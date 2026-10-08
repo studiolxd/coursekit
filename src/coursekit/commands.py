@@ -26,7 +26,7 @@ def cmd_new(args: argparse.Namespace) -> int:
         project, args.title, args.hours, code=args.code, intro=not args.no_intro, summary=not args.no_summary,
         notes=args.notes, language=args.language,
     )
-    print(f"created {folder.relative_to(project.root)} ({args.hours} h)")
+    print(f"created {folder.relative_to(project.root).as_posix()} ({args.hours} h)")
     return 0
 
 
@@ -158,7 +158,7 @@ def _launch_report(result: launch.UnitResult, project: Project) -> None:
     if result.summary:
         print(result.summary)
     if result.log:
-        print(f"unit {result.n}: {result.status} · session in {result.log.relative_to(project.root)}"
+        print(f"unit {result.n}: {result.status} · session in {result.log.relative_to(project.root).as_posix()}"
               + (f" · exit {result.exit_code}" if result.exit_code else ""))
 
 
@@ -221,7 +221,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     if summary:
         print(summary)
     if log:
-        print(f"session in {log.relative_to(project.root)}" + (f" · exit {code}" if code else ""))
+        print(f"session in {log.relative_to(project.root).as_posix()}" + (f" · exit {code}" if code else ""))
     return code
 
 
