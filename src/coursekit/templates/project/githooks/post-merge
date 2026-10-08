@@ -1,0 +1,4 @@
+#!/bin/sh
+# coursekit: refresh the generated skills, commands and agent settings after every pull.
+command -v coursekit >/dev/null 2>&1 && coursekit agents >/dev/null 2>&1
+exit 0

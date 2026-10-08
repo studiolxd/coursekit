@@ -6,9 +6,10 @@ import argparse
 import sys
 
 from coursekit import agents as agentsmod
-from coursekit import approve, envfile, launch, new, outline, status, verify
+from coursekit import approve, doctor, envfile, launch, new, outline, status, verify
 from coursekit import brief as briefmod
 from coursekit import course as coursemod
+from coursekit import setup as setupmod
 from coursekit.lang import format_number
 from coursekit.project import Project, find_project
 from coursekit.sync import sync
@@ -236,6 +237,28 @@ def cmd_roles(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_setup(args: argparse.Namespace) -> int:
+    project = find_project()
+    tty = sys.stdin.isatty() and not args.yes
+
+    def ask(question: str, default: str) -> str:
+        shown = f" ({default})" if default else ""
+        return input(f"{question}{shown}: ").strip() or default
+
+    def confirm(question: str) -> bool:
+        return input(f"{question} [Y/n] ").strip().lower() in ("", "y", "yes", "s", "si", "sí")
+
+    return setupmod.run(project, print, ask if tty else None, confirm if tty else None,
+                        identity_only=args.identity, media=args.media, name=args.name, email=args.email)
+
+
+def cmd_doctor(args: argparse.Namespace) -> int:
+    project = _project()
+    sections = doctor.collect(project)
+    print(doctor.render(sections))
+    return 0
+
+
 def register(sub: argparse._SubParsersAction) -> None:
     p = sub.add_parser("new", help="create a course from its title and hours")
     p.add_argument("title")
@@ -300,6 +323,17 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--agent", choices=launch.TOOLS)
     p.add_argument("--model")
     p.set_defaults(func=cmd_run)
+
+    p = sub.add_parser("setup", help="prepare this machine for the project (identity, .env, hooks, agents, network)")
+    p.add_argument("--identity", action="store_true", help="only set or change the signing identity")
+    p.add_argument("--media", action="store_true", help="also install the media production tools")
+    p.add_argument("--name", help="signing name (without asking)")
+    p.add_argument("--email", help="signing email (without asking)")
+    p.add_argument("--yes", "-y", action="store_true", help="do not ask")
+    p.set_defaults(func=cmd_setup)
+
+    p = sub.add_parser("doctor", help="what is installed and configured here for the project")
+    p.set_defaults(func=cmd_doctor)
 
     p = sub.add_parser("roles", help="tool and model of each role")
     p.set_defaults(func=cmd_roles)

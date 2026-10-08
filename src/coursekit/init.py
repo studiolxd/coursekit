@@ -37,7 +37,10 @@ MANAGED = {
     "CLAUDE.md": "CLAUDE.md",
     "env.example": ".env.example",
     "gitignore": ".gitignore",
+    "githooks/post-merge": ".githooks/post-merge",
+    "githooks/post-checkout": ".githooks/post-checkout",
 }
+EXECUTABLE = (".githooks/post-merge", ".githooks/post-checkout")
 FOLDERS = ("courses", "brief/sources", "config", "theme", ".agents")
 
 LANGUAGES = ("es", "en")
@@ -114,6 +117,8 @@ def _save_state(root: Path, state: dict) -> None:
 def _write(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8", newline="\n")
+    if any(path.as_posix().endswith(e) for e in EXECUTABLE):
+        path.chmod(0o755)
 
 
 def values_from_project(root: Path) -> dict[str, str]:

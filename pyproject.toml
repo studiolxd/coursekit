@@ -6,11 +6,13 @@ readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Studio LXD", email = "hello@studiolxd.com" }]
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.14"
 dependencies = [
     "pyyaml>=6.0",
     "ruamel.yaml>=0.18",
     "openpyxl>=3.1",
+    "markdown-it-py>=3.0",
+    "markitdown[pdf,docx,pptx,xlsx,xls,outlook]>=0.1",
 ]
 
 [project.optional-dependencies]
