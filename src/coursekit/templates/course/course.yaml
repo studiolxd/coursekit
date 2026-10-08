@@ -1,0 +1,44 @@
+# Course record: the single source of truth for the course state (the catalog is generated
+# from it). `units` is filled from the approved instructional design (`coursekit sync`):
+# do not edit it by hand.
+code: {code}
+title: {title}
+client: {client}
+language: {language}
+status: design
+owners:
+  instructional_design: ""
+  writing: ""
+  review: ""
+  media: ""
+  assembly: ""
+design:
+  hours: {hours}
+  structure: {structure}   # slxd patronEstructural: sin_modulos | con_modulos
+  intro_section: {intro}   # every unit opens with the introduction section
+  summary_section: {summary} # every unit closes with the summary section
+  audience: ""
+  level: ""
+  prerequisites: ""
+  tone: {tone}
+  notes: {notes}            # extra instructions from the person who created the course
+  grading:
+    unit_tests_weight: {unit_tests_weight}   # total % for all unit tests, split evenly
+    final_test_weight: {final_test_weight}
+    passing_score: {passing_score}
+    attempts: {attempts}
+units: []
+slxd:
+  organization_id: null
+  matrix_id: null
+  folder_id: null
+  theme_id: null
+links:
+  preview: null            # share link of the assembled course
+  review: null
+media:
+  voice: {}                # one voice for the whole course: coursekit voice set <CODE> <provider>
+approvals: []              # written by `coursekit approve` only
+deliveries: []             # - {version, date, standard, file}
+history:
+  - {date: "{today}", status: design, by: {author}, note: "Course created"}

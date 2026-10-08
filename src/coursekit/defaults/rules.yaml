@@ -6,10 +6,16 @@
 pages_per_hour: 10
 words_per_page: 500            # minimum learner-facing words = hours x 10 x 500
 
-# Default structure options for new courses (overridable per course in course.yaml).
+# Defaults for new courses (each course can change them in its course.yaml).
 defaults:
-  intro_section: true          # first section of every unit: "Introducción y objetivos"
-  summary_section: true        # last section of every unit: "Resumen"
+  intro_section: true          # first section of every unit: introduction and objectives
+  summary_section: true        # last section of every unit: summary
+  structure: sin_modulos       # slxd patronEstructural: sin_modulos | con_modulos
+  grading:
+    unit_tests_weight: 60      # total % for all unit tests, split evenly
+    final_test_weight: 40
+    passing_score: 50
+    attempts: 2
 
 content:
   word_margin: 0.03                    # recommended margin over the minimum (warning only)

@@ -1,0 +1,14 @@
+# Tokens of the content format in Spanish (what writers type and the verifier reads).
+section: Apartado                     # "## Apartado N — Title"
+objective: Objetivo                   # "*[Objetivo U1.2 — Verbo]*"
+assessment_activity: ACTIVIDAD DE EVALUACIÓN
+placeholder: RECURSO MULTIMEDIA       # "> **[RECURSO MULTIMEDIA — Imagen]**"
+placeholder_fields: [Título, Descripción, Cómo se elabora, Especificaciones]
+intro_title: Introducción y objetivos
+summary_title: Resumen
+intro_pattern: '^\s*introducci[oó]n'
+summary_pattern: '^\s*(resumen|s[ií]ntesis|conclusi[oó]n)'
+unit: Unidad
+min_words: mín. {words} palabras
+question_objective_key: "objetivo:"
+thousands_separator: "."

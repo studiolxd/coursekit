@@ -1,0 +1,19 @@
+{
+  "matrix": {"id": "m-1", "nombre": "Contraseñas seguras", "updatedAt": "2026-01-01T00:00:00Z"},
+  "competencias": [{"id": "c-1", "texto": "Proteger sus cuentas en el trabajo"}],
+  "objetivos": [
+    {"id": "o-1", "texto": "Crear contraseñas robustas", "nivelBloom": "aplicar"},
+    {"id": "o-2", "texto": "Identificar contraseñas débiles", "nivelBloom": "analizar"}
+  ],
+  "nodos": [
+    {"id": "u-1", "tipo": "unidad", "titulo": "Contraseñas que protegen", "orden": 1, "parentId": null, "horas": 1},
+    {"id": "s-1", "tipo": "apartado", "titulo": "Introducción y objetivos", "orden": 1, "parentId": "u-1", "horas": 0.2},
+    {"id": "s-2", "tipo": "apartado", "titulo": "Cómo es una contraseña robusta", "orden": 2, "parentId": "u-1", "horas": 0.6,
+     "objetivoIds": ["o-1", "o-2"]},
+    {"id": "s-3", "tipo": "apartado", "titulo": "Resumen", "orden": 3, "parentId": "u-1", "horas": 0.2}
+  ],
+  "actividadesAprendizaje": [],
+  "actividadesEvaluacion": [
+    {"id": "a-1", "titulo": "Test de la unidad", "instrumento": "cuestionario", "nodeId": "u-1", "objetivoIds": ["o-1"]}
+  ]
+}

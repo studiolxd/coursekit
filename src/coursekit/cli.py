@@ -9,9 +9,10 @@ from pathlib import Path
 
 import yaml
 
-from coursekit import __version__, config, envfile
+from coursekit import __version__, commands, config, envfile
 from coursekit import init as initmod
 from coursekit.project import PROJECT_FILE, ProjectNotFound, find_project
+from coursekit.sync import DesignError
 
 
 def _print_report(report: initmod.Report) -> None:
@@ -125,6 +126,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--changed", action="store_true", help="only values that differ from the package defaults")
     p.add_argument("--json", action="store_true", help="print the merged values as JSON")
     p.set_defaults(func=cmd_config)
+
+    p = sub.add_parser("rules", help="production rules in force for a course, and where each value is set")
+    p.add_argument("course", nargs="?")
+    p.add_argument("--changed", action="store_true")
+    p.set_defaults(func=lambda a: cmd_config(argparse.Namespace(name="rules", course=a.course, changed=a.changed, json=False)))
+
+    commands.register(sub)
     return parser
 
 
@@ -136,7 +144,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     try:
         return args.func(args)
-    except ProjectNotFound as exc:
+    except (ProjectNotFound, DesignError, *commands.ERRORS) as exc:
         print(f"coursekit: {exc}", file=sys.stderr)
         return 1
 

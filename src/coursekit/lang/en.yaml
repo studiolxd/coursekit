@@ -1,0 +1,14 @@
+# Tokens of the content format in English.
+section: Section
+objective: Objective
+assessment_activity: ASSESSMENT ACTIVITY
+placeholder: MEDIA ASSET
+placeholder_fields: [Title, Description, How it is made, Specifications]
+intro_title: Introduction and objectives
+summary_title: Summary
+intro_pattern: '^\s*introduction'
+summary_pattern: '^\s*(summary|wrap-up|conclusion)'
+unit: Unit
+min_words: min. {words} words
+question_objective_key: "objective:"
+thousands_separator: ","
