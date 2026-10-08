@@ -120,7 +120,7 @@ def approve_content(course: dict, n: int, confirm: Confirm, do_commit: bool = Tr
     course_dir: Path = course["_dir"]
     review = course_dir / "reviews" / f"unit-{n:02d}-ai-review.md"
     if not review.exists():
-        raise ApprovalError(f"missing AI review {review.relative_to(course_dir)}")
+        raise ApprovalError(f"missing AI review {review.relative_to(course_dir).as_posix()}")
     folder = coursemod.unit_dir(course_dir, n)
     files = [folder / "content.md", folder / "assessment.md"]
     who = signer()
@@ -149,7 +149,7 @@ def mark_reviewed(course: dict, n: int) -> str:
     course_dir: Path = course["_dir"]
     report_path = course_dir / "reviews" / f"unit-{n:02d}-ai-review.md"
     if not report_path.exists():
-        raise ApprovalError(f"missing {report_path.relative_to(course_dir)}")
+        raise ApprovalError(f"missing {report_path.relative_to(course_dir).as_posix()}")
     unit = next((u for u in course.get("units") or [] if u["n"] == n), None)
     if unit is None:
         raise ApprovalError(f"unit {n} not found")

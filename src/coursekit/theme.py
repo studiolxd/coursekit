@@ -35,7 +35,7 @@ def tokens_path(project: Project) -> Path:
 def load(project: Project) -> dict:
     path = tokens_path(project)
     if not path.exists():
-        raise ThemeError(f"missing {path.relative_to(project.root)}: derive it from the theme of the assembly platform")
+        raise ThemeError(f"missing {path.relative_to(project.root).as_posix()}: derive it from the theme of the assembly platform")
     return json.loads(path.read_text(encoding="utf-8"))
 
 
