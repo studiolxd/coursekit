@@ -59,7 +59,8 @@ def sha256_file(path: Path) -> str:
 
 def git(*args: str, cwd: Path | None = None) -> str:
     try:
-        out = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True, check=True)
+        # git prints UTF-8 on every platform; the locale encoding (cp1252 on Windows) would garble it.
+        out = subprocess.run(["git", *args], cwd=cwd, capture_output=True, encoding="utf-8", errors="replace", check=True)
         return out.stdout.strip()
     except (OSError, subprocess.CalledProcessError):
         return ""

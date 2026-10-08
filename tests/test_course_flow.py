@@ -204,7 +204,7 @@ def test_approval_commit_is_authored_by_the_signer(tmp_path, monkeypatch, capsys
         monkeypatch.delenv(key, raising=False)
     root = tmp_path / "repo"
     assert main(["init", str(root), "--yes"]) == 0  # with git init
-    run = lambda *a: subprocess.run(["git", *a], cwd=root, capture_output=True, text=True, check=True).stdout  # noqa: E731
+    run = lambda *a: subprocess.run(["git", *a], cwd=root, capture_output=True, encoding="utf-8", check=True).stdout  # noqa: E731
     run("config", "user.name", "Some Git Account")
     run("config", "user.email", "git@example.com")
     run("add", "-A")
