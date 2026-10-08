@@ -1,6 +1,6 @@
 # Plan de coursekit
 
-> Estado: **plan, sin ejecutar**. Paquete `slxd-coursekit`, comando `coursekit`, repositorio
+> Estado: **fase 1 en curso** (pasos 1.1–1.5 hechos). Paquete `slxd-coursekit`, comando `coursekit`, repositorio
 > público <https://github.com/studiolxd/coursekit>.
 
 ## 1. Objetivo
@@ -327,15 +327,15 @@ Cada fase termina con algo comprobable. No se pasa a la siguiente con la anterio
 
 ### 7.1 Pasos de la fase 1
 
-| Paso | Qué | Comprobación |
-|---|---|---|
-| 1.1 | Paquete mínimo: `pyproject.toml` (hatchling, Python ≥ 3.12, MIT), `src/coursekit/`, comando `coursekit` con `--version` y `help`, `LICENSE`, CI con ruff, pytest y la comprobación de términos prohibidos. | `uv tool install git+…` y `coursekit --version` en macOS, Linux y Windows; CI en verde. |
-| 1.2 | Raíz del proyecto y configuración en capas: el motor busca `project.yaml` hacia arriba (como git busca `.git`), carga los valores del paquete, `project.yaml`, `config/`, `course.yaml` y `.env`; `coursekit config [CODE]` muestra el valor efectivo y su origen. | Tests de fusión de capas; ningún módulo usa rutas relativas al paquete para datos del proyecto. |
-| 1.3 | `coursekit init <carpeta>` y `init --update`: genera `project.yaml` (preguntas: cliente, idioma, tono, tratamiento, backend, espejo), `.env.example`, `AGENTS.md`, `.gitignore`, `courses/`, `brief/`, `theme/`; `--update` refresca solo lo generado. | `coursekit init demo` en una carpeta vacía y `init --update` sin tocar lo editado por la persona. |
-| 1.4 | Motor de cursos: `new`, `status`, `sync`, `outline`, `verify`, `approve`, `reviewed`, `brief`, `rules`, con estados, huellas y firmas con la identidad del `.env`. Copiados y limpiados, con tests sobre un curso de ejemplo genérico. | Un curso de ejemplo en `tests/fixtures/` pasa `sync --check` y `verify`; `approve` firma con `COURSEKIT_USER_*`. |
-| 1.5 | Skills, comandos y agentes en inglés con variables; `coursekit agents` genera `.claude/`, `.opencode/` y lo de Codex; `coursekit run` y `write`/`review` con `--headless`. | Las tres herramientas ven skills, comandos y MCP en el proyecto demo (`coursekit doctor`). |
-| 1.6 | `setup` y `doctor` del paquete (sin `.venv` en el proyecto; extra `[media]`), red con inspección TLS configurable. | `coursekit setup` y `doctor` limpios en un equipo nuevo. |
-| 1.7 | Montaje creator, multimedia, entrega, catálogo y `publish` (este último con `mirror.provider: folder` y `sharepoint`; el resto de proveedores en la fase 4). | El curso de ejemplo genera plan de montaje y catálogo. |
+| Paso | Qué | Comprobación | Estado |
+|---|---|---|---|
+| 1.1 | Paquete mínimo: `pyproject.toml` (hatchling, Python ≥ 3.12, MIT), `src/coursekit/`, comando `coursekit` con `--version` y `help`, `LICENSE`, CI con ruff, pytest y la comprobación de términos prohibidos. | `uv tool install git+…` y `coursekit --version` en macOS, Linux y Windows; CI en verde. | hecho |
+| 1.2 | Raíz del proyecto y configuración en capas: el motor busca `project.yaml` hacia arriba (como git busca `.git`), carga los valores del paquete, `project.yaml`, `config/`, `course.yaml` y `.env`; `coursekit config [CODE]` muestra el valor efectivo y su origen. | Tests de fusión de capas; ningún módulo usa rutas relativas al paquete para datos del proyecto. | hecho |
+| 1.3 | `coursekit init <carpeta>` y `init --update`: genera `project.yaml` (preguntas: cliente, idioma, tono, tratamiento, backend, espejo), `.env.example`, `AGENTS.md`, `.gitignore`, `courses/`, `brief/`, `theme/`; `--update` refresca solo lo generado. | `coursekit init demo` en una carpeta vacía y `init --update` sin tocar lo editado por la persona. | hecho |
+| 1.4 | Motor de cursos: `new`, `status`, `sync`, `outline`, `verify`, `approve`, `reviewed`, `brief`, `rules`, con estados, huellas y firmas con la identidad del `.env`. Copiados y limpiados, con tests sobre un curso de ejemplo genérico. | Un curso de ejemplo en `tests/fixtures/` pasa `sync --check` y `verify`; `approve` firma con `COURSEKIT_USER_*`. | hecho |
+| 1.5 | Skills, comandos y agentes en inglés con variables; `coursekit agents` genera `.claude/`, `.opencode/` y lo de Codex; `coursekit run` y `write`/`review` con `--headless`. | Las tres herramientas ven skills, comandos y MCP en el proyecto demo (`coursekit doctor`). | hecho |
+| 1.6 | `setup` y `doctor` del paquete (sin `.venv` en el proyecto; extra `[media]`), red con inspección TLS configurable. | `coursekit setup` y `doctor` limpios en un equipo nuevo. | |
+| 1.7 | Montaje creator, multimedia, entrega, catálogo y `publish` (este último con `mirror.provider: folder` y `sharepoint`; el resto de proveedores en la fase 4). | El curso de ejemplo genera plan de montaje y catálogo. | |
 
 Orden alternativo: si corre prisa el backend html, la fase 6 puede ir justo después de la 2;
 3, 4 y 5 son independientes entre sí.
