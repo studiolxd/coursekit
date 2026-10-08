@@ -3,11 +3,42 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 
-from coursekit import __version__
+import yaml
 
-COMMANDS: dict[str, str] = {}
+from coursekit import __version__, config, envfile
+from coursekit.project import ProjectNotFound, find_project
+
+
+def cmd_config(args: argparse.Namespace) -> int:
+    project = find_project()
+    envfile.load(project.env_file)
+    course = None
+    if args.course:
+        course_file = project.course_dir(args.course) / "course.yaml"
+        if not course_file.exists():
+            print(f"coursekit: course {args.course} not found ({course_file})", file=sys.stderr)
+            return 1
+        course = yaml.safe_load(course_file.read_text(encoding="utf-8")) or {}
+    names = [args.name] if args.name else list(config.NAMES)
+    if args.json:
+        out = {n: config.effective(n, project, course).value for n in names}
+        print(json.dumps(out if not args.name else out[args.name], indent=2, ensure_ascii=False))
+        return 0
+    for name in names:
+        layered = config.effective(name, project, course)
+        if len(names) > 1:
+            print(f"[{name}]")
+        rows = [(k, v, o) for k, v, o in layered.flat() if not args.changed or o != "package"]
+        width = max((len(k) for k, _, _ in rows), default=0)
+        for key, value, origin in rows:
+            shown = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)
+            print(f"  {key.ljust(width)}  {shown}  ({origin})")
+        if len(names) > 1:
+            print()
+    return 0
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -18,6 +49,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--version", action="version", version=f"coursekit {__version__}")
     sub = parser.add_subparsers(dest="command", metavar="<command>")
     sub.add_parser("help", help="show this help")
+
+    p = sub.add_parser("config", help="show the effective configuration and where each value is set")
+    p.add_argument("name", nargs="?", choices=config.NAMES, help="one configuration (default: all)")
+    p.add_argument("--course", help="include the overrides of this course (code or folder)")
+    p.add_argument("--changed", action="store_true", help="only values that differ from the package defaults")
+    p.add_argument("--json", action="store_true", help="print the merged values as JSON")
+    p.set_defaults(func=cmd_config)
     return parser
 
 
@@ -27,7 +65,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.command in (None, "help"):
         parser.print_help()
         return 0
-    return 0
+    try:
+        return args.func(args)
+    except ProjectNotFound as exc:
+        print(f"coursekit: {exc}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

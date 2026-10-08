@@ -1,0 +1,23 @@
+# Default production rules. A project overrides them in config/rules.yaml or project.yaml › rules,
+# and a course in course.yaml › rules (see `coursekit config`). Structure (units, sections,
+# objectives, hours) is NOT fixed here: it comes from each course's approved instructional design
+# (courses/<CODE>/design/matrix.json). These are the checks applied on top of it.
+
+pages_per_hour: 10
+words_per_page: 500            # minimum learner-facing words = hours x 10 x 500
+
+# Default structure options for new courses (overridable per course in course.yaml).
+defaults:
+  intro_section: true          # first section of every unit: "Introducción y objetivos"
+  summary_section: true        # last section of every unit: "Resumen"
+
+content:
+  word_margin: 0.03                    # recommended margin over the minimum (warning only)
+  placeholders_per_hour: 2.5           # multimedia placeholders per unit hour (rounded up)
+  min_placeholder_types: 4             # capped by the number of placeholders required
+  interactive_per_hour: 4              # distinct interactive directives per content-section hour
+  min_interactive_per_content_section: 1
+  questions_per_objective: 5           # summative question bank, per objective of the unit
+  placeholder_types: [Imagen, Vídeo, GIF animado, Infografía, Esquema/Diagrama, Simulación interactiva, Demo interactiva en terminal, Audio]
+  # Directives and their creator bricks: config/directives.yaml
+  allowed_symbols: "★✔✘·—‹›"

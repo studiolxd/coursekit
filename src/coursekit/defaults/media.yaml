@@ -1,0 +1,53 @@
+# Multimedia production: for each placeholder type, the options in order of preference.
+# `coursekit media plan` keeps, for each asset, the options whose requirements are met:
+#   env: VAR   the variable is set (in .env or the shell)
+#   bin: CMD   the command is installed
+#   mcp: TOOL  the agent has that MCP tool (only the agent can check it)
+#   media: X   X is installed in the media environment (`coursekit setup --media`):
+#              a command in .venv-media/bin or a Python package in .venv-media
+#   path: P    the path exists inside the project (e.g. tools/remotion/node_modules)
+#   none       always available (the agent does it itself)
+# `only:` limits an option to some content (e.g. terminal) — the agent decides from the
+# placeholder's description.
+# The agent uses the first option it can actually run and records it in the manifest.
+
+# Voice-over for Vídeo and Audio. A course uses ONE provider for all its narration:
+# course.yaml › media.voice, chosen with `coursekit voice set` when several are available.
+# `coursekit tts --course CODE` uses it.
+voice:
+  - {id: elevenlabs-api, needs: {env: ELEVENLABS_API_KEY}, how: "TTS con timestamps por carácter (subtítulos exactos sin alinear)"}
+  - {id: azure-api, needs: {env: AZURE_SPEECH_KEY}, how: "Azure AI Speech, voces neuronales es-ES"}
+  - {id: google-api, needs: {env: GOOGLE_TTS_API_KEY}, how: "Google Cloud TTS, Chirp 3 HD es-ES"}
+  - {id: elevenlabs-mcp, needs: {mcp: creative_generate_speech}, how: "Conector ElevenLabs de Claude (sin coursekit tts)"}
+  - {id: piper, needs: {media: piper, env: PIPER_VOICE}, how: "Borrador local, voz es_ES sharvard (hablantes 0 y 1)"}
+subtitles:
+  - {id: elevenlabs-timestamps, needs: {env: ELEVENLABS_API_KEY}, how: "VTT desde los timestamps de ElevenLabs"}
+  - {id: stable-ts, needs: {media: stable-ts}, how: "Alinear el guion con el audio (stable-ts, palabra a palabra) → VTT (coursekit subtitles)"}
+
+types:
+  Imagen:
+    - {id: magnific-api, needs: {env: MAGNIFIC_API_KEY}, how: "Imagen generada con la API de Magnific"}
+    - {id: magnific-mcp, needs: {mcp: images_generate}, how: "Conector Magnific de Claude"}
+    - {id: creator-stock, needs: {mcp: search_stock_images}, how: "Stock con licencia desde creator (Pexels, Pixabay, Unsplash, Freepik) + import_stock_image"}
+  Infografía:
+    - {id: agent-svg, needs: none, how: "SVG escrito por el agente con theme/…/tokens.json; iconos con search_stock_icons"}
+    - {id: magnific-api, needs: {env: MAGNIFIC_API_KEY}, how: "Ilustración de apoyo generada"}
+  Esquema/Diagrama:
+    - {id: agent-svg, needs: none, how: "SVG escrito por el agente con los tokens del tema"}
+  GIF animado:
+    - {id: vhs, needs: {bin: vhs}, only: terminal, how: "Guion .tape → GIF (solo si muestra un terminal)"}
+    - {id: agent-svg-animated, needs: none, how: "SVG animado con CSS (procesos, esquemas que se construyen)"}
+    - {id: remotion-gif, needs: {bin: node, path: tools/remotion/node_modules}, how: "Animación corta con Remotion exportada a GIF"}
+  Demo interactiva en terminal:
+    - {id: asciinema, needs: {bin: asciinema}, only: terminal, how: "Grabación .cast + reproductor web en paquete EMBED (texto copiable)"}
+    - {id: vhs, needs: {bin: vhs}, only: terminal, how: "Alternativa en vídeo: guion .tape → MP4"}
+  Vídeo:
+    - {id: remotion, needs: {bin: node, path: tools/remotion/node_modules}, how: "Vídeo programado (React) con diagramas, tokens del tema, locución (voice) y subtítulos (subtitles). Remotion es gratuito para equipos pequeños; las empresas más grandes necesitan licencia (remotion.dev/license)"}
+    - {id: vhs, needs: {bin: vhs}, only: terminal, how: "Vídeo de terminal"}
+  Audio:
+    - {id: voice, needs: none, how: "Locución según la cadena `voice` + transcripción"}
+  Simulación interactiva:
+    - {id: agent-html, needs: none, how: "HTML/JS autocontenido con theme/…/tokens.css → request_embed_upload (EMBED)"}
+
+# Resources are validated in the assembled course (preview), not one by one.
+statuses: [pending, scripted, produced, uploaded]
