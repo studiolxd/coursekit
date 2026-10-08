@@ -6,8 +6,9 @@ file (one term per line, `#` for comments). Matching is case-insensitive and on 
 (a term never matches inside a longer word).
 
 Usage:
-    python tools/check_terms.py            all tracked files
-    python tools/check_terms.py --staged   files staged for commit (pre-commit hook)
+    python tools/check_terms.py                   all tracked files
+    python tools/check_terms.py --staged          files staged for commit (pre-commit hook)
+    python tools/check_terms.py --message FILE    a commit message (commit-msg hook)
 """
 
 from __future__ import annotations
@@ -51,12 +52,21 @@ def content(path: str, staged: bool) -> str:
 
 def main() -> int:
     staged = "--staged" in sys.argv
+    message = sys.argv[sys.argv.index("--message") + 1] if "--message" in sys.argv else None
     terms = load_terms()
     if not terms:
         print("check_terms: no forbidden terms configured (FORBIDDEN_TERMS or .forbidden-terms)", file=sys.stderr)
         return 1 if os.environ.get("CI") else 0
     pattern = re.compile("|".join(rf"(?<!\w){re.escape(t)}(?!\w)" for t in terms), re.IGNORECASE)
     hits = []
+    if message:
+        text = Path(message).read_text(encoding="utf-8", errors="ignore")
+        hits = [f"commit message:{n}" for n, line in enumerate(text.splitlines(), 1)
+                if not line.startswith("#") and pattern.search(line)]
+        if hits:
+            print(f"check_terms: forbidden terms in the commit message: {', '.join(hits)}", file=sys.stderr)
+            return 1
+        return 0
     for path in files(staged):
         for target in (path, content(path, staged)):
             for n, line in enumerate(target.splitlines(), 1):
