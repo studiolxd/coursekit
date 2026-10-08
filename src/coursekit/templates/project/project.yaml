@@ -1,0 +1,34 @@
+# coursekit project. Shared by the whole team and versioned; personal settings go in .env.
+# Production rules, directives, media and delivery options can be overridden here (sections
+# rules:, directives:, media:, delivery:) or in config/<name>.yaml; see `coursekit config`.
+name: {name}
+client: {client}
+# Language of the courses (es | en).
+content_language: {content_language}
+# Language of coursekit messages and of the templates for people (es | en).
+ui_language: {ui_language}
+tone: {tone}
+# How learners are addressed: tu | usted (es), you (en).
+address: {address}
+
+assembly:
+  # creator | html
+  backend: {backend}
+
+platform:
+  slxd:
+    # Name of the MCP server in .mcp.json and opencode.json, and its URL
+    # (e.g. https://<tenant>.slxd.app/mcp/creator).
+    mcp_name: slxd-creator
+    mcp_url: ""
+    organization_id: ""
+
+mirror:
+  # sharepoint | onedrive | google-drive | nextcloud | folder | none
+  provider: {mirror}
+  # Web address of the mirror folder (links in the catalog).
+  url: ""
+
+network:
+  # Extra CA certificates for TLS-inspecting proxies (paths).
+  ca_bundles: []
