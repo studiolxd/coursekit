@@ -1,0 +1,3 @@
+#!/bin/sh
+# Blocks a commit that would publish a forbidden term (see tools/check_terms.py).
+exec python3 tools/check_terms.py --staged
