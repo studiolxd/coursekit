@@ -17,8 +17,14 @@ defaults:
     passing_score: 50
     attempts: 2
 
+# Guidance for the instructional design proposal (given to the design agent).
+design:
+  competencies_per_course: "2–4"
+  objectives_per_unit: "2–4"
+  intro_summary_hours: "0.2–0.3"
+
 content:
-  word_margin: 0.03                    # recommended margin over the minimum (warning only)
+  word_margin: 0.05                    # recommended margin over the minimum (warning only)
   placeholders_per_hour: 2.5           # multimedia placeholders per unit hour (rounded up)
   min_placeholder_types: 4             # capped by the number of placeholders required
   interactive_per_hour: 4              # distinct interactive directives per content-section hour

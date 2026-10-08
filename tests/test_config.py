@@ -69,7 +69,7 @@ def test_lists_replace(project):
 
 def test_package_defaults_are_not_mutated(project):
     config.effective("rules", find_project(project), {"rules": {"content": {"word_margin": 0.5}}})
-    assert config.package_defaults("rules")["content"]["word_margin"] == 0.03
+    assert config.package_defaults("rules")["content"]["word_margin"] == 0.05
 
 
 def test_unknown_name():

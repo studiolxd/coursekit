@@ -12,3 +12,5 @@ courses/*/delivery/
 .opencode/skill/
 .opencode/command/
 .opencode/agent/
+.coursekit/agents/
+.coursekit/docs/
