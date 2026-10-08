@@ -37,7 +37,7 @@ CONTENT = f"""# Unidad 1 — Contraseñas que protegen
 {WORDS} {WORDS} {WORDS}
 
 :::accordion
-## Longitud
+#### Longitud
 Más larga es mejor.
 :::
 

@@ -21,6 +21,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from coursekit import config
 from coursekit import course as coursemod
 from coursekit.fingerprint import changed_since_review
 from coursekit.lang import format_number
@@ -275,7 +276,13 @@ def verify_unit(course: dict, unit: dict) -> Report:
     else:
         report.error(f"missing {assessment_path.name}")
 
-    for check in BACKEND_CHECKS:
+    backend = (config.project_data(course["_project"]).get("assembly") or {}).get("backend", "creator") if course.get("_project") else None
+    checks = list(BACKEND_CHECKS)
+    if backend == "creator":
+        from coursekit.assemble import check_unit
+
+        checks.append(check_unit)
+    for check in checks:
         for err in check(course, unit):
             report.error(f"assembly: {err}")
 

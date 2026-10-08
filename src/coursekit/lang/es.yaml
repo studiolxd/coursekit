@@ -12,3 +12,7 @@ unit: Unidad
 min_words: mín. {words} palabras
 question_objective_key: "objetivo:"
 thousands_separator: "."
+assessment_instructions: Instrucciones para el alumno
+assessment_bank: Banco de preguntas
+download: Descargar
+note: Nota

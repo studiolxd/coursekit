@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 
 from coursekit import agents as agentsmod
-from coursekit import approve, doctor, envfile, launch, new, outline, status, verify
+from coursekit import approve, config, directives, doctor, envfile, launch, new, outline, status, verify
+from coursekit import assemble as assemblemod
 from coursekit import brief as briefmod
 from coursekit import course as coursemod
 from coursekit import setup as setupmod
@@ -259,6 +261,56 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_assemble(args: argparse.Namespace) -> int:
+    import json
+
+    course = coursemod.load(_project(), args.code)
+    unit = next((u for u in course.get("units") or [] if u["n"] == args.unit), None)
+    if unit is None:
+        print(f"coursekit: unit {args.unit} not found", file=sys.stderr)
+        return 1
+    if args.action == "plan":
+        plan, errors, warnings, counts = assemblemod.write_plan(course, unit)
+        for w in warnings:
+            print(f"WARNING {w}")
+        for e in errors:
+            print(f"ERROR   {e}")
+        if plan is None:
+            return 1
+        print(f"plan assembly/unit-{args.unit:02d}.plan.json: {len(plan['lessons'])} lessons, {sum(counts.values())} bricks "
+              f"({', '.join(f'{k} {v}' for k, v in counts.items())})")
+        return 0
+    if args.action == "diff":
+        print(json.dumps(assemblemod.diff(course, unit), indent=1, ensure_ascii=False))
+        return 0
+    if args.action == "link":
+        if not args.content_id:
+            print("coursekit: link needs --content-id", file=sys.stderr)
+            return 2
+        print(assemblemod.link(course, unit, args.content_id))
+        return 0
+    if args.content:
+        print(assemblemod.record_content_title(course, unit))
+        return 0
+    if not (args.lesson and args.lesson_id):
+        print("coursekit: applied needs --lesson and --lesson-id (or --content)", file=sys.stderr)
+        return 2
+    print(assemblemod.record_lesson(course, unit, args.lesson, args.lesson_id, [b for b in args.brick_ids.split(",") if b]))
+    return 0
+
+
+def cmd_directives(args: argparse.Namespace) -> int:
+    project = _project()
+    registry = config.effective("directives", project).value
+    new_lines, removed, total = directives.check(registry, Path(args.file))
+    for line in [*new_lines, *removed]:
+        print(line)
+    if not new_lines and not removed:
+        print(f"ok: the directive registry matches creator ({total} bricks)")
+        return 0
+    return 1
+
+
 def register(sub: argparse._SubParsersAction) -> None:
     p = sub.add_parser("new", help="create a course from its title and hours")
     p.add_argument("title")
@@ -324,6 +376,22 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--model")
     p.set_defaults(func=cmd_run)
 
+    p = sub.add_parser("assemble", help="plan, diff and record the assembly of a unit in creator")
+    p.add_argument("action", choices=("plan", "diff", "applied", "link"))
+    p.add_argument("code")
+    p.add_argument("--unit", type=int, required=True)
+    p.add_argument("--lesson")
+    p.add_argument("--lesson-id")
+    p.add_argument("--brick-ids", default="")
+    p.add_argument("--content", action="store_true", help="applied: record the content title as renamed")
+    p.add_argument("--content-id")
+    p.set_defaults(func=cmd_assemble)
+
+    p = sub.add_parser("directives", help="compare the directive registry with the creator catalog")
+    p.add_argument("action", choices=("check",))
+    p.add_argument("file", help="JSON saved from list_brick_types")
+    p.set_defaults(func=cmd_directives)
+
     p = sub.add_parser("setup", help="prepare this machine for the project (identity, .env, hooks, agents, network)")
     p.add_argument("--identity", action="store_true", help="only set or change the signing identity")
     p.add_argument("--media", action="store_true", help="also install the media production tools")
@@ -344,4 +412,5 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.set_defaults(func=cmd_brief)
 
 
-ERRORS = (coursemod.CourseNotFound, approve.ApprovalError, FileExistsError, launch.LaunchError)
+ERRORS = (coursemod.CourseNotFound, approve.ApprovalError, FileExistsError, launch.LaunchError,
+          assemblemod.AssembleError, directives.CatalogError)
