@@ -1,4 +1,7 @@
 #!/bin/sh
 # coursekit: refresh the generated skills, commands and agent settings after every pull.
-command -v coursekit >/dev/null 2>&1 && coursekit agents >/dev/null 2>&1
+# Then publish to the mirror folder, if this person has one configured.
+command -v coursekit >/dev/null 2>&1 || exit 0
+coursekit agents >/dev/null 2>&1
+coursekit publish --only-if-configured >/dev/null 2>&1
 exit 0

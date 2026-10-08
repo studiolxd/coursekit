@@ -1,6 +1,6 @@
 # Plan de coursekit
 
-> Estado: **fase 1 en curso** (pasos 1.1–1.6 hechos). Paquete `slxd-coursekit`, comando `coursekit`, repositorio
+> Estado: **fase 1 hecha**; siguiente, fase 2 (curso de prueba de extremo a extremo). Paquete `slxd-coursekit`, comando `coursekit`, repositorio
 > público <https://github.com/studiolxd/coursekit>.
 
 ## 1. Objetivo
@@ -335,7 +335,7 @@ Cada fase termina con algo comprobable. No se pasa a la siguiente con la anterio
 | 1.4 | Motor de cursos: `new`, `status`, `sync`, `outline`, `verify`, `approve`, `reviewed`, `brief`, `rules`, con estados, huellas y firmas con la identidad del `.env`. Copiados y limpiados, con tests sobre un curso de ejemplo genérico. | Un curso de ejemplo en `tests/fixtures/` pasa `sync --check` y `verify`; `approve` firma con `COURSEKIT_USER_*`. | hecho |
 | 1.5 | Skills, comandos y agentes en inglés con variables; `coursekit agents` genera `.claude/`, `.opencode/` y lo de Codex; `coursekit run` y `write`/`review` con `--headless`. | Las tres herramientas ven skills, comandos y MCP en el proyecto demo (`coursekit doctor`). | hecho |
 | 1.6 | `setup` y `doctor` del paquete (sin `.venv` en el proyecto; extra `[media]`), red con inspección TLS configurable. | `coursekit setup` y `doctor` limpios en un equipo nuevo. | hecho |
-| 1.7 | Montaje creator, multimedia, entrega, catálogo y `publish` (este último con `mirror.provider: folder` y `sharepoint`; el resto de proveedores en la fase 4). | El curso de ejemplo genera plan de montaje y catálogo. | |
+| 1.7 | Montaje creator, multimedia, entrega, catálogo y `publish` (este último con `mirror.provider: folder` y `sharepoint`; el resto de proveedores en la fase 4). | El curso de ejemplo genera plan de montaje y catálogo. | hecho |
 
 Orden alternativo: si corre prisa el backend html, la fase 6 puede ir justo después de la 2;
 3, 4 y 5 son independientes entre sí.

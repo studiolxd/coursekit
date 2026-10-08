@@ -10,9 +10,13 @@ from coursekit import agents as agentsmod
 from coursekit import approve, config, directives, doctor, envfile, launch, mediatools, new, outline, status, verify, voices
 from coursekit import assemble as assemblemod
 from coursekit import brief as briefmod
+from coursekit import catalog as catalogmod
 from coursekit import course as coursemod
+from coursekit import delivery as deliverymod
 from coursekit import media as mediamod
+from coursekit import publish as publishmod
 from coursekit import setup as setupmod
+from coursekit import theme as thememod
 from coursekit.lang import format_number
 from coursekit.project import Project, find_project
 from coursekit.sync import sync
@@ -371,6 +375,48 @@ def cmd_subtitles(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_delivery(args: argparse.Namespace) -> int:
+    course = coursemod.load(_project(), args.code)
+    if args.action == "name":
+        print(deliverymod.expected_name(course, args.unit, args.version))
+        return 0
+    if not args.file:
+        print("coursekit: delivery add needs --file", file=sys.stderr)
+        return 2
+    print(deliverymod.add(course, args.unit, args.version, args.file, args.job, args.snapshot))
+    return 0
+
+
+def cmd_publish(args: argparse.Namespace) -> int:
+    project = _project()
+    if args.check:
+        print("\n".join(publishmod.check(project)))
+        return 0
+    for line in publishmod.publish(project, args.code, args.only_if_configured):
+        print(line)
+    return 0
+
+
+def cmd_catalog(args: argparse.Namespace) -> int:
+    project = _project()
+    output = Path(args.output) if args.output else project.root / "catalog" / catalogmod.file_name(project)
+    courses, units = catalogmod.build(project, output)
+    print(f"wrote {output} ({courses} courses, {units} units)")
+    return 0
+
+
+def cmd_theme(args: argparse.Namespace) -> int:
+    project = _project()
+    if args.action == "tokens":
+        out = thememod.write_css(project)
+        print(f"wrote {out.relative_to(project.root).as_posix()}")
+        return 0
+    results = thememod.check(thememod.load(project))
+    for ok, line in results:
+        print(f"  {'ok  ' if ok else 'FAIL'} {line}")
+    return 0 if all(ok for ok, _ in results) else 1
+
+
 def register(sub: argparse._SubParsersAction) -> None:
     p = sub.add_parser("new", help="create a course from its title and hours")
     p.add_argument("title")
@@ -487,6 +533,30 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--model", default="base")
     p.set_defaults(func=cmd_subtitles)
 
+    p = sub.add_parser("delivery", help="record a delivered SCORM package (or print its expected file name)")
+    p.add_argument("action", choices=("add", "name"))
+    p.add_argument("code")
+    p.add_argument("--unit", type=int, required=True)
+    p.add_argument("--version", required=True)
+    p.add_argument("--file")
+    p.add_argument("--job")
+    p.add_argument("--snapshot")
+    p.set_defaults(func=cmd_delivery)
+
+    p = sub.add_parser("publish", help="mirror the courses to the shared folder and write the catalog")
+    p.add_argument("code", nargs="?")
+    p.add_argument("--check", action="store_true", help="only report the mirror configuration")
+    p.add_argument("--only-if-configured", action="store_true", help="do nothing when there is no mirror (git hooks)")
+    p.set_defaults(func=cmd_publish)
+
+    p = sub.add_parser("catalog", help="write the tracking Excel of every course")
+    p.add_argument("--output")
+    p.set_defaults(func=cmd_catalog)
+
+    p = sub.add_parser("theme", help="design tokens of the project theme: tokens.css and the contrast check")
+    p.add_argument("action", choices=("tokens", "check"))
+    p.set_defaults(func=cmd_theme)
+
     p = sub.add_parser("setup", help="prepare this machine for the project (identity, .env, hooks, agents, network)")
     p.add_argument("--identity", action="store_true", help="only set or change the signing identity")
     p.add_argument("--media", action="store_true", help="also install the media production tools")
@@ -508,4 +578,5 @@ def register(sub: argparse._SubParsersAction) -> None:
 
 
 ERRORS = (coursemod.CourseNotFound, approve.ApprovalError, FileExistsError, launch.LaunchError,
-          assemblemod.AssembleError, directives.CatalogError, mediamod.MediaError, voices.VoiceError, mediatools.ToolError)
+          assemblemod.AssembleError, directives.CatalogError, mediamod.MediaError, voices.VoiceError, mediatools.ToolError,
+          deliverymod.DeliveryError, publishmod.PublishError, thememod.ThemeError)
