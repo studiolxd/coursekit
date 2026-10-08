@@ -1,0 +1,19 @@
+{
+  "name": "coursekit-remotion",
+  "private": true,
+  "description": "Remotion workspace for course videos. Each video is a composition in src/videos/<asset-id>.tsx.",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "typescript": "^5.4.5"
+  }
+}

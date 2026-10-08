@@ -217,6 +217,24 @@ def piper_voice(project: Project, say: Say) -> None:
     say(f"ok: Piper draft voice {name}")
 
 
+def remotion(project: Project, say: Say) -> None:
+    """Remotion workspace for videos in tools/remotion (from the package template), with npm install."""
+    from importlib import resources
+
+    target = project.root / "tools" / "remotion"
+    if not target.exists():
+        source = Path(str(resources.files("coursekit.templates.remotion")))
+        shutil.copytree(source, target, ignore=shutil.ignore_patterns("__init__.py", "__pycache__"))
+        say("ok: Remotion workspace in tools/remotion")
+    npm = shutil.which("npm")
+    if not npm:
+        say("warning: npm not found; Remotion dependencies not installed (repeat after installing Node)")
+        return
+    if not (target / "node_modules").exists():
+        code = subprocess.run([npm, "install", "--silent"], cwd=target, check=False).returncode
+        say("ok: Remotion dependencies" if code == 0 else "warning: npm install failed in tools/remotion")
+
+
 def run(project: Project, say: Say, ask: Ask | None, confirm: Callable[[str], bool] | None, *,
         identity_only: bool = False, media: bool = False, name: str | None = None, email: str | None = None) -> int:
     env_file(project, say)
@@ -235,5 +253,6 @@ def run(project: Project, say: Say, ask: Ask | None, confirm: Callable[[str], bo
         system_packages(say)
         media_tools(say)
         piper_voice(project, say)
+        remotion(project, say)
     say("done: run `coursekit doctor` to check everything")
     return 0

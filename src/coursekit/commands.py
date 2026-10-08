@@ -7,10 +7,11 @@ import sys
 from pathlib import Path
 
 from coursekit import agents as agentsmod
-from coursekit import approve, config, directives, doctor, envfile, launch, new, outline, status, verify
+from coursekit import approve, config, directives, doctor, envfile, launch, mediatools, new, outline, status, verify, voices
 from coursekit import assemble as assemblemod
 from coursekit import brief as briefmod
 from coursekit import course as coursemod
+from coursekit import media as mediamod
 from coursekit import setup as setupmod
 from coursekit.lang import format_number
 from coursekit.project import Project, find_project
@@ -311,6 +312,65 @@ def cmd_directives(args: argparse.Namespace) -> int:
     return 1
 
 
+def cmd_media(args: argparse.Namespace) -> int:
+    project = _project()
+    if args.action == "providers":
+        print("\n".join(mediamod.providers(project)))
+        return 0
+    if not args.code:
+        print("coursekit: this action needs a course code", file=sys.stderr)
+        return 2
+    course = coursemod.load(project, args.code)
+    if args.action == "extract":
+        counts = mediamod.extract(course)
+        print(f"manifest: {sum(counts.values())} assets ({', '.join(f'{k} {v}' for k, v in counts.items())})")
+        return 0
+    if args.action == "plan":
+        warnings, lines = mediamod.plan(course)
+        for w in warnings:
+            print(f"WARNING {w}")
+        print("\n".join(lines) if lines else "nothing to produce")
+        return 0
+    if not args.id:
+        print("coursekit: set needs an asset id", file=sys.stderr)
+        return 2
+    values = {k: getattr(args, k) for k in ("status", "recipe", "asset_path", "file", "alt", "transcript", "subtitles_path",
+                                            "made_with", "download", "download_title", "download_asset_path")}
+    print(mediamod.set_asset(course, args.id, **values))
+    return 0
+
+
+def cmd_voice(args: argparse.Namespace) -> int:
+    project = _project()
+    course = coursemod.load(project, args.code) if args.code else None
+    if args.action == "list":
+        print("\n".join(voices.listing(course)))
+        return 0
+    if not (course and args.provider):
+        print("coursekit: voice set needs CODE and PROVIDER", file=sys.stderr)
+        return 2
+    message, warning = voices.set_voice(course, args.provider, args.voice, args.speaker)
+    if warning:
+        print(f"warning: {warning}", file=sys.stderr)
+    print(message)
+    return 0
+
+
+def cmd_tts(args: argparse.Namespace) -> int:
+    project = _project()
+    course = coursemod.load(project, args.course) if args.course else None
+    print(mediatools.tts(course, args.engine, Path(args.input), Path(args.out), args.voice, args.speaker))
+    return 0
+
+
+def cmd_subtitles(args: argparse.Namespace) -> int:
+    project = _project()
+    language = coursemod.language(coursemod.load(project, args.course)) if args.course else args.language
+    mediatools.subtitles(Path(args.audio), Path(args.text), Path(args.out), args.model, language)
+    print(f"wrote {args.out}")
+    return 0
+
+
 def register(sub: argparse._SubParsersAction) -> None:
     p = sub.add_parser("new", help="create a course from its title and hours")
     p.add_argument("title")
@@ -392,6 +452,41 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("file", help="JSON saved from list_brick_types")
     p.set_defaults(func=cmd_directives)
 
+    p = sub.add_parser("media", help="media manifest of a course and how to produce each asset")
+    p.add_argument("action", choices=("extract", "plan", "providers", "set"))
+    p.add_argument("code", nargs="?")
+    p.add_argument("id", nargs="?")
+    for key in ("status", "recipe", "asset-path", "file", "alt", "transcript", "subtitles-path", "made-with",
+                "download", "download-title", "download-asset-path"):
+        p.add_argument(f"--{key}")
+    p.set_defaults(func=cmd_media)
+
+    p = sub.add_parser("voice", help="voice providers available here, and the one voice of a course")
+    p.add_argument("action", choices=("list", "set"))
+    p.add_argument("code", nargs="?")
+    p.add_argument("provider", nargs="?", choices=tuple(voices.PROVIDERS))
+    p.add_argument("--voice")
+    p.add_argument("--speaker")
+    p.set_defaults(func=cmd_voice)
+
+    p = sub.add_parser("tts", help="voice-over of a script with the course voice")
+    p.add_argument("--course", help="use the voice of this course (course.yaml › media.voice)")
+    p.add_argument("--engine", choices=tuple(voices.PROVIDERS))
+    p.add_argument("--in", dest="input", required=True)
+    p.add_argument("--out", required=True)
+    p.add_argument("--voice")
+    p.add_argument("--speaker", help="speaker of multi-speaker Piper voices")
+    p.set_defaults(func=cmd_tts)
+
+    p = sub.add_parser("subtitles", help="captions (VTT) aligning a script with its audio")
+    p.add_argument("--audio", required=True)
+    p.add_argument("--text", required=True)
+    p.add_argument("--out", required=True)
+    p.add_argument("--course", help="the course language")
+    p.add_argument("--language", default="es")
+    p.add_argument("--model", default="base")
+    p.set_defaults(func=cmd_subtitles)
+
     p = sub.add_parser("setup", help="prepare this machine for the project (identity, .env, hooks, agents, network)")
     p.add_argument("--identity", action="store_true", help="only set or change the signing identity")
     p.add_argument("--media", action="store_true", help="also install the media production tools")
@@ -413,4 +508,4 @@ def register(sub: argparse._SubParsersAction) -> None:
 
 
 ERRORS = (coursemod.CourseNotFound, approve.ApprovalError, FileExistsError, launch.LaunchError,
-          assemblemod.AssembleError, directives.CatalogError)
+          assemblemod.AssembleError, directives.CatalogError, mediamod.MediaError, voices.VoiceError, mediatools.ToolError)
