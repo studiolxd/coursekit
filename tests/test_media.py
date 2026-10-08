@@ -103,7 +103,9 @@ def test_tts_and_subtitles_with_fake_tools(course, monkeypatch, tmp_path):  # no
     script = tmp_path / "s.txt"
     script.write_text("Hola.  Adiós.", encoding="utf-8")
     assert main(["tts", "--course", "PWD", "--engine", "piper", "--in", str(script), "--out", str(tmp_path / "a.wav")]) == 0
-    assert calls[0][:3] == ["/fake/piper", "-m", "/voices/v.onnx"]
+    from pathlib import Path
+
+    assert calls[0][:3] == ["/fake/piper", "-m", str(Path("/voices/v.onnx"))]
     assert (tmp_path / "a.wav").exists()
     assert main(["subtitles", "--course", "PWD", "--audio", "a.mp3", "--text", str(script), "--out", "a.vtt"]) == 0
     assert calls[-1][:2] == ["/fake/stable-ts", "a.mp3"]
