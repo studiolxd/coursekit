@@ -120,3 +120,54 @@ def test_resuming_only_exports_when_the_matrix_exists_in_slxd(project, monkeypat
     fake.calls.clear()
     assert main(["handoff", "PWD"]) == 1
     assert fake.calls == ["design-change"]
+
+
+def write_events(path, events):
+    path.write_text("\n".join(json.dumps(e) for e in events), encoding="utf-8")
+    return path
+
+
+def bash(uid, command):
+    return {"type": "assistant", "message": {"content": [{"type": "tool_use", "id": uid, "name": "Bash", "input": {"command": command}}]}}
+
+
+def refused(uid, text="This command requires approval"):
+    return {"type": "user", "message": {"content": [{"type": "tool_result", "tool_use_id": uid, "is_error": True, "content": text}]}}
+
+
+def test_the_programs_a_session_could_not_run_are_named(tmp_path):
+    log = write_events(tmp_path / "a.log", [
+        {"type": "system", "message": "not a dict"}, ["not", "an", "event"],
+        bash("1", "cd /x && vhs --version | head -1"), refused("1"),
+        bash("2", "blender -b"), refused("2", "This Bash command contains multiple operations. The parts that require approval: blender"),
+        bash("3", "ls /elsewhere"), refused("3", "ls was blocked. only list files in the allowed working directories"),
+        bash("4", "coursekit status"),
+        {"type": "user", "message": {"content": [{"type": "tool_result", "tool_use_id": "4", "content": "ok"}]}},
+    ])
+    assert launch.blocked_programs(log) == ["vhs", "blender"]
+
+
+def test_the_stop_names_the_programs_to_add_to_the_rule(project, tmp_path):  # noqa: F811
+    log = write_events(tmp_path / "a.log", [bash("1", "vhs a.tape; blender -b; npx remotion render"), refused("1")])
+    message = launch.permission_blocker(find_project(project), log, "media")
+    assert "blender" in message and "media_tools" in message and "vhs" not in message and "npx" not in message
+    assert "media_tools" not in launch.permission_blocker(find_project(project), log, "writer")
+
+
+def test_the_media_agent_may_run_what_its_recipes_declare(project):  # noqa: F811
+    programs = launch.media_programs(find_project(project))
+    assert {"npx", "python3", "vhs"} <= set(programs)
+    assert not {"node", "bash", "sh"} & set(programs)
+    agent = launch.Agent("media", "claude", "")
+    args = launch.headless_args(agent, "x", project / "last.txt", "slxd-creator", None, programs, ["/store/workspaces"])
+    allowed = args[args.index("--allowedTools") + 1:args.index("--disallowedTools")]
+    assert "Bash(vhs:*)" in allowed and "Bash(npx:*)" in allowed and args[args.index("--add-dir") + 1] == "/store/workspaces"
+    other = launch.headless_args(launch.Agent("writer", "claude", ""), "x", project / "last.txt", "slxd-creator", None, programs, ["/s"])
+    assert "--add-dir" not in other and "Bash(vhs:*)" not in other
+
+
+def test_the_rule_adds_programs_to_the_media_agent(project):  # noqa: F811
+    path = project / "project.yaml"
+    path.write_text(path.read_text(encoding="utf-8") + "\nrules:\n  handoff:\n    media_tools: [blender, bash]\n", encoding="utf-8")
+    programs = launch.media_programs(find_project(project))
+    assert "blender" in programs and "bash" in programs

@@ -142,10 +142,10 @@ def _unit(ctx: Context, role: str, n: int, note: str = "") -> launch.UnitResult:
     return result
 
 
-def _why(ctx: Context, log: Path | None, summary: str) -> str:
-    """The cause of an agent that did not do its job: what its session log says about creator (not authorized, not allowed), else
-    what the agent itself said at the end."""
-    blocker = launch.mcp_blocker(ctx.project, log) if log else None
+def _why(ctx: Context, log: Path | None, summary: str, role: str = "") -> str:
+    """The cause of an agent that did not do its job: what its session log says about creator (not authorized, not allowed) or about
+    the programs it could not run, else what the agent itself said at the end."""
+    blocker = (launch.mcp_blocker(ctx.project, log) or launch.permission_blocker(ctx.project, log, role)) if log else None
     if blocker:
         return "\n" + t("handoff", "cause_line", text=blocker)
     text = " ".join(summary.split())[:700]
@@ -263,7 +263,7 @@ def _media(ctx: Context, course: dict) -> None:
             if not pending:
                 break
         if pending:
-            raise _stuck(ctx, "media_pending", log, why=_why(ctx, log, summary), assets=", ".join(a["id"] for a in pending))
+            raise _stuck(ctx, "media_pending", log, why=_why(ctx, log, summary, "media"), assets=", ".join(a["id"] for a in pending))
     ctx.mirror()
     log = None
     for _ in range(ctx.rounds):

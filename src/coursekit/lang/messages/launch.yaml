@@ -23,3 +23,9 @@ connector_not_connected:
 mcp_needs_auth:
   es: "el servidor MCP «{server}» no está autorizado (estado: {status}) y una sesión sin interfaz no puede iniciar sesión. Autorízalo una vez: abre tu herramienta de IA en esta carpeta y usa /mcp; o, si ya tienes creator conectado en tu cuenta, pon el nombre de ese conector en project.yaml › platform.slxd.connector"
   en: "the MCP server \"{server}\" is not authorized (status: {status}) and a session without an interface cannot sign in. Authorize it once: open your AI tool in this folder and use /mcp; or, if creator is already connected in your account, set the name of that connector in project.yaml › platform.slxd.connector"
+programs_blocked:
+  es: "el agente intentó ejecutar {programs}, pero en una sesión sin interfaz no está permitido y nadie podía aprobarlo; haz ese paso tú desde tu herramienta de IA"
+  en: "the agent tried to run {programs}, but it is not allowed in a session without an interface and nobody could approve it; do that step yourself from your AI tool"
+programs_blocked_media:
+  es: "el agente de media intentó ejecutar {programs}, pero en una sesión sin interfaz no está permitido y nadie podía aprobarlo. Añádelos a rules › handoff › media_tools (config/rules.yaml) y vuelve a lanzarlo; bash, sh y node dejan al agente ejecutar cualquier orden, añádelos solo si lo aceptas"
+  en: "the media agent tried to run {programs}, but it is not allowed in a session without an interface and nobody could approve it. Add them to rules › handoff › media_tools (config/rules.yaml) and run it again; bash, sh and node let the agent run any command, add them only if you accept that"

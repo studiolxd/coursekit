@@ -25,6 +25,10 @@ review:
 handoff:
   rounds: 2                    # attempts per step (writing a unit, reviewing it with its fixes, the design sign-off, media, assembly,
                                # delivery) before it stops and tells the person where it is; `coursekit handoff CODE` carries on
+  media_tools: []              # programs the media agent may run when nobody can approve them (the handoff, `--headless`), besides
+                               # `coursekit`, `npx`, Python and those the recipes of the media configuration declare in `needs`
+                               # (bin, media); add the rest here, e.g. [blender, gs]. `bash`, `sh` and `node` let the agent run any
+                               # command: add them only if you accept that
 
 # Guidance for the instructional design proposal (given to the design agent).
 design:

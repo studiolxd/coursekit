@@ -107,6 +107,11 @@ def project_data(project: Project) -> dict:
     return _read_yaml(project.file) if project.file.exists() else {}
 
 
+# Keys of a course record's section that hold the course's own state, not overrides of the configuration of the same name
+# (`media › voice` is the voice chosen for the course; the configuration's `voice` is the list of providers).
+COURSE_STATE = {"media": {"voice"}}
+
+
 def effective(name: str, project: Project | None = None, course: dict | None = None) -> Layered:
     """The effective configuration `name` for the project (and course, if given)."""
     if name not in NAMES:
@@ -121,5 +126,5 @@ def effective(name: str, project: Project | None = None, course: dict | None = N
         if isinstance(section, dict):
             result.merge(section, "project")
     if course is not None and isinstance(course.get(name), dict):
-        result.merge(course[name], "course")
+        result.merge({k: v for k, v in course[name].items() if k not in COURSE_STATE.get(name, ())}, "course")
     return result

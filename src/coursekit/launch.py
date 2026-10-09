@@ -29,7 +29,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from coursekit import agents as agentsmod
+from coursekit import config as configmod
 from coursekit import course as coursemod
+from coursekit import store
 from coursekit.fingerprint import changed_since_review
 from coursekit.i18n import t
 from coursekit.project import Project
@@ -116,7 +118,78 @@ def interactive_args(agent: Agent, text: str) -> list[str]:
     return [exe, *(["--model", agent.model] if agent.model else []), text]
 
 
-def headless_args(agent: Agent, text: str, last_message: Path, mcp_name: str, connector: str | None = None) -> list[str]:
+# What the media agent may run when nobody can approve it: the programs its recipes declare (`needs: {bin|media: …}` in the media
+# configuration), these that run the productions, and what `rules › handoff › media_tools` adds. Programs that run any command are
+# never taken from the recipes: the person adds them to the rule if they accept it.
+MEDIA_CORE = ("npx", "python3", "python")
+NOT_DERIVED = {"node", "bash", "sh", "zsh", "env"}
+
+
+def media_programs(project: Project) -> list[str]:
+    options = []
+    cfg = configmod.effective("media", project).value
+    for group in [*(cfg.get("types") or {}).values(), cfg.get("voice"), cfg.get("subtitles")]:
+        options += group if isinstance(group, list) else []
+    found = list(MEDIA_CORE)
+    for option in options:
+        needs = option.get("needs") if isinstance(option, dict) else None
+        for kind in ("bin", "media"):
+            name = needs.get(kind) if isinstance(needs, dict) else None
+            if isinstance(name, str) and name not in NOT_DERIVED:
+                found.append(name)
+    added = (coursemod.rules(project=project).get("handoff") or {}).get("media_tools") or []
+    found += [str(name) for name in added]
+    return list(dict.fromkeys(found))
+
+
+# Words that start a part of a shell command without being a program that matters, and readers that are always harmless.
+_SHELL_WORDS = {"cd", "echo", "for", "do", "done", "then", "fi", "if", "source", "export", "set", "test", "true", "false", "exit",
+                "head", "tail", "ls", "cat", "grep", "wc", "sort", "which", "command", "printf", "mkdir", "rm", "cp", "mv"}
+_NEEDS_APPROVAL = re.compile(r"requires? approval|was blocked", re.I)
+
+
+def blocked_programs(log: Path) -> list[str]:
+    """Programs a headless Claude Code session asked to run and was not allowed (its log has the command and the refusal)."""
+    commands: dict[str, str] = {}
+    found: list[str] = []
+    try:
+        lines = log.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return []
+    for line in lines:
+        try:
+            event = json.loads(line)
+        except ValueError:
+            continue
+        message = event.get("message") if isinstance(event, dict) else None
+        content = message.get("content") if isinstance(message, dict) else None
+        for item in content if isinstance(content, list) else []:
+            if not isinstance(item, dict):
+                continue
+            if item.get("type") == "tool_use" and item.get("name") == "Bash":
+                commands[item.get("id", "")] = str((item.get("input") or {}).get("command", ""))
+            elif item.get("type") == "tool_result" and item.get("is_error") and item.get("tool_use_id") in commands:
+                body = item.get("content")
+                if isinstance(body, str) and _NEEDS_APPROVAL.search(body) and "working director" not in body:
+                    for part in re.split(r"&&|\|\||[;|\n]", commands[item["tool_use_id"]]):
+                        words = [w for w in part.split() if not re.match(r"\w+=", w)]
+                        name = words[0] if words else ""
+                        if name and "/" not in name and name not in _SHELL_WORDS and name != "coursekit":
+                            found.append(name)
+    return list(dict.fromkeys(found))
+
+
+def permission_blocker(project: Project, log: Path, role: str) -> str | None:
+    """Which programs the session could not run, for the cause of a stop. None when it was not that."""
+    allowed = set(media_programs(project)) if role == "media" else set()
+    programs = [p for p in blocked_programs(log) if p not in allowed]
+    if not programs:
+        return None
+    return t("launch", "programs_blocked_media" if role == "media" else "programs_blocked", programs=", ".join(programs))
+
+
+def headless_args(agent: Agent, text: str, last_message: Path, mcp_name: str, connector: str | None = None,
+                  programs: list[str] | None = None, folders: list[str] | None = None) -> list[str]:
     exe = _exe(agent.tool)
     with_model = ["--model", agent.model] if agent.model else []
     if agent.tool == "claude":
@@ -125,7 +198,10 @@ def headless_args(agent: Agent, text: str, last_message: Path, mcp_name: str, co
             allowed.append("Bash(coursekit reviewed:*)")
         if agent.role in ("design", "media", "assembly"):
             allowed += [f"mcp__{mcp_name}", *([f"mcp__{connector}"] if connector else []), "Bash(coursekit:*)", "WebFetch"]
-        return [exe, "-p", text, *with_model, "--permission-mode", "acceptEdits",
+        if agent.role == "media":
+            allowed += [f"Bash({program}:*)" for program in programs or []]
+        outside = ["--add-dir", *folders] if folders and agent.role == "media" else []
+        return [exe, "-p", text, *with_model, "--permission-mode", "acceptEdits", *outside,
                 "--allowedTools", *allowed, "--disallowedTools", *CLAUDE_DENY,
                 "--output-format", "stream-json", "--verbose"]
     if agent.tool == "opencode":
@@ -201,7 +277,8 @@ def execute(project: Project, agent: Agent, text: str, headless: bool, log_name:
     log = logs / f"{log_name}-{stamp}.log"
     last_message = log.with_suffix(".last.txt")
     mcp_name = agentsmod.context(project)["mcp_name"]
-    args = headless_args(agent, text, last_message, mcp_name, agentsmod.connector_server(project))
+    args = headless_args(agent, text, last_message, mcp_name, agentsmod.connector_server(project), media_programs(project),
+                         [store.workspaces_dir().as_posix()])
     # A clean session even when launched from inside another agent (e.g. Claude Code).
     env = {k: v for k, v in os.environ.items() if not k.startswith("CLAUDE")}
     with log.open("w", encoding="utf-8") as fh:

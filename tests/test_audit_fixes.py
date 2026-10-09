@@ -6,6 +6,7 @@ import urllib.request
 import pytest
 import yaml
 
+from coursekit import config as configmod
 from coursekit import mediatools
 from coursekit.assemble import Syntax, directive_brick
 from coursekit.cli import main
@@ -127,3 +128,9 @@ def test_a_change_only_in_the_grading_of_a_test_is_a_diff(course, capsys):  # no
     assert lessons["U1-E1.1"]["action"] == "update"
     assert lessons["U1-E1.1"]["ops"] == [{"op": "update_quiz", "quiz": {"passingGrade": 80, "maxAttempts": 2, "courseWeight": 1}}]
     assert lessons["U1-S1"]["action"] == "unchanged"
+
+
+def test_the_voice_chosen_for_a_course_does_not_replace_the_list_of_voice_providers():
+    chosen = {"media": {"voice": {"provider": "piper", "voice": "x.onnx"}}}
+    voices = configmod.effective("media", None, chosen).value["voice"]
+    assert isinstance(voices, list) and voices
