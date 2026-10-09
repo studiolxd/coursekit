@@ -91,7 +91,7 @@ The links are **per unit**, not per course, because each unit is its own content
 
 ### What the plan contains
 
-The html backend builds its pages from this same plan. Lesson keys are `U<unit>-S<section>` for content lessons and `U<unit>-E<N.M>` for assessment activities. The content is titled with the course title when it has a single unit, otherwise `Unit N. <unit title>`. Assessment lessons take `passingGrade` and `maxAttempts` from `design.grading.passing_score` and `design.grading.attempts` in `course.yaml`.
+The html backend builds its pages from this same plan. Lesson keys are `U<unit>-S<section>` for content lessons and `U<unit>-E<N.M>` for assessment activities. The content is titled with the course title when it has a single unit, otherwise `Unit N. <unit title>`. Assessment lessons carry the settings of their quiz in the plan (see [Grading of a test](#grading-of-a-test)).
 
 | Markdown | Brick |
 |---|---|
@@ -116,6 +116,20 @@ The keys of the directive lines (`question:`, `answer:`, `answers:`, `feedback:`
 U1-S2: the key 'pregunta:' belongs to the language 'es'; this course uses: answer, answers, feedback, feedback-correct, feedback-incorrect, image, objective, position, question, title
 ```
 
+### Grading of a test
+
+Each assessment activity of the design has its own grading in creator (`design_matrix_ae_create` and `design_matrix_ae_update`): its weight (`peso`), its pass mark (`notaAprobado`, 0 to 100) and its attempts (`intentosMax`, `0` is unlimited). `coursekit sync` reads them into `course.yaml › units[].activities.assessment`, and the plan gives the quiz of each assessment lesson:
+
+| Plan field (`quiz`) | From the design | When the design leaves it empty |
+|---|---|---|
+| `passingGrade` | `notaAprobado` | `design.grading.passing_score` of `course.yaml` (default `50`) |
+| `maxAttempts` | `intentosMax` | `design.grading.attempts` (default `2`; `0` is unlimited) |
+| `courseWeight` | `peso` | `1` |
+
+The activity of a lesson is the one with the same title in the design, else the one in the same position of the unit (`U1-E1.2` is the second). With the creator backend the assembly agent passes the three values to `update_quiz_settings`. `courseWeight` is the weight of the quiz among the quizzes of the same unit, normalised (60 and 40 weigh like 3 and 2), and `0` leaves it out of the score. Each unit is its own course and its own package, so the weights never compare tests of different units: combining units into one grade is for the LMS.
+
+A change only in the grading of a test (after signing the design again and running `plan`) shows in `diff` as an `update_quiz` operation of that lesson, and the course is not `assembly` again until it is applied. With the html backend the three values are written in the settings of each test, but the package reports one score for the unit (the best of its tests), so the weight does not change it.
+
 ### `diff`
 
 For every lesson, `diff` gives an action and its operations; the `data` of each operation is the payload for the creator tool:
@@ -123,7 +137,7 @@ For every lesson, `diff` gives an action and its operations; the `data` of each 
 | Action | Meaning |
 |---|---|
 | `create` | The lesson is not in `applied.json`: one `add` operation per brick |
-| `update` | Operations `update`, `delete`, `add` (with `position`) and `rename_lesson`, computed from the brick hashes |
+| `update` | Operations `update`, `delete`, `add` (with `position`), `rename_lesson` and `update_quiz` (the grading of a test changed), computed from the brick hashes and the quiz settings |
 | `unchanged` | Nothing to do |
 | `delete` | The lesson is in `applied.json` but no longer in the plan; the agent asks you before deleting it |
 
@@ -242,7 +256,7 @@ With JavaScript the page becomes a small course player:
 - One lesson is shown at a time. The lesson list (the "Lessons" navigation) marks the current and the visited lessons; **Previous** and **Next** move between them; the progress bar shows the percentage of lessons visited; a **skip to content** link is the first element of the page. When the lesson changes, the page scrolls to the top and focus moves to the lesson title.
 - The unit reopens in the lesson where the learner left it.
 - **Practice questions** (in content lessons) have a **Check** button. It does nothing until the question is answered; then it locks the answers, marks them and shows the feedback, and the button becomes **Try again**, which clears the answer and shuffles again.
-- **The assessment lessons** (`assessment.md`) are graded together with one **Submit answers** button. Unanswered questions block the submit ("Answer every question before submitting."). The score is the percentage of questions fully right, rounded; the learner passes when it reaches `design.grading.passing_score` of `course.yaml`. `design.grading.attempts` limits the attempts (empty or 0: unlimited). After submitting, each question shows its mark and feedback and the report says the score and whether the learner passed; if not, **Try again** appears while attempts are left (the report says how many) and "No attempts left." when none are. The attempts used and the best score are kept in the suspend data, so reopening the unit does not give new attempts.
+- **The assessment lessons** (`assessment.md`) are graded together with one **Submit answers** button. Unanswered questions block the submit ("Answer every question before submitting."). The score is the percentage of questions fully right, rounded; the learner passes when it reaches `the pass mark of the test (see [Grading of a test](#grading-of-a-test)). The attempts of the test limit them (empty or 0: unlimited). After submitting, each question shows its mark and feedback and the report says the score and whether the learner passed; if not, **Try again** appears while attempts are left (the report says how many) and "No attempts left." when none are. The attempts used and the best score are kept in the suspend data, so reopening the unit does not give new attempts.
 - The interface texts (button labels and messages) are in the language of the course.
 - The page is responsive (the lesson list is a side column on wide screens), respects reduced motion and forced colours, and prints with every lesson.
 

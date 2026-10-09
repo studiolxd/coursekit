@@ -61,7 +61,9 @@ sections the course needs, and justify it.
    graded) to practise each objective, and assessment activities (`design_matrix_ae_create`)
    that give evidence of all of them. Instrument according to the Bloom level (the validator
    requires it: questionnaire up to *apply*; case study up to *evaluate*; portfolio/rubric for
-   *create*). Grading: `design.grading` of `course.yaml`.
+   *create*). Grading: give each assessment activity its `peso` (weight in the unit's score; 1 when the tests count
+   the same), `notaAprobado` and `intentosMax` (0 = unlimited) in `design_matrix_ae_create` / `_ae_update`; what you
+   leave empty takes `design.grading` of `course.yaml` (`passing_score`, `attempts`) and weight 1 when assembling.
 7. **Hours, last.** With the content defined, split the hours **by real load**: breadth, Bloom
    level (apply/analyse/evaluate need more time than remember), practice and activities. Never
    split evenly. `design_matrix_node_update_horas` on sections and units; the total must be

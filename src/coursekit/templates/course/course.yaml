@@ -23,8 +23,6 @@ design:
   tone: {tone}
   notes: {notes}            # extra instructions from the person who created the course
   grading:
-    unit_tests_weight: {unit_tests_weight}   # total % for all unit tests, split evenly
-    final_test_weight: {final_test_weight}
     passing_score: {passing_score}
     attempts: {attempts}
 units: []

@@ -91,7 +91,7 @@ Los enlaces son **por unidad**, no por curso, porque cada unidad es un contenido
 
 ### Qué contiene el plan
 
-El backend html construye sus páginas a partir de este mismo plan. Las claves de lección son `U<unidad>-S<apartado>` para las lecciones de contenido y `U<unidad>-E<N.M>` para las actividades de evaluación. El contenido se titula con el título del curso cuando tiene una sola unidad y, si no, `Unidad N. <título de la unidad>`. Las lecciones de evaluación toman `passingGrade` y `maxAttempts` de `design.grading.passing_score` y `design.grading.attempts` en `course.yaml`.
+El backend html construye sus páginas a partir de este mismo plan. Las claves de lección son `U<unidad>-S<apartado>` para las lecciones de contenido y `U<unidad>-E<N.M>` para las actividades de evaluación. El contenido se titula con el título del curso cuando tiene una sola unidad y, si no, `Unidad N. <título de la unidad>`. Las lecciones de evaluación llevan en el plan los ajustes de su test (mira [Calificación de un test](#calificación-de-un-test)).
 
 | Markdown | Brick |
 |---|---|
@@ -116,6 +116,20 @@ Las claves de las líneas de las directivas (`pregunta:`, `respuesta:`, `respues
 U1-S2: la clave 'question:' es del idioma «en»; en este curso se usan: feedback, feedback-correcto, feedback-incorrecto, imagen, objetivo, posición, pregunta, respuesta, respuestas, título
 ```
 
+### Calificación de un test
+
+Cada actividad de evaluación del diseño tiene su propia calificación en creator (`design_matrix_ae_create` y `design_matrix_ae_update`): su peso (`peso`), su nota de aprobado (`notaAprobado`, de 0 a 100) y sus intentos (`intentosMax`, `0` es sin límite). `coursekit sync` los lee en `course.yaml › units[].activities.assessment`, y el plan da el test de cada lección de evaluación:
+
+| Campo del plan (`quiz`) | Del diseño | Cuando el diseño lo deja vacío |
+|---|---|---|
+| `passingGrade` | `notaAprobado` | `design.grading.passing_score` de `course.yaml` (por defecto `50`) |
+| `maxAttempts` | `intentosMax` | `design.grading.attempts` (por defecto `2`; `0` es sin límite) |
+| `courseWeight` | `peso` | `1` |
+
+La actividad de una lección es la que tiene el mismo título en el diseño y, si no, la que ocupa la misma posición en la unidad (`U1-E1.2` es la segunda). Con el backend creator, el agente de montaje pasa los tres valores a `update_quiz_settings`. `courseWeight` es el peso del test entre los tests de la misma unidad, normalizado (60 y 40 pesan como 3 y 2), y `0` lo deja fuera de la nota. Cada unidad es su propio curso y su propio paquete, así que los pesos nunca comparan tests de unidades distintas: combinar unidades en una nota corresponde al LMS.
+
+Un cambio solo en la calificación de un test (tras firmar de nuevo el diseño y ejecutar `plan`) aparece en `diff` como una operación `update_quiz` de esa lección, y el curso no vuelve a `assembly` hasta que se aplica. Con el backend html los tres valores se escriben en los ajustes de cada test, pero el paquete informa de una sola nota por unidad (la mejor de sus tests), así que el peso no la cambia.
+
 ### `diff`
 
 Por cada lección, `diff` da una acción y sus operaciones; el `data` de cada operación es la carga útil para la herramienta de creator:
@@ -123,7 +137,7 @@ Por cada lección, `diff` da una acción y sus operaciones; el `data` de cada op
 | Acción | Significado |
 |---|---|
 | `create` | La lección no está en `applied.json`: una operación `add` por brick |
-| `update` | Operaciones `update`, `delete`, `add` (con `position`) y `rename_lesson`, calculadas a partir de las huellas de los bricks |
+| `update` | Operaciones `update`, `delete`, `add` (con `position`) `rename_lesson` y `update_quiz` (cambió la calificación de un test), calculadas a partir de las huellas de los bricks y de los ajustes del test |
 | `unchanged` | Nada que hacer |
 | `delete` | La lección está en `applied.json` pero ya no en el plan; el agente te pregunta antes de borrarla |
 
@@ -242,7 +256,7 @@ Con JavaScript la página se convierte en un pequeño reproductor de curso:
 - Se muestra una lección cada vez. La lista de lecciones (la navegación «Lecciones») marca la lección actual y las visitadas; **Anterior** y **Siguiente** mueven entre ellas; la barra de progreso muestra el porcentaje de lecciones visitadas; un enlace para **saltar al contenido** es el primer elemento de la página. Al cambiar de lección la página vuelve arriba y el foco pasa al título de la lección.
 - La unidad se reabre en la lección donde la dejó la persona.
 - Las **preguntas de práctica** (en las lecciones de contenido) tienen un botón **Comprobar**. No hace nada hasta que la pregunta está contestada; entonces bloquea las respuestas, las marca y muestra la retroalimentación, y el botón pasa a **Reintentar**, que borra la respuesta y vuelve a desordenar.
-- **Las lecciones de evaluación** (`assessment.md`) se corrigen juntas con un solo botón **Enviar respuestas**. Las preguntas sin contestar impiden el envío («Responde todas las preguntas antes de enviar.»). La puntuación es el porcentaje de preguntas totalmente correctas, redondeado; se aprueba cuando llega a `design.grading.passing_score` de `course.yaml`. `design.grading.attempts` limita los intentos (vacío o 0: sin límite). Tras enviar, cada pregunta muestra su marca y su retroalimentación, y el informe indica la puntuación y si se ha aprobado; si no, aparece **Reintentar** mientras queden intentos (el informe dice cuántos) y «No quedan intentos.» cuando no queda ninguno. Los intentos usados y la mejor puntuación se guardan en los datos de suspensión, de modo que reabrir la unidad no da intentos nuevos.
+- **Las lecciones de evaluación** (`assessment.md`) se corrigen juntas con un solo botón **Enviar respuestas**. Las preguntas sin contestar impiden el envío («Responde todas las preguntas antes de enviar.»). La puntuación es el porcentaje de preguntas totalmente correctas, redondeado; se aprueba cuando llega a la nota de aprobado del test (mira [Calificación de un test](#calificación-de-un-test)). Los intentos del test los limitan (vacío o 0: sin límite). Tras enviar, cada pregunta muestra su marca y su retroalimentación, y el informe indica la puntuación y si se ha aprobado; si no, aparece **Reintentar** mientras queden intentos (el informe dice cuántos) y «No quedan intentos.» cuando no queda ninguno. Los intentos usados y la mejor puntuación se guardan en los datos de suspensión, de modo que reabrir la unidad no da intentos nuevos.
 - Los textos de la interfaz (etiquetas de botones y mensajes) están en el idioma del curso.
 - La página es adaptable (la lista de lecciones es una columna lateral en pantallas anchas), respeta el movimiento reducido y los colores forzados, y se imprime con todas las lecciones.
 

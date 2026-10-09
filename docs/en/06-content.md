@@ -217,7 +217,7 @@ The assembly loads only what is under **Instructions for the learner** and **Que
 
 - `verify` does not check the headings of `assessment.md`, but the assembly matches them exactly, with the words of the course language: a misspelled `### Question bank` loads no questions. One assessment lesson is built per `## ASSESSMENT ACTIVITY` heading.
 - `verify` counts every question directive of the file, wherever it is. One placed in another subsection counts for `verify` but never reaches the learner.
-- The pass mark and the attempts are not read from the Markdown: they come from `course.yaml › design.grading` (`passing_score` and `attempts`; see [04-configuration.md](04-configuration.md)). The subsections `Automatic marking and scoring` and `Attempts and feedback` only document the activity. The weights (`unit_tests_weight`, `final_test_weight`) are not read by the assembly either.
+- The pass mark, the attempts and the weight of a test are not read from the Markdown: they come from its assessment activity in the design (`notaAprobado`, `intentosMax`, `peso`) and, for what the design leaves empty, from `course.yaml › design.grading` (`passing_score` and `attempts`; see [Grading of a test](08-assembly-and-delivery.md#grading-of-a-test)). The subsections `Automatic marking and scoring` and `Attempts and feedback` only document the activity.
 
 ## Directives
 
@@ -295,7 +295,7 @@ Anything that does not follow these shapes fails when the unit is converted (`ve
 | `quote` | Quote + `— author` on the last line |
 | `word-search`, `wordle`, `hangman` | `- WORD` per line |
 | `memory` | `- card content` per line |
-| `pasapalabra` | `- A (starts): definition :: ANSWER` (or `(contains)`) per line |
+| `pasapalabra` | `- A (starts): definition :: ANSWER` (or `(contains)`) per line; the answer takes alternatives separated by `/` (`ANSWER/OTHER`) |
 | `trivial` | `#### Category`, then blocks with `question: …` and `- [x]` / `- [ ]` options, separated by a blank line |
 
 The `image:` of a `labelled-graphic` is matched against the title of a resource in `media/manifest.yaml`, so the placeholder must exist in the manifest (run `coursekit media extract` first) and be produced. Otherwise `assemble` only warns (`labelled-graphic: image 'X' not produced yet`) and the graphic has no image. Only the lines before the first `####` are keys of the graphic itself; a `position:` goes under the point it belongs to.

@@ -200,10 +200,8 @@ La estructura (unidades, apartados, objetivos, horas) no se fija aquí: sale del
 | `defaults.intro_section` | `true` | Los cursos nuevos empiezan cada unidad con un apartado de introducción y objetivos. |
 | `defaults.summary_section` | `true` | Los cursos nuevos cierran cada unidad con un apartado de resumen. |
 | `defaults.structure` | `sin_modulos` | Estructura de los cursos nuevos: `sin_modulos` o `con_modulos` (patrón estructural de slxd). |
-| `defaults.grading.unit_tests_weight` | `60` | % total de la nota que suman todos los tests de unidad, repartido a partes iguales. Se copia en `course.yaml › design.grading` como guía de calificación del diseño; el montaje no lo aplica (solo `passing_score` y `attempts` llegan a los tests). |
-| `defaults.grading.final_test_weight` | `40` | % de la nota del test final. Se registra igual que el anterior; el montaje no lo aplica. |
-| `defaults.grading.passing_score` | `50` | Nota para aprobar. |
-| `defaults.grading.attempts` | `2` | Intentos permitidos por test. |
+| `defaults.grading.passing_score` | `50` | Nota para aprobar un test, cuando el diseño no da a esa actividad de evaluación la suya (`notaAprobado`). |
+| `defaults.grading.attempts` | `2` | Intentos permitidos por test, cuando el diseño no da a esa actividad de evaluación los suyos (`intentosMax`; `0` es sin límite). |
 | `design.competencies_per_course` | `"2–4"` | Orientación para el agente de diseño: competencias por curso. |
 | `design.objectives_per_unit` | `"2–4"` | Orientación: objetivos por unidad. |
 | `design.intro_summary_hours` | `"0.2–0.3"` | Orientación: horas de la introducción y del resumen. |
@@ -303,7 +301,7 @@ delivery:
 | `design.intro_section`, `design.summary_section` | Si cada unidad abre con una introducción y cierra con un resumen. |
 | `design.audience`, `design.level`, `design.prerequisites` | Texto libre para el agente de diseño. |
 | `design.tone`, `design.notes` | Tono e instrucciones adicionales para este curso. |
-| `design.grading.unit_tests_weight`, `final_test_weight`, `passing_score`, `attempts` | Calificación de este curso. `passing_score` y `attempts` son lo que el montaje carga en cada test (con el backend html, en los ajustes del test del paquete). |
+| `design.grading.passing_score`, `attempts` | Calificación de este curso: la nota de aprobado y los intentos de un test cuando el diseño no los fija para su actividad de evaluación. Mira [Calificación de un test](08-assembly-and-delivery.md#calificación-de-un-test). |
 | `owners.*` | Quién lidera cada etapa (`instructional_design`, `writing`, `review`, `media`, `assembly`); se muestra en el catálogo. |
 | `rules:`, `directives:`, `media:`, `delivery:` | Cambios solo para este curso, con las mismas claves que los ficheros de `config/`. Por ejemplo, `delivery › client_review › required` hace obligatoria la revisión del cliente en este curso (mira arriba). |
 

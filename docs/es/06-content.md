@@ -217,7 +217,7 @@ El montaje carga en la lección de evaluación de la plataforma solo lo que hay 
 
 - `verify` no comprueba los encabezados de `assessment.md`, pero el montaje los empareja exactamente, con las palabras del idioma del curso: un `### Banco de preguntas` mal escrito no carga ninguna pregunta. Se construye una lección de evaluación por cada encabezado `## ACTIVIDAD DE EVALUACIÓN`.
 - `verify` cuenta todas las directivas de pregunta del fichero, estén donde estén. Una colocada en otro subapartado cuenta para `verify`, pero nunca llega al alumno.
-- La nota de aprobado y los intentos no se leen del Markdown: salen de `course.yaml › design.grading` (`passing_score` y `attempts`; consulta [04-configuration.md](04-configuration.md)). Los subapartados `Corrección automática y puntuación` e `Intentos y retroalimentación` solo documentan la actividad. El montaje tampoco lee los pesos (`unit_tests_weight`, `final_test_weight`).
+- La nota de aprobado, los intentos y el peso de un test no se leen del Markdown: salen de su actividad de evaluación en el diseño (`notaAprobado`, `intentosMax`, `peso`) y, para lo que el diseño deja vacío, de `course.yaml › design.grading` (`passing_score` y `attempts`; consulta [Calificación de un test](08-assembly-and-delivery.md#calificación-de-un-test)). Los subapartados `Corrección automática y puntuación` e `Intentos y retroalimentación` solo documentan la actividad.
 
 ## Directivas
 
@@ -295,7 +295,7 @@ Lo que no siga estas formas falla al convertir la unidad (`verify` lo indica).
 | `quote` | Cita + `— autor` en la última línea |
 | `word-search`, `wordle`, `hangman` | `- PALABRA` por línea |
 | `memory` | `- contenido de la tarjeta` por línea |
-| `pasapalabra` | `- A (empieza): definición :: RESPUESTA` (o `(contiene)`) por línea |
+| `pasapalabra` | `- A (empieza): definición :: RESPUESTA` (o `(contiene)`) por línea; la respuesta admite alternativas separadas por `/` (`RESPUESTA/OTRA`) |
 | `trivial` | `#### Categoría`, después bloques con `pregunta: …` y opciones `- [x]` / `- [ ]`, separados por una línea en blanco |
 
 La `imagen:` de un `labelled-graphic` se empareja con el título de un recurso de `media/manifest.yaml`, así que el recurso debe existir en el manifiesto (ejecuta antes `coursekit media extract`) y estar producido. Si no, `assemble` solo avisa (`labelled-graphic: la imagen 'X' aún no está producida`) y el gráfico se queda sin imagen. Solo las líneas anteriores al primer `####` son claves del propio gráfico; una `posición:` va bajo el punto al que pertenece.

@@ -70,8 +70,6 @@ def create(
         summary=str(bool(defaults.get("summary_section", True)) and summary).lower(),
         tone=q(data.get("tone") or ""),
         notes=q(notes),
-        unit_tests_weight=grading.get("unit_tests_weight", 60),
-        final_test_weight=grading.get("final_test_weight", 40),
         passing_score=grading.get("passing_score", 50),
         attempts=grading.get("attempts", 2),
         today=dt.date.today().isoformat(),

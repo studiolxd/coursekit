@@ -50,9 +50,9 @@ The generator names each content after its **unit**. The plan gives the title it
   (`get_lesson` + `delete_brick`); otherwise `create_lesson` (`type: content` or `evaluation`, in
   its position). Then `add_brick` for each op in order.
 - `update`: apply the ops in order (`update_brick`, `delete_brick`, `add_brick` with `position`,
-  `update_lesson` for `rename_lesson`).
-- Assessment lessons: `update_quiz_settings` with the plan's `quiz` (`passingGrade`,
-  `maxAttempts`).
+  `update_lesson` for `rename_lesson`, `update_quiz_settings` for `update_quiz`).
+- Assessment lessons: `update_quiz_settings` with the plan's `quiz` as its `config` (`passingGrade`,
+  `maxAttempts`, where 0 is unlimited, and `courseWeight`, the weight of the quiz among the quizzes of the unit).
 - `delete`: **ask the person** before `delete_lesson`.
 - After each lesson: `get_lesson`, take the brick IDs **in order** and record
   `coursekit assemble applied <CODE> --unit N --lesson <key> --lesson-id <id> --brick-ids id1,id2,…`.

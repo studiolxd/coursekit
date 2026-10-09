@@ -166,7 +166,8 @@ def build_units(graph: dict, course: dict, cfg: dict, tokens: dict) -> tuple[lis
                 ],
                 "assessment": [
                     {"title": a["titulo"], "instrument": a.get("instrumento"), "criterion": a.get("criterio"),
-                     "description": a.get("descripcion"),
+                     "description": a.get("descripcion"), "weight": a.get("peso"), "passing_score": a.get("notaAprobado"),
+                     "max_attempts": a.get("intentosMax"),
                      "objectives": [labels[o] for o in a.get("objetivoIds") or [] if o in labels]}
                     for a in unit_activities("actividadesEvaluacion")
                 ],

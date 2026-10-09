@@ -45,7 +45,7 @@ def test_plan_bricks(course, capsys):
     assert "Recurso multimedia — Infografía: Anatomía de una contraseña" in note["data"]["content"]["title"]
     assert "<strong>Descripción:</strong>" in note["data"]["content"]["content"]
     evaluation = plan["lessons"][3]
-    assert evaluation["type"] == "evaluation" and evaluation["quiz"] == {"passingGrade": 50, "maxAttempts": 2}
+    assert evaluation["type"] == "evaluation" and evaluation["quiz"] == {"passingGrade": 50, "maxAttempts": 2, "courseWeight": 1}
 
 
 def test_apply_cycle(course, capsys):

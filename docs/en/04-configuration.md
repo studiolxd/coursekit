@@ -200,10 +200,8 @@ Structure (units, sections, objectives, hours) is not set here: it comes from ea
 | `defaults.intro_section` | `true` | New courses start with an introduction-and-objectives section in every unit. |
 | `defaults.summary_section` | `true` | New courses end every unit with a summary section. |
 | `defaults.structure` | `sin_modulos` | Structure of new courses: `sin_modulos` or `con_modulos` (slxd structural pattern). |
-| `defaults.grading.unit_tests_weight` | `60` | Total % of the grade for all unit tests, split evenly. Copied into `course.yaml › design.grading` as the grading guide of the design; the assembly does not apply it (only `passing_score` and `attempts` reach the quizzes). |
-| `defaults.grading.final_test_weight` | `40` | % of the grade for the final test. Recorded like the previous one; the assembly does not apply it. |
-| `defaults.grading.passing_score` | `50` | Passing score. |
-| `defaults.grading.attempts` | `2` | Attempts allowed per test. |
+| `defaults.grading.passing_score` | `50` | Passing score of a test, when the design does not give that assessment activity its own (`notaAprobado`). |
+| `defaults.grading.attempts` | `2` | Attempts allowed per test, when the design does not give that assessment activity its own (`intentosMax`; `0` is unlimited). |
 | `design.competencies_per_course` | `"2–4"` | Guidance given to the design agent: competencies per course. |
 | `design.objectives_per_unit` | `"2–4"` | Guidance: objectives per unit. |
 | `design.intro_summary_hours` | `"0.2–0.3"` | Guidance: hours for the introduction and the summary. |
@@ -303,7 +301,7 @@ delivery:
 | `design.intro_section`, `design.summary_section` | Whether every unit opens with an introduction and closes with a summary. |
 | `design.audience`, `design.level`, `design.prerequisites` | Free text for the design agent. |
 | `design.tone`, `design.notes` | Tone and extra instructions for this course. |
-| `design.grading.unit_tests_weight`, `final_test_weight`, `passing_score`, `attempts` | Grading of this course. `passing_score` and `attempts` are what the assembly loads into each quiz (with the html backend, into the quiz settings of the package). |
+| `design.grading.passing_score`, `attempts` | Grading of this course: the pass mark and the attempts a test has when the design does not set them for its assessment activity. See [Grading of a test](08-assembly-and-delivery.md#grading-of-a-test). |
 | `owners.*` | Who leads each stage (`instructional_design`, `writing`, `review`, `media`, `assembly`); shown in the catalog. |
 | `rules:`, `directives:`, `media:`, `delivery:` | Overrides for this course only, with the same keys as the `config/` files. For example `delivery › client_review › required` makes the client review mandatory for this course (see above). |
 

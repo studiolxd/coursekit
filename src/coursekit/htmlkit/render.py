@@ -367,7 +367,7 @@ def lesson(entry: dict, ui: dict[str, str]) -> str:
     ctx = Ctx(ui, entry["key"], entry["type"] == "evaluation")
     body = "".join(RENDERERS[b["type"]](b, ctx) for b in entry["bricks"])
     quiz = entry.get("quiz") or {}
-    settings = json.dumps({"passingGrade": quiz.get("passingGrade"), "maxAttempts": quiz.get("maxAttempts")})
+    settings = json.dumps({key: quiz.get(key) for key in ("passingGrade", "maxAttempts", "courseWeight")})
     attrs = f' data-quiz="{a(settings)}"' if ctx.evaluation else ""
     footer = '<div class="ck-quiz-actions"></div>' if ctx.evaluation else ""
     return (f'<section class="ck-lesson" id="{a(entry["key"])}" data-lesson="{a(entry["key"])}" data-type="{entry["type"]}"{attrs}>'

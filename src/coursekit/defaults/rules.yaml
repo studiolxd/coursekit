@@ -12,8 +12,6 @@ defaults:
   summary_section: true        # last section of every unit: summary
   structure: sin_modulos       # slxd patronEstructural: sin_modulos | con_modulos
   grading:
-    unit_tests_weight: 60      # total % for all unit tests, split evenly
-    final_test_weight: 40
     passing_score: 50
     attempts: 2
 

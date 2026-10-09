@@ -482,6 +482,24 @@ def manifest_assets(course: dict) -> dict[str, dict]:
     return {a["id"]: a for a in (load_yaml(manifest_path).get("assets") or [])} if manifest_path.exists() else {}
 
 
+def quiz_settings(course: dict, unit: dict, number: str, title: str) -> dict:
+    """Settings of the quiz of an assessment activity: the ones the design gives it (weight, pass mark, attempts), else the
+    course's `design.grading` (weight 1). The activity is the one with that title, else the one in that position of the unit."""
+    items = (unit.get("activities") or {}).get("assessment") or []
+    found = next((a for a in items if (a.get("title") or "").strip() == title.strip()), None)
+    if found is None:
+        position = number.rsplit(".", 1)[-1]
+        found = items[int(position) - 1] if position.isdigit() and 0 < int(position) <= len(items) else {}
+    grading = course["design"].get("grading") or {}
+
+    def pick(own, fallback):
+        return fallback if own is None else own
+
+    return {"passingGrade": pick(found.get("passing_score"), grading.get("passing_score")),
+            "maxAttempts": pick(found.get("max_attempts"), grading.get("attempts")),
+            "courseWeight": pick(found.get("weight"), 1)}
+
+
 def build_plan(course: dict, unit: dict, assets: dict[str, dict] | None = None) -> tuple[dict, list[str], list[str]]:
     """The plan of a unit. `assets` are the media of the manifest as the plan reads them (the html backend gives its own copies)."""
     folder = coursemod.unit_dir(course["_dir"], unit["n"])
@@ -508,14 +526,13 @@ def build_plan(course: dict, unit: dict, assets: dict[str, dict] | None = None) 
                         "slxd_node_id": spec.get("slxd_id"), "bricks": parse_blocks(lines, ctx, key)})
 
     assessment = folder / "assessment.md"
-    grading = course["design"].get("grading") or {}
     if assessment.exists():
         for m, lines in split(assessment.read_text(encoding="utf-8"), syntax.assessment):
             parts = {sm.group(1): sl for sm, sl in split("\n".join(lines), re.compile(r"^### (.+?)\s*$"))}
             body = parts.get(syntax.t["assessment_instructions"], []) + [""] + parts.get(syntax.t["assessment_bank"], [])
             key = f"U{unit['n']}-E{m.group(1)}"
             lessons.append({"key": key, "type": "evaluation", "title": m.group(2), "kind": "assessment",
-                            "quiz": {"passingGrade": grading.get("passing_score"), "maxAttempts": grading.get("attempts")},
+                            "quiz": quiz_settings(course, unit, m.group(1), m.group(2)),
                             "bricks": parse_blocks(body, ctx, key)})
 
     for lesson in lessons:
@@ -600,6 +617,8 @@ def diff(course: dict, unit: dict) -> dict:
                         ops.append({"op": "delete", "brickId": o["brickId"]})
                     if b:
                         ops.append({"op": "add", "position": b0 + k, "type": b["type"], "data": b["data"]})
+        if lesson.get("quiz") and old.get("quiz") != lesson["quiz"]:
+            ops.insert(0, {"op": "update_quiz", "quiz": lesson["quiz"]})
         if old.get("title") != lesson["title"]:
             ops.insert(0, {"op": "rename_lesson", "title": lesson["title"]})
         result["lessons"].append({"key": lesson["key"], "lessonId": old["lessonId"], "title": lesson["title"],
@@ -625,6 +644,8 @@ def record_lesson(course: dict, unit: dict, lesson_key: str, lesson_id: str, bri
         "title": lesson["title"],
         "bricks": [{"brickId": bid, "type": b["type"], "hash": b["hash"]} for bid, b in zip(brick_ids, lesson["bricks"], strict=True)],
     }
+    if lesson.get("quiz"):
+        applied["lessons"][lesson_key]["quiz"] = lesson["quiz"]
     write_json(applied_path, applied)
     return t("assemble", "recorded_lesson", key=lesson_key, count=len(brick_ids)) + mark_assembled(course)
 
@@ -648,7 +669,9 @@ def unit_in_sync(course_dir: Path, n: int) -> bool:
         return False
     applied = applied_all["lessons"]
     return all(
-        lesson["key"] in applied and [b["hash"] for b in applied[lesson["key"]]["bricks"]] == [b["hash"] for b in lesson["bricks"]]
+        lesson["key"] in applied
+        and [b["hash"] for b in applied[lesson["key"]]["bricks"]] == [b["hash"] for b in lesson["bricks"]]
+        and (not lesson.get("quiz") or applied[lesson["key"]].get("quiz") == lesson["quiz"])
         for lesson in plan["lessons"]
     )
 
