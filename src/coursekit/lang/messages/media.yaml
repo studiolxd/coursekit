@@ -39,3 +39,9 @@ bad_status:
 download_needs_file:
   es: "--download-title y --download-asset-path necesitan --download FILE"
   en: "--download-title and --download-asset-path need --download FILE"
+embed_needs_svg:
+  es: "{asset} no tiene un fichero .svg en el manifiesto (coursekit media set … --file)"
+  en: "{asset} has no .svg file in the manifest (coursekit media set … --file)"
+embed_written:
+  es: "escrito {path}: sube ese fichero con request_embed_upload (folderId {asset}, relativePath index.html) y `coursekit media upload`, y registra el embedFolderPrefix con `coursekit media set … --status uploaded --asset-path`"
+  en: "wrote {path}: upload that file with request_embed_upload (folderId {asset}, relativePath index.html) and `coursekit media upload`, then record the embedFolderPrefix with `coursekit media set … --status uploaded --asset-path`"

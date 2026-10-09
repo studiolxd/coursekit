@@ -636,12 +636,13 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
                 [--alt ALT] [--transcript TRANSCRIPT] [--subtitles-path SUBTITLES_PATH]
                 [--made-with MADE_WITH] [--download DOWNLOAD] [--download-title DOWNLOAD_TITLE]
                 [--download-asset-path DOWNLOAD_ASSET_PATH] [--force]
-                {extract,plan,providers,set} [code] [id]
+                [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all]
+                {extract,plan,providers,set,upload,redo,embed} [code] [id] [more ...]
 ```
 
 | Argument | Values / default | Meaning |
 |---|---|---|
-| `action` | `extract`, `plan`, `providers`, `set` | See below. |
+| `action` | `extract`, `plan`, `providers`, `set`, `upload`, `redo`, `embed` | See below. |
 | `code` | course code or folder | Required by every action except `providers` (exit code 2 without it). |
 | `id` | asset id such as `U1-S2-M1` | Required by `set` (exit code 2 without it). |
 | `--status STATUS` | `pending`, `scripted`, `produced`, `uploaded` | New status of the asset (checked against `coursekit config media`). |
@@ -655,6 +656,10 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
 | `--download DOWNLOAD` | file name | Add or update an extra downloadable file of the asset. |
 | `--download-title DOWNLOAD_TITLE` | text | Title of that download (needs `--download`). |
 | `--download-asset-path DOWNLOAD_ASSET_PATH` | text | Uploaded path of that download (needs `--download`). |
+| `--url URL` | `https://` address | `upload`: the `uploadUrl` that the platform minted (creator's `request_asset_upload` or `request_embed_upload`). |
+| `--content-type CONTENT_TYPE` | MIME type, for example `image/png` | `upload`: the one the upload was requested with. |
+| `--method METHOD` | default `PUT` | `upload`: HTTP method. |
+| `--all` | flag | `redo` only: redo every asset that uses the theme, not only those made with other tokens. |
 | `--force` | flag | `set` only: mark an asset that uses the theme tokens as `produced` or `uploaded` even though the tokens are missing or were written by hand (see below). |
 
 Actions:
@@ -663,8 +668,11 @@ Actions:
 - `plan`: for each `pending` or `scripted` asset, the production options available here in order of preference (the line starts with the id of the type, `U1-S2-M1 [infographic] Title`), plus the voice and subtitle options for audio and video, and warnings for missing downloads and for the theme (see below). Prints `nothing to produce` when there is none.
 - `providers`: every optional provider and whether it is `available`, `missing` or `agent MCP` (only the agent can tell). Takes no course.
 - `set`: updates the asset `id` with the options given; prints `<id>: <status>`.
+- `upload`: sends the local `--file` (a path from the course folder or the project) to the `--url` with the `--content-type` and prints `uploaded <name> (<n> bytes)`. It exists so that the media agent does not need `curl`, which a session without an interface cannot run. It does not change the manifest: the agent then records the `path` the platform gave with `set --status uploaded --asset-path`. Exit code 2 without `--file`, `--url` or `--content-type`; exit code 1 if the file does not exist, the address is not `https://` or the upload fails.
+- `embed`: wraps the `.svg` that the asset `id` has as its `--file` in `media/src/<id>/index.html` (the SVG inline, responsive, the language of the course, animations paused with `prefers-reduced-motion`) and says how to upload it: creator does not take SVG as an image, so an SVG goes up as an EMBED package, and the assembly puts an EMBED block where the asset's file is an `.svg`. Exit code 1 if the asset has no `.svg` file.
+- `redo`: marks assets to be produced again and prints their ids. With one or more ids (`redo CODE U1-S3-M1 U1-S5-M4`), those; without them, the produced or uploaded assets of the types that use the theme (`uses_theme`) whose fingerprint differs from the current tokens (all of them with `--all`). They go back to `scripted` and forget their fingerprint and uploaded path; their script and file stay. Then `/produce-media` (or `coursekit handoff`) produces them again. See [Change the theme after producing the media](07-media.md#change-the-theme-after-producing-the-media). Refused while the course is on hold.
 
-The types that use the theme tokens are listed in `media.yaml › uses_theme` (by default `infographic`, `diagram`, `animated_gif`, `simulation` and `video`). For them:
+The types that use the theme tokens are listed in `media.yaml › uses_theme` (by default `infographic`, `diagram`, `animated_gif`, `simulation`, `video` and `terminal_demo`). For them:
 
 - `plan` warns, once per course, when the course has assets of those types and its tokens (its own, else the project's) are missing or were written by hand instead of derived with [`coursekit theme import`](#coursekit-theme) (from the platform theme, or from the stylesheet of the html backend). It also warns for each `produced` or `uploaded` asset that was made with other tokens than the current ones.
 - `set --status produced` or `--status uploaded` is refused (exit code 1) unless the tokens are derived (from the platform theme or from the stylesheet of the html backend), or `--force` is given. When it goes through, the asset stores a fingerprint of the tokens (`theme` in `media/manifest.yaml`), which is how `plan` notices later that the theme changed and the asset must be produced again.

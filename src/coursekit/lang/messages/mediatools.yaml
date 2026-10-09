@@ -29,3 +29,7 @@ http_failed:
 network_failed:
   es: "no se pudo conectar con {host}: {reason}"
   en: "could not reach {host}: {reason}"
+upload_not_https:
+  es: "la dirección de subida debe empezar por https://"
+  en: "the upload address must start with https://"
+uploaded: {es: "subido {name} ({size} bytes)", en: "uploaded {name} ({size} bytes)"}

@@ -36,7 +36,7 @@ types:
     - {id: agent-svg, needs: none, how: "SVG written by the agent with the theme tokens"}
   animated_gif:
     - {id: vhs, needs: {bin: vhs}, only: terminal, how: ".tape script → GIF (only if it shows a terminal)"}
-    - {id: agent-svg-animated, needs: none, how: "SVG animated with CSS (processes, diagrams that build up)"}
+    - {id: agent-svg-animated, needs: none, how: "SVG animated with CSS (processes, diagrams that build up); in creator it goes up as an EMBED package (coursekit media embed)"}
     - {id: remotion-gif, needs: {bin: node, path: tools/remotion/node_modules}, how: "Short Remotion animation exported to GIF"}
   terminal_demo:
     - {id: asciinema, needs: {bin: asciinema}, only: terminal, how: ".cast recording + web player in an EMBED package (copyable text)"}
@@ -52,7 +52,7 @@ types:
 # Types whose production uses the tokens of the theme (theme/tokens.json, or the course's own): `coursekit media plan`
 # warns when the tokens are missing or were not derived from the theme of the platform (`/define-theme`), and
 # `coursekit media set --status produced` refuses (unless --force) and remembers which tokens the asset was made with.
-uses_theme: [infographic, diagram, animated_gif, simulation, video]
+uses_theme: [infographic, diagram, animated_gif, simulation, video, terminal_demo]
 
 # Resources are validated in the assembled course (preview), not one by one.
 statuses: [pending, scripted, produced, uploaded]

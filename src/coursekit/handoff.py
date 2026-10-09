@@ -25,6 +25,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from coursekit import approve, clientreview, config, identity, launch, new
+from coursekit import assemble as assemblemod
 from coursekit import course as coursemod
 from coursekit import media as mediamod
 from coursekit import theme as thememod
@@ -144,12 +145,11 @@ def _unit(ctx: Context, role: str, n: int, note: str = "") -> launch.UnitResult:
 
 def _why(ctx: Context, log: Path | None, summary: str, role: str = "") -> str:
     """The cause of an agent that did not do its job: what its session log says about creator (not authorized, not allowed) or about
-    the programs it could not run, else what the agent itself said at the end."""
+    the programs it could not run, and what the agent itself said at the end (it is the one that knows when the cause is another)."""
     blocker = (launch.mcp_blocker(ctx.project, log) or launch.permission_blocker(ctx.project, log, role)) if log else None
-    if blocker:
-        return "\n" + t("handoff", "cause_line", text=blocker)
     text = " ".join(summary.split())[:700]
-    return "\n" + t("handoff", "agent_said_line", text=text) if text else ""
+    said = "\n" + t("handoff", "agent_said_line", text=text) if text else ""
+    return ("\n" + t("handoff", "cause_line", text=blocker) if blocker else "") + said
 
 
 def _cannot(ctx: Context, log: Path | None, role: str) -> bool:
@@ -252,24 +252,75 @@ def _pending_media(course: dict) -> list[dict]:
     return [a for a in data["assets"] if a.get("status") in ("pending", "scripted")]
 
 
-def _media(ctx: Context, course: dict) -> None:
-    mediamod.extract(course)
-    pending = _pending_media(course)
-    if pending:
-        cfg = mediamod.config(course=course)
-        needs_theme = any(a["type"] in (cfg.get("uses_theme") or []) for a in pending)
-        if needs_theme and thememod.status(ctx.project, course).state != "derived":
-            _agent(ctx, "design", "define-theme", "", "theme", theme_note(ctx.project, coursemod.backend(course)))
-            if thememod.status(ctx.project, ctx.course()).state != "derived":
-                raise _stuck(ctx, "theme_missing")
+UPLOAD_NOTE = (
+    "\n\nThe course is already assembled, so every unit has its content in creator now. Produce nothing: upload each asset whose "
+    "status is `produced` to the content of its unit, as the upload step of the media-production skill says (request_asset_upload "
+    "or request_embed_upload, then `coursekit media upload`, then `coursekit media set` with --status uploaded and --asset-path). "
+    "Do not run /assemble: the assembly agent does it next, and it is what puts the media in place of their placeholders."
+)
+
+
+def _not_uploaded(course: dict) -> list[dict]:
+    _, _, data = mediamod.load_manifest(course["_dir"])
+    return [a for a in data["assets"] if a.get("status") == "produced"]
+
+
+def _refresh_media(ctx: Context, course: dict) -> None:
+    """Media that is not in the course yet. The assets marked to be produced again (`coursekit media redo`, after the theme changed)
+    are produced. With the creator backend the produced ones are uploaded, which can only be done to the content of their unit that
+    the assembly creates; then the course is assembled again so that they replace their placeholders."""
+    again = bool(_pending_media(course))
+    if again:
+        _produce(ctx, course)
+    creator = coursemod.backend(course) == "creator"
+    if creator and _not_uploaded(ctx.course()):
         log = None
         for _ in range(ctx.rounds):
-            _, log, summary = _agent(ctx, "media", "produce-media", ctx.code, "media")
-            pending = _pending_media(ctx.course())
-            if not pending or _cannot(ctx, log, "media"):
+            _, log, summary = _agent(ctx, "media", "produce-media", ctx.code, "upload", UPLOAD_NOTE)
+            if not _not_uploaded(ctx.course()) or _cannot(ctx, log, "media"):
                 break
-        if pending:
-            raise _stuck(ctx, "media_pending", log, why=_why(ctx, log, summary, "media"), assets=", ".join(a["id"] for a in pending))
+        left = _not_uploaded(ctx.course())
+        if left:
+            raise _stuck(ctx, "media_not_uploaded", log, why=_why(ctx, log, summary, "media"), assets=", ".join(a["id"] for a in left))
+    elif not again:
+        return
+    ctx.mirror()
+    for _ in range(ctx.rounds):
+        _, log, summary = _agent(ctx, "assembly", "assemble", ctx.code, "assemble")
+        if not creator or _in_sync(ctx) or _cannot(ctx, log, "assembly"):
+            break
+    if creator and not _in_sync(ctx):
+        raise _stuck(ctx, "not_assembled", log, why=_why(ctx, log, summary, "assembly"))
+
+
+def _in_sync(ctx: Context) -> bool:
+    course = ctx.course()
+    return all(assemblemod.unit_in_sync(course["_dir"], u["n"]) for u in course["units"])
+
+
+def _produce(ctx: Context, course: dict) -> None:
+    """The media agent produces the pending assets (with the theme defined first when they use it)."""
+    pending = _pending_media(course)
+    cfg = mediamod.config(course=course)
+    needs_theme = any(a["type"] in (cfg.get("uses_theme") or []) for a in pending)
+    if needs_theme and thememod.status(ctx.project, course).state != "derived":
+        _agent(ctx, "design", "define-theme", "", "theme", theme_note(ctx.project, coursemod.backend(course)))
+        if thememod.status(ctx.project, ctx.course()).state != "derived":
+            raise _stuck(ctx, "theme_missing")
+    log = None
+    for _ in range(ctx.rounds):
+        _, log, summary = _agent(ctx, "media", "produce-media", ctx.code, "media")
+        pending = _pending_media(ctx.course())
+        if not pending or _cannot(ctx, log, "media"):
+            break
+    if pending:
+        raise _stuck(ctx, "media_pending", log, why=_why(ctx, log, summary, "media"), assets=", ".join(a["id"] for a in pending))
+
+
+def _media(ctx: Context, course: dict) -> None:
+    mediamod.extract(course)
+    if _pending_media(course):
+        _produce(ctx, course)
     ctx.mirror()
     log = None
     for _ in range(ctx.rounds):
@@ -282,6 +333,7 @@ def _media(ctx: Context, course: dict) -> None:
 
 
 def _deliver(ctx: Context, course: dict) -> None:
+    _refresh_media(ctx, course)
     log = None
     for _ in range(ctx.rounds):
         _, log, summary = _agent(ctx, "assembly", "deliver", ctx.code, "deliver")

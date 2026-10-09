@@ -9,6 +9,7 @@ import pytest
 import yaml
 
 from coursekit import agents, launch
+from coursekit import assemble as assemblemod
 from coursekit.cli import main
 from tests.test_course_flow import ASSESSMENT, CONTENT, FIXTURES, write_course_rules
 
@@ -29,6 +30,7 @@ class Agents:
 
     def __init__(self, root, monkeypatch):
         self.root, self.calls, self.skip, self.reviews, self.fixing = root, [], {}, [], False
+        self.produced_status, self.uploading = "uploaded", False
         monkeypatch.setattr(launch, "execute", self.execute)
 
     @property
@@ -40,6 +42,7 @@ class Agents:
         command, _, arguments = text.split("\n")[0].partition(" ")
         command = command.lstrip("/")
         self.calls.append(command)
+        self.uploading = "already assembled" in text
         if self.skip.get(command, 0) > 0:
             self.skip[command] -= 1
             return 1, None, ""
@@ -85,7 +88,7 @@ class Agents:
         path = self.course / "media" / "manifest.yaml"
         manifest = yaml.safe_load(path.read_text(encoding="utf-8"))
         for asset in manifest["assets"]:
-            asset["status"] = "uploaded"
+            asset["status"] = "uploaded" if self.uploading else self.produced_status
         path.write_text(yaml.safe_dump(manifest, allow_unicode=True), encoding="utf-8")
 
     def assemble(self, arguments):
@@ -263,3 +266,44 @@ def test_a_step_refused_a_program_is_not_repeated(project, monkeypatch, capsys):
     assert main(["handoff", "Contraseñas seguras", "1", "--code", "PWD"]) == 1
     assert fake.calls.count("deliver") == 1  # the second round would be refused the same
     assert "tried to run curl" in capsys.readouterr().err
+
+
+def test_the_media_is_uploaded_once_the_course_is_assembled_and_it_is_assembled_again(project, monkeypatch):
+    fake = Agents(project, monkeypatch)
+    fake.produced_status = "produced"  # they can only be uploaded to the content that the assembly creates
+    monkeypatch.setattr(assemblemod, "unit_in_sync", lambda course_dir, n: fake.calls.count("assemble") >= 2)
+    assert main(["handoff", "Contraseñas seguras", "1", "--code", "PWD"]) == 0
+    assert fake.calls[-5:] == ["produce-media", "assemble", "produce-media", "assemble", "deliver"]
+
+
+def test_it_stops_when_the_media_cannot_be_uploaded(project, monkeypatch, capsys):
+    fake = Agents(project, monkeypatch)
+    fake.produced_status = "produced"
+    run = fake.execute
+
+    def execute(project_, agent, text, headless, log_name):
+        if "already assembled" in text:
+            fake.calls.append("produce-media")
+            return 1, None, ""
+        return run(project_, agent, text, headless, log_name)
+
+    monkeypatch.setattr(launch, "execute", execute)
+    assert main(["handoff", "Contraseñas seguras", "1", "--code", "PWD"]) == 1
+    assert "still not uploaded to creator" in capsys.readouterr().err
+    assert fake.calls.count("deliver") == 0
+
+
+def test_media_marked_to_be_produced_again_is_produced_uploaded_and_assembled_again(project, monkeypatch):
+    fake = Agents(project, monkeypatch)
+    monkeypatch.setattr(assemblemod, "unit_in_sync", lambda course_dir, n: fake.calls.count("assemble") >= 2)
+    assert main(["handoff", "Contraseñas seguras", "1", "--code", "PWD"]) == 0
+    path = fake.course / "media" / "manifest.yaml"
+    manifest = yaml.safe_load(path.read_text(encoding="utf-8"))
+    manifest["assets"][0]["status"] = "scripted"  # what `coursekit media redo` leaves after the theme was changed
+    path.write_text(yaml.safe_dump(manifest, allow_unicode=True), encoding="utf-8")
+    set_status(project, "assembly")
+    fake.calls.clear()
+    fake.produced_status = "produced"
+    monkeypatch.setattr(assemblemod, "unit_in_sync", lambda course_dir, n: "assemble" in fake.calls)
+    assert main(["handoff", "PWD"]) == 0
+    assert fake.calls == ["produce-media", "produce-media", "assemble", "deliver"]

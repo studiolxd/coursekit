@@ -148,6 +148,25 @@ _SHELL_WORDS = {"cd", "echo", "for", "do", "done", "then", "fi", "if", "source",
 _NEEDS_APPROVAL = re.compile(r"requires? approval|was blocked", re.I)
 
 
+def _command_parts(command: str) -> list[str]:
+    """The parts of a shell command line split at `&&`, `||`, `;`, `|` and new lines that are not inside quotes."""
+    parts, current, quote, i = [], "", "", 0
+    while i < len(command):
+        ch = command[i]
+        if quote:
+            quote = "" if ch == quote else quote
+        elif ch in "'\"":
+            quote = ch
+        elif ch in ";|\n" or command.startswith("&&", i):
+            parts.append(current)
+            current = ""
+            i += 2 if command.startswith(("&&", "||"), i) else 1
+            continue
+        current += ch
+        i += 1
+    return [*parts, current]
+
+
 def blocked_programs(log: Path) -> list[str]:
     """Programs a headless Claude Code session asked to run and was not allowed (its log has the command and the refusal)."""
     commands: dict[str, str] = {}
@@ -171,7 +190,7 @@ def blocked_programs(log: Path) -> list[str]:
             elif item.get("type") == "tool_result" and item.get("is_error") and item.get("tool_use_id") in commands:
                 body = item.get("content")
                 if isinstance(body, str) and _NEEDS_APPROVAL.search(body) and "working director" not in body:
-                    for part in re.split(r"&&|\|\||[;|\n]", commands[item["tool_use_id"]]):
+                    for part in _command_parts(commands[item["tool_use_id"]]):
                         words = [w for w in part.split() if not re.match(r"\w+=", w)]
                         name = words[0] if words else ""
                         if name and "/" not in name and name not in _SHELL_WORDS and name != "coursekit":

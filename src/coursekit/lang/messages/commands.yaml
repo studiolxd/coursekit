@@ -253,6 +253,22 @@ help_theme_action:
   en: "tokens writes tokens.css; check measures the contrast; import derives the tokens from the saved get_theme result; show says where they come from"
 help_theme_file: {es: "import: fichero con el resultado de get_theme, o la hoja de estilos .css del backend html", en: "import: file with the get_theme result, or the .css stylesheet of the html backend"}
 help_theme_course: {es: "usa (o crea con import) los tokens propios de este curso", en: "use (or create with import) the tokens of this course"}
+media_upload_needs:
+  es: "coursekit: media upload necesita --file, --url y --content-type"
+  en: "coursekit: media upload needs --file, --url and --content-type"
+help_media_url: {es: "upload: dirección de subida (uploadUrl) que dio la plataforma", en: "upload: upload address (uploadUrl) the platform gave"}
+help_media_content_type:
+  es: "upload: tipo MIME del fichero, el mismo con el que se pidió la subida"
+  en: "upload: MIME type of the file, the one the upload was requested with"
+help_media_method: {es: "upload: método HTTP (por defecto PUT)", en: "upload: HTTP method (default PUT)"}
+media_redo:
+  es: "para producir de nuevo: {assets} (ejecuta /produce-media o `coursekit handoff`)"
+  en: "to produce again: {assets} (run /produce-media or `coursekit handoff`)"
+media_redo_none:
+  es: "ningún recurso se hizo con otros tokens del tema; con --all se rehacen todos los que usan el tema"
+  en: "no asset was made with other theme tokens; with --all every one that uses the theme is redone"
+help_media_more: {es: "redo: más recursos a rehacer", en: "redo: more assets to redo"}
+help_media_all: {es: "redo: rehace todos los recursos que usan el tema, no solo los hechos con otros tokens", en: "redo: redo every asset that uses the theme, not only those made with other tokens"}
 help_media_force: {es: "set: marca el recurso aunque los tokens del tema no vengan de la plataforma", en: "set: mark the asset even if the theme tokens do not come from the platform"}
 theme_import_needs_file: {es: "coursekit: theme import necesita el fichero con el resultado de get_theme", en: "coursekit: theme import needs the file with the get_theme result"}
 theme_imported:

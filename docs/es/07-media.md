@@ -11,7 +11,7 @@ Un recurso multimedia se escribe en `content.md` (formato en [06-content.md](06-
 | `image` | Imagen | `magnific-api` (`MAGNIFIC_API_KEY`) · `magnific-mcp` (herramienta MCP del agente `images_generate`) · `creator-stock` (herramienta MCP del agente `search_stock_images`) |
 | `infographic` | Infografía | `agent-svg` (nada) · `magnific-api` |
 | `diagram` | Esquema o diagrama | `agent-svg` |
-| `animated_gif` | GIF animado | `vhs` (comando `vhs`; solo contenido de terminal) · `agent-svg-animated` (nada) · `remotion-gif` (`node` y `tools/remotion/node_modules`) |
+| `animated_gif` | GIF animado | `vhs` (comando `vhs`; solo contenido de terminal) · `agent-svg-animated` (nada; con el backend creator se sube como paquete EMBED, mira [Subida](#subida-a-creator)) · `remotion-gif` (`node` y `tools/remotion/node_modules`) |
 | `terminal_demo` | Demo interactiva en terminal | `asciinema` (comando `asciinema`; solo contenido de terminal) · `vhs` (alternativa en vídeo; solo contenido de terminal) |
 | `video` | Vídeo | `remotion` (`node` y `tools/remotion/node_modules`) · `vhs` (solo contenido de terminal) |
 | `audio` | Audio | `voice` (nada): la cadena de voz de más abajo |
@@ -108,6 +108,15 @@ coursekit assemble build PWD --unit 1
 | Descargas | Los ficheros registrados con `--download FILE` se copian en `media/files/` y se muestran como adjuntos descargables después del recurso. No hace falta `--download-asset-path`. |
 
 Un recurso `produced` cuyo fichero no existe es un aviso en la salida de `build` (`el recurso U1-S2-M2 está producido pero su fichero no existe (coursekit media set … --file): se deja el marcador`), y el recurso reservado se queda en la página como una nota visible con su descripción, igual que un recurso que aún no está producido. Los recursos que usan el tema (infografías, esquemas, simulaciones, vídeos) usan los mismos tokens que el paquete: [Tokens del tema](#tokens-del-tema).
+
+## Subida a creator
+
+Con el backend creator los recursos se suben al contenido de su unidad, que crea el montaje, y el curso se monta otra vez para que sustituyan a sus recuadros (el handoff lo hace solo: [Modo handoff](02-workflow.md#modo-handoff)). El agente pide a creator una dirección de subida (`request_asset_upload`, o `request_embed_upload` para los paquetes) y envía el fichero con `coursekit media upload CODE --file F --url "<uploadUrl>" --content-type MIME`; después registra la ruta con `coursekit media set CODE ID --status uploaded --asset-path <ruta>`.
+
+Creator solo admite PNG, JPEG, WebP y GIF como imagen, así que un SVG no puede ser un bloque de imagen:
+
+- Una infografía o un diagrama estático: el agente conserva el SVG como fuente y sube un PNG exportado de él.
+- Un SVG animado (`agent-svg-animated`): `coursekit media embed CODE ID` envuelve el SVG en `media/src/<id>/index.html`, el agente sube ese fichero como paquete EMBED, y el montaje pone un bloque EMBED donde el fichero del recurso es un `.svg`. La animación se conserva.
 
 ## Proveedores de voz
 
@@ -326,13 +335,23 @@ Con el backend html los tokens salen de las variables CSS de la maqueta base del
 
 ### El control de los recursos
 
-Los tipos de recurso que usan los tokens figuran en `uses_theme` de la configuración multimedia (por defecto `infographic`, `diagram`, `animated_gif`, `simulation` y `video`; consulta [04-configuration.md](04-configuration.md)). Para ellos:
+Los tipos de recurso que usan los tokens figuran en `uses_theme` de la configuración multimedia (por defecto `infographic`, `diagram`, `animated_gif`, `simulation`, `video` y `terminal_demo`; consulta [04-configuration.md](04-configuration.md)). Para ellos:
 
 - `coursekit media plan` avisa cuando el curso tiene recursos de esos tipos y sus tokens faltan o están escritos a mano (ni origen `creator` ni `css`), y por cada recurso producido o subido que se hizo con otros tokens distintos de los actuales (hay que producirlo de nuevo).
 - `coursekit media set CODE ID --status produced` (o `uploaded`) se rechaza mientras los tokens no estén derivados: del tema de la plataforma (backend creator) o de la hoja de estilos del proyecto (backend html, `coursekit theme import FICHERO.css`). `--force` se salta la comprobación, para el caso poco habitual de un curso que deliberadamente no sigue el tema.
 - Cuando se acepta, el recurso guarda una huella de los tokens (`theme`, en `media/manifest.yaml`). Si el tema cambia y se vuelve a importar, la huella ya no coincide y `plan` avisa. La huella abarca los colores, las tipografías, el radio, los espaciados y las sombras, no el origen ni la fecha, así que importar de nuevo el mismo tema no genera avisos.
 
 El agente multimedia se detiene y pide a la persona que ejecute `/define-theme` cuando faltan los tokens, en lugar de inventar colores.
+
+### Cambiar el theme después de producir el multimedia
+
+Si el theme era incorrecto (por ejemplo el theme por defecto del tenant), el multimedia hecho con él lleva el aspecto equivocado. Para rehacerlo:
+
+1. Corrige el theme en la plataforma (o elige otro) e impórtalo otra vez. Si el theme incorrecto era el del proyecto, `coursekit run define-theme` (sin código) sobrescribe `theme/tokens.json`, que heredan todos los cursos sin theme propio. `coursekit run define-theme CODE` escribe en cambio el theme de ese curso en `courses/<CODE>/theme/` y deja el del proyecto como está ([Un tema por proyecto, uno por curso](#un-tema-por-proyecto-uno-por-curso)).
+2. `coursekit media redo CODE` marca los recursos que usan el tema y se hicieron con otros tokens (`--all` marca todos los que usan el tema; `coursekit media redo CODE ID [ID ...]`, los que nombres, para recursos que llevan el tema sin ser de esos tipos, como una imagen con el color de acento pintado). Vuelven a `scripted`.
+3. `coursekit handoff CODE` continúa (o, a mano, `/produce-media`, `/assemble`, y otra vez `/produce-media` y `/assemble`): los produce de nuevo, los sube al contenido de su unidad, vuelve a vincular los contenidos al theme (`set_content_theme` se ejecuta en cada montaje) y monta el curso otra vez, de modo que el multimedia nuevo sustituye al antiguo. Con el backend html se vuelve a construir el curso. Las subidas antiguas se quedan en la plataforma hasta su limpieza de almacenamiento.
+
+Un curso ya `delivered` no lo continúa el handoff: rehaz el multimedia y el montaje a mano y entrega una versión nueva.
 
 ### Comprobación de contraste
 
@@ -387,7 +406,7 @@ tools/remotion/
 | `audio` | Un proveedor de voz (`ffmpeg` para unir MP3 y para Piper) |
 | `simulation` | Ninguna (HTML/JS del agente con `tokens.css`) |
 
-Los tipos `infographic`, `diagram`, `animated_gif`, `simulation` y `video` necesitan además los tokens del tema derivados del tema de la plataforma, o de la hoja de estilos con el backend html ([Tokens del tema](#tokens-del-tema)).
+Los tipos `infographic`, `diagram`, `animated_gif`, `simulation`, `video` y `terminal_demo` necesitan además los tokens del tema derivados del tema de la plataforma, o de la hoja de estilos con el backend html ([Tokens del tema](#tokens-del-tema)).
 
 ## Ejemplo completo
 

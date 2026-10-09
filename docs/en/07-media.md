@@ -11,7 +11,7 @@ A media placeholder is written in `content.md` (format in [06-content.md](06-con
 | `image` | Image | `magnific-api` (`MAGNIFIC_API_KEY`) · `magnific-mcp` (agent MCP tool `images_generate`) · `creator-stock` (agent MCP tool `search_stock_images`) |
 | `infographic` | Infographic | `agent-svg` (nothing) · `magnific-api` |
 | `diagram` | Diagram | `agent-svg` |
-| `animated_gif` | Animated GIF | `vhs` (command `vhs`; terminal content only) · `agent-svg-animated` (nothing) · `remotion-gif` (`node` and `tools/remotion/node_modules`) |
+| `animated_gif` | Animated GIF | `vhs` (command `vhs`; terminal content only) · `agent-svg-animated` (nothing; with the creator backend it goes up as an EMBED package, see [Upload](#upload-to-creator)) · `remotion-gif` (`node` and `tools/remotion/node_modules`) |
 | `terminal_demo` | Interactive terminal demo | `asciinema` (command `asciinema`; terminal content only) · `vhs` (video alternative; terminal content only) |
 | `video` | Video | `remotion` (`node` and `tools/remotion/node_modules`) · `vhs` (terminal content only) |
 | `audio` | Audio | `voice` (nothing): the voice chain below |
@@ -108,6 +108,15 @@ coursekit assemble build PWD --unit 1
 | Downloads | The files registered with `--download FILE` are copied to `media/files/` and shown as downloadable attachments after the asset. `--download-asset-path` is not needed. |
 
 An asset that is `produced` but whose file does not exist is a warning in the output of `build` (`the asset U1-S2-M2 is produced but its file does not exist (coursekit media set … --file): the placeholder stays`), and the placeholder stays in the page as a visible note with its description, like an asset that is not produced yet. The media of the theme (infographics, diagrams, simulations, videos) use the same tokens as the package: [Theme tokens](#theme-tokens).
+
+## Upload to creator
+
+With the creator backend the assets are uploaded to the content of their unit, which the assembly creates, and the course is assembled again so that they replace their placeholders (the handoff does it by itself: [Handoff mode](02-workflow.md#handoff-mode)). The agent asks creator for an upload address (`request_asset_upload`, or `request_embed_upload` for packages) and sends the file with `coursekit media upload CODE --file F --url "<uploadUrl>" --content-type MIME`; then it records the path with `coursekit media set CODE ID --status uploaded --asset-path <path>`.
+
+Creator takes only PNG, JPEG, WebP and GIF as an image, so an SVG cannot be an image block:
+
+- A static infographic or diagram: the agent keeps the SVG as the source and uploads a PNG exported from it.
+- An animated SVG (`agent-svg-animated`): `coursekit media embed CODE ID` wraps the SVG in `media/src/<id>/index.html`, the agent uploads that file as an EMBED package, and the assembly puts an EMBED block where the asset's file is an `.svg`. The animation is kept.
 
 ## Voice providers
 
@@ -326,13 +335,23 @@ With the html backend the tokens come from the CSS variables of the base layout 
 
 ### The media guard
 
-The asset types that use the tokens are listed in `uses_theme` of the media configuration (`infographic`, `diagram`, `animated_gif`, `simulation` and `video` by default; see [04-configuration.md](04-configuration.md)). For them:
+The asset types that use the tokens are listed in `uses_theme` of the media configuration (`infographic`, `diagram`, `animated_gif`, `simulation`, `video` and `terminal_demo` by default; see [04-configuration.md](04-configuration.md)). For them:
 
 - `coursekit media plan` warns when the course has assets of those types and its tokens are missing or were written by hand (neither `creator` nor `css` origin), and for each produced or uploaded asset that was made with other tokens than the current ones (produce it again).
 - `coursekit media set CODE ID --status produced` (or `uploaded`) is refused until the tokens are derived: from the platform theme (creator backend) or from the stylesheet of the project (html backend, `coursekit theme import FILE.css`). `--force` skips the check, for the rare case of a course that deliberately does not follow the theme.
 - When it goes through, the asset stores a fingerprint of the tokens (`theme`, in `media/manifest.yaml`). If the theme changes and is imported again, the fingerprint no longer matches and `plan` warns. The fingerprint covers the colours, fonts, radius, spacing and shadows, not the origin or the date, so importing the same theme again does not raise warnings.
 
 The media agent stops and asks the person to run `/define-theme` when the tokens are missing, instead of inventing colours.
+
+### Change the theme after producing the media
+
+If the theme was wrong (for example the default theme of the tenant) the media made with it carries the wrong look. To redo it:
+
+1. Fix the theme in the platform (or choose another one) and import it again. If the wrong theme was the project's, `coursekit run define-theme` (without a code) overwrites `theme/tokens.json`, which every course without its own theme inherits. `coursekit run define-theme CODE` writes the theme of that one course in `courses/<CODE>/theme/` instead and leaves the project's alone ([One theme per project, one per course](#one-theme-per-project-one-per-course)).
+2. `coursekit media redo CODE` marks the assets that use the theme and were made with other tokens (`--all` marks every one that uses the theme; `coursekit media redo CODE ID [ID ...]` the ones you name, for assets that carry the theme without being of those types, such as an image with the accent colour painted on it). They go back to `scripted`.
+3. `coursekit handoff CODE` carries on (or, by hand, `/produce-media`, `/assemble`, and again `/produce-media` and `/assemble`): it produces them again, uploads them to the content of their unit, links the contents to the theme again (`set_content_theme` runs on every assembly) and assembles the course again, so the new media replace the old ones. With the html backend the course is built again instead. The old uploads stay in the platform until its storage cleanup.
+
+A course already `delivered` is not carried on by the handoff: redo the media and the assembly by hand and deliver a new version.
 
 ### Contrast check
 
@@ -387,7 +406,7 @@ tools/remotion/
 | `audio` | A voice provider (`ffmpeg` for MP3 joining and Piper) |
 | `simulation` | None (HTML/JS by the agent with `tokens.css`) |
 
-The types `infographic`, `diagram`, `animated_gif`, `simulation` and `video` also need the theme tokens derived from the platform theme, or from the stylesheet with the html backend ([Theme tokens](#theme-tokens)).
+The types `infographic`, `diagram`, `animated_gif`, `simulation`, `video` and `terminal_demo` also need the theme tokens derived from the platform theme, or from the stylesheet with the html backend ([Theme tokens](#theme-tokens)).
 
 ## Worked example
 

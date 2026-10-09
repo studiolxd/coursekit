@@ -460,6 +460,29 @@ def cmd_media(args: argparse.Namespace) -> int:
             print(t("commands", "warning_line", text=w))
         print("\n".join(lines) if lines else t("commands", "media_nothing"))
         return 0
+    if args.action == "embed":
+        if not args.id:
+            print(t("commands", "media_set_needs_id"), file=sys.stderr)
+            return 2
+        print(mediamod.embed(course, args.id))
+        return 0
+    if args.action == "redo":
+        statesmod.ensure_active(course)
+        chosen = mediamod.redo(course, [args.id, *args.more] if args.id else None, args.all)
+        print(t("commands", "media_redo", assets=", ".join(chosen)) if chosen else t("commands", "media_redo_none"))
+        _mirror(course["_project"], course["code"])
+        return 0
+    if args.action == "upload":
+        if not (args.file and args.url and args.content_type):
+            print(t("commands", "media_upload_needs"), file=sys.stderr)
+            return 2
+        path = Path(args.file)
+        for base in (course["_dir"], course["_project"].root):
+            if not path.is_absolute() and (base / path).is_file():
+                path = base / path
+                break
+        print(mediatools.upload(path, args.url, args.content_type, args.method))
+        return 0
     if not args.id:
         print(t("commands", "media_set_needs_id"), file=sys.stderr)
         return 2
@@ -742,13 +765,18 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.set_defaults(func=cmd_directives)
 
     p = sub.add_parser("media", help=t("commands", "help_media"))
-    p.add_argument("action", choices=("extract", "plan", "providers", "set"))
+    p.add_argument("action", choices=("extract", "plan", "providers", "set", "upload", "redo", "embed"))
     p.add_argument("code", nargs="?")
     p.add_argument("id", nargs="?")
+    p.add_argument("more", nargs="*", help=t("commands", "help_media_more"))
+    p.add_argument("--url", help=t("commands", "help_media_url"))
+    p.add_argument("--content-type", help=t("commands", "help_media_content_type"))
+    p.add_argument("--method", default="PUT", help=t("commands", "help_media_method"))
     for key in ("status", "recipe", "asset-path", "file", "alt", "transcript", "subtitles-path", "made-with",
                 "download", "download-title", "download-asset-path"):
         p.add_argument(f"--{key}")
     p.add_argument("--force", action="store_true", help=t("commands", "help_media_force"))
+    p.add_argument("--all", action="store_true", help=t("commands", "help_media_all"))
     p.set_defaults(func=cmd_media)
 
     p = sub.add_parser("voice", help=t("commands", "help_voice"))

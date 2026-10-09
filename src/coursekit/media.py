@@ -214,6 +214,60 @@ def providers(project) -> list[str]:
     return out
 
 
+def embed(course: dict, asset_id: str) -> str:
+    """Wraps the SVG of an asset in `media/src/<id>/index.html`, the EMBED package that creator takes in place of an SVG image."""
+    _, _, data = load_manifest(course["_dir"])
+    asset = next((a for a in data["assets"] if a["id"] == asset_id), None)
+    if asset is None:
+        raise MediaError(t("media", "asset_not_found", asset_id=asset_id))
+    source = course["_dir"] / "media" / str(asset.get("file") or "").removeprefix("media/")
+    if not str(asset.get("file") or "").lower().endswith(".svg") or not source.is_file():
+        raise MediaError(t("media", "embed_needs_svg", asset=asset_id))
+    svg = re.sub(r"^\s*<\?xml[^>]*\?>\s*", "", source.read_text(encoding="utf-8"))
+    title = (asset.get("title") or asset_id).replace("&", "&amp;").replace("<", "&lt;")
+    page = (f'<!doctype html>\n<html lang="{coursemod.language(course)}">\n<head>\n<meta charset="utf-8">\n'
+            '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+            f"<title>{title}</title>\n<style>html,body{{margin:0;background:transparent}}svg{{display:block;width:100%;height:auto}}\n"
+            "@media (prefers-reduced-motion: reduce){svg *{animation-play-state:paused !important}}</style>\n</head>\n"
+            f"<body>\n{svg}\n</body>\n</html>\n")
+    folder = course["_dir"] / "media" / "src" / asset_id
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "index.html").write_text(page, encoding="utf-8", newline="\n")
+    return t("media", "embed_written", path=(folder / "index.html").as_posix(), asset=asset_id)
+
+
+def redo(course: dict, ids: list[str] | None = None, everything: bool = False) -> list[str]:
+    """Marks assets to be produced again: the ones named, else those that use the theme and were made with other tokens than the
+    current ones (every one that uses the theme with `everything`). They go back to `scripted`, forgetting the fingerprint and
+    the uploaded path; their script and file stay for the agent to start from."""
+    cfg = config(course=course)
+    ry, path, data = load_manifest(course["_dir"])
+    found = thememod.status(course["_project"], course)
+    current = thememod.fingerprint(found.tokens) if found.tokens else None
+    known = {a["id"] for a in data["assets"]}
+    for asset_id in ids or []:
+        if asset_id not in known:
+            raise MediaError(t("media", "asset_not_found", asset_id=asset_id))
+    chosen = []
+    for asset in data["assets"]:
+        if ids:
+            hit = asset["id"] in ids
+        else:
+            themed = asset["type"] in (cfg.get("uses_theme") or []) and asset.get("status") in ("produced", "uploaded")
+            hit = themed and (everything or bool(asset.get("theme") and current and asset["theme"] != current))
+        if hit:
+            asset["status"] = "scripted"
+            asset.pop("theme", None)
+            asset["asset_path"] = None
+            for download in asset.get("downloads") or []:
+                download["asset_path"] = None
+            chosen.append(asset["id"])
+    if chosen:
+        with path.open("w", encoding="utf-8", newline="\n") as fh:
+            ry.dump(data, fh)
+    return chosen
+
+
 def set_asset(course: dict, asset_id: str, **values) -> str:
     """Update an asset of the manifest. `download` adds or updates an extra downloadable file."""
     ry, path, data = load_manifest(course["_dir"])

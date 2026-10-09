@@ -171,3 +171,14 @@ def test_the_rule_adds_programs_to_the_media_agent(project):  # noqa: F811
     path.write_text(path.read_text(encoding="utf-8") + "\nrules:\n  handoff:\n    media_tools: [blender, bash]\n", encoding="utf-8")
     programs = launch.media_programs(find_project(project))
     assert "blender" in programs and "bash" in programs
+
+
+def test_a_command_is_split_only_outside_quotes():
+    parts = launch._command_parts('ls x | grep -i -E "course|slxd"; cat y && echo "a;b" || true')
+    assert [p.split()[0] for p in parts] == ["ls", "grep", "cat", "echo", "true"]
+    assert launch.blocked_programs.__doc__
+
+
+def test_a_quoted_bar_is_not_taken_for_a_program(tmp_path):
+    log = write_events(tmp_path / "a.log", [bash("1", 'cd /x && grep -i -E "course|slxd"; blender -b'), refused("1")])
+    assert launch.blocked_programs(log) == ["blender"]

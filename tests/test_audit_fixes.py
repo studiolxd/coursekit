@@ -134,3 +134,81 @@ def test_the_voice_chosen_for_a_course_does_not_replace_the_list_of_voice_provid
     chosen = {"media": {"voice": {"provider": "piper", "voice": "x.onnx"}}}
     voices = configmod.effective("media", None, chosen).value["voice"]
     assert isinstance(voices, list) and voices
+
+
+def test_a_file_is_sent_to_the_upload_address(tmp_path, monkeypatch):
+    sent = {}
+
+    def urlopen(req, timeout=0):
+        sent.update(url=req.full_url, method=req.get_method(), body=req.data, type=req.get_header("Content-type"))
+
+        class Done:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc):
+                return False
+
+            def read(self):
+                return b""
+
+        return Done()
+
+    monkeypatch.setattr("urllib.request.urlopen", urlopen)
+    picture = tmp_path / "a.png"
+    picture.write_bytes(b"png")
+    assert "uploaded a.png (3 bytes)" in mediatools.upload(picture, "https://store.example/u?s=1", "image/png")
+    assert sent == {"url": "https://store.example/u?s=1", "method": "PUT", "body": b"png", "type": "image/png"}
+    with pytest.raises(mediatools.ToolError, match="https://"):
+        mediatools.upload(picture, "http://store.example/u", "image/png")
+
+
+def test_media_redo_marks_the_assets_made_with_another_theme(course, capsys):  # noqa: F811
+    path = course / "media" / "manifest.yaml"
+    assert main(["media", "extract", "PWD"]) == 0
+    manifest = yaml.safe_load(path.read_text(encoding="utf-8"))
+    uses = ("infographic", "diagram", "animated_gif", "simulation", "video", "terminal_demo")
+    themed = next(a for a in manifest["assets"] if a["type"] in uses)
+    plain = next((a for a in manifest["assets"] if a["type"] not in uses), None)
+    tokens = course.parent.parent / "theme" / "tokens.json"
+    tokens.parent.mkdir(exist_ok=True)
+    tokens.write_text('{"origin": {"source": "creator"}, "color": {"accent": "#112233"}}', encoding="utf-8")
+    for asset in manifest["assets"]:
+        asset.update(status="uploaded", asset_path="p/x.png", theme="old")
+    path.write_text(yaml.safe_dump(manifest, allow_unicode=True), encoding="utf-8")
+    capsys.readouterr()
+    assert main(["media", "redo", "PWD"]) == 0
+    assert themed["id"] in capsys.readouterr().out
+    after = {a["id"]: a for a in yaml.safe_load(path.read_text(encoding="utf-8"))["assets"]}
+    assert after[themed["id"]]["status"] == "scripted" and after[themed["id"]]["asset_path"] is None
+    assert "theme" not in after[themed["id"]]
+    if plain:
+        assert after[plain["id"]]["status"] == "uploaded"
+    assert main(["media", "redo", "PWD", "NOPE"]) == 1
+    named = plain["id"] if plain else themed["id"]
+    assert main(["media", "redo", "PWD", named, themed["id"]]) == 0
+    again = {a["id"]: a for a in yaml.safe_load(path.read_text(encoding="utf-8"))["assets"]}
+    assert again[named]["status"] == "scripted"
+
+
+
+def test_an_svg_asset_becomes_an_embed_block_and_gets_its_package(course, capsys):  # noqa: F811
+    from coursekit.assemble import placeholder_brick
+
+    asset = {"id": "U1-S1-M1", "status": "uploaded", "asset_path": "embeds/x", "file": "media/files/U1-S1-M1.svg", "alt": "a"}
+    brick = placeholder_brick("animated_gif", {"title": "Animation"}, asset, "Resource")
+    assert brick["type"] == "EMBED" and brick["data"]["properties"]["embedFolderPrefix"] == "embeds/x"
+    assert placeholder_brick("animated_gif", {"title": "A"}, {**asset, "file": "media/files/U1-S1-M1.gif"}, "Resource")["type"] == "IMAGE"
+    assert main(["media", "extract", "PWD"]) == 0
+    path = course / "media" / "manifest.yaml"
+    manifest = yaml.safe_load(path.read_text(encoding="utf-8"))
+    first = manifest["assets"][0]["id"]
+    (course / "media" / "files").mkdir(exist_ok=True)
+    (course / "media" / "files" / f"{first}.svg").write_text('<?xml version="1.0"?><svg viewBox="0 0 1 1"><title>t</title></svg>',
+                                                             encoding="utf-8")
+    assert main(["media", "set", "PWD", first, "--status", "pending", "--file", f"media/files/{first}.svg"]) == 0
+    capsys.readouterr()
+    assert main(["media", "embed", "PWD", first]) == 0
+    page = (course / "media" / "src" / first / "index.html").read_text(encoding="utf-8")
+    assert "<svg" in page and "<?xml" not in page and "prefers-reduced-motion" in page
+    assert main(["media", "embed", "PWD", "NOPE"]) == 1

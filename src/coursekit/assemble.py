@@ -324,6 +324,8 @@ def placeholder_brick(kind: str, fields: dict, asset: dict | None, label: str, w
     if asset and asset.get("asset_path") and asset.get("status") == "uploaded":
         meta["asset"] = asset["id"]
         caption = inline(title)
+        if media == "image" and str(asset.get("file") or "").lower().endswith(".svg"):
+            media = "embed"  # creator does not take SVG as an image: it goes up as an EMBED package (`coursekit media embed`)
         if media == "image":
             return {"type": "IMAGE", "data": {"properties": {"imagePath": asset["asset_path"], "imageAlt": asset.get("alt")},
                                               "content": {"content": caption}}, "meta": meta}

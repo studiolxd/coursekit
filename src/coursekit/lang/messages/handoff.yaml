@@ -78,3 +78,6 @@ cause_line:
 agent_said_line:
   es: "  El agente dijo: {text}"
   en: "  The agent said: {text}"
+media_not_uploaded:
+  es: "{code}: quedan recursos multimedia sin subir a creator tras los intentos: {assets}"
+  en: "{code}: media assets are still not uploaded to creator after the attempts: {assets}"

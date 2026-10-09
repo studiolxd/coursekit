@@ -49,6 +49,16 @@ def fetch(req: urllib.request.Request, timeout: int = 300) -> bytes:
         raise ToolError(t("mediatools", "network_failed", host=req.host, reason=getattr(exc, "reason", exc))) from None
 
 
+def upload(path: Path, url: str, content_type: str, method: str = "PUT") -> str:
+    """Sends a file to the upload address a platform minted for it (creator's `request_asset_upload` gives `uploadUrl`)."""
+    require_file(path)
+    if not url.startswith("https://"):
+        raise ToolError(t("mediatools", "upload_not_https"))
+    req = urllib.request.Request(url, data=path.read_bytes(), method=method.upper(), headers={"Content-Type": content_type})
+    fetch(req)
+    return t("mediatools", "uploaded", name=path.name, size=path.stat().st_size)
+
+
 def require_file(path: Path) -> None:
     if not path.is_file():
         raise ToolError(t("mediatools", "input_missing", path=path.as_posix()))

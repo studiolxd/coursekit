@@ -33,6 +33,12 @@ The generator names each content after its **unit**. The plan gives the title it
 (`content_title`): the course title when it has a single unit, otherwise
 "{{t_unit}} N. <unit title>". Step 3 applies it.
 
+## Theme of the contents (every run)
+
+`coursekit theme show --course <CODE>` gives the id of the theme of the course. At the start of every run, also when the contents
+already exist, `set_content_theme` with that id on each content of the course: setting it again does no harm and it is what makes
+the contents follow a theme that was changed and imported again.
+
 ## 2. Plan and differences, per unit
 
 1. `coursekit assemble plan <CODE> --unit N`: writes `assembly/unit-NN.plan.json`. Errors are

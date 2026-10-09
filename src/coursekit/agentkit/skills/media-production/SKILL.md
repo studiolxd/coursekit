@@ -52,9 +52,13 @@ credits.
   (`search_stock_images` + `import_stock_image`).
 - **Infographic, Diagram** — SVG written by you, with the colours and fonts of `tokens.json`,
   real text in {{language_name}}, `<title>` and `<desc>` for accessibility, readable at 1280 px.
-  If the learner should keep it, also a PDF (`media set --download`).
+  If the learner should keep it, also a PDF (`media set --download`). With the creator backend the
+  platform accepts only PNG, JPEG, WebP and GIF as an image: keep the SVG as the source in
+  `media/src/` and export a PNG (a Remotion still, or any renderer available) as the asset `--file`.
 - **Animated GIF** — if it shows a terminal, VHS (`media/src/<id>.tape`, light theme; relative
-  or quoted `Output` path). Otherwise animated SVG or a short Remotion composition.
+  or quoted `Output` path). Otherwise animated SVG (`media/files/<id>.svg`) or a short Remotion
+  composition exported to GIF. Creator rejects SVG as an image: an animated SVG goes up as an EMBED
+  package, see step 4.
 - **Interactive terminal demo** — asciinema recording of the script's commands and an EMBED
   package (`media/src/<id>/index.html` with the player and `tokens.css`).
 - **Video** — Remotion composition with the script's scenes, diagrams and tokens; voice-over with
@@ -71,9 +75,17 @@ Alt text is mandatory for images and captions for every video.
 ## 4. Upload
 
 Assets are **not approved one by one**: they are validated in the assembled course (preview).
-1. Upload to the unit's content: `request_asset_upload` (image, video, audio) or
-   `request_embed_upload` (simulations and demos); upload the file with the `curlCommand` it
-   returns and keep the `path` / `embedFolderPrefix`:
+1. Upload to the unit's content, which exists once `/assemble` has created it (`content_id` of the unit in `course.yaml`):
+   until then leave the assets `produced`; after `/assemble`, upload them and run `/assemble` again, which puts each one in place
+   of its placeholder. `request_asset_upload` (image, video, audio, subtitles) or `request_embed_upload` (simulations and demos,
+   one request per file of the package, all with the same `folderId`) return an `uploadUrl`. Send the file with
+   `coursekit media upload <CODE> --file <file> --url "<uploadUrl>" --content-type <MIME>` (the same MIME type the upload was
+   requested with); do not use `curl`, a session without an interface cannot run it. Keep the `path` / `embedFolderPrefix`:
    `coursekit media set <CODE> <id> --status uploaded --asset-path <path>`.
+   An SVG (animated, or any one you cannot export to PNG) goes up as an EMBED package:
+   `coursekit media embed <CODE> <id>` wraps it in `media/src/<id>/index.html`; upload that file with
+   `request_embed_upload` (`folderId` = the asset id, `relativePath` = `index.html`, `text/html`) and
+   `coursekit media upload`, and record the `embedFolderPrefix` as the `--asset-path`. Keep the `.svg` as the
+   asset `--file`: the assembly puts an EMBED block where it sees an SVG.
 2. `/assemble <CODE> <N>` replaces each placeholder with its media block.
 3. Summarise for the person what was produced and with what, to review it in the preview.
