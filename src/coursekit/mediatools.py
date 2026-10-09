@@ -21,6 +21,7 @@ from pathlib import Path
 
 from coursekit import course as coursemod
 from coursekit.i18n import t
+from coursekit.util import USER_AGENT
 from coursekit.voices import LOCALES, resolve
 
 
@@ -54,7 +55,8 @@ def upload(path: Path, url: str, content_type: str, method: str = "PUT") -> str:
     require_file(path)
     if not url.startswith("https://"):
         raise ToolError(t("mediatools", "upload_not_https"))
-    req = urllib.request.Request(url, data=path.read_bytes(), method=method.upper(), headers={"Content-Type": content_type})
+    headers = {"Content-Type": content_type, "User-Agent": USER_AGENT}
+    req = urllib.request.Request(url, data=path.read_bytes(), method=method.upper(), headers=headers)
     fetch(req)
     return t("mediatools", "uploaded", name=path.name, size=path.stat().st_size)
 

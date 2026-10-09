@@ -152,7 +152,9 @@ def test_delivery_download_saves_and_checks_the_package(course, tmp_path, monkey
     scorm(good)
     scorm(bad, manifest=False)
     served = {"body": good.read_bytes()}
-    monkeypatch.setattr("urllib.request.urlopen", lambda url, timeout=0: Response(served["body"]))
+    agents = []
+    monkeypatch.setattr("urllib.request.urlopen",
+                        lambda req, timeout=0: agents.append(req.get_header("User-agent")) or Response(served["body"]))
     set_status(course, "assembly")
     args = ["delivery", "download", "PWD", "--unit", "1", "--version", "1.0"]
     assert main(args) == 2 and "needs --url" in capsys.readouterr().err
@@ -165,3 +167,4 @@ def test_delivery_download_saves_and_checks_the_package(course, tmp_path, monkey
     path = capsys.readouterr().out.strip().splitlines()[-1]
     assert path.endswith("delivery/PWD-U01-v1.0-scorm12.zip")
     assert main(["delivery", "add", "PWD", "--unit", "1", "--version", "1.0", "--file", path]) == 0
+    assert agents and all(a and a.startswith("coursekit/") for a in agents)  # Cloudflare refuses the default one of Python

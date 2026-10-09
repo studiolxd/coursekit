@@ -932,7 +932,7 @@ coursekit publish PWD
 
 ### `coursekit catalog`
 
-Writes the tracking Excel of every course (sheets Courses, Units and About), built from every `courses/*/course.yaml`. The Units sheet has, per unit, the creator content id and the Preview and Review links as hyperlinks (from `course.yaml › units[N].links`). It is a generated file: never edit it by hand. Who: both.
+Writes the tracking Excel of every course (sheets Courses, Units and About), built from every `courses/*/course.yaml`. The Units sheet has, per unit, the creator content id and the "Share link" (the live preview) and Review links as hyperlinks (from `course.yaml › units[N].links`). It is a generated file: never edit it by hand. Who: both.
 
 ```
 coursekit catalog [--output OUTPUT]

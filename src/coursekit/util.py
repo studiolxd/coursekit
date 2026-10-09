@@ -11,6 +11,11 @@ from pathlib import Path
 import yaml
 from ruamel.yaml import YAML
 
+from coursekit import __version__
+
+# Sent with every download and upload: the services behind Cloudflare refuse the default one of Python (error 1010, a 403).
+USER_AGENT = f"coursekit/{__version__}"
+
 
 def load_yaml(path: Path) -> dict:
     with path.open(encoding="utf-8") as fh:

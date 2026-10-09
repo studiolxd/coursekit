@@ -16,7 +16,7 @@ from pathlib import Path
 from coursekit import clientreview, config, identity
 from coursekit.i18n import t
 from coursekit.states import ensure_active, history_entry
-from coursekit.util import edit_yaml, save_yaml, sha256_file
+from coursekit.util import USER_AGENT, edit_yaml, save_yaml, sha256_file
 
 
 class DeliveryError(Exception):
@@ -70,7 +70,8 @@ def download(course: dict, unit: int, version: str, url: str) -> str:
     path = folder / expected_name(course, unit, version)
     partial = path.with_name(path.name + ".part")
     try:
-        with urllib.request.urlopen(url, timeout=300) as response, partial.open("wb") as out:
+        request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+        with urllib.request.urlopen(request, timeout=300) as response, partial.open("wb") as out:
             while chunk := response.read(1 << 20):
                 out.write(chunk)
     except urllib.error.HTTPError as exc:

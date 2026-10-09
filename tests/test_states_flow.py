@@ -189,9 +189,9 @@ def test_unit_links_survive_a_sync_and_reach_the_catalog(course, capsys):  # noq
     assert main(["catalog", "--output", str(out)]) == 0
     sheet = load_workbook(out)["Unidades"]
     headers = [c.value for c in sheet[1]]
-    assert headers[-2:] == ["Preview", "Review"]
+    assert headers[-2:] == ["Enlace compartido", "Review"]
     assert [c.value for c in sheet[2]][-2:] == ["https://creator.example/p/1", "https://creator.example/r/1"]
-    assert "Preview" not in [c.value for c in load_workbook(out)["Cursos"][1]]
+    assert "Enlace compartido" not in [c.value for c in load_workbook(out)["Cursos"][1]]
 
 
 def test_assemble_link_needs_something_to_record(course, capsys):  # noqa: F811

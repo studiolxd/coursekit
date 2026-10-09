@@ -932,7 +932,7 @@ coursekit publish PWD
 
 ### `coursekit catalog`
 
-Escribe el Excel de seguimiento de todos los cursos (hojas Cursos, Unidades e Información), construido a partir de cada `courses/*/course.yaml`. La hoja Unidades incluye, por unidad, el id del contenido de creator y los enlaces Preview y Review como hipervínculos (de `course.yaml › units[N].links`). Es un fichero generado: no lo edites a mano. Quién: ambos.
+Escribe el Excel de seguimiento de todos los cursos (hojas Cursos, Unidades e Información), construido a partir de cada `courses/*/course.yaml`. La hoja Unidades incluye, por unidad, el id del contenido de creator y los enlaces «Enlace compartido» (el de vista previa) y Review como hipervínculos (de `course.yaml › units[N].links`). Es un fichero generado: no lo edites a mano. Quién: ambos.
 
 ```
 coursekit catalog [--output OUTPUT]
