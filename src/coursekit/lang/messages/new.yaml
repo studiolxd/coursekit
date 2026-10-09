@@ -1,0 +1,2 @@
+# Errors of `coursekit new`.
+already_exists: {es: "{path} ya existe", en: "{path} already exists"}

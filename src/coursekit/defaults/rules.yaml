@@ -17,6 +17,12 @@ defaults:
     passing_score: 50
     attempts: 2
 
+# Review of each unit before its sign-off.
+review:
+  ai: required                 # required: an AI review (coursekit review, then `coursekit reviewed`) comes before the sign-off
+                               # skip: a unit that verifies counts as reviewed and the person's sign-off is the review
+                               # (either way a person can record their own review of a unit: coursekit reviewed CODE N --by NAME)
+
 # Guidance for the instructional design proposal (given to the design agent).
 design:
   competencies_per_course: "2–4"
@@ -30,6 +36,6 @@ content:
   interactive_per_hour: 4              # distinct interactive directives per content-section hour
   min_interactive_per_content_section: 1
   questions_per_objective: 5           # summative question bank, per objective of the unit
-  placeholder_types: [Imagen, Vídeo, GIF animado, Infografía, Esquema/Diagrama, Simulación interactiva, Demo interactiva en terminal, Audio]
+  placeholder_types: [image, video, animated_gif, infographic, diagram, simulation, terminal_demo, audio]
   # Directives and their creator bricks: config/directives.yaml
   allowed_symbols: "★✔✘·—‹›"

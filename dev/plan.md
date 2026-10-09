@@ -329,7 +329,7 @@ Cada fase termina con algo comprobable. No se pasa a la siguiente con la anterio
 
 | Paso | Qué | Comprobación | Estado |
 |---|---|---|---|
-| 1.1 | Paquete mínimo: `pyproject.toml` (hatchling, Python ≥ 3.12, MIT), `src/coursekit/`, comando `coursekit` con `--version` y `help`, `LICENSE`, CI con ruff, pytest y la comprobación de términos prohibidos. | `uv tool install git+…` y `coursekit --version` en macOS, Linux y Windows; CI en verde. | hecho |
+| 1.1 | Paquete mínimo: `pyproject.toml` (hatchling, Python ≥ 3.12, MIT), `src/coursekit/`, comando `coursekit` con `--version` y `help`, `LICENSE`, CI con ruff y pytest. | `uv tool install git+…` y `coursekit --version` en macOS, Linux y Windows; CI en verde. | hecho |
 | 1.2 | Raíz del proyecto y configuración en capas: el motor busca `project.yaml` hacia arriba (como git busca `.git`), carga los valores del paquete, `project.yaml`, `config/`, `course.yaml` y `.env`; `coursekit config [CODE]` muestra el valor efectivo y su origen. | Tests de fusión de capas; ningún módulo usa rutas relativas al paquete para datos del proyecto. | hecho |
 | 1.3 | `coursekit init <carpeta>` y `init --update`: genera `project.yaml` (preguntas: cliente, idioma, tono, tratamiento, backend, espejo), `.env.example`, `AGENTS.md`, `.gitignore`, `courses/`, `brief/`, `theme/`; `--update` refresca solo lo generado. | `coursekit init demo` en una carpeta vacía y `init --update` sin tocar lo editado por la persona. | hecho |
 | 1.4 | Motor de cursos: `new`, `status`, `sync`, `outline`, `verify`, `approve`, `reviewed`, `brief`, `rules`, con estados, huellas y firmas con la identidad del `.env`. Copiados y limpiados, con tests sobre un curso de ejemplo genérico. | Un curso de ejemplo en `tests/fixtures/` pasa `sync --check` y `verify`; `approve` firma con `COURSEKIT_USER_*`. | hecho |
@@ -340,12 +340,25 @@ Cada fase termina con algo comprobable. No se pasa a la siguiente con la anterio
 Orden alternativo: si corre prisa el backend html, la fase 6 puede ir justo después de la 2;
 3, 4 y 5 son independientes entre sí.
 
+### 7.2 Tandas de mejora acordadas
+
+| Tanda | Contenido | Estado |
+|---|---|---|
+| 1 | Errores como mensajes (`sync`, `directives check`, `tts`, `subtitles`), ayuda de `write` sin opciones de `review`, Azure (clave y región), plurales (`tn`), `publish` con `mirror.provider: none` sin error, índice de `brief` en el idioma del contenido, `COURSEKIT_LANG` del `.env` también en `--help`, `CONTRIBUTING` bilingüe | hecho |
+| 2 | `coursekit hold` / `resume` (solo personas; en pausa se niegan write, review, assemble, deliver, produce y approve); revisión del cliente opcional (`delivery.yaml › client_review.required`, `coursekit client CODE send/changes/approve`, enlaces por unidad con `enable_review`, comentarios con `list_review_comments`, `reply_review_comment` y `set_review_comment_status`); `delivered` solo desde `assembly` o desde `client_review` aprobado; `approve content` se niega si la unidad cambió desde la revisión (`--force`); `run` no arranca un agente sobre un curso en pausa; comandos `/client-feedback` y skill `client-review` | hecho |
+| 3 | `/define-theme [CODE]`: tokens derivados del theme de creator (`list_themes`, `get_theme`), por proyecto con sustitución por curso (`courses/<CODE>/theme/`), origen en `tokens.json`, guardas en `media plan`/`set` y aviso en `doctor` | hecho |
+| 4 | Identificadores internos en inglés (tipos de recurso, claves de directivas) y los términos que escribe el autor en `lang/<idioma>.yaml`, sin alias | hecho |
+| 5 | Almacén común de herramientas por máquina (Remotion y el builder html con `node_modules` enlazado, probado con Remotion en macOS) y `coursekit uninstall` con registro de lo instalado | hecho |
+| 6 | Backend html (fase 6) sobre el almacén común, con `@studiolxd/scorm` y los tokens desde las variables CSS de la maqueta; sin los juegos (sopa de letras, wordle, ahorcado, pasapalabra, memoria, trivial), pendientes | hecho |
+| 7 | Publicación automática: los comandos que cambian un curso (`new`, `sync`, `verify`, `reviewed`, `approve`, `assemble link/build`, `media set`, `delivery add`, `hold`, `resume`, `client`) actualizan la carpeta espejo y el catálogo por sí solos si hay espejo; un fallo del espejo es un aviso. Se quitan los `publish` de `/new-course`, `/approve-design`, `/design-change` y `/deliver`; queda el de la exportación del diseño, porque descargar el Excel no es un comando de coursekit | hecho |
+| 8 | Revisión sin IA: `coursekit reviewed CODE N --by NOMBRE [--note] [--report]` (revisión de una persona, denegada a los agentes, registrada en `units[].review` y en el historial) y la regla `rules › review › ai: required \| skip` (con `skip`, una unidad que verifica cuenta como revisada y se salta la fase `ai_review`); `approve content` no pide el informe de IA en ninguno de los dos casos. Además, el siguiente paso de `status` tras cerrar la ronda del cliente | hecho |
+
 ## 8. Riesgos
 
 | Riesgo | Mitigación |
 |---|---|
 | Un cambio rompe el flujo | El curso de prueba de la fase 2 se recorre en CI (sin interfaz) antes de cada release. |
-| Filtrar datos de proyectos al repo público | Lista de términos prohibidos (nombres, dominios, rutas, tenants) comprobada en CI antes de cada commit a `main`; nada de `courses/` ni de themes de clientes en el paquete. |
+| Filtrar datos de proyectos al repo público | Revisión humana antes de cada commit (nombres, dominios, rutas, tenants); nada de `courses/` ni de themes de clientes en el paquete. |
 | Skills en inglés que escriben peor en castellano | Probarlo en la fase 1 redactando la misma unidad con skills en inglés y en castellano, y comparar. |
 | Windows | Mantener el lanzador `.cmd` y las copias de skills cuando no hay enlaces; probar `init`, `setup` y `brief` en Windows en las fases 1 y 2. |
 | Una herramienta de agente cambia su formato (skills, comandos, MCP, permisos) | Todo lo específico de cada herramienta lo genera `coursekit agents` en un solo sitio; la prueba de compatibilidad de cada release lo detecta. |

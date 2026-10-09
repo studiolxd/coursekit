@@ -18,6 +18,9 @@ from pathlib import Path
 
 from coursekit import config as configmod
 from coursekit import course as coursemod
+from coursekit import lang
+from coursekit import theme as thememod
+from coursekit.i18n import t
 from coursekit.util import roundtrip_yaml
 
 FIELD_KEYS = ("title", "description", "how", "specs")  # in the order of the language's placeholder_fields
@@ -43,7 +46,8 @@ def requirement_met(needs, root: Path | None = None) -> bool | None:
     results = []
     for kind, value in needs.items():
         if kind == "env":
-            results.append(bool(os.environ.get(value, "").strip()))
+            names = [value] if isinstance(value, str) else list(value)
+            results.append(all(os.environ.get(name, "").strip() for name in names))
         elif kind == "bin":
             results.append(shutil.which(value) is not None)
         elif kind == "mcp":
@@ -62,20 +66,22 @@ def options_for(kind: str, cfg: dict, root: Path | None = None) -> list[dict]:
     for option in cfg["types"].get(kind, []):
         met = requirement_met(option.get("needs"), root)
         if met is not False:
-            available = "yes" if met else "if the agent has the MCP tool"
-            if option.get("only"):
-                available += f", only for {option['only']} content"
+            only = option.get("only")
+            if only:
+                available = t("media", "available_yes_only" if met else "available_mcp_only", only=only)
+            else:
+                available = t("media", "available_yes" if met else "available_mcp")
             chain.append({**option, "available": available})
     return chain
 
 
 def scan(course: dict) -> list[dict]:
-    t = coursemod.tokens(course)
-    section_re = re.compile(rf"^## {re.escape(t['section'])} (\d+)\s*[—-]")
-    placeholder_re = re.compile(rf"^>\s*\*\*\[{re.escape(t['placeholder'])}\s*[—-]\s*(.+?)\]\*\*")
-    names = "|".join(re.escape(f) for f in t["placeholder_fields"])
+    tk = coursemod.tokens(course)
+    section_re = re.compile(rf"^## {re.escape(tk['section'])} (\d+)\s*[—-]")
+    placeholder_re = re.compile(rf"^>\s*\*\*\[{re.escape(tk['placeholder'])}\s*[—-]\s*(.+?)\]\*\*")
+    names = "|".join(re.escape(f) for f in tk["placeholder_fields"])
     field_re = re.compile(rf"^>\s*\*\*({names}):\*\*\s*(.*)$")
-    keys = dict(zip(t["placeholder_fields"], FIELD_KEYS, strict=False))
+    keys = dict(zip(tk["placeholder_fields"], FIELD_KEYS, strict=False))
     assets = []
     for unit in course.get("units") or []:
         path = coursemod.unit_dir(course["_dir"], unit["n"]) / "content.md"
@@ -90,7 +96,9 @@ def scan(course: dict) -> list[dict]:
             m = placeholder_re.match(line)
             if m and section is not None:
                 k += 1
-                current = {"id": f"U{unit['n']}-S{section}-M{k}", "unit": unit["n"], "section": section, "type": m.group(1).strip()}
+                written = m.group(1).strip()
+                current = {"id": f"U{unit['n']}-S{section}-M{k}", "unit": unit["n"], "section": section,
+                           "type": lang.media_type_id(tk, written) or written}
                 assets.append(current)
                 continue
             if current is not None:
@@ -155,9 +163,9 @@ def missing_downloads(asset: dict) -> list[str]:
         return []
     downloads = asset.get("downloads") or []
     if not downloads:
-        return ["its specs ask for a downloadable file (PDF…): coursekit media set … --download media/files/<file>"]
+        return [t("media", "missing_download_specs")]
     if asset.get("status") == "uploaded" and not all(d.get("asset_path") for d in downloads):
-        return ["a downloadable file is not uploaded yet: request_asset_upload kind attachment, then --download-asset-path"]
+        return [t("media", "missing_download_upload")]
     return []
 
 
@@ -167,18 +175,27 @@ def plan(course: dict) -> tuple[list[str], list[str]]:
     root = course["_project"].root if course.get("_project") else None
     _, _, data = load_manifest(course["_dir"])
     warnings = [f"{a['id']}: {p}" for a in data["assets"] for p in missing_downloads(a)]
+    uses_theme = [a for a in data["assets"] if a["type"] in (cfg.get("uses_theme") or [])]
+    if uses_theme and course.get("_project"):
+        found = thememod.status(course["_project"], course)
+        if found.state != "derived":
+            warnings.append(t("media", f"theme_{found.state}", code=course["code"]))
+        elif found.tokens:
+            current = thememod.fingerprint(found.tokens)
+            warnings += [t("media", "theme_changed", asset=a["id"]) for a in uses_theme
+                         if a.get("status") in ("produced", "uploaded") and a.get("theme") and a["theme"] != current]
     lines = []
     for a in (a for a in data["assets"] if a.get("status") in ("pending", "scripted")):
         chain = options_for(a["type"], cfg, root)
         lines.append(f"{a['id']} [{a['type']}] {a.get('title', '')}")
         if not chain:
-            lines.append("  no option available: install a tool or set a key (coursekit config media)")
+            lines.append(t("media", "no_option"))
         for option in chain:
             lines.append(f"  - {option['id']} ({option['available']}): {option['how']}")
-        if a["type"] in ("Vídeo", "Audio", "Video"):
+        if a["type"] in ("video", "audio"):
             for group in ("voice", "subtitles"):
                 avail = [o["id"] for o in cfg[group] if requirement_met(o.get("needs"), root) is not False]
-                lines.append(f"    {group}: {', '.join(avail) or 'none available'}")
+                lines.append(t("media", f"{group}_options", options=", ".join(avail)) if avail else t("media", f"{group}_none"))
     return warnings, lines
 
 
@@ -188,10 +205,12 @@ def providers(project) -> list[str]:
     for group in [*cfg["types"].values(), cfg["voice"], cfg["subtitles"]]:
         for option in group:
             seen.setdefault(option["id"], option)
+    words = {True: t("media", "provider_available"), False: t("media", "provider_missing"), None: t("media", "provider_mcp")}
+    width = max(len(w) for w in words.values()) + 1
     out = []
     for oid, option in seen.items():
         met = requirement_met(option.get("needs"), project.root if project else None)
-        out.append(f"{oid:<22} {({True: 'available', False: 'missing', None: 'agent MCP'})[met]:<10} {option['needs']}")
+        out.append(f"{oid:<22} {words[met]:<{width}} {option['needs']}")
     return out
 
 
@@ -200,10 +219,17 @@ def set_asset(course: dict, asset_id: str, **values) -> str:
     ry, path, data = load_manifest(course["_dir"])
     asset = next((a for a in data["assets"] if a["id"] == asset_id), None)
     if asset is None:
-        raise MediaError(f"asset {asset_id} not found (run `coursekit media extract` first)")
-    statuses = config(course=course)["statuses"]
+        raise MediaError(t("media", "asset_not_found", asset_id=asset_id))
+    cfg = config(course=course)
+    statuses = cfg["statuses"]
     if values.get("status") and values["status"] not in statuses:
-        raise MediaError(f"status must be one of {statuses}")
+        raise MediaError(t("media", "bad_status", statuses=statuses))
+    if values.get("status") in ("produced", "uploaded") and asset["type"] in (cfg.get("uses_theme") or []):
+        found = thememod.status(course["_project"], course)
+        if found.state != "derived" and not values.get("force"):
+            raise MediaError(t("media", f"theme_{found.state}", code=course["code"]))
+        if found.tokens:
+            asset["theme"] = thememod.fingerprint(found.tokens)
     for key in ("status", "recipe", "asset_path", "file", "alt", "transcript", "subtitles_path", "made_with"):
         if values.get(key) is not None:
             asset[key] = values[key]
@@ -223,7 +249,7 @@ def set_asset(course: dict, asset_id: str, **values) -> str:
             entry["asset_path"] = values["download_asset_path"]
         asset["downloads"] = downloads
     elif values.get("download_title") or values.get("download_asset_path"):
-        raise MediaError("--download-title and --download-asset-path need --download FILE")
+        raise MediaError(t("media", "download_needs_file"))
     with path.open("w", encoding="utf-8", newline="\n") as fh:
         ry.dump(data, fh)
     return f"{asset_id}: {asset.get('status')}"

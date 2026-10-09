@@ -18,6 +18,10 @@ permission:
     "git commit*": deny
     "git push*": deny
     "*coursekit approve*": deny
+    "*coursekit client*": deny
+    "*coursekit hold*": deny
+    "*coursekit resume*": deny
+    "*coursekit reviewed*--by*": deny
 ---
 
 You are the e-learning content reviewer of the {{project_name}} team. Follow the `/review-unit` command

@@ -28,6 +28,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, quote, unquote, urlencode, urlsplit, urlunsplit
 
 from coursekit import catalog, config
+from coursekit.i18n import t
 from coursekit.project import Project
 
 
@@ -166,42 +167,44 @@ def mirror_settings(project: Project) -> tuple[str, str, Path | None]:
 def check(project: Project) -> list[str]:
     provider, url, root = mirror_settings(project)
     if provider == "none":
-        return ["info: no mirror folder (project.yaml › mirror.provider: none)"]
+        return [t("publish", "check_none")]
     if root is None:
-        return ["warning: MIRROR_DIR is not set in .env; nothing will be published"]
+        return [t("publish", "check_no_dir")]
     if not root.is_dir():
-        return [f"warning: MIRROR_DIR does not exist: {root}"]
-    lines = [f"ok: {provider} mirror in {root}"]
+        return [t("publish", "check_dir_missing", root=root)]
+    lines = [t("publish", "check_ok", provider=provider, root=root)]
     link = folder_link(provider, url)
     if not url:
-        lines.append("info: no mirror.url in project.yaml; the catalog will have no folder links")
+        lines.append(t("publish", "check_no_url"))
     elif link is None:
-        lines.append("warning: mirror.url is a sharing link without a folder path; copy the address bar of the folder instead")
+        lines.append(t("publish", "check_sharing_link"))
     else:
-        lines.append(f"ok: course folder links like {link('ABC101')}")
+        lines.append(t("publish", "check_links", link=link("ABC101")))
     return lines
 
 
 def publish(project: Project, code: str | None = None, only_if_configured: bool = False) -> list[str]:
     provider, url, root = mirror_settings(project)
-    if provider == "none" or root is None:
+    if provider == "none":  # a choice, not a mistake: the agents' commands call publish in every project
+        return [] if only_if_configured else [t("publish", "skipped_none")]
+    if root is None:
         if only_if_configured:
             return []
-        raise PublishError("no mirror folder configured (project.yaml › mirror and MIRROR_DIR in .env)")
+        raise PublishError(t("publish", "no_mirror"))
     if not root.is_dir():
-        raise PublishError(f"MIRROR_DIR does not exist: {root}")
+        raise PublishError(t("publish", "dir_missing", root=root))
     courses = [d for d in project.iter_courses() if code is None or d.name in (code, code.upper())]
     if code and not courses:
-        raise PublishError(f"course {code} not found")
+        raise PublishError(t("publish", "course_not_found", code=code))
     lines = []
     for course_dir in courses:
         copied, removed, unchanged = publish_course(course_dir, root)
         if copied or removed:
-            lines.append(f"published {course_dir.name}: {copied} copied, {removed} removed, {unchanged} unchanged")
+            lines.append(t("publish", "published", name=course_dir.name, copied=copied, removed=removed, unchanged=unchanged))
     output = root / catalog.file_name(project)
     try:
         n_courses, n_units = catalog.build(project, output, folder_link(provider, url))
     except PermissionError as exc:
-        raise PublishError(f"cannot replace {output} (is it open in Excel?)") from exc
-    lines.append(f"wrote {output} ({n_courses} courses, {n_units} units)")
+        raise PublishError(t("publish", "cannot_replace", output=output)) from exc
+    lines.append(t("publish", "wrote_catalog", output=output, courses=n_courses, units=n_units))
     return lines

@@ -1,0 +1,14 @@
+# Output of `coursekit directives check`.
+catalog_missing:
+  es: "no existe {path}: guarda en ese fichero el resultado de list_brick_types (/sync-directives lo hace)"
+  en: "{path} does not exist: save the result of list_brick_types in that file (/sync-directives does it)"
+not_a_catalog:
+  es: "{path} no parece un resultado de list_brick_types (falta 'categories')"
+  en: "{path} does not look like a list_brick_types result (no 'categories')"
+new_brick: {es: "NUEVO    {brick} [{category}] {when}", en: "NEW     {brick} [{category}] {when}"}
+removed_directive:
+  es: "RETIRADO {brick} (en la directiva {directive})"
+  en: "REMOVED {brick} (in directive {directive})"
+removed_ignored:
+  es: "RETIRADO {brick} (en not_directives)"
+  en: "REMOVED {brick} (in not_directives)"

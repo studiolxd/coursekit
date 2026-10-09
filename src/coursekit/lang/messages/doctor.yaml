@@ -1,0 +1,57 @@
+# Output of `coursekit doctor`.
+mark_ok: {es: ok, en: ok}
+mark_missing: {es: falta, en: missing}
+mark_info: {es: info, en: info}
+section_base: {es: Base, en: Base}
+section_tools: {es: Herramientas de agente, en: Agent tools}
+section_network: {es: Red, en: Network}
+section_mirror: {es: Carpeta espejo, en: Mirror folder}
+store: {es: "almacén de coursekit {path} ({size})", en: "coursekit store {path} ({size})"}
+remotion_deps: {es: "dependencias de Remotion (tools/remotion/node_modules)", en: "Remotion dependencies (tools/remotion/node_modules)"}
+html_builder: {es: "constructor del backend html (@studiolxd/scorm y esbuild)", en: "html backend builder (@studiolxd/scorm and esbuild)"}
+section_theme: {es: "Theme del proyecto", en: "Project theme"}
+theme_derived: {es: "tokens derivados del theme de la plataforma", en: "tokens derived from the theme of the platform"}
+theme_missing: {es: "sin tokens de diseño (theme/tokens.json)", en: "no design tokens (theme/tokens.json)"}
+theme_manual: {es: "tokens escritos a mano, no derivados de la plataforma", en: "tokens written by hand, not derived from the platform"}
+theme_hint: {es: "/define-theme antes de producir multimedia", en: "/define-theme before producing media"}
+section_media: {es: "Multimedia (opcional: coursekit setup --media)", en: "Media (optional: coursekit setup --media)"}
+mcp_server: {es: "servidor MCP de slxd '{mcp}'", en: "slxd MCP server '{mcp}'"}
+mcp_no_url:
+  es: "servidor MCP de slxd '{mcp}': falta mcp_url en project.yaml › platform.slxd"
+  en: "slxd MCP server '{mcp}': no mcp_url in project.yaml › platform.slxd"
+not_installed: {es: "{name}: no instalado", en: "{name}: not installed"}
+skills_commands: {es: "{name}: skills y comandos", en: "{name}: skills and commands"}
+mcp_of_tool: {es: "{name}: MCP {mcp}", en: "{name}: MCP {mcp}"}
+role_line: {es: "{role}: {tool} · {model}", en: "{role}: {tool} · {model}"}
+default_model: {es: modelo por defecto, en: default model}
+role_hint:
+  es: "instala {tool} o cambia {key} en .env"
+  en: "install {tool} or change {key} in .env"
+same_model:
+  es: "redactor y revisor usan la misma herramienta y modelo (otro modelo detecta más)"
+  en: "writer and reviewer use the same tool and model (another model catches more)"
+coursekit_line: {es: "coursekit {version} (Python {python})", en: "coursekit {version} (Python {python})"}
+env_file: {es: ".env", en: ".env"}
+identity_with: {es: "identidad de firma: {who}", en: "signing identity: {who}"}
+identity_without: {es: "identidad de firma", en: "signing identity"}
+git_hooks: {es: "hooks de git", en: "git hooks"}
+not_a_repo: {es: "no es un repositorio git", en: "not a git repository"}
+markitdown: {es: "MarkItDown (coursekit brief)", en: "MarkItDown (coursekit brief)"}
+markitdown_hint: {es: "reinstala coursekit", en: "reinstall coursekit"}
+node_line: {es: "Node (enlaces web de brief/links.md)", en: "Node (web links of brief/links.md)"}
+ca_set: {es: "certificado CA corporativo: NODE_EXTRA_CA_CERTS ({cert})", en: "corporate CA certificate: NODE_EXTRA_CA_CERTS ({cert})"}
+ca_none:
+  es: "ningún certificado CA corporativo configurado ni encontrado (project.yaml › network)"
+  en: "no corporate CA certificate configured or found (project.yaml › network)"
+mirror_none: {es: "sin carpeta espejo (project.yaml › mirror)", en: "no mirror folder (project.yaml › mirror)"}
+mirror_dir: {es: "{provider}: MIRROR_DIR", en: "{provider}: MIRROR_DIR"}
+mirror_hint:
+  es: "defínela en .env (ruta local de la carpeta sincronizada)"
+  en: "set it in .env (local path of the synced folder)"
+asciinema_windows:
+  es: "asciinema: no disponible en Windows (las demos de terminal usan VHS)"
+  en: "asciinema: not available on Windows (terminal demos fall back to VHS)"
+azure_region_hint:
+  es: "con AZURE_SPEECH_KEY hace falta la región de tu recurso de Azure Speech en .env"
+  en: "AZURE_SPEECH_KEY needs the region of your Azure Speech resource in .env"
+key_optional: {es: "{key} (opcional)", en: "{key} (optional)"}

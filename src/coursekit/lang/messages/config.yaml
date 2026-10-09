@@ -1,0 +1,4 @@
+# Errors of the layered configuration.
+unknown_config:
+  es: "configuración desconocida {name!r} (una de: {names})"
+  en: "unknown configuration {name!r} (one of: {names})"

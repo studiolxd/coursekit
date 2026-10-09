@@ -21,14 +21,25 @@ import subprocess
 from importlib import resources
 from pathlib import Path
 
+from coursekit import i18n
 from coursekit.lang import format_number
 from coursekit.util import sha256_file
 
 WEB2MD = Path(str(resources.files("coursekit.tools").joinpath("web2md.js")))
 
 
-def fmt(number: int) -> str:
-    return format_number(number, "es")
+def fmt(number: int, lang: str) -> str:
+    return format_number(number, lang)
+
+
+def note(key: str, **values: object) -> tuple[str, dict]:
+    """A warning about a file, kept as a key so it can be shown in any language."""
+    return key, values
+
+
+def render(item: tuple[str, dict], lang: str) -> str:
+    key, values = item
+    return i18n.t_in(lang, "brief", f"note_{key}", **values)
 
 
 STATE = ".state.json"
@@ -73,15 +84,15 @@ def site_slug(url: str) -> str:
     return re.sub(r"[^\w]+", "-", re.sub(r"^https?://", "", url)).strip("-")
 
 
-def markitdown(src: Path) -> tuple[str | None, str | None]:
+def markitdown(src: Path) -> tuple[str | None, tuple[str, dict] | None]:
     try:
         from markitdown import MarkItDown
     except ImportError:
-        return None, "falta MarkItDown (coursekit setup)"
+        return None, note("markitdown_missing")
     try:
         return MarkItDown().convert(str(src)).text_content or "", None
     except Exception as exc:  # noqa: BLE001 — any converter error is reported per file
-        return None, f"no se pudo convertir: {type(exc).__name__}: {str(exc)[:200]}"
+        return None, note("convert_failed", error=f"{type(exc).__name__}: {str(exc)[:200]}")
 
 
 def text_path(out_root: Path, rel: str) -> Path:
@@ -103,17 +114,17 @@ def convert_files(brief: Path, state: dict) -> tuple[list[dict], int]:
         size_mb = src.stat().st_size / 1_000_000
         row = {"source": f"sources/{rel}", "text": None, "title": src.stem, "words": 0, "notes": []}
         if size_mb > MAX_MB:
-            row["notes"].append(f"pesa {size_mb:.0f} MB: mejor fuera de git (enlace o transcripción)")
+            row["notes"].append(note("heavy", mb=f"{size_mb:.0f}"))
         if ext in IMAGES:
-            row["kind"] = "imagen"
+            row["kind"] = "image"
             rows.append(row)
             continue
         if ext in AUDIO_VIDEO:
-            row["kind"] = "audio/vídeo"
-            row["notes"].append("sin transcripción: añade un .vtt/.txt con el texto")
+            row["kind"] = "media"
+            row["notes"].append(note("no_transcript"))
             rows.append(row)
             continue
-        row["kind"] = "documento"
+        row["kind"] = "document"
         present.add(rel)
         target = text_path(out_root, rel)
         digest = sha256_file(src)
@@ -138,7 +149,7 @@ def convert_files(brief: Path, state: dict) -> tuple[list[dict], int]:
         text = target.read_text(encoding="utf-8")
         row.update(text=target.relative_to(brief).as_posix(), title=title_of(text, src.stem), words=words(text))
         if row["words"] < MIN_WORDS:
-            row["notes"].append("casi sin texto: ¿escaneado? necesita OCR")
+            row["notes"].append(note("no_text"))
         rows.append(row)
     # Remove conversions of files that are no longer in sources/.
     for rel in set(previous) - present:
@@ -165,20 +176,20 @@ def download_links(brief: Path, state: dict, refresh: bool, log=None) -> tuple[l
             if node is None:
                 failed += 1
                 rows.append({"url": url, "note": note, "folder": None, "pages": 0, "words": 0,
-                             "downloaded": None, "notes": ["falta Node (nodejs.org)"]})
+                             "downloaded": None, "notes": [note("node_missing")]})
                 continue
             if folder.exists():
                 shutil.rmtree(folder)
             if log:
-                log(f"descargando {url} …")
+                log(i18n.t("brief", "downloading", url=url))
             proc = subprocess.run([node, str(WEB2MD), url, "--out", str(folder)],
                                   capture_output=True, text=True, encoding="utf-8", errors="replace")
             info["downloaded"] = dt.date.today().isoformat()
             info["errors"] = proc.returncode != 0
         pages = [p for p in folder.rglob("*.md") if p.name != "README.md"] if folder.exists() else []
-        notes = ["algunas páginas fallaron (coursekit brief --refresh)"] if info.get("errors") else []
+        notes = [note("pages_failed")] if info.get("errors") else []
         if folder.exists() and not pages:
-            notes.append("no se extrajo texto (¿web con JavaScript?)")
+            notes.append(note("no_web_text"))
         rows.append({"url": url, "note": note, "folder": folder.relative_to(brief).as_posix() if folder.exists() else None,
                      "pages": len(pages), "words": sum(words(p.read_text(encoding="utf-8")) for p in pages),
                      "downloaded": info.get("downloaded"), "notes": notes})
@@ -193,47 +204,50 @@ def cell(text: str) -> str:
     return str(text).replace("|", "\\|").replace("\n", " ")
 
 
-def write_index(brief: Path, code: str, files: list[dict], webs: list[dict], general: str | None = None) -> None:
+def write_index(brief: Path, code: str, files: list[dict], webs: list[dict], general: str | None, lang: str) -> None:
+    def say(key: str, **values: object) -> str:
+        return i18n.t_in(lang, "brief", key, **values)
+
+    def warnings(row: dict) -> str:
+        return cell("; ".join(render(n, lang) for n in row["notes"]))
+
     notes_text = strip_frontmatter(re.sub(r"<!--.*?-->", "", (brief / "notes.md").read_text(encoding="utf-8"), flags=re.S))
     has_notes = words(re.sub(r"^#.*$", "", notes_text, flags=re.M)) > 0
-    docs = [f for f in files if f["kind"] == "documento"]
+    docs = [f for f in files if f["kind"] == "document"]
     total = sum(f["words"] for f in docs) + sum(w["words"] for w in webs)
     out = [
-        f"# Material de referencia — {code}",
+        say("index_title", code=code),
         "",
-        "> Generado por `coursekit brief`. No lo edites: cambia `sources/`, `links.md` o `notes.md` y",
-        "> vuelve a ejecutarlo. Agentes: leed este índice, luego `notes.md` y abrid en `text/` solo",
-        "> lo que toque a vuestra tarea. Los originales de `sources/` solo para imágenes.",
+        *say("index_generated").rstrip("\n").split("\n"),
         "",
-        f"Actualizado: {dt.date.today().isoformat()} · {len(docs)} documentos · {len(webs)} webs · "
-        f"{fmt(total)} palabras · indicaciones en `notes.md`: {'sí' if has_notes else 'no'}",
+        say("index_updated", date=dt.date.today().isoformat(), documents=len(docs), webs=len(webs), words=fmt(total, lang),
+            notes=say("answer_yes" if has_notes else "answer_no")),
         "",
     ]
     if general:
-        out += [f"Material general del proyecto: `{general}` (léelo también).", ""]
+        out += [say("index_general", general=general), ""]
     if docs:
-        out += ["## Documentos", "", "| Documento | Texto | Palabras | Avisos |", "|---|---|---:|---|"]
+        out += [say("section_documents"), "", say("header_documents"), "|---|---|---:|---|"]
         out += [f"| {cell(f['title'])} (`{cell(f['source'])}`) | " + (f"`{f['text']}`" if f["text"] else "—")
-                + f" | {fmt(f['words'])} | {cell('; '.join(f['notes']))} |" for f in docs]
+                + f" | {fmt(f['words'], lang)} | {warnings(f)} |" for f in docs]
         out.append("")
     if webs:
-        out += ["## Webs", "", "| URL | Nota | Texto | Páginas | Palabras | Descargada | Avisos |", "|---|---|---|---:|---:|---|---|"]
-        out += [f"| {w['url']} | {cell(w['note'])} | " + (f"`{w['folder']}/` (índice: `README.md`)" if w["folder"] else "—")
-                + f" | {w['pages']} | {fmt(w['words'])} | {w['downloaded'] or '—'} | {cell('; '.join(w['notes']))} |" for w in webs]
+        out += [say("section_webs"), "", say("header_webs"), "|---|---|---|---:|---:|---|---|"]
+        out += [f"| {w['url']} | {cell(w['note'])} | " + (say("web_text_index", folder=w["folder"]) if w["folder"] else "—")
+                + f" | {w['pages']} | {fmt(w['words'], lang)} | {w['downloaded'] or '—'} | {warnings(w)} |" for w in webs]
         out.append("")
-    other = [f for f in files if f["kind"] != "documento"]
+    other = [f for f in files if f["kind"] != "document"]
     if other:
-        out += ["## Imágenes, audio y vídeo", "", "Sin texto: las imágenes se abren directamente desde `sources/`.", "",
-                "| Fichero | Tipo | Avisos |", "|---|---|---|"]
-        out += [f"| `{cell(f['source'])}` | {f['kind']} | {cell('; '.join(f['notes']))} |" for f in other]
+        out += [say("section_other"), "", say("other_intro"), "", say("header_other"), "|---|---|---|"]
+        out += [f"| `{cell(f['source'])}` | {say('kind_' + f['kind'])} | {warnings(f)} |" for f in other]
         out.append("")
     if not (docs or webs or other):
-        out += ["Sin material todavía: deja ficheros en `sources/` o URLs en `links.md`.", ""]
+        out += [say("index_empty"), ""]
     (brief / "index.md").write_text("\n".join(out), encoding="utf-8")
 
 
-def build(brief: Path, title: str, refresh: bool = False, general: str | None = None, log=None) -> dict:
-    """Convert sources and links of one brief folder and write its index. Returns a summary."""
+def build(brief: Path, title: str, refresh: bool = False, general: str | None = None, log=None, language: str = "es") -> dict:
+    """Convert sources and links of one brief folder and write its index in `language` (the content's). Returns a summary."""
     (brief / "sources").mkdir(parents=True, exist_ok=True)
     state_path = brief / "text" / STATE
     state = json.loads(state_path.read_text(encoding="utf-8")) if state_path.exists() else {}
@@ -243,12 +257,12 @@ def build(brief: Path, title: str, refresh: bool = False, general: str | None = 
     state_path.write_text(json.dumps(state, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     if not (brief / "notes.md").exists():
         (brief / "notes.md").write_text("", encoding="utf-8")
-    write_index(brief, title, files, webs, general)
-    documents = [f for f in files if f["kind"] == "documento"]
+    write_index(brief, title, files, webs, general, language)
+    documents = [f for f in files if f["kind"] == "document"]
     return {
         "documents": len([f for f in documents if f["text"]]),
         "webs": len(webs),
         "media": len(files) - len(documents),
-        "notes": [(item.get("source") or item.get("url"), note) for item in [*files, *webs] for note in item["notes"]],
+        "notes": [(item.get("source") or item.get("url"), render(n, i18n.language())) for item in [*files, *webs] for n in item["notes"]],
         "failed": failed_files + failed_webs,
     }

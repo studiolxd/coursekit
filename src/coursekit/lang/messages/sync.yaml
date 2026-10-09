@@ -1,0 +1,25 @@
+# Messages of `coursekit sync` (units and sections derived from the instructional design).
+matrix_missing:
+  es: "no existe {path}: el diseño aún no está guardado (lanza /new-course o pide al agente que guarde la matriz con design_matrix_get)"
+  en: "{path} does not exist: the design is not saved yet (run /new-course or ask the agent to save the matrix with design_matrix_get)"
+not_a_matrix:
+  es: "{path} no parece un resultado de design_matrix_get (falta 'nodos')"
+  en: "{path} does not look like a design_matrix_get result (no 'nodos')"
+intro_mismatch:
+  es: "{unit} {n}: intro_section está activado pero el primer apartado es '{title}'"
+  en: "{unit} {n}: intro_section is on but the first section is '{title}'"
+summary_mismatch:
+  es: "{unit} {n}: summary_section está activado pero el último apartado es '{title}'"
+  en: "{unit} {n}: summary_section is on but the last section is '{title}'"
+section_without_hours:
+  es: "{unit} {n} › {title}: apartado sin horas en el diseño"
+  en: "{unit} {n} › {title}: section without hours in the design"
+unit_hours_mismatch:
+  es: "{unit} {n}: {declared} h declaradas pero los apartados suman {sections} h"
+  en: "{unit} {n}: {declared} h declared but sections add up to {sections} h"
+total_hours_mismatch:
+  es: "las unidades suman {total} h pero el curso tiene {hours} h"
+  en: "units add up to {total} h but the course has {hours} h"
+headings_differ:
+  es: "{unit} {n}: los encabezados de content.md difieren del diseño; actualízalos a mano"
+  en: "{unit} {n}: content.md headings differ from the design; update them by hand"

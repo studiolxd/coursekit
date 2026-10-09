@@ -1,0 +1,100 @@
+{
+  "themeId": "11111111-2222-4333-8444-555555555555",
+  "name": "ACME training",
+  "version": 3,
+  "usageCount": 0,
+  "isDefault": false,
+  "theme": {
+    "name": "ACME training",
+    "customCss": "",
+    "config": {
+      "globals": {
+        "contentPaddingInline": "2rem"
+      },
+      "colors": {
+        "palette": [
+          {
+            "id": "black",
+            "name": "Black",
+            "value": "#000000",
+            "locked": true
+          },
+          {
+            "id": "white",
+            "name": "White",
+            "value": "#FFFFFF",
+            "locked": true
+          },
+          {
+            "id": "transparent",
+            "name": "Transparent",
+            "value": "transparent",
+            "locked": true
+          },
+          {
+            "id": "accent",
+            "name": "Accent",
+            "value": "#0A58CA",
+            "locked": true
+          },
+          {
+            "id": "navy",
+            "name": "Navy",
+            "value": "#1B365D"
+          }
+        ],
+        "semantic": {
+          "background": {
+            "paletteId": "white"
+          },
+          "headings": {
+            "paletteId": "navy"
+          },
+          "text": {
+            "paletteId": "black"
+          },
+          "accent": {
+            "paletteId": "accent"
+          },
+          "accentText": {
+            "paletteId": "white"
+          },
+          "correct": {
+            "custom": "#14733A"
+          },
+          "wrong": {
+            "custom": "#B3261E"
+          },
+          "link": {
+            "paletteId": "semantic:accent"
+          }
+        },
+        "series": [
+          {
+            "custom": "#2563eb"
+          }
+        ]
+      },
+      "fonts": {
+        "customFonts": [
+          {
+            "id": "acme-sans",
+            "name": "ACME Sans"
+          }
+        ],
+        "assignments": {
+          "text": "system",
+          "headings": "acme-sans",
+          "ui": "system"
+        },
+        "baseFontSize": 17,
+        "baseLineHeight": 1.5
+      },
+      "colorMode": {
+        "mode": "light",
+        "toggle": false
+      }
+    }
+  },
+  "legend": "Theme shape: { name, customCss, config }."
+}

@@ -16,7 +16,15 @@ ROOT_ENV = "COURSEKIT_PROJECT"  # explicit project root, overrides the search
 
 class ProjectNotFound(Exception):
     def __init__(self, start: Path):
-        super().__init__(f"no {PROJECT_FILE} found in {start} or any parent folder (run `coursekit init`)")
+        super().__init__(start)
+        self.start = start
+
+    def __str__(self) -> str:
+        # Translated when shown, not when raised: i18n itself looks for the project to choose the language,
+        # and it imports this module (hence the lazy import).
+        from coursekit.i18n import t
+
+        return t("project", "not_found", file=PROJECT_FILE, start=self.start)
 
 
 @dataclass(frozen=True)

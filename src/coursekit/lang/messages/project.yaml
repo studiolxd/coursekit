@@ -1,0 +1,4 @@
+# Error when no project is found.
+not_found:
+  es: "no se encuentra {file} en {start} ni en ninguna carpeta superior (ejecuta `coursekit init`)"
+  en: "no {file} found in {start} or any parent folder (run `coursekit init`)"

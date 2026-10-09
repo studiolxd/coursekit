@@ -7,7 +7,7 @@ Changes asked for on the instructional design: $ARGUMENTS
 
 The first argument is the course code; the rest, the changes. Run `coursekit brief <CODE>` first
 in case there is new material. Load the `instructional-design` skill and follow its **Changes**
-section, then publish with `coursekit publish <CODE>`.
+section.
 
 If the design was already signed (`course.yaml › approvals`), say that the change invalidates the
 signature and that it must be approved again. Summarise what changed and its consequences (hours,

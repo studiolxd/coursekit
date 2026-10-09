@@ -21,10 +21,11 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from coursekit import config
 from coursekit import course as coursemod
 from coursekit.fingerprint import changed_since_review
+from coursekit.i18n import t
 from coursekit.lang import format_number
+from coursekit.states import now as timestamp
 from coursekit.states import rank, set_unit_status
 from coursekit.util import sha256_file
 
@@ -46,16 +47,21 @@ class Syntax:
     placeholder: re.Pattern
     placeholder_fields: tuple[str, ...]
     question_key: str
+    media_types: dict[str, str]  # how each resource type is written in the language -> its id
 
     @classmethod
-    def for_tokens(cls, t: dict) -> Syntax:
+    def for_tokens(cls, tokens: dict) -> Syntax:
         return cls(
-            section=re.compile(rf"^## {re.escape(t['section'])} (\d+)\s*[—-]\s*(.+?)\s*(\*\(.*\)\*)?\s*$"),
-            objective_tag=re.compile(rf"^\*\[{re.escape(t['objective'])}[^\]]*\]\*\s*$"),
-            placeholder=re.compile(rf"^>\s*\*\*\[{re.escape(t['placeholder'])}\s*[—-]\s*(.+?)\]\*\*"),
-            placeholder_fields=tuple(t["placeholder_fields"]),
-            question_key=t["question_objective_key"],
+            section=re.compile(rf"^## {re.escape(tokens['section'])} (\d+)\s*[—-]\s*(.+?)\s*(\*\(.*\)\*)?\s*$"),
+            objective_tag=re.compile(rf"^\*\[{re.escape(tokens['objective'])}[^\]]*\]\*\s*$"),
+            placeholder=re.compile(rf"^>\s*\*\*\[{re.escape(tokens['placeholder'])}\s*[—-]\s*(.+?)\]\*\*"),
+            placeholder_fields=tuple(tokens["placeholder_fields"]),
+            question_key=tokens["question_objective_key"],
+            media_types={written.casefold(): type_id for type_id, written in tokens["media_types"].items()},
         )
+
+    def media_type(self, written: str) -> str | None:
+        return self.media_types.get(written.strip().casefold())
 
 
 @dataclass
@@ -94,7 +100,7 @@ def check_pictographs(path: Path, text: str, allowed: str, report: Report) -> No
         found = {ch for ch in PICTOGRAPH_RE.findall(line) if ch not in allowed}
         if found:
             chars = " ".join(f"U+{ord(c):04X}" for c in sorted(found))
-            report.error(f"{path.name}:{i}: emoji/pictograph not allowed ({chars})")
+            report.error(t("verify", "pictograph", file=path.name, line=i, chars=chars))
 
 
 def parse_directives(path: Path, lines: list[str], rules: dict, report: Report, start: int = 1):
@@ -114,17 +120,20 @@ def parse_directives(path: Path, lines: list[str], rules: dict, report: Report, 
                 name = m.group(1)
                 if name not in known:
                     hint = rules.get("component_equivalents", {}).get(name)
-                    report.error(f"{path.name}:{i}: unknown directive ':::{name}'" + (f" (use: {hint})" if hint else ""))
+                    if hint:
+                        report.error(t("verify", "unknown_directive_hint", file=path.name, line=i, name=name, hint=hint))
+                    else:
+                        report.error(t("verify", "unknown_directive", file=path.name, line=i, name=name))
                 current = (i, name, [])
         elif DIRECTIVE_CLOSE_RE.match(line):
             yield current
             current = None
         elif DIRECTIVE_OPEN_RE.match(line):
-            report.error(f"{path.name}:{i}: nested directive inside ':::{current[1]}' (opened at line {current[0]})")
+            report.error(t("verify", "nested_directive", file=path.name, line=i, outer=current[1], opened=current[0]))
         else:
             current[2].append(line)
     if current is not None:
-        report.error(f"{path.name}:{current[0]}: directive ':::{current[1]}' is not closed")
+        report.error(t("verify", "directive_not_closed", file=path.name, line=current[0], name=current[1]))
 
 
 def check_questions(path: Path, directives, rules: dict, syntax: Syntax, report: Report) -> int:
@@ -133,7 +142,7 @@ def check_questions(path: Path, directives, rules: dict, syntax: Syntax, report:
         if name in rules["question_directives"]:
             count += 1
             if not any(b.strip().startswith(syntax.question_key) for b in body):
-                report.warn(f"{path.name}:{line_no}: question without '{syntax.question_key}'")
+                report.warn(t("verify", "question_without_objective", file=path.name, line=line_no, key=syntax.question_key))
     return count
 
 
@@ -196,7 +205,7 @@ def verify_unit(course: dict, unit: dict) -> Report:
     folder = coursemod.unit_dir(course["_dir"], unit["n"])
     content_path, assessment_path = folder / "content.md", folder / "assessment.md"
     if not content_path.exists():
-        report.error(f"missing {content_path}")
+        report.error(t("verify", "file_missing", path=content_path))
         return report
 
     text = content_path.read_text(encoding="utf-8")
@@ -205,7 +214,7 @@ def verify_unit(course: dict, unit: dict) -> Report:
     specs = unit.get("sections") or []
     found, expected = [s.n for s in sections], [s["n"] for s in specs]
     if found != expected:
-        report.error(f"content.md: sections {found} do not match the design {expected}")
+        report.error(t("verify", "sections_mismatch", found=found, expected=expected))
 
     by_n = {s.n: s for s in sections}
     total_words = 0
@@ -221,40 +230,41 @@ def verify_unit(course: dict, unit: dict) -> Report:
         placeholders += sec.placeholders
         label = f"content.md › {tokens['section']} {spec['n']}"
         if sec.title.strip() != spec["title"].strip():
-            report.warn(f"{label}: title '{sec.title}' differs from the design '{spec['title']}'")
+            report.warn(t("verify", "title_differs", label=label, title=sec.title, design=spec["title"]))
         if sec.words < spec["min_words"]:
-            report.error(f"{label}: {fmt(sec.words)} words < minimum {fmt(spec['min_words'])}")
+            report.error(t("verify", "words_below_minimum", label=label, words=fmt(sec.words), minimum=fmt(spec["min_words"])))
         elif sec.words < spec["min_words"] * (1 + margin):
-            report.warn(f"{label}: {fmt(sec.words)} words, below the recommended {int(margin * 100)} % margin")
+            report.warn(t("verify", "words_below_margin", label=label, words=fmt(sec.words), margin=int(margin * 100)))
         if spec["kind"] == "content":
             tags = [line for line in sec.lines if syntax.objective_tag.match(line)]
             if not tags:
-                report.error(f"{label}: missing objective tag *[{tokens['objective']} UN.M — …]*")
+                report.error(t("verify", "missing_objective_tag", label=label, objective=tokens["objective"]))
             for tag in tags:
                 covered.update(re.findall(r"U\d+\.\d+", tag))
             interactive = {d for d in sec.directives if d in rules["interactive_directives"]}
             needed = max(rules["min_interactive_per_content_section"], math.ceil(spec["hours"] * rules["interactive_per_hour"]))
             if len(interactive) < needed:
-                report.error(f"{label}: {len(interactive)} distinct interactive directives < {needed}")
+                report.error(t("verify", "few_interactive", label=label, count=len(interactive), needed=needed))
 
     if any(s["kind"] == "content" for s in specs):
         for obj in unit.get("objectives") or []:
             if obj["id"] not in covered:
-                report.error(f"content.md: objective {obj['id']} is not tagged in any content section")
+                report.error(t("verify", "objective_not_tagged", id=obj["id"]))
 
+    allowed = ", ".join(tokens["media_types"][i] for i in rules["placeholder_types"] if i in tokens["media_types"])
     for ph in placeholders:
-        if ph.kind not in rules["placeholder_types"]:
-            report.error(f"content.md:{ph.line}: unknown placeholder type '{ph.kind}'")
+        if syntax.media_type(ph.kind) not in rules["placeholder_types"]:
+            report.error(t("verify", "unknown_placeholder_type", line=ph.line, kind=ph.kind, allowed=allowed))
         missing = [f for f in syntax.placeholder_fields if f not in ph.fields]
         if missing:
-            report.error(f"content.md:{ph.line}: placeholder missing fields: {', '.join(missing)}")
-    kinds = {ph.kind for ph in placeholders}
+            report.error(t("verify", "placeholder_missing_fields", line=ph.line, fields=", ".join(missing)))
+    kinds = {syntax.media_type(ph.kind) or ph.kind for ph in placeholders}
     needed_ph = math.ceil(float(unit["hours"]) * rules["placeholders_per_hour"])
     needed_types = min(rules["min_placeholder_types"], needed_ph)
     if len(placeholders) < needed_ph:
-        report.error(f"content.md: {len(placeholders)} placeholders < {needed_ph}")
+        report.error(t("verify", "few_placeholders", count=len(placeholders), needed=needed_ph))
     if len(kinds) < needed_types:
-        report.error(f"content.md: {len(kinds)} placeholder types < {needed_types}")
+        report.error(t("verify", "few_placeholder_types", count=len(kinds), needed=needed_types))
 
     quiet = list(parse_directives(Path("content.md"), text.splitlines(), rules, Report()))
     content_questions = check_questions(content_path, quiet, rules, syntax, report)
@@ -270,21 +280,24 @@ def verify_unit(course: dict, unit: dict) -> Report:
         expected_q = rules["questions_per_objective"] * len(quiz_objectives)
         if questions < expected_q:
             report.warn(
-                f"assessment.md: {questions} questions in the bank, expected {expected_q} "
-                f"({rules['questions_per_objective']} per objective assessed by questionnaire)"
+                t("verify", "few_questions", questions=questions, expected=expected_q, per_objective=rules["questions_per_objective"])
             )
     else:
-        report.error(f"missing {assessment_path.name}")
+        report.error(t("verify", "file_missing", path=assessment_path.name))
 
-    backend = (config.project_data(course["_project"]).get("assembly") or {}).get("backend", "creator") if course.get("_project") else None
+    backend = coursemod.backend(course) if course.get("_project") else None
     checks = list(BACKEND_CHECKS)
     if backend == "creator":
         from coursekit.assemble import check_unit
 
         checks.append(check_unit)
+    elif backend == "html":
+        from coursekit.htmlkit.build import check_unit as check_html_unit
+
+        checks.append(check_html_unit)
     for check in checks:
         for err in check(course, unit):
-            report.error(f"assembly: {err}")
+            report.error(t("verify", "assembly_error", error=err))
 
     report.summary = {
         "words": total_words,
@@ -314,19 +327,29 @@ def update_status(course: dict, unit: dict, report: Report) -> list[str]:
         None,
     )
     tokens = coursemod.tokens(course)
-    changed = changed_since_review(course["_dir"], unit, tokens) if rank(current) >= rank("reviewed") else None
+    ai_review = coursemod.ai_review_required(course)
+    changed = changed_since_review(course["_dir"], unit, tokens) if ai_review and rank(current) >= rank("reviewed") else None
     if current == "approved" and approval:
         folder = coursemod.unit_dir(course["_dir"], unit["n"])
         now = {f.name: sha256_file(f) for f in (folder / "content.md", folder / "assessment.md") if f.exists()}
         if now != approval.get("files_sha256"):
-            parts = f" ({', '.join(changed)} changed after the AI review)" if changed else ""
-            notes.append(f"content changed after its approval{parts}: it must be reviewed and approved again")
+            if changed:
+                notes.append(t("verify", "changed_after_approval_parts", parts=", ".join(changed)))
+            else:
+                notes.append(t("verify", "changed_after_approval"))
             target = "writing" if report.errors else ("verified" if changed else "reviewed")
     if changed and not report.errors and rank(target) >= rank("reviewed"):
-        notes.append(f"changed after the AI review: {', '.join(changed)} (coursekit review: partial review)")
+        notes.append(t("verify", "changed_after_review", parts=", ".join(changed)))
         target = "verified"
+    review = None
+    if not ai_review and not report.errors and rank(target) < rank("reviewed"):
+        target, review = "reviewed", {"kind": "skipped", "at": timestamp()}  # no AI review in this project: verified is reviewed
+        notes.append(t("verify", "review_skipped"))
     if target != current:
-        old, new = set_unit_status(course["_dir"], unit["n"], target)
-        notes.append(f"status: unit {current} -> {target}" + (f" · course {old} -> {new}" if old != new else ""))
+        old, new = set_unit_status(course["_dir"], unit["n"], target, review=review)
+        if old != new:
+            notes.append(t("verify", "status_change_course", current=current, target=target, old=old, new=new))
+        else:
+            notes.append(t("verify", "status_change", current=current, target=target))
         unit["status"] = target
     return notes

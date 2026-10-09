@@ -12,6 +12,7 @@ from importlib import resources
 from pathlib import Path
 
 from coursekit import config, course, identity
+from coursekit.i18n import t
 from coursekit.project import Project
 from coursekit.util import render, slugify
 
@@ -49,7 +50,7 @@ def create(
     code = code.upper() if code else slugify(title).upper()
     course_dir = project.courses_dir / code
     if course_dir.exists():
-        raise FileExistsError(f"{course_dir} already exists")
+        raise FileExistsError(t("new", "already_exists", path=course_dir))
     data = config.project_data(project)
     cfg = course.rules(project=project)
     defaults = cfg.get("defaults") or {}

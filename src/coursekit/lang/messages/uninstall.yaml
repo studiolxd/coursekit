@@ -1,0 +1,34 @@
+# Output of `coursekit uninstall`.
+store_line: {es: "Almacén de coursekit: {path}", en: "coursekit store: {path}"}
+nothing: {es: "No hay nada instalado por coursekit fuera de los proyectos.", en: "Nothing installed by coursekit outside the projects."}
+group_workspaces:
+  es: "Dependencias de Node compartidas por los proyectos (Remotion, constructor html):"
+  en: "Node dependencies shared by the projects (Remotion, html builder):"
+group_tools: {es: "Herramientas de multimedia instaladas con uv:", en: "Media tools installed with uv:"}
+group_files: {es: "Ficheros descargados (voces de Piper):", en: "Downloaded files (Piper voices):"}
+group_shell:
+  es: "Líneas que coursekit añadió a los ficheros de la terminal (certificado del proxy):"
+  en: "Lines coursekit added to the shell files (proxy certificate):"
+group_variables: {es: "Variables de usuario de Windows que coursekit definió:", en: "Windows user variables coursekit defined:"}
+item_size: {es: "{path} ({size})", en: "{path} ({size})"}
+item_recorded: {es: "{item} (instalada por coursekit setup)", en: "{item} (installed by coursekit setup)"}
+item_detected:
+  es: "{item} (detectada: puede que no la instalara coursekit; se pregunta antes de quitarla)"
+  en: "{item} (detected: coursekit may not have installed it; you are asked before it is removed)"
+item_lines: {es: "{path}: {count} bloque(s) de coursekit", en: "{path}: {count} coursekit block(s)"}
+ask_remove: {es: "¿Quitar esto?", en: "Remove this?"}
+kept: {es: "  se deja como está", en: "  left as it is"}
+removed_workspaces: {es: "quitadas {count} carpeta(s) de dependencias", en: "removed {count} dependency folder(s)"}
+tool_removed: {es: "quitada {package}", en: "removed {package}"}
+tool_failed: {es: "no se pudo quitar {package} (uv tool uninstall {package})", en: "could not remove {package} (uv tool uninstall {package})"}
+removed_files: {es: "quitados {count} fichero(s)", en: "removed {count} file(s)"}
+shell_cleaned: {es: "{path}: quitado(s) {count} bloque(s)", en: "{path}: removed {count} block(s)"}
+removed_variables: {es: "quitadas: {names}", en: "removed: {names}"}
+system_header:
+  es: "Paquetes del sistema que instaló coursekit setup (no se quitan: pueden servir para otras cosas; para quitarlos tú):"
+  en: "System packages that coursekit setup installed (they are not removed, they may be used for other things; to remove them yourself):"
+system_item: {es: "{packages}:  {command}", en: "{packages}:  {command}"}
+projects_note:
+  es: "Los proyectos no se tocan (sus carpetas, .env y cursos). Para limpiar uno a mano: .claude/, .opencode/, .codex/, .mcp.json, opencode.json, .coursekit/ y tools/."
+  en: "The projects are not touched (their folders, .env and courses). To clean one by hand: .claude/, .opencode/, .codex/, .mcp.json, opencode.json, .coursekit/ and tools/."
+last_step: {es: "Para quitar el propio paquete: uv tool uninstall {package}", en: "To remove the package itself: uv tool uninstall {package}"}

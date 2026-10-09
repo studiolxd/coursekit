@@ -90,3 +90,45 @@ def test_hooks_are_executable_and_refresh_agents(project):
     assert "coursekit agents" in hook.read_text(encoding="utf-8")
     if os.name != "nt":
         assert os.access(hook, os.X_OK)
+
+
+def test_changing_only_the_email_keeps_the_name_without_asking(project):
+    assert main(["setup", "--yes", "--name", "Ana Pérez", "--email", "ana@example.com"]) == 0
+    p = find_project(project)
+
+    def ask(question, default):
+        raise AssertionError(f"should not ask: {question}")
+
+    who = setup.setup_identity(p, lambda m: None, ask, email="ana@nuevo.example.com", force=True)
+    assert str(who) == "Ana Pérez <ana@nuevo.example.com>"
+
+
+def test_roles_get_default_tool_and_model_in_the_env(project):
+    from coursekit import envfile
+
+    values = envfile.parse((project / ".env").read_text(encoding="utf-8"))
+    assert values["WRITER_AGENT"] == "claude" and values["WRITER_MODEL"] == "sonnet"
+    assert values["REVIEWER_AGENT"] == "claude" and values["REVIEWER_MODEL"] == "opus"
+
+
+def test_roles_can_be_chosen_one_by_one(project, monkeypatch):
+    p = find_project(project)
+    answers = iter(["codex", "", "claude", "opus"] + ["", ""] * 3)
+    said = []
+    setup.agent_roles(p, said.append, lambda q, d: next(answers) or d, lambda q: False, force=True)
+    from coursekit import envfile
+
+    values = envfile.parse((project / ".env").read_text(encoding="utf-8"))
+    assert values["DESIGN_AGENT"] == "codex" and values["DESIGN_MODEL"] == ""
+    assert values["WRITER_AGENT"] == "claude" and values["WRITER_MODEL"] == "opus"
+
+
+def test_media_keys_are_asked_and_saved(project, monkeypatch):
+    for key in ("ELEVENLABS_API_KEY", "ELEVENLABS_VOICE_ID", "AZURE_SPEECH_KEY", "GOOGLE_TTS_API_KEY", "MAGNIFIC_API_KEY"):
+        monkeypatch.delenv(key, raising=False)
+    p = find_project(project)
+    secrets = iter(["el-key", "", "", "mg-key"])
+    setup.media_keys(p, lambda m: None, lambda q, d: "voice-1", lambda q, d: next(secrets))
+    text = (project / ".env").read_text(encoding="utf-8")
+    assert "ELEVENLABS_API_KEY=el-key" in text and "ELEVENLABS_VOICE_ID=voice-1" in text
+    assert "MAGNIFIC_API_KEY=mg-key" in text and "AZURE_SPEECH_KEY=\n" in text

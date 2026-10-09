@@ -1,0 +1,16 @@
+# Errors and warnings when launching the agent of a role (write, review, run).
+invalid_agent:
+  es: "{role}_AGENT={chosen} no es válido (usa {tools})"
+  en: "{role}_AGENT={chosen} is not valid (use {tools})"
+tool_not_installed:
+  es: "{tool} no está instalado en este equipo (coursekit doctor)"
+  en: "{tool} is not installed on this machine (coursekit doctor)"
+unit_not_found:
+  es: "no se encuentra la unidad {n} en course.yaml (¿está aprobado el diseño?)"
+  en: "unit {n} not found in course.yaml (is the design approved?)"
+writer_unknown:
+  es: "course.yaml no dice quién escribió la unidad {n}; comprueba que no fue {label}"
+  en: "course.yaml does not say who wrote unit {n}; check it was not {label}"
+same_writer:
+  es: "la unidad {n} se escribió con {writer}, la misma herramienta y modelo que esta revisión; otro modelo detecta más (REVIEWER_AGENT / REVIEWER_MODEL en .env)"
+  en: "unit {n} was written with {writer}, the same tool and model as this review; another model catches more (REVIEWER_AGENT / REVIEWER_MODEL in .env)"

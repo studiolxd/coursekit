@@ -6,6 +6,7 @@ import math
 from pathlib import Path
 
 from coursekit import config, lang
+from coursekit.i18n import t
 from coursekit.project import Project
 from coursekit.util import load_yaml, sha256_file
 
@@ -29,20 +30,39 @@ class CourseNotFound(Exception):
     pass
 
 
+class RuleError(Exception):
+    pass
+
+
 def load(project: Project, code_or_path: str) -> dict:
     folder = project.course_dir(code_or_path)
     if not (folder / "course.yaml").exists():
-        raise CourseNotFound(f"course {code_or_path} not found ({folder})")
+        raise CourseNotFound(t("course", "not_found", code=code_or_path, folder=folder))
     course = load_yaml(folder / "course.yaml")
     course["_dir"] = folder
     course["_project"] = project
     return course
 
 
+def backend(course: dict) -> str:
+    """Where the course is assembled: `creator` or `html` (course.yaml › assembly › backend, else the project's)."""
+    own = (course.get("assembly") or {}).get("backend")
+    project = course.get("_project")
+    return str(own or ((config.project_data(project).get("assembly") or {}).get("backend") if project else None) or "creator")
+
+
 def language(course: dict) -> str:
     project = course.get("_project")
     fallback = config.project_data(project).get("content_language", "es") if project else "es"
     return str(course.get("language") or fallback).split("-")[0]
+
+
+def ai_review_required(course: dict) -> bool:
+    """rules › review › ai: `required` (default) or `skip`; any other value is a mistake worth reporting."""
+    value = str(((config.effective("rules", course.get("_project"), course).value.get("review") or {}).get("ai")) or "required")
+    if value not in ("required", "skip"):
+        raise RuleError(t("course", "bad_review_ai", value=value))
+    return value == "required"
 
 
 def tokens(course: dict) -> dict:
@@ -85,10 +105,10 @@ def approval_problem(course: dict) -> str | None:
     """Why the design is not (or no longer) approved; None when it is."""
     approval = design_approval(course)
     if approval is None:
-        return f"the instructional design is not approved yet (coursekit approve design {course.get('code')})"
+        return t("course", "design_not_approved", code=course.get("code"))
     matrix = course["_dir"] / "design" / "matrix.json"
     if not matrix.exists():
-        return "design/matrix.json is missing"
+        return t("course", "matrix_missing")
     if sha256_file(matrix) != approval.get("snapshot_sha256"):
-        return "design/matrix.json changed after the approval: the design must be approved again"
+        return t("course", "matrix_changed")
     return None

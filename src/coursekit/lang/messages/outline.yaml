@@ -1,0 +1,11 @@
+# Output of `coursekit outline`.
+words_written: {es: "{words} palabras escritas", en: "{words} words written"}
+not_written: {es: "sin escribir", en: "not written"}
+section_line:
+  es: "  {unit}.{section} {title}{objectives} · mín. {minimum} · {state}"
+  en: "  {unit}.{section} {title}{objectives} · min. {minimum} · {state}"
+read_one_section:
+  es: "Para leer un apartado: coursekit outline CODE --section U.S"
+  en: "To read one section: coursekit outline CODE --section U.S"
+section_takes: {es: "--section recibe U.S, p. ej. 2.3", en: "--section takes U.S, e.g. 2.3"}
+section_not_written: {es: "apartado {ref}: sin escribir", en: "section {ref}: not written"}

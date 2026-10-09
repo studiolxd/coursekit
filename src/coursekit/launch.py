@@ -30,6 +30,7 @@ from pathlib import Path
 from coursekit import agents as agentsmod
 from coursekit import course as coursemod
 from coursekit.fingerprint import changed_since_review
+from coursekit.i18n import t
 from coursekit.project import Project
 from coursekit.util import edit_yaml, save_yaml
 
@@ -46,6 +47,8 @@ COMMAND_ROLE = {
     "assemble": "assembly",
     "deliver": "assembly",
     "sync-directives": "assembly",
+    "client-feedback": "assembly",
+    "define-theme": "design",
 }
 TODO = {"writer": ("pending", "writing"), "reviewer": ("verified",)}
 DONE = {"writer": ("verified", "reviewed", "approved"), "reviewer": ("reviewed", "approved")}
@@ -57,7 +60,8 @@ HEADLESS_NOTE = (
 _BASE_TOOLS = ["Read", "Edit", "Write", "Glob", "Grep", "Skill", "TodoWrite",
                "Bash(coursekit verify:*)", "Bash(coursekit brief:*)", "Bash(coursekit status:*)",
                "Bash(coursekit outline:*)", "Bash(coursekit config:*)", "Bash(git status:*)", "Bash(git diff:*)"]
-CLAUDE_DENY = ["Bash(git commit:*)", "Bash(git push:*)", "Bash(coursekit approve:*)"]
+CLAUDE_DENY = ["Bash(git commit:*)", "Bash(git push:*)", "Bash(coursekit approve:*)", "Bash(coursekit client:*)", "Bash(coursekit hold:*)",
+               "Bash(coursekit resume:*)"]
 
 
 class LaunchError(Exception):
@@ -82,7 +86,7 @@ def agent_for(role: str, tool: str | None = None, model: str | None = None) -> A
     else:
         chosen, chosen_model = env_tool, (model if model is not None else env_model)
     if chosen not in TOOLS:
-        raise LaunchError(f"{role.upper()}_AGENT={chosen} is not valid (use {' | '.join(TOOLS)})")
+        raise LaunchError(t("launch", "invalid_agent", role=role.upper(), chosen=chosen, tools=" | ".join(TOOLS)))
     return Agent(role, chosen, chosen_model)
 
 
@@ -99,7 +103,7 @@ def prompt(agent: Agent, command: str, arguments: str, headless: bool, extra: st
 def _exe(tool: str) -> str:
     exe = shutil.which(tool)
     if exe is None:
-        raise LaunchError(f"{tool} is not installed on this machine (coursekit doctor)")
+        raise LaunchError(t("launch", "tool_not_installed", tool=tool))
     return exe
 
 
@@ -210,16 +214,15 @@ def run_unit(project: Project, code: str, role: str, n: int, agent: Agent, headl
     course = coursemod.load(project, code)
     unit = next((u for u in _units(course) if u["n"] == n), None)
     if unit is None:
-        raise LaunchError(f"unit {n} not found in course.yaml (is the design approved?)")
+        raise LaunchError(t("launch", "unit_not_found", n=n))
     warnings = []
     extra = ""
     if role == "reviewer":
         writer = unit.get("written_with")
         if writer is None:
-            warnings.append(f"course.yaml does not say who wrote unit {n}; check it was not {agent.label}")
+            warnings.append(t("launch", "writer_unknown", n=n, label=agent.label))
         elif writer == agent.label:
-            warnings.append(f"unit {n} was written with {writer}, the same tool and model as this review; "
-                            "another model catches more (REVIEWER_AGENT / REVIEWER_MODEL in .env)")
+            warnings.append(t("launch", "same_writer", n=n, writer=writer))
         record(course["_dir"], n, "reviewed_with", agent.label)
         extra = f"\n\nYou are the reviewer ({agent.label}): put that in the header of the report."
         parts = review_parts(course, n, full, parts_given)

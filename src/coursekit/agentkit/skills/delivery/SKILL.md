@@ -9,10 +9,20 @@ Export settings: `coursekit config delivery`. Each unit is one creator content a
 
 {{> _slxd-tools}}
 
+## With the html backend
+
+The packages are built by coursekit, not exported by a platform: for each unit `coursekit assemble build <CODE> --unit N
+--version X.Y` (it writes `delivery/<name>.zip`), then `coursekit delivery add <CODE> --unit N --version X.Y --file
+courses/<CODE>/delivery/<name> ` with no `--job` or `--snapshot`. Everything else (requirements, gate, publication, summary) is the
+same; `coursekit status <CODE>` says which backend the course uses.
+
 ## Requirements (stop if one is missing)
 
 - Every unit assembled: `course.yaml › units[].content_id` set.
-- Client review closed: ask the person if it is not in `history`.
+- `coursekit delivery check <CODE>` passes. It refuses while the course is on hold and, when the project
+  requires the client's review (`coursekit config delivery`), until the client has approved it
+  (`coursekit client <CODE> approve`) or the person has skipped it with a reason. Never run
+  `coursekit client` or `coursekit hold`: they record decisions of people. Tell the person what is missing.
 - Version: the one the person says; otherwise `1.0` the first time and the next minor version
   (`1.1`, `1.2`…) afterwards, according to `course.yaml › deliveries`.
 
@@ -26,12 +36,12 @@ Export settings: `coursekit config delivery`. Each unit is one creator content a
 4. File name: `coursekit delivery name <CODE> --unit N --version X.Y`. Download the
    `downloadUrl` to `courses/<CODE>/delivery/<that name>` (e.g. with `curl -fL -o`).
 5. `coursekit delivery add <CODE> --unit N --version X.Y --file courses/<CODE>/delivery/<name> --job <jobId> --snapshot <id>`.
-   It checks the zip has `imsmanifest.xml` at its root and records it.
+   It checks the zip has `imsmanifest.xml` at its root and records it; with a mirror folder configured it
+   also copies the package there (never deleted) and updates the catalog.
 
 ## At the end
 
-1. `coursekit publish <CODE>`: the packages go to the mirror folder (never deleted there).
-2. Summarise: version, packages, size, standard and course status. Recommend testing at least
-   one unit in the target LMS before closing it.
+Summarise: version, packages, size, standard and course status. Recommend testing at least
+one unit in the target LMS before closing it.
 
 Do not commit unless asked (zip files are not versioned; `course.yaml` is).

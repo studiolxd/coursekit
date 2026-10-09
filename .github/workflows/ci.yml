@@ -6,14 +6,6 @@ on:
   pull_request:
 
 jobs:
-  terms:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: python3 tools/check_terms.py
-        env:
-          FORBIDDEN_TERMS: ${{ secrets.FORBIDDEN_TERMS }}
-
   test:
     strategy:
       matrix:

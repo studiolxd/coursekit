@@ -1,4 +1,5 @@
 import json
+import re
 import zipfile
 
 import pytest
@@ -8,6 +9,11 @@ from openpyxl import load_workbook
 from coursekit import publish
 from coursekit.cli import main
 from tests.test_assemble import course  # noqa: F401 — the approved sample course fixture
+
+
+def set_status(course_dir, status):
+    path = course_dir / "course.yaml"
+    path.write_text(re.sub(r"^status: .*$", f"status: {status}", path.read_text(encoding="utf-8"), count=1, flags=re.M), encoding="utf-8")
 
 
 def scorm(path, manifest=True):
@@ -27,6 +33,7 @@ def test_delivery_name_and_add(course, capsys):  # noqa: F811
     assert main(["delivery", "add", "PWD", "--unit", "1", "--version", "1.0", "--file", str(folder / "bad.zip")]) == 1
     assert "imsmanifest.xml is not at the root" in capsys.readouterr().err
     scorm(folder / name)
+    set_status(course, "assembly")
     assert main(["delivery", "add", "PWD", "--unit", "1", "--version", "1.0", "--file", str(folder / name), "--job", "j1"]) == 0
     assert "course delivered" in capsys.readouterr().out
     data = yaml.safe_load((course / "course.yaml").read_text(encoding="utf-8"))
@@ -71,8 +78,9 @@ def test_publish_to_a_folder_and_catalog(course, tmp_path, monkeypatch, capsys):
 
 def test_publish_without_mirror(course, capsys):  # noqa: F811
     assert main(["publish", "--only-if-configured"]) == 0
-    assert main(["publish"]) == 1
-    assert "no mirror folder configured" in capsys.readouterr().err
+    assert capsys.readouterr().out == ""
+    assert main(["publish"]) == 0  # provider none is a choice: nothing to publish, not an error
+    assert "nothing to publish" in capsys.readouterr().out
 
 
 @pytest.mark.parametrize(
@@ -96,7 +104,7 @@ def test_english_catalog(tmp_path, monkeypatch):
     monkeypatch.chdir(root)
     assert main(["new", "Strong passwords", "1", "--code", "EN1"]) == 0
     assert main(["catalog"]) == 0
-    ws = load_workbook(root / "catalog" / "course-catalog.xlsx")["Courses"]
+    ws = load_workbook(root / "courses" / "course-catalog.xlsx")["Courses"]
     assert [c.value for c in ws[1]][:3] == ["Code", "Title", "Status"]
     assert [c.value for c in ws[2]][2] == "Instructional design (proposal)"
 

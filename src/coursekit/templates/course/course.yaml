@@ -33,9 +33,7 @@ slxd:
   matrix_id: null
   folder_id: null
   theme_id: null
-links:
-  preview: null            # share link of the assembled course
-  review: null
+client_review: []          # rounds of review by the client (coursekit client): - {round, sent_at, to, links, outcome}
 media:
   voice: {}                # one voice for the whole course: coursekit voice set <CODE> <provider>
 approvals: []              # written by `coursekit approve` only

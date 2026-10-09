@@ -156,10 +156,30 @@ def test_roles_and_bad_tool(course, monkeypatch, capsys):
 
 
 def test_write_rejects_review_options(course, capsys):
-    assert main(["write", "PWD", "1", "--full"]) == 2
+    with pytest.raises(SystemExit) as refused:  # --full and --parts exist only on review
+        main(["write", "PWD", "1", "--full"])
+    assert refused.value.code == 2
 
 
 def test_run_passes_the_command_options_through(course, monkeypatch):
     tools = FakeTools(monkeypatch)
     assert main(["run", "new-course", '"Curso nuevo"', "2", "--code", "ABC", "--model", "opus"]) == 0
     assert tools.calls[0] == ["/fake/claude", "--model", "opus", '/new-course "Curso nuevo" 2 --code ABC']
+
+
+def test_run_puts_back_the_quotes_around_arguments_with_spaces(course, monkeypatch):
+    seen = []
+    monkeypatch.setattr(launch, "execute", lambda project, agent, text, headless, log: seen.append(text) or (0, None, ""))
+    assert main(["run", "new-course", "Strong passwords", "2"]) == 0
+    assert seen == ['/new-course "Strong passwords" 2']
+
+
+def test_run_does_not_start_an_agent_on_a_course_on_hold(course, monkeypatch, capsys):
+    tools = FakeTools(monkeypatch)
+    assert main(["hold", "PWD", "--reason", "waiting"]) == 0
+    capsys.readouterr()
+    assert main(["run", "assemble", "PWD"]) == 1
+    assert "has been on hold since" in capsys.readouterr().err
+    assert tools.calls == []
+    assert main(["run", "course-status", "PWD"]) == 0  # reading is allowed
+    assert len(tools.calls) == 1

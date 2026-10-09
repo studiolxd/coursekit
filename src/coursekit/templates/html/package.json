@@ -1,0 +1,9 @@
+{
+  "name": "coursekit-html-builder",
+  "private": true,
+  "description": "Bundles the player of the html backend: the SCORM runtime and the behaviour of the components.",
+  "dependencies": {
+    "@studiolxd/scorm": "^2.0.1",
+    "esbuild": "^0.28.0"
+  }
+}

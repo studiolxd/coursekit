@@ -16,3 +16,68 @@ assessment_instructions: Instructions for the learner
 assessment_bank: Question bank
 download: Download
 note: Note
+
+# Resource types of the media placeholders: the id (configuration, manifest) -> what is written in the content.
+media_types:
+  image: Image
+  video: Video
+  animated_gif: Animated GIF
+  infographic: Infographic
+  diagram: Diagram
+  simulation: Interactive simulation
+  terminal_demo: Interactive terminal demo
+  audio: Audio
+# Keys of the "key: value" lines of the directives (the objective key is question_objective_key) ...
+directive_keys:
+  question: question
+  answer: answer
+  answers: answers
+  feedback: feedback
+  feedback_correct: feedback-correct
+  feedback_incorrect: feedback-incorrect
+  image: image
+  position: position
+  title: title
+# ... and the words some of them take.
+directive_words:
+  "true": "true"
+  "false": "false"
+  starts: starts
+  contains: contains
+
+# Texts of the interface of the html backend's package (buttons, feedback), in the language of the content.
+player:
+  skip: Skip to content
+  lessons: Lessons
+  previous: Previous
+  next: Next
+  progress: Progress
+  check: Check
+  retry: Try again
+  submit: Submit answers
+  correct: Correct
+  incorrect: Incorrect
+  answer_true: "True"
+  answer_false: "False"
+  flip: Flip the card
+  slide: Slide {n} of {total}
+  select: Choose…
+  move_up: Move up
+  move_down: Move down
+  score: "Your score: {score}%"
+  passed: You passed the test.
+  failed: "You did not reach the passing score ({min}%)."
+  attempts: "Attempts left: {n}"
+  no_attempts: No attempts left.
+  answer_all: Answer every question before submitting.
+  finished: You have completed the unit.
+  hotspot: Point {n}
+  close: Close
+  expected: "Correct answer: {answer}"
+  words_pool: Available words
+  words_answer: Your sentence
+  blank: Blank {n}
+  type_answer: Type your answer
+  question: Question {n}
+  media_missing: Media asset still to be produced
+  transcript: Transcript

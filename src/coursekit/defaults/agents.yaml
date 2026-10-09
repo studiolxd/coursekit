@@ -1,0 +1,21 @@
+# Default tool and model of each role, proposed by `coursekit setup` and saved in the .env
+# (<ROLE>_AGENT / <ROLE>_MODEL). Tools: claude | opencode | codex.
+# `models` is what each tool understands: Claude Code takes an alias or an id; opencode takes
+# provider/model; a tool without an entry runs with its own default model (empty).
+# The reviewer defaults to a different model than the writer (opus vs sonnet): another model catches more.
+roles:
+  design:
+    tool: claude
+    models: {claude: opus, opencode: anthropic/claude-opus-5-5}
+  writer:
+    tool: claude
+    models: {claude: sonnet, opencode: anthropic/claude-sonnet-5-5}
+  reviewer:
+    tool: claude
+    models: {claude: opus, opencode: anthropic/claude-opus-5-5}
+  media:
+    tool: claude
+    models: {claude: opus, opencode: anthropic/claude-opus-5-5}
+  assembly:
+    tool: claude
+    models: {claude: sonnet, opencode: anthropic/claude-sonnet-5-5}

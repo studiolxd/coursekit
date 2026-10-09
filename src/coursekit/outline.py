@@ -11,6 +11,7 @@ import re
 from pathlib import Path
 
 from coursekit import course as coursemod
+from coursekit.i18n import t
 from coursekit.lang import format_number
 
 WORD = re.compile(r"\w+")
@@ -43,12 +44,15 @@ def outline(course: dict) -> str:
             lines.append(f"  {o['id']} ({o.get('bloom')}): {o['text']}")
         for s in u.get("sections") or []:
             words = len(WORD.findall(texts.get(s["n"], "")))
-            state = f"{fmt(words)} words written" if words else "not written"
+            state = t("outline", "words_written", words=fmt(words)) if words else t("outline", "not_written")
             objs = f" [{', '.join(s['objectives'])}]" if s.get("objectives") else ""
-            lines.append(f"  {u['n']}.{s['n']} {s['title']}{objs} · min. {fmt(s['min_words'])} · {state}")
+            lines.append(
+                t("outline", "section_line", unit=u["n"], section=s["n"], title=s["title"], objectives=objs,
+                  minimum=fmt(s["min_words"]), state=state)
+            )
             for sub in s.get("subsections") or []:
                 lines.append(f"      · {sub}")
-    lines.append("\nTo read one section: coursekit outline CODE --section U.S")
+    lines.append("\n" + t("outline", "read_one_section"))
     return "\n".join(lines)
 
 
@@ -56,6 +60,6 @@ def section(course: dict, ref: str) -> str:
     try:
         n, s = (int(x) for x in ref.split("."))
     except ValueError as exc:
-        raise ValueError("--section takes U.S, e.g. 2.3") from exc
+        raise ValueError(t("outline", "section_takes")) from exc
     text = written(course["_dir"], n, coursemod.tokens(course)).get(s)
-    return text or f"section {ref}: not written"
+    return text or t("outline", "section_not_written", ref=ref)

@@ -19,11 +19,17 @@ import urllib.request
 from pathlib import Path
 
 from coursekit import course as coursemod
+from coursekit.i18n import t
 from coursekit.voices import LOCALES, resolve
 
 
 class ToolError(Exception):
     pass
+
+
+def require_file(path: Path) -> None:
+    if not path.is_file():
+        raise ToolError(t("mediatools", "input_missing", path=path.as_posix()))
 
 
 def to_mp3(wav: Path, out: Path) -> None:
@@ -60,10 +66,10 @@ def vtt_from_characters(chars: list[str], starts: list[float], ends: list[float]
 def tts_piper(text: str, out: Path, voice: str | None, speaker: str | None = None, language: str = "es") -> None:
     model = voice or os.environ.get("PIPER_VOICE", "")
     if not model:
-        raise ToolError("set PIPER_VOICE in .env (path to a .onnx voice) or pass --voice")
+        raise ToolError(t("mediatools", "piper_voice"))
     piper = shutil.which("piper")
     if not piper:
-        raise ToolError("piper is not installed (coursekit setup --media)")
+        raise ToolError(t("mediatools", "piper_missing"))
     with tempfile.TemporaryDirectory() as tmp:
         wav = Path(tmp) / "out.wav"
         cmd = [piper, "-m", str(Path(model).expanduser()), "-f", str(wav)]
@@ -78,7 +84,7 @@ def tts_elevenlabs(text: str, out: Path, voice: str | None, speaker: str | None 
     key = os.environ.get("ELEVENLABS_API_KEY", "").strip()
     voice_id = voice or os.environ.get("ELEVENLABS_VOICE_ID", "").strip()
     if not key or not voice_id:
-        raise ToolError("ELEVENLABS_API_KEY and a voice (ELEVENLABS_VOICE_ID or --voice) are needed")
+        raise ToolError(t("mediatools", "elevenlabs_needs"))
     body = json.dumps({"text": text, "model_id": "eleven_multilingual_v2", "language_code": language}).encode()
     req = urllib.request.Request(
         f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/with-timestamps?output_format=mp3_44100_128",
@@ -159,9 +165,11 @@ def tts_google(text: str, out: Path, voice: str | None, speaker: str | None = No
 
 def subtitles(audio: Path, text_path: Path, out: Path, model_name: str = "base", language: str = "es") -> None:
     """Align the known script with the audio (stable-ts, installed by coursekit setup --media) into a VTT."""
+    require_file(audio)
+    require_file(text_path)
     exe = shutil.which("stable-ts")
     if not exe:
-        raise ToolError("stable-ts is not installed (coursekit setup --media)")
+        raise ToolError(t("mediatools", "stable_ts_missing"))
     subprocess.run([exe, str(audio), "--align", str(text_path), "--language", language, "--model", model_name,
                     "--regroup", "sp=./?/!_sl=84", "--word_level", "false", "-o", str(out)], check=True)
 
@@ -171,10 +179,13 @@ ENGINES = {"elevenlabs": tts_elevenlabs, "azure": tts_azure, "google": tts_googl
 
 def tts(course: dict | None, engine: str | None, input_path: Path, out: Path, voice: str | None = None,
         speaker: str | None = None) -> str:
+    require_file(input_path)
     text = re.sub(r"\s+", " ", input_path.read_text(encoding="utf-8")).strip()
     out.parent.mkdir(parents=True, exist_ok=True)
     provider, course_voice, course_speaker = resolve(course, engine)
     language = coursemod.language(course) if course else "es"
     ENGINES[provider](text, out, voice or course_voice, speaker or course_speaker, language)
-    extra = f" and {out.with_suffix('.vtt').name}" if provider == "elevenlabs" and out.with_suffix(".vtt").exists() else ""
-    return f"wrote {out}{extra} ({provider} · {voice or course_voice or 'default voice'})"
+    used_voice = voice or course_voice or t("mediatools", "default_voice")
+    if provider == "elevenlabs" and out.with_suffix(".vtt").exists():
+        return t("mediatools", "wrote_vtt", out=out, vtt=out.with_suffix(".vtt").name, provider=provider, voice=used_voice)
+    return t("mediatools", "wrote", out=out, provider=provider, voice=used_voice)

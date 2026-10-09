@@ -1,0 +1,27 @@
+# Prompts of `coursekit init`.
+content_language: {es: Idioma de los cursos, en: Language of the courses}
+name: {es: Nombre del proyecto, en: Project name}
+client: {es: Cliente, en: Client}
+tone: {es: Tono, en: Tone}
+address: {es: Tratamiento, en: Address}
+backend: {es: Backend de montaje, en: Assembly backend}
+mirror: {es: Carpeta espejo, en: Mirror folder}
+mirror_dir: {es: Ruta local de la carpeta sincronizada, en: Local path of the synced folder}
+mirror_dir_missing:
+  es: "aviso: {path} no existe todavía; se usará cuando el cliente de escritorio la sincronice"
+  en: "warning: {path} does not exist yet; it will be used once the desktop client syncs it"
+mirror_url:
+  es: Dirección web de la carpeta (opcional, para los enlaces del catálogo)
+  en: Web address of the folder (optional, for the catalog links)
+choose: {es: "elige una de: {options}", en: "choose one of: {options}"}
+hint_yes: {es: "[S/n]", en: "[Y/n]"}
+hint_no: {es: "[s/N]", en: "[y/N]"}
+already_exists:
+  es: "{path} ya existe (usa `coursekit init --update`)"
+  en: "{path} already exists (use `coursekit init --update`)"
+mcp_url:
+  es: "URL del servidor MCP de slxd (https://<tenant>.slxd.app/mcp/creator; vacío para ponerla después)"
+  en: "slxd MCP server URL (https://<tenant>.slxd.app/mcp/creator; empty to set it later)"
+bad_url:
+  es: "  escribe una dirección que empiece por http:// o https://"
+  en: "  enter an address starting with http:// or https://"

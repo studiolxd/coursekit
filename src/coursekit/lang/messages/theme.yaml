@@ -1,0 +1,32 @@
+# Output and errors of `coursekit theme`.
+missing_tokens:
+  es: "falta {path}: derívalo del tema de la plataforma de maquetación"
+  en: "missing {path}: derive it from the theme of the assembly platform"
+pair_line:
+  es: "{fg} sobre {bg} ({use}): {ratio:.2f}:1, mínimo {minimum}:1"
+  en: "{fg} on {bg} ({use}): {ratio:.2f}:1, needs {minimum}:1"
+use_body_text: {es: texto del cuerpo, en: body text}
+use_secondary_text: {es: texto secundario, en: secondary text}
+use_button_text: {es: texto del botón sobre el color de acento, en: button text on the accent}
+use_accent: {es: elementos de acento y texto grande, en: accent elements and large text}
+use_card_text: {es: texto sobre tarjetas, en: text on cards}
+use_highlight_text: {es: texto sobre resaltados, en: text on highlights}
+use_correct: {es: respuesta correcta, en: correct feedback}
+use_wrong: {es: respuesta incorrecta, en: wrong feedback}
+bad_tokens: {es: "{path} no es un JSON de tokens válido", en: "{path} is not a valid tokens JSON"}
+not_a_theme:
+  es: "el fichero no parece un resultado de get_theme (falta theme.config.colors)"
+  en: "the file does not look like a get_theme result (no theme.config.colors)"
+file_missing: {es: "no existe el fichero {path}", en: "the file {path} does not exist"}
+note_font:
+  es: "la fuente «{font}» es una fuente incluida en la plataforma: se usa su nombre como familia CSS; ajústalo si no coincide"
+  en: "the font '{font}' is a font included in the platform: its name is used as the CSS family; adjust it if it differs"
+note_color:
+  es: "el rol de color «{role}» no se pudo resolver; se usa el valor por defecto"
+  en: "the colour role '{role}' could not be resolved; the default is used"
+note_css_color:
+  es: "la variable --{name} vale «{value}», que no es un color con valor fijo: no entra en la comprobación de contraste"
+  en: "the variable --{name} is '{value}', not a plain colour value: it is left out of the contrast check"
+note_dark:
+  es: "el theme tiene modo oscuro: los tokens son los del modo claro"
+  en: "the theme has a dark mode: the tokens are those of the light mode"

@@ -1,0 +1,24 @@
+# Output and errors of `coursekit client` and of the client-review gate of the delivery.
+gate_none:
+  es: "{code} necesita la revisión del cliente antes de entregarse (delivery.yaml › client_review.required): `coursekit client {code} send`"
+  en: "{code} needs the client's review before it is delivered (delivery.yaml › client_review.required): `coursekit client {code} send`"
+gate_changes:
+  es: "el cliente pidió cambios en {code}: aplícalos, vuelve a montar y abre otra ronda con `coursekit client {code} send`"
+  en: "the client asked for changes in {code}: apply them, assemble again and open another round with `coursekit client {code} send`"
+gate_waiting:
+  es: "{code} espera a la respuesta del cliente (ronda {round}, enviada a {to}): `coursekit client {code} approve --by \"Nombre\"` o `changes`"
+  en: "{code} is waiting for the client's answer (round {round}, sent to {to}): `coursekit client {code} approve --by \"Name\"` or `changes`"
+send_needs_assembly:
+  es: "{code} está en «{status}»: la revisión del cliente empieza con el curso montado (estado «assembly»)"
+  en: "{code} is in '{status}': the client's review starts with the course assembled (status 'assembly')"
+round_open: {es: "la ronda {round} sigue abierta: ciérrala con `approve` o `changes`", en: "round {round} is still open: close it with `approve` or `changes`"}
+no_links:
+  es: "no hay enlaces de revisión en las unidades: lanza /assemble (crea el enlace de cada unidad) o pasa --where con el enlace"
+  en: "the units have no review links: run /assemble (it creates the link of each unit) or pass --where with the link"
+sent: {es: "ronda {round} abierta; el curso pasa a client_review. Enlaces:\n{links}", en: "round {round} opened; the course moves to client_review. Links:\n{links}"}
+no_open_round: {es: "{code} no tiene ninguna ronda abierta con el cliente", en: "{code} has no round open with the client"}
+changes: {es: "ronda {round} cerrada con cambios; el curso vuelve a assembly", en: "round {round} closed with changes; the course goes back to assembly"}
+approved: {es: "ronda {round} aprobada por {by}: se puede entregar", en: "round {round} approved by {by}: it can be delivered"}
+skipped: {es: "revisión del cliente omitida en {code} (queda en el historial)", en: "client review skipped in {code} (it stays in the history)"}
+needs_by: {es: "coursekit: approve necesita --by con el nombre de quien aprueba", en: "coursekit: approve needs --by with the name of who approves"}
+needs_reason: {es: "coursekit: skip necesita --reason", en: "coursekit: skip needs --reason"}

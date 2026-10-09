@@ -1,0 +1,257 @@
+# Output, errors and help of the course commands (new, status, sync, outline, verify, approve, write, review, run, assemble...).
+
+# Line prefixes shared by several commands
+warning_line: {es: "AVISO   {text}", en: "WARNING {text}"}
+error_line: {es: "ERROR   {text}", en: "ERROR   {text}"}
+catalog_not_updated: {es: "AVISO   no se pudo actualizar el catálogo de courses/ (el cambio sí está hecho; `coursekit catalog` lo reintenta): {text}", en: "WARNING the catalog in courses/ could not be updated (the change is done; `coursekit catalog` tries again): {text}"}
+mirror_not_updated: {es: "AVISO   no se pudo actualizar la carpeta espejo (el cambio sí está hecho; `coursekit publish` lo reintenta): {text}", en: "WARNING the mirror folder could not be updated (the change is done; `coursekit publish` tries again): {text}"}
+
+# new, status, sync, outline
+new_created: {es: "creado {path} ({hours} h)", en: "created {path} ({hours} h)"}
+n_units_one: {es: "1 unidad", en: "1 unit"}
+n_units: {es: "{n} unidades", en: "{n} units"}
+n_sections_one: {es: "1 apartado", en: "1 section"}
+n_sections: {es: "{n} apartados", en: "{n} sections"}
+sync_summary:
+  es: "{units}, {sections}, {words} palabras mínimas"
+  en: "{units}, {sections}, {words} minimum words"
+sync_summary_synced:
+  es: "{units}, {sections}, {words} palabras mínimas · sincronizado en course.yaml"
+  en: "{units}, {sections}, {words} minimum words · synced into course.yaml"
+sync_written: {es: "  escrito: {path}", en: "  written: {path}"}
+outline_error: {es: "coursekit: {error}", en: "coursekit: {error}"}
+
+# verify
+no_units: {es: "coursekit: no hay unidades en course.yaml", en: "coursekit: no units in course.yaml"}
+no_units_n:
+  es: "coursekit: no hay unidades en course.yaml con n={n}"
+  en: "coursekit: no units in course.yaml with n={n}"
+verify_header_ok: {es: "[OK] {code} · U{n} — {title}", en: "[OK] {code} · U{n} — {title}"}
+verify_header_fail: {es: "[FALLO] {code} · U{n} — {title}", en: "[FAIL] {code} · U{n} — {title}"}
+verify_stats:
+  es: "  palabras {words}/{min_words} · recursos multimedia {placeholders} ({types} tipos) · preguntas formativas {formative} · preguntas del banco {bank}"
+  en: "  words {words}/{min_words} · placeholders {placeholders} ({types} types) · formative questions {formative} · bank questions {bank}"
+
+# approve
+confirmed_yes: {es: "→ confirmado con --yes", en: "→ confirmed with --yes"}
+confirm_prompt: {es: "[s/N] ", en: "[y/N] "}
+approve_no_terminal:
+  es: "coursekit: no hay terminal interactiva. Firma en tu propia terminal, o desde el chat del agente con\n  `! coursekit approve … --yes` (el `!` lo ejecuta como tú, no como el agente)"
+  en: "coursekit: no interactive terminal. Sign in your own terminal, or from the agent chat with\n  `! coursekit approve … --yes` (the `!` runs it as you, not as the agent)"
+approve_needs_unit: {es: "coursekit: las aprobaciones de contenido necesitan --unit N", en: "coursekit: content approvals need --unit N"}
+
+# brief
+brief_summary:
+  es: "brief: {documents} documentos, {webs} webs, {media} imágenes/audio/vídeo → {target}"
+  en: "brief: {documents} documents, {webs} webs, {media} images/audio/video → {target}"
+brief_note: {es: "  aviso: {source}: {note}", en: "  warning: {source}: {note}"}
+
+# write, review, run, roles
+launch_warning: {es: "aviso: {warning}", en: "warning: {warning}"}
+launch_unit_log:
+  es: "unidad {n}: {status} · sesión en {path}"
+  en: "unit {n}: {status} · session in {path}"
+launch_unit_log_exit:
+  es: "unidad {n}: {status} · sesión en {path} · exit {code}"
+  en: "unit {n}: {status} · session in {path} · exit {code}"
+nothing_to_write: {es: "nada que escribir en {code}", en: "nothing to write in {code}"}
+nothing_to_review: {es: "nada que revisar en {code}", en: "nothing to review in {code}"}
+unit_start:
+  es: "{command} {code} · unidad {n} con {label}"
+  en: "{command} {code} · unit {n} with {label}"
+unit_start_headless:
+  es: "{command} {code} · unidad {n} con {label} (sin interfaz)"
+  en: "{command} {code} · unit {n} with {label} (headless)"
+stopped_at_unit:
+  es: "detenido en la unidad {n}: corrígela y lanza el comando de nuevo"
+  en: "stopped at unit {n}: fix it and launch the command again"
+bad_agent: {es: "--agent debe ser uno de {options}", en: "--agent must be one of {options}"}
+bad_role: {es: "--role debe ser uno de {options}", en: "--role must be one of {options}"}
+run_start:
+  es: "/{name} {arguments} con el agente {role} ({label})"
+  en: "/{name} {arguments} with the {role} agent ({label})"
+run_start_headless:
+  es: "/{name} {arguments} con el agente {role} ({label}) (sin interfaz)"
+  en: "/{name} {arguments} with the {role} agent ({label}) (headless)"
+run_session: {es: "sesión en {path}", en: "session in {path}"}
+run_session_exit: {es: "sesión en {path} · exit {code}", en: "session in {path} · exit {code}"}
+role_line: {es: "{role:<9} {label}", en: "{role:<9} {label}"}
+role_line_missing: {es: "{role:<9} {label}  (no instalado)", en: "{role:<9} {label}  (not installed)"}
+
+# assemble, directives
+unit_not_found: {es: "coursekit: unidad {n} no encontrada", en: "coursekit: unit {n} not found"}
+assemble_plan:
+  es: "plan {path}: {lessons} lecciones, {bricks} bricks ({detail})"
+  en: "plan {path}: {lessons} lessons, {bricks} bricks ({detail})"
+link_needs_content_id: {es: "coursekit: link necesita --content-id, --preview o --review", en: "coursekit: link needs --content-id, --preview or --review"}
+applied_needs_lesson:
+  es: "coursekit: applied necesita --lesson y --lesson-id (o --content)"
+  en: "coursekit: applied needs --lesson and --lesson-id (or --content)"
+directives_ok:
+  es: "ok: el registro de directivas coincide con creator ({total} bricks)"
+  en: "ok: the directive registry matches creator ({total} bricks)"
+
+# media, voice, tts, subtitles, delivery, publish, catalog, theme
+action_needs_course: {es: "coursekit: esta acción necesita un código de curso", en: "coursekit: this action needs a course code"}
+media_manifest: {es: "manifest: {total} recursos ({detail})", en: "manifest: {total} assets ({detail})"}
+media_nothing: {es: "nada que producir", en: "nothing to produce"}
+media_set_needs_id: {es: "coursekit: set necesita el id de un recurso", en: "coursekit: set needs an asset id"}
+voice_set_needs: {es: "coursekit: voice set necesita CODE y PROVIDER", en: "coursekit: voice set needs CODE and PROVIDER"}
+voice_warning: {es: "aviso: {warning}", en: "warning: {warning}"}
+subtitles_wrote: {es: "escrito {path}", en: "wrote {path}"}
+delivery_add_needs_file: {es: "coursekit: delivery add necesita --file", en: "coursekit: delivery add needs --file"}
+catalog_wrote: {es: "escrito {path} ({courses} cursos, {units} unidades)", en: "wrote {path} ({courses} courses, {units} units)"}
+theme_wrote: {es: "escrito {path}", en: "wrote {path}"}
+theme_check_ok: {es: "  ok    {line}", en: "  ok   {line}"}
+theme_check_fail: {es: "  FALLO {line}", en: "  FAIL {line}"}
+
+# argparse: help
+help_new: {es: "crea un curso a partir de su título y sus horas", en: "create a course from its title and hours"}
+help_new_code: {es: "código del curso (por defecto: sale del título)", en: "course code (default: from the title)"}
+help_new_language:
+  es: "idioma del curso (por defecto: project.yaml › content_language)"
+  en: "course language (default: project.yaml › content_language)"
+help_new_no_intro: {es: "unidades sin el apartado de introducción inicial", en: "units without the opening introduction section"}
+help_new_no_summary: {es: "unidades sin el apartado de resumen final", en: "units without the closing summary section"}
+help_new_notes: {es: "instrucciones extra para el diseño instruccional", en: "extra instructions for the instructional design"}
+help_status:
+  es: "estado de todos los cursos, o detalle y siguiente paso de uno"
+  en: "state of every course, or the detail and next step of one"
+help_sync:
+  es: "escribe unidades y apartados a partir del diseño aprobado (design/matrix.json)"
+  en: "write units and sections from the approved design (design/matrix.json)"
+help_sync_check: {es: "solo informa de lo que se sincronizaría", en: "only report what would be synced"}
+help_outline: {es: "mapa compacto de un curso, o el texto de un apartado", en: "compact map of a course, or the text of one section"}
+help_outline_section: {es: "U.S: imprime solo el texto de ese apartado", en: "U.S: print only that section's text"}
+help_verify: {es: "comprueba el contenido con las reglas de producción", en: "check the content against the production rules"}
+help_verify_no_update: {es: "no actualiza el estado de la unidad ni del curso", en: "do not update unit and course status"}
+help_reviewed: {es: "marca una unidad como revisada: por la IA (lo usa el agente revisor) o, con --by, por una persona", en: "mark a unit as reviewed: by the AI (used by the review agent) or, with --by, by a person"}
+help_reviewed_by: {es: "nombre de la persona que ha revisado la unidad (sin él, la revisión es la de la IA); solo lo ejecutan personas", en: "name of the person who reviewed the unit (without it, the review is the AI's); only people run it"}
+help_reviewed_note: {es: "nota de la revisión de la persona (con --by)", en: "note of the person's review (with --by)"}
+help_reviewed_report: {es: "informe de la revisión de la persona, dentro de la carpeta del curso (con --by)", en: "report of the person's review, inside the course folder (with --by)"}
+reviewed_needs_by: {es: "coursekit: --note y --report necesitan --by", en: "coursekit: --note and --report need --by"}
+help_approve: {es: "firma el diseño o una unidad (solo personas, nunca un agente)", en: "sign off the design or a unit (people only, never an agent)"}
+help_approve_unit: {es: "número de unidad (aprobación de contenido)", en: "unit number (content gate)"}
+help_approve_yes:
+  es: "confirma sin preguntar (para `!` en el chat de un agente)"
+  en: "confirm without a prompt (for `!` in an agent chat)"
+help_approve_no_commit: {es: "registra la aprobación sin hacer commit", en: "record the approval without committing"}
+help_write:
+  es: "escribe unidades con el agente redactor (WRITER_AGENT / WRITER_MODEL)"
+  en: "write units with the writer agent (WRITER_AGENT / WRITER_MODEL)"
+help_review:
+  es: "revisión con IA de unidades con el agente revisor (REVIEWER_AGENT / REVIEWER_MODEL)"
+  en: "AI review of units with the reviewer agent (REVIEWER_AGENT / REVIEWER_MODEL)"
+help_unit_n: {es: "número de unidad (por defecto: todas las pendientes)", en: "unit number (default: every unit still to do)"}
+help_headless:
+  es: "ejecuta sin la interfaz de la herramienta (logs en .cache/logs/)"
+  en: "run without the tool's interface (logs in .cache/logs/)"
+help_full: {es: "review: la unidad entera, aunque ya se revisara antes", en: "review: the whole unit, even if it was reviewed before"}
+help_parts:
+  es: 'review: solo estas partes, p. ej. "apartado 4, actividad 1.2"'
+  en: 'review: only these parts, e.g. "section 4, activity 1.2"'
+help_agent_launch: {es: "herramienta para este lanzamiento (sustituye a .env)", en: "tool for this launch (overrides .env)"}
+help_model_launch: {es: "modelo para este lanzamiento (sustituye a .env)", en: "model for this launch (overrides .env)"}
+help_run:
+  es: "lanza un comando (/new-course, /assemble…) con el agente de su rol"
+  en: "launch a command (/new-course, /assemble…) with the agent of its role"
+help_run_name:
+  es: "nombre del comando, p. ej. new-course, design-change, assemble, deliver"
+  en: "command name, e.g. new-course, design-change, assemble, deliver"
+help_run_role: {es: "rol cuyo agente lo ejecuta (por defecto: el del comando)", en: "role whose agent runs it (default: from the command)"}
+help_assemble:
+  es: "monta una unidad: planifica, compara y registra en creator, o construye su paquete con el backend html"
+  en: "assemble a unit: plan, diff and record in creator, or build its package with the html backend"
+help_assemble_action:
+  es: "plan, diff, applied y link son del backend creator; build construye el paquete del backend html"
+  en: "plan, diff, applied and link are for the creator backend; build builds the package of the html backend"
+help_assemble_unit: {es: "número de unidad (build sin él: todas)", en: "unit number (build without it: every unit)"}
+help_assemble_version: {es: "build: versión del paquete; con ella también se crea el zip en delivery/", en: "build: version of the package; with it the zip is also created in delivery/"}
+assemble_build_needs_html:
+  es: "{code} se monta con el backend «{backend}»: `build` es del backend html (project.yaml › assembly.backend o course.yaml › assembly.backend)"
+  en: "{code} is assembled with the '{backend}' backend: `build` is for the html backend (project.yaml › assembly.backend or course.yaml › assembly.backend)"
+assemble_creator_only:
+  es: "{code} se monta con el backend html: `{action}` es del backend creator; usa `coursekit assemble build`"
+  en: "{code} is assembled with the html backend: `{action}` is for the creator backend; use `coursekit assemble build`"
+assemble_needs_unit: {es: "coursekit: assemble {action} necesita --unit", en: "coursekit: assemble {action} needs --unit"}
+help_assemble_content: {es: "applied: registra el título del contenido como renombrado", en: "applied: record the content title as renamed"}
+help_directives: {es: "compara el registro de directivas con el catálogo de creator", en: "compare the directive registry with the creator catalog"}
+help_directives_file: {es: "JSON guardado de list_brick_types", en: "JSON saved from list_brick_types"}
+help_media: {es: "manifiesto multimedia de un curso y cómo producir cada recurso", en: "media manifest of a course and how to produce each asset"}
+help_voice: {es: "proveedores de voz disponibles aquí, y la voz única de un curso", en: "voice providers available here, and the one voice of a course"}
+help_tts: {es: "locución de un guion con la voz del curso", en: "voice-over of a script with the course voice"}
+help_tts_course: {es: "usa la voz de este curso (course.yaml › media.voice)", en: "use the voice of this course (course.yaml › media.voice)"}
+help_tts_speaker: {es: "locutor de las voces Piper multilocutor", en: "speaker of multi-speaker Piper voices"}
+help_subtitles: {es: "subtítulos (VTT) que alinean un guion con su audio", en: "captions (VTT) aligning a script with its audio"}
+help_subtitles_course: {es: "el idioma del curso", en: "the course language"}
+help_delivery:
+  es: "registra un paquete SCORM entregado, imprime el nombre esperado o comprueba que se puede entregar (check)"
+  en: "record a delivered SCORM package, print its expected file name or check that it can be delivered (check)"
+delivery_ready: {es: "{code}: se puede entregar", en: "{code}: it can be delivered"}
+delivery_needs_unit_version: {es: "coursekit: delivery {action} necesita --unit y --version", en: "coursekit: delivery {action} needs --unit and --version"}
+help_hold: {es: "pone un curso en pausa (solo personas)", en: "put a course on hold (people only)"}
+help_hold_reason: {es: "por qué se pausa (queda en el historial)", en: "why it is paused (kept in the history)"}
+help_resume: {es: "reanuda un curso en pausa en el estado en que estaba", en: "resume a course on hold in the status it had"}
+hold_done: {es: "{code} en pausa (estaba en «{previous}»)", en: "{code} on hold (it was in '{previous}')"}
+resume_done: {es: "{code} reanudado: «{previous}» -> «{new}»", en: "{code} resumed: '{previous}' -> '{new}'"}
+help_client: {es: "revisión del curso por el cliente: ronda, cambios, aprobación (solo personas)", en: "review of the course by the client: round, changes, approval (people only)"}
+help_client_action:
+  es: "send abre una ronda; changes la cierra con cambios; approve registra la aprobación del cliente; skip entrega sin ella"
+  en: "send opens a round; changes closes it with changes; approve records the client's approval; skip delivers without it"
+help_client_to: {es: "send: a quién se envía", en: "send: who it is sent to"}
+help_client_where: {es: "send: enlace único, en vez de los de revisión de cada unidad", en: "send: one link, instead of the review links of each unit"}
+help_client_by: {es: "approve: nombre de quien aprueba por parte del cliente", en: "approve: name of who approves on behalf of the client"}
+help_client_note: {es: "changes o approve: nota (qué pidió el cliente, comentarios)", en: "changes or approve: note (what the client asked for, comments)"}
+help_client_reason: {es: "skip: motivo de entregar sin la aprobación del cliente", en: "skip: reason for delivering without the client's approval"}
+help_approve_force: {es: "firma la unidad aunque haya cambiado desde la revisión con IA", en: "sign the unit even if it changed after its AI review"}
+help_assemble_preview: {es: "link: enlace de vista previa de la unidad", en: "link: preview link of the unit"}
+help_assemble_review: {es: "link: enlace de revisión (comentarios del cliente) de la unidad", en: "link: review link (client comments) of the unit"}
+help_publish: {es: "replica los cursos en la carpeta compartida y escribe el catálogo", en: "mirror the courses to the shared folder and write the catalog"}
+help_publish_check: {es: "solo informa de la configuración del espejo", en: "only report the mirror configuration"}
+help_publish_only:
+  es: "no hace nada si no hay espejo (hooks de git)"
+  en: "do nothing when there is no mirror (git hooks)"
+help_catalog: {es: "escribe el Excel de seguimiento de todos los cursos", en: "write the tracking Excel of every course"}
+help_theme:
+  es: "tokens de diseño del tema (del proyecto o de un curso): derivarlos de la plataforma, tokens.css y el contraste"
+  en: "design tokens of the theme (of the project or of a course): derive them from the platform, tokens.css and the contrast"
+help_doctor: {es: "qué hay instalado y configurado aquí para el proyecto", en: "what is installed and configured here for the project"}
+help_roles: {es: "herramienta y modelo de cada rol", en: "tool and model of each role"}
+help_brief:
+  es: "convierte el material de referencia de un curso (o del proyecto) para los agentes"
+  en: "convert the reference material of a course (or of the project) for the agents"
+help_brief_code: {es: "código del curso (por defecto: el brief/ del proyecto)", en: "course code (default: the project brief/)"}
+help_brief_refresh: {es: "descarga de nuevo las URL de links.md", en: "download the URLs of links.md again"}
+help_theme_action:
+  es: "tokens escribe tokens.css; check mide el contraste; import deriva los tokens del resultado guardado de get_theme; show dice de dónde salen"
+  en: "tokens writes tokens.css; check measures the contrast; import derives the tokens from the saved get_theme result; show says where they come from"
+help_theme_file: {es: "import: fichero con el resultado de get_theme, o la hoja de estilos .css del backend html", en: "import: file with the get_theme result, or the .css stylesheet of the html backend"}
+help_theme_course: {es: "usa (o crea con import) los tokens propios de este curso", en: "use (or create with import) the tokens of this course"}
+help_media_force: {es: "set: marca el recurso aunque los tokens del tema no vengan de la plataforma", en: "set: mark the asset even if the theme tokens do not come from the platform"}
+theme_import_needs_file: {es: "coursekit: theme import necesita el fichero con el resultado de get_theme", en: "coursekit: theme import needs the file with the get_theme result"}
+theme_imported:
+  es: "tokens escritos en {path} (theme «{name}», {theme_id}) y tokens.css al lado"
+  en: "tokens written to {path} (theme '{name}', {theme_id}) and tokens.css next to it"
+theme_contrast_hint:
+  es: "algún par no llega al contraste mínimo: corrígelo en el theme de la plataforma (update_theme) y vuelve a importarlo; no edites los tokens a mano"
+  en: "some pair is below the minimum contrast: fix it in the theme of the platform (update_theme) and import it again; do not edit the tokens by hand"
+theme_imported_css:
+  es: "tokens escritos en {path} desde las variables CSS de {file} (sobre la maqueta base del paquete) y tokens.css al lado"
+  en: "tokens written to {path} from the CSS variables of {file} (over the base layout of the package) and tokens.css next to it"
+theme_origin_css:
+  es: "origen: variables CSS de {file} (huella {digest}), importado el {date}"
+  en: "origin: CSS variables of {file} (fingerprint {digest}), imported on {date}"
+theme_contrast_hint_css:
+  es: "algún par no llega al contraste mínimo: corrige el color en la hoja de estilos y vuelve a importarla; no edites los tokens a mano"
+  en: "some pair is below the minimum contrast: fix the colour in the stylesheet and import it again; do not edit the tokens by hand"
+theme_scope_project: {es: "tokens del proyecto: {path}", en: "project tokens: {path}"}
+theme_scope_course: {es: "tokens propios del curso: {path}", en: "tokens of the course: {path}"}
+theme_missing:
+  es: "no existe {path}: define el theme con /define-theme (o `coursekit theme import`)"
+  en: "{path} does not exist: define the theme with /define-theme (or `coursekit theme import`)"
+theme_manual:
+  es: "los tokens no vienen del theme de la plataforma (escritos a mano): impórtalos con /define-theme"
+  en: "the tokens do not come from the theme of the platform (written by hand): import them with /define-theme"
+theme_origin:
+  es: "origen: theme «{name}» de la plataforma ({theme_id}, versión {version}), importado el {date}"
+  en: "origin: platform theme '{name}' ({theme_id}, version {version}), imported on {date}"

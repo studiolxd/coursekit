@@ -24,7 +24,10 @@ If a unit has no `content_id`:
    `design_matrix_redaccion_status` until it finishes.
 2. `browse_workspace` / `get_content` to find each unit's content (folder named after the matrix)
    and `coursekit assemble link <CODE> --unit N --content-id <id>`.
-3. If there is `slxd.theme_id`: `set_content_theme` on each content.
+3. The theme: `coursekit theme show --course <CODE>` gives the theme of the course (its own or the project's) in the
+   `origin:` line, with its id: `set_content_theme` with that id on each content of the course. Without
+   tokens from the platform there is no theme to apply: leave the default and tell the person about
+   `/define-theme`.
 
 The generator names each content after its **unit**. The plan gives the title it must have
 (`content_title`): the course title when it has a single unit, otherwise
@@ -62,10 +65,16 @@ The generator names each content after its **unit**. The plan gives the title it
    links) and use `apply_accessibility_autofix` only for technical ones.
 2. `get_content_text` and compare with the `.md`: no text may be missing.
 3. `create_snapshot` named `assembly-YYYY-MM-DD`.
-4. The first time, `share_content` (`enabled: true`, `liveUpdates: true`) and save the URL in
-   `course.yaml › links.preview`.
+4. Links of each unit (each unit is its own content, so each has its own links); the first time:
+   - `share_content` (`enabled: true`, `liveUpdates: true`): the live preview, without comments.
+   - `enable_review` (no password unless the person asks for one): the review link where the client
+     comments; it publishes the first review version. Use `get_review` to read it again.
+   - Record both: `coursekit assemble link <CODE> --unit N --preview <url> --review <url>`.
+   When a unit is reloaded after the client's comments, its review needs a new version so the client
+   sees the changes: `publish_review_version` (see the `client-review` skill).
 5. Summarise for the person: lessons and bricks created or updated, warnings (unproduced
-   placeholders, pending labelled-graphic images), preview link.
+   placeholders, pending labelled-graphic images), and the preview and review link of each unit.
+   Tell them that, to open a round with the client, they run `coursekit client <CODE> send`.
 
 `assembly/*.json` is versioned with the course: it is what allows reloading only what changes.
 Do not commit unless asked.

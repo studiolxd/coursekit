@@ -1,0 +1,42 @@
+# Voice-over providers: errors, listing (`coursekit voice`) and the voice of a course.
+note_elevenlabs:
+  es: "mejor calidad; subtítulos exactos a partir de sus marcas de tiempo"
+  en: "best quality; exact captions from its timestamps"
+note_azure: {es: "voces neuronales; nivel gratuito", en: "neural voices; free tier"}
+note_google: {es: "voces Chirp 3 HD; nivel gratuito", en: "Chirp 3 HD voices; free tier"}
+note_piper: {es: "voz local de borrador (coursekit setup --media)", en: "local draft voice (coursekit setup --media)"}
+unknown_provider:
+  es: "proveedor de voz desconocido '{provider}' ({providers})"
+  en: "unknown voice provider '{provider}' ({providers})"
+not_configured:
+  es: "este curso usa {label} pero no está configurado aquí ({needs} en .env)"
+  en: "this course uses {label} but it is not configured here ({needs} in .env)"
+none_configured:
+  es: "no hay ningún proveedor de voz configurado (claves de ElevenLabs, Azure o Google, o Piper, en .env)"
+  en: "no voice provider configured (ElevenLabs, Azure or Google keys, or Piper, in .env)"
+several_available:
+  es: "hay varios proveedores de voz disponibles ({found}): elige uno para el curso con `coursekit voice set {code} <provider> [--voice …]`"
+  en: "several voice providers are available ({found}): choose one for the course with `coursekit voice set {code} <provider> [--voice …]`"
+unknown_provider_short:
+  es: "proveedor desconocido '{provider}' ({providers})"
+  en: "unknown provider '{provider}' ({providers})"
+not_configured_warning:
+  es: "{provider} no está configurado en este equipo; puede que otras personas del equipo lo tengan"
+  en: "{provider} is not configured on this machine; others on the team may have it"
+status_available: {es: disponible, en: available}
+status_missing: {es: falta, en: missing}
+default_voice_listing: {es: "(voz por defecto)", en: "(default voice)"}
+default_voice_set: {es: "(por defecto)", en: "(default)"}
+course_uses: {es: "\n{code} usa: {provider} · {voice}", en: "\n{code} uses: {provider} · {voice}"}
+course_uses_speaker:
+  es: "\n{code} usa: {provider} · {voice} · locutor {speaker}"
+  en: "\n{code} uses: {provider} · {voice} · speaker {speaker}"
+course_several:
+  es: "\n{code}: sin voz elegida y con varios proveedores disponibles → coursekit voice set {code} <provider>"
+  en: "\n{code}: no voice chosen and several providers available → coursekit voice set {code} <provider>"
+course_default: {es: "\n{code}: sin voz elegida; se usaría {provider}", en: "\n{code}: no voice chosen; {provider} would be used"}
+course_nothing: {es: "\n{code}: sin voz elegida; no se usaría nada", en: "\n{code}: no voice chosen; nothing would be used"}
+voice_set: {es: "{code}: voz {provider} · {voice}", en: "{code}: voice {provider} · {voice}"}
+voice_set_speaker:
+  es: "{code}: voz {provider} · {voice} · locutor {speaker}"
+  en: "{code}: voice {provider} · {voice} · speaker {speaker}"

@@ -128,12 +128,12 @@ def test_english_course_plan(tmp_path, monkeypatch, capsys):
     assert main(["approve", "design", "EN1", "--yes", "--no-commit"]) == 0
     skeleton = (course_dir / "content" / "unit-01" / "content.md").read_text(encoding="utf-8")
     assert "## Section 1 — Introduction and objectives *(min. 1,000 words)*" in skeleton
-    text = skeleton + "\n> **[MEDIA ASSET — Infografía]**\n> **Title:** A chart\n> **Description:** d\n"
+    text = skeleton + "\n> **[MEDIA ASSET — Infographic]**\n> **Title:** A chart\n> **Description:** d\n"
     (course_dir / "content" / "unit-01" / "content.md").write_text(text, encoding="utf-8")
     assert main(["assemble", "plan", "EN1", "--unit", "1"]) == 0
     plan = json.loads((course_dir / "assembly" / "unit-01.plan.json").read_text(encoding="utf-8"))
     note = next(b for lesson in plan["lessons"] for b in lesson["bricks"] if b["type"] == "NOTE")
-    assert note["data"]["content"]["title"] == "<p>Media asset — Infografía: A chart</p>"
+    assert note["data"]["content"]["title"] == "<p>Media asset — Infographic: A chart</p>"
     assert Path(course_dir / "assembly").is_dir()
 
 

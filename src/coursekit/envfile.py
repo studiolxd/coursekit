@@ -28,10 +28,11 @@ def parse(text: str) -> dict[str, str]:
 
 
 def load(path: Path) -> dict[str, str]:
-    """Load the file into os.environ without overriding it; return what the file defines."""
+    """Load the file into os.environ without overriding it (an empty value counts as not set); return what the file defines."""
     if not path.exists():
         return {}
     values = parse(path.read_text(encoding="utf-8"))
     for key, value in values.items():
-        os.environ.setdefault(key, value)
+        if value:
+            os.environ.setdefault(key, value)
     return values

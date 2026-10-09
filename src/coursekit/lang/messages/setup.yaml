@@ -1,0 +1,115 @@
+# Output of `coursekit setup` (identity, .env, hooks, agents, network, media tools).
+ok_item: {es: "ok: {item}", en: "ok: {item}"}
+warn_item: {es: "aviso: {item}", en: "warning: {item}"}
+env_created: {es: "ok: .env creado (personal, nunca se sube a git)", en: "ok: created .env (personal, never committed)"}
+identity_ok: {es: "ok: firmas como {who}", en: "ok: you sign as {who}"}
+identity_no_terminal:
+  es: "falta: identidad para firmar las aprobaciones; ejecuta `coursekit setup --identity` en una terminal (o con --name y --email)"
+  en: "missing: identity to sign approvals; run `coursekit setup --identity` in a terminal (or --name and --email)"
+identity_both: {es: "falta: hacen falta nombre y email para firmar", en: "missing: name and email are both needed to sign"}
+identity_saved: {es: "ok: firmas como {who} (guardado en .env)", en: "ok: you sign as {who} (saved in .env)"}
+identity_name: {es: "Tu nombre (firma las aprobaciones)", en: "Your name (signs approvals)"}
+identity_email: {es: "Tu email", en: "Your email"}
+hooks_no_repo: {es: "info: no es un repositorio git: sin hooks", en: "info: not a git repository: no hooks"}
+hooks_none:
+  es: "info: el proyecto no tiene .githooks/ (lo crea coursekit init --update)"
+  en: "info: no .githooks/ in the project (coursekit init --update creates it)"
+hooks_other:
+  es: "aviso: core.hooksPath ya es '{current}'; no lo cambio"
+  en: "warning: core.hooksPath is already '{current}'; not changing it"
+hooks_ok: {es: "ok: hooks de git activados ({path})", en: "ok: git hooks enabled ({path})"}
+ca_ok:
+  es: "ok: certificado CA corporativo configurado (NODE_EXTRA_CA_CERTS)"
+  en: "ok: corporate CA certificate configured (NODE_EXTRA_CA_CERTS)"
+ca_found:
+  es: "info: certificado CA corporativo encontrado ({cert}): Claude Code, opencode y npm necesitan NODE_EXTRA_CA_CERTS"
+  en: "info: corporate CA certificate found ({cert}): Claude Code, opencode and npm need NODE_EXTRA_CA_CERTS"
+ca_question:
+  es: "¿Definir NODE_EXTRA_CA_CERTS (y UV_NATIVE_TLS=1) para tu usuario?"
+  en: "Set NODE_EXTRA_CA_CERTS (and UV_NATIVE_TLS=1) for your user?"
+ca_set_ok:
+  es: "ok: definido; abre terminales nuevas y reinicia las herramientas de agente"
+  en: "ok: set; open new terminals and restart the agent tools"
+ca_set_fail: {es: "aviso: no he podido definirlo; hazlo a mano", en: "warning: could not set it; do it by hand"}
+ca_manual:
+  es: 'info: defínelo tú: NODE_EXTRA_CA_CERTS="{cert}" y UV_NATIVE_TLS=1'
+  en: 'info: set it yourself: NODE_EXTRA_CA_CERTS="{cert}" and UV_NATIVE_TLS=1'
+brew_missing:
+  es: "aviso: no encuentro Homebrew (https://brew.sh); luego repite coursekit setup --media"
+  en: "warning: Homebrew not found (https://brew.sh); then repeat coursekit setup --media"
+winget_missing:
+  es: "aviso: no encuentro winget (App Installer); instala a mano: {tools}"
+  en: "warning: winget not found (App Installer); install by hand: {tools}"
+asciinema_windows:
+  es: "info: asciinema no tiene versión para Windows (las demos de terminal usan VHS)"
+  en: "info: asciinema has no Windows build (terminal demos fall back to VHS)"
+apt_hint:
+  es: "info: instala con tu gestor de paquetes, por ejemplo: sudo apt install {packages}"
+  en: "info: install with your package manager, e.g.: sudo apt install {packages}"
+vhs_hint: {es: "info: instala vhs: https://github.com/charmbracelet/vhs", en: "info: install vhs: https://github.com/charmbracelet/vhs"}
+uv_missing:
+  es: "aviso: no encuentro uv (https://docs.astral.sh/uv/); no instalo las herramientas multimedia"
+  en: "warning: uv not found (https://docs.astral.sh/uv/); media tools not installed"
+piper_failed: {es: "aviso: no he podido descargar la voz de Piper ({error})", en: "warning: could not download the Piper voice ({error})"}
+piper_ok: {es: "ok: voz de borrador de Piper {name}", en: "ok: Piper draft voice {name}"}
+remotion_workspace: {es: "ok: espacio de Remotion en tools/remotion", en: "ok: Remotion workspace in tools/remotion"}
+npm_missing:
+  es: "aviso: no encuentro npm; no instalo las dependencias de Node (repite tras instalar Node)"
+  en: "warning: npm not found; the Node dependencies are not installed (repeat after installing Node)"
+workspace_installing:
+  es: "instalando las dependencias en {path} (una sola vez para todos los proyectos)…"
+  en: "installing the dependencies in {path} (once for every project)…"
+remotion_shared:
+  es: "ok: dependencias de Remotion compartidas desde {path}"
+  en: "ok: Remotion dependencies shared from {path}"
+remotion_kept:
+  es: "ok: tools/remotion ya tiene su propia carpeta node_modules; se deja como está"
+  en: "ok: tools/remotion already has its own node_modules folder; it is left as it is"
+html_builder_ok:
+  es: "ok: constructor del backend html (compartido por los proyectos) en {path}"
+  en: "ok: html backend builder (shared by the projects) in {path}"
+html_builder_fail:
+  es: "aviso: no se pudo preparar el constructor del backend html (npm install); `coursekit assemble build` lo intentará de nuevo"
+  en: "warning: the html backend builder could not be prepared (npm install); `coursekit assemble build` will try again"
+remotion_deps_ok: {es: "ok: dependencias de Remotion", en: "ok: Remotion dependencies"}
+remotion_deps_fail: {es: "aviso: ha fallado npm install en tools/remotion", en: "warning: npm install failed in tools/remotion"}
+agents_done:
+  es: "ok: skills, comandos y ajustes de agentes ({count} actualizados)"
+  en: "ok: skills, commands and agent settings ({count} updated)"
+node_hint:
+  es: "info: Node descarga los enlaces web de brief/links.md (coursekit setup --media lo instala)"
+  en: "info: Node downloads the web links of brief/links.md (coursekit setup --media installs it)"
+media_header: {es: "== herramientas multimedia", en: "== media tools"}
+ask_media:
+  es: "¿Instalar también las herramientas de multimedia (ffmpeg, vhs, voz local de borrador, Remotion)? Descarga bastante."
+  en: "Also install the media tools (ffmpeg, vhs, local draft voice, Remotion)? It downloads quite a lot."
+help_setup:
+  es: "prepara esta máquina para el proyecto (identidad, .env, hooks, agentes, red)"
+  en: "prepare this machine for the project (identity, .env, hooks, agents, network)"
+help_identity: {es: "solo fija o cambia la identidad con la que firmas", en: "only set or change the signing identity"}
+help_media: {es: "instala también las herramientas de producción multimedia", en: "also install the media production tools"}
+help_name: {es: "nombre con el que firmas (sin preguntar)", en: "signing name (without asking)"}
+help_email: {es: "email con el que firmas (sin preguntar)", en: "signing email (without asking)"}
+help_yes: {es: "no pregunta", en: "do not ask"}
+keys_header:
+  es: "== claves de servicios de voz e imagen (opcionales; Enter para omitir)"
+  en: "== voice and image service keys (optional; Enter to skip)"
+key_prompt: {es: "{service}: {key}", en: "{service}: {key}"}
+key_extra: {es: "  {key} (opcional)", en: "  {key} (optional)"}
+key_present: {es: "ok: {key} ya está definida", en: "ok: {key} is already set"}
+keys_saved: {es: "ok: guardadas en .env: {keys}", en: "ok: saved in .env: {keys}"}
+roles_header:
+  es: "== herramienta y modelo de cada rol (se guardan en .env)"
+  en: "== tool and model of each role (saved in .env)"
+roles_line: {es: "  {role}: {tool} · {model}", en: "  {role}: {tool} · {model}"}
+roles_default_model: {es: modelo por defecto de la herramienta, en: the tool's default model}
+roles_confirm: {es: "¿Usar estos valores?", en: "Use these values?"}
+role_tool: {es: "{role}: herramienta ({tools})", en: "{role}: tool ({tools})"}
+role_model: {es: "{role}: modelo (vacío: el de la herramienta)", en: "{role}: model (empty: the tool's own)"}
+roles_saved: {es: "ok: herramienta y modelo de cada rol guardados en .env", en: "ok: tool and model of each role saved in .env"}
+role_design: {es: diseño, en: design}
+role_writer: {es: redacción, en: writing}
+role_reviewer: {es: revisión, en: review}
+role_media: {es: multimedia, en: media}
+role_assembly: {es: montaje, en: assembly}
+help_roles: {es: "vuelve a elegir la herramienta y el modelo de cada rol", en: "choose again the tool and model of each role"}

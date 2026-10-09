@@ -7,7 +7,7 @@ Prepare the approval of the instructional design of course $ARGUMENTS.
 
 1. Read the matrix with `design_matrix_get` and compare it with `courses/<CODE>/design/matrix.json`.
    If the person edited in slxd since the last export, export again (Excel, `matrix.json`,
-   `validation.json`) and publish with `coursekit publish <CODE>`.
+   `validation.json`).
 2. `design_matrix_validate`: if there are errors, stop and explain them.
 3. Run `coursekit sync <CODE> --check` and summarise what will be signed: units, hours, sections,
    objectives and minimum words, plus the warnings.

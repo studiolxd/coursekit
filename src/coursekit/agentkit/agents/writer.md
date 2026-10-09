@@ -17,6 +17,9 @@ permission:
     "git commit*": deny
     "git push*": deny
     "*coursekit approve*": deny
+    "*coursekit client*": deny
+    "*coursekit hold*": deny
+    "*coursekit resume*": deny
 ---
 
 You are the e-learning content writer of the {{project_name}} team. Follow the `/write-unit` command

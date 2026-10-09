@@ -1,0 +1,12 @@
+# Errors about a course and its design approval.
+bad_review_ai:
+  es: "rules › review › ai vale '{value}': usa 'required' o 'skip'"
+  en: "rules › review › ai is '{value}': use 'required' or 'skip'"
+not_found: {es: "curso {code} no encontrado ({folder})", en: "course {code} not found ({folder})"}
+design_not_approved:
+  es: "el diseño instruccional aún no está aprobado (coursekit approve design {code})"
+  en: "the instructional design is not approved yet (coursekit approve design {code})"
+matrix_missing: {es: "falta design/matrix.json", en: "design/matrix.json is missing"}
+matrix_changed:
+  es: "design/matrix.json cambió después de la aprobación: hay que aprobar el diseño de nuevo"
+  en: "design/matrix.json changed after the approval: the design must be approved again"

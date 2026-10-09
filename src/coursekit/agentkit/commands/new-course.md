@@ -14,7 +14,8 @@ $ARGUMENTS
    material, say so in the final summary: the person can drop files in `brief/sources/` or URLs
    in `brief/links.md` and ask for `/design-change`.
 4. Load the `instructional-design` skill and follow its **Proposal** section.
-5. Publish for review: `coursekit publish <CODE>`.
+5. Run `coursekit theme show`. If the project has no theme tokens, say in the summary that `/define-theme`
+   must be run before producing media.
 6. Finish with a short summary for the person, in {{ui_language_name}}: units with hours and
    objectives, decisions and assumptions to check, where the Excel is, and how to go on: changes
    with `/design-change <CODE> <changes>` and sign-off with `/approve-design <CODE>`.

@@ -5,8 +5,13 @@ description: Production and upload of a course's media assets (images, diagrams,
 
 # Media production
 
-Providers and order of preference: `coursekit config media`. Design tokens: `theme/tokens.json`
-and `theme/tokens.css` of the project (`coursekit theme tokens` derives them from the theme).
+Providers and order of preference: `coursekit config media`. Design tokens: `coursekit theme show --course <CODE>` says
+which ones the course uses (its own `courses/<CODE>/theme/`, else the project's `theme/`) and where they come
+from; `tokens.json` and `tokens.css` are next to each other. They are derived from the theme of the platform with
+`/define-theme`: if there are none, or they were written by hand, stop and tell the person to run it; never
+write or edit tokens yourself. Infographics, diagrams, GIFs, simulations and videos need them: `coursekit media
+set … --status produced` refuses without them. The Remotion template reads `theme/tokens.json`; for a course with
+its own tokens, point the composition at `courses/<CODE>/theme/tokens.json`.
 
 {{> _slxd-tools}}
 

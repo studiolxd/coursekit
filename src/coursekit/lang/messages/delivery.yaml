@@ -1,0 +1,12 @@
+# Errors and result of `coursekit delivery`.
+no_manifest: {es: "imsmanifest.xml no está en la raíz del zip", en: "imsmanifest.xml is not at the root of the zip"}
+not_a_zip: {es: "no es un fichero zip válido", en: "not a valid zip file"}
+wrong_folder: {es: "el paquete debe estar en {folder}", en: "the package must be in {folder}"}
+unit_not_found: {es: "no se encuentra la unidad {unit}", en: "unit {unit} not found"}
+recorded_pending:
+  es: "registrado {name} · unidades pendientes de la v{version}: {pending}"
+  en: "recorded {name} · pending units for v{version}: {pending}"
+status_warning:
+  es: "aviso: {code} está en «{status}», no en un estado de entrega (assembly, client_review): el paquete se registra, pero el curso no se marca como entregado"
+  en: "warning: {code} is in '{status}', not in a delivery status (assembly, client_review): the package is recorded, but the course is not marked as delivered"
+recorded_done: {es: "registrado {name} · curso entregado", en: "recorded {name} · course delivered"}

@@ -1,9 +1,10 @@
 ---
-description: Load into slxd creator the content of a course or of one unit (only what changed).
+description: Assemble a course or one unit: load it into slxd creator (only what changed) or build its SCORM package with the html backend.
 argument-hint: "<CODE> [N]"
 ---
 
-Assembly in creator of: $ARGUMENTS (course code and, optionally, the unit).
+Assembly of: $ARGUMENTS (course code and, optionally, the unit).
 
-Load the `creator-assembly` skill and follow it. Without a unit number, process every unit in
-order.
+The project assembles with the **{{backend}}** backend by default; `coursekit status <CODE>` says the one of the course (a course
+may use the other). With `creator` load the `creator-assembly` skill; with `html` load the `html-assembly` skill. Follow it.
+Without a unit number, process every unit in order.

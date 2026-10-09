@@ -1,0 +1,10 @@
+# Errors when generating the skills, commands and agents of a project.
+unknown_partial:
+  es: "{where}: partial desconocido {{{{> {name}}}}}"
+  en: "{where}: unknown partial {{{{> {name}}}}}"
+unknown_token:
+  es: "{where}: token desconocido {{{{{name}}}}}"
+  en: "{where}: unknown token {{{{{name}}}}}"
+invalid_json:
+  es: "{file} no es un JSON válido ({error}); corrígelo y ejecuta `coursekit agents` de nuevo"
+  en: "{file} is not valid JSON ({error}); fix it and run `coursekit agents` again"

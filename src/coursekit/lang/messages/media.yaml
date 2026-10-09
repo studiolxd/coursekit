@@ -1,0 +1,41 @@
+# Output and errors of `coursekit media` (plan, providers, set).
+available_yes: {es: "sí", en: "yes"}
+available_mcp: {es: "si el agente tiene la herramienta MCP", en: "if the agent has the MCP tool"}
+available_yes_only: {es: "sí, solo para contenido {only}", en: "yes, only for {only} content"}
+available_mcp_only:
+  es: "si el agente tiene la herramienta MCP, solo para contenido {only}"
+  en: "if the agent has the MCP tool, only for {only} content"
+missing_download_specs:
+  es: "sus especificaciones piden un fichero descargable (PDF…): coursekit media set … --download media/files/<file>"
+  en: "its specs ask for a downloadable file (PDF…): coursekit media set … --download media/files/<file>"
+missing_download_upload:
+  es: "un fichero descargable aún no está subido: request_asset_upload kind attachment, y después --download-asset-path"
+  en: "a downloadable file is not uploaded yet: request_asset_upload kind attachment, then --download-asset-path"
+no_option:
+  es: "  ninguna opción disponible: instala una herramienta o define una clave (coursekit config media)"
+  en: "  no option available: install a tool or set a key (coursekit config media)"
+voice_options: {es: "    voz: {options}", en: "    voice: {options}"}
+voice_none: {es: "    voz: ninguna disponible", en: "    voice: none available"}
+subtitles_options: {es: "    subtítulos: {options}", en: "    subtitles: {options}"}
+subtitles_none: {es: "    subtítulos: ninguno disponible", en: "    subtitles: none available"}
+provider_available: {es: disponible, en: available}
+provider_missing: {es: falta, en: missing}
+provider_mcp: {es: MCP del agente, en: agent MCP}
+theme_missing:
+  es: "{code} no tiene tokens del tema: define el theme con /define-theme antes de producir infografías, esquemas, simulaciones o vídeos (--force para saltarlo)"
+  en: "{code} has no theme tokens: define the theme with /define-theme before producing infographics, diagrams, simulations or videos (--force to skip it)"
+theme_manual:
+  es: "los tokens de {code} no vienen del theme de la plataforma (escritos a mano): impórtalos con /define-theme (--force para saltarlo)"
+  en: "the tokens of {code} do not come from the theme of the platform (written by hand): import them with /define-theme (--force to skip it)"
+theme_changed:
+  es: "{asset} se produjo con otros tokens del tema: vuelve a producirlo"
+  en: "{asset} was produced with other theme tokens: produce it again"
+asset_not_found:
+  es: "no se encuentra el recurso {asset_id} (ejecuta antes `coursekit media extract`)"
+  en: "asset {asset_id} not found (run `coursekit media extract` first)"
+bad_status:
+  es: "el estado debe ser uno de {statuses}"
+  en: "status must be one of {statuses}"
+download_needs_file:
+  es: "--download-title y --download-asset-path necesitan --download FILE"
+  en: "--download-title and --download-asset-path need --download FILE"

@@ -1,0 +1,75 @@
+# Findings of `coursekit verify` (errors and warnings about a unit's content).
+pictograph:
+  es: "{file}:{line}: emoji o pictograma no permitido ({chars})"
+  en: "{file}:{line}: emoji/pictograph not allowed ({chars})"
+unknown_directive:
+  es: "{file}:{line}: directiva desconocida ':::{name}'"
+  en: "{file}:{line}: unknown directive ':::{name}'"
+unknown_directive_hint:
+  es: "{file}:{line}: directiva desconocida ':::{name}' (usa: {hint})"
+  en: "{file}:{line}: unknown directive ':::{name}' (use: {hint})"
+nested_directive:
+  es: "{file}:{line}: directiva anidada dentro de ':::{outer}' (abierta en la línea {opened})"
+  en: "{file}:{line}: nested directive inside ':::{outer}' (opened at line {opened})"
+directive_not_closed:
+  es: "{file}:{line}: la directiva ':::{name}' no está cerrada"
+  en: "{file}:{line}: directive ':::{name}' is not closed"
+question_without_objective:
+  es: "{file}:{line}: pregunta sin '{key}'"
+  en: "{file}:{line}: question without '{key}'"
+file_missing: {es: "falta {path}", en: "missing {path}"}
+sections_mismatch:
+  es: "content.md: los apartados {found} no coinciden con el diseño {expected}"
+  en: "content.md: sections {found} do not match the design {expected}"
+title_differs:
+  es: "{label}: el título '{title}' difiere del diseño '{design}'"
+  en: "{label}: title '{title}' differs from the design '{design}'"
+words_below_minimum:
+  es: "{label}: {words} palabras < mínimo {minimum}"
+  en: "{label}: {words} words < minimum {minimum}"
+words_below_margin:
+  es: "{label}: {words} palabras, por debajo del margen recomendado del {margin} %"
+  en: "{label}: {words} words, below the recommended {margin} % margin"
+missing_objective_tag:
+  es: "{label}: falta la etiqueta de objetivo *[{objective} UN.M — …]*"
+  en: "{label}: missing objective tag *[{objective} UN.M — …]*"
+few_interactive:
+  es: "{label}: {count} directivas interactivas distintas < {needed}"
+  en: "{label}: {count} distinct interactive directives < {needed}"
+objective_not_tagged:
+  es: "content.md: el objetivo {id} no está etiquetado en ningún apartado de contenido"
+  en: "content.md: objective {id} is not tagged in any content section"
+unknown_placeholder_type:
+  es: "content.md:{line}: tipo de recurso multimedia desconocido o no permitido '{kind}' (usa: {allowed})"
+  en: "content.md:{line}: unknown or not allowed placeholder type '{kind}' (use: {allowed})"
+placeholder_missing_fields:
+  es: "content.md:{line}: al recurso multimedia le faltan campos: {fields}"
+  en: "content.md:{line}: placeholder missing fields: {fields}"
+few_placeholders:
+  es: "content.md: {count} recursos multimedia < {needed}"
+  en: "content.md: {count} placeholders < {needed}"
+few_placeholder_types:
+  es: "content.md: {count} tipos de recurso multimedia < {needed}"
+  en: "content.md: {count} placeholder types < {needed}"
+few_questions:
+  es: "assessment.md: {questions} preguntas en el banco, se esperaban {expected} ({per_objective} por objetivo evaluado con cuestionario)"
+  en: "assessment.md: {questions} questions in the bank, expected {expected} ({per_objective} per objective assessed by questionnaire)"
+assembly_error: {es: "ensamblado: {error}", en: "assembly: {error}"}
+changed_after_approval:
+  es: "el contenido cambió tras su aprobación: hay que revisarlo y aprobarlo de nuevo"
+  en: "content changed after its approval: it must be reviewed and approved again"
+changed_after_approval_parts:
+  es: "el contenido cambió tras su aprobación ({parts} cambió tras la revisión con IA): hay que revisarlo y aprobarlo de nuevo"
+  en: "content changed after its approval ({parts} changed after the AI review): it must be reviewed and approved again"
+changed_after_review:
+  es: "cambió tras la revisión con IA: {parts} (coursekit review: revisión parcial)"
+  en: "changed after the AI review: {parts} (coursekit review: partial review)"
+status_change:
+  es: "estado: unidad {current} -> {target}"
+  en: "status: unit {current} -> {target}"
+review_skipped:
+  es: "revisión con IA omitida (rules › review › ai: skip): la unidad pasa a revisada y la revisión es tu firma"
+  en: "AI review skipped (rules › review › ai: skip): the unit counts as reviewed and your sign-off is the review"
+status_change_course:
+  es: "estado: unidad {current} -> {target} · curso {old} -> {new}"
+  en: "status: unit {current} -> {target} · course {old} -> {new}"

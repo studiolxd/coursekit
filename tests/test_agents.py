@@ -61,7 +61,7 @@ def test_writer_model_from_env(project, monkeypatch):
     monkeypatch.setenv("WRITER_MODEL", "acme/model-x")
     assert main(["agents"]) == 0
     assert "model: acme/model-x" in (project / ".opencode/agent/writer.md").read_text(encoding="utf-8")
-    assert "model:" not in (project / ".opencode/agent/reviewer.md").read_text(encoding="utf-8")
+    assert "model: acme/model-x" not in (project / ".opencode/agent/reviewer.md").read_text(encoding="utf-8")
 
 
 def test_project_override_wins_and_extra_skill(project):

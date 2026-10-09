@@ -21,6 +21,7 @@ from importlib import resources
 from pathlib import Path
 
 from coursekit import course as coursemod
+from coursekit.i18n import t
 from coursekit.lang import format_number
 from coursekit.util import edit_yaml, render, save_yaml
 
@@ -46,12 +47,19 @@ def number(value: float) -> float | int:
 
 
 def load_graph(path: Path) -> dict:
-    data = json.loads(path.read_text(encoding="utf-8"))
+    if not path.is_file():
+        raise DesignError(t("sync", "matrix_missing", path=path.as_posix()))
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except ValueError as exc:
+        raise DesignError(t("sync", "not_a_matrix", path=path.as_posix())) from exc
+    if not isinstance(data, dict):
+        raise DesignError(t("sync", "not_a_matrix", path=path.as_posix()))
     for key in ("result", "graph"):  # tolerate the MCP result wrapped in {"result": ...}
         if "nodos" not in data and isinstance(data.get(key), dict):
             data = data[key]
     if "nodos" not in data:
-        raise DesignError(f"{path} does not look like a design_matrix_get result (no 'nodos')")
+        raise DesignError(t("sync", "not_a_matrix", path=path.as_posix()))
     return data
 
 
@@ -98,18 +106,18 @@ def build_units(graph: dict, course: dict, cfg: dict, tokens: dict) -> tuple[lis
             if intro and sn == 1:
                 kind = "intro"
                 if not intro_re.match(node["titulo"]):
-                    problems.append(f"{unit_word} {un}: intro_section is on but the first section is '{node['titulo']}'")
+                    problems.append(t("sync", "intro_mismatch", unit=unit_word, n=un, title=node["titulo"]))
             elif summary and sn == len(section_nodes):
                 kind = "summary"
                 if not summary_re.match(node["titulo"]):
-                    problems.append(f"{unit_word} {un}: summary_section is on but the last section is '{node['titulo']}'")
+                    problems.append(t("sync", "summary_mismatch", unit=unit_word, n=un, title=node["titulo"]))
             elif obj_ids:
                 kind = "content"
             else:
                 kind = "activities"
 
             if hours is None:
-                problems.append(f"{unit_word} {un} › {node['titulo']}: section without hours in the design")
+                problems.append(t("sync", "section_without_hours", unit=unit_word, n=un, title=node["titulo"]))
                 hours = 0
             sections.append({
                 "n": sn,
@@ -134,7 +142,7 @@ def build_units(graph: dict, course: dict, cfg: dict, tokens: dict) -> tuple[lis
         if unit_hours is None:
             unit_hours = section_hours
         elif abs(unit_hours - section_hours) > 0.01:
-            problems.append(f"{unit_word} {un}: {unit_hours} h declared but sections add up to {section_hours} h")
+            problems.append(t("sync", "unit_hours_mismatch", unit=unit_word, n=un, declared=unit_hours, sections=section_hours))
 
         units.append({
             "n": un,
@@ -170,7 +178,7 @@ def build_units(graph: dict, course: dict, cfg: dict, tokens: dict) -> tuple[lis
 
     total = sum(u["hours"] for u in units)
     if abs(total - float(course["design"]["hours"])) > 0.01:
-        problems.append(f"units add up to {number(total)} h but the course has {course['design']['hours']} h")
+        problems.append(t("sync", "total_hours_mismatch", total=number(total), hours=course["design"]["hours"]))
     return units, problems
 
 
@@ -226,7 +234,7 @@ def sync(course: dict, check_only: bool = False) -> SyncResult:
         if old:
             unit["content_id"] = old.get("content_id")
             unit["status"] = old.get("status", "pending")
-            for key in ("written_with", "reviewed_with", "reviewed_parts"):
+            for key in ("written_with", "reviewed_with", "reviewed_parts", "links"):
                 if old.get(key):
                     unit[key] = old[key]
     data["units"] = units
@@ -240,12 +248,10 @@ def sync(course: dict, check_only: bool = False) -> SyncResult:
         if content.exists() and old and content.read_text(encoding="utf-8") == skeleton(old, cfg, tokens, language):
             content.unlink()  # still the untouched skeleton of the previous design: regenerate it
         if content.exists():
-            found = [(int(n), t.strip()) for n, t, _ in headings.findall(content.read_text(encoding="utf-8"))]
+            found = [(int(n), title.strip()) for n, title, _ in headings.findall(content.read_text(encoding="utf-8"))]
             expected = [(s["n"], s["title"]) for s in unit["sections"]]
             if found != expected:
-                result.warnings.append(
-                    f"{tokens['unit']} {unit['n']}: content.md headings differ from the design; update them by hand"
-                )
+                result.warnings.append(t("sync", "headings_differ", unit=tokens["unit"], n=unit["n"]))
             continue
         folder.mkdir(parents=True, exist_ok=True)
         content.write_text(skeleton(unit, cfg, tokens, language), encoding="utf-8", newline="\n")

@@ -1,0 +1,20 @@
+# Errors and output of the html backend (`coursekit assemble build`).
+unsupported:
+  es: "{brick}: este componente aún no está disponible en el backend html (los juegos llegarán en una entrega posterior)"
+  en: "{brick}: this component is not available in the html backend yet (the games come in a later delivery)"
+asset_without_file:
+  es: "el recurso {asset} está producido pero su fichero no existe (coursekit media set … --file): se deja el marcador"
+  en: "the asset {asset} is produced but its file does not exist (coursekit media set … --file): the placeholder stays"
+no_workspace:
+  es: "no se pudo preparar el constructor (npm install de @studiolxd/scorm y esbuild): comprueba Node y npm con `coursekit doctor`"
+  en: "the builder could not be prepared (npm install of @studiolxd/scorm and esbuild): check Node and npm with `coursekit doctor`"
+bundle_failed: {es: "ha fallado esbuild al empaquetar el reproductor: {error}", en: "esbuild failed to bundle the player: {error}"}
+missing_text:
+  es: "el paquete no contiene {count} palabra(s) del contenido: {words}"
+  en: "the package does not contain {count} word(s) of the content: {words}"
+course_assembled: {es: "todas las unidades están construidas: el curso pasa a assembly", en: "every unit is built: the course moves to assembly"}
+built:
+  es: "unidad {n}: {files} ficheros en {path}"
+  en: "unit {n}: {files} files in {path}"
+packaged: {es: "paquete {name} ({size})", en: "package {name} ({size})"}
+preview: {es: "vista previa: abre {path} en el navegador", en: "preview: open {path} in the browser"}

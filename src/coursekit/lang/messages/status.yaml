@@ -1,0 +1,63 @@
+# Output of `coursekit status`.
+next_design:
+  es: "revisa la propuesta, pide cambios con /design-change y firma con `coursekit approve design {code}`"
+  en: "review the proposal, ask for changes with /design-change and sign with `coursekit approve design {code}`"
+next_design_approved:
+  es: "escribe las unidades con `coursekit write {code} <N>`"
+  en: "write the units with `coursekit write {code} <N>`"
+next_writing:
+  es: "termina la redacción (`coursekit verify {code}`) y revisa con `coursekit review {code} <N>` (o registra tu revisión con `coursekit reviewed {code} <N> --by \"Nombre\"`)"
+  en: "finish the writing (`coursekit verify {code}`) and review with `coursekit review {code} <N>` (or record your own review with `coursekit reviewed {code} <N> --by \"Name\"`)"
+next_ai_review:
+  es: "revisión con IA con `coursekit review {code} <N>` (o registra tu revisión con `coursekit reviewed {code} <N> --by \"Nombre\"`)"
+  en: "AI review with `coursekit review {code} <N>` (or record your own review with `coursekit reviewed {code} <N> --by \"Name\"`)"
+next_editorial_review:
+  es: "revisión editorial y firma de cada unidad con `coursekit approve content {code} --unit <N>`"
+  en: "editorial review and sign-off of each unit with `coursekit approve content {code} --unit <N>`"
+next_media:
+  es: "produce el multimedia con /produce-media {code} y monta con /assemble {code}"
+  en: "produce the media with /produce-media {code} and assemble with /assemble {code}"
+next_assembly:
+  es: "monta con /assemble {code}; después abre la revisión del cliente con `coursekit client {code} send` o entrega con /deliver {code}"
+  en: "assemble with /assemble {code}; then open the client's review with `coursekit client {code} send` or deliver with /deliver {code}"
+next_client_review:
+  es: "espera al cliente y registra su respuesta con `coursekit client {code} approve --by \"Nombre\"` o `coursekit client {code} changes`"
+  en: "wait for the client and record the answer with `coursekit client {code} approve --by \"Name\"` or `coursekit client {code} changes`"
+next_client_review_closed:
+  es: "la ronda del cliente está cerrada: entrega con /deliver {code}"
+  en: "the client's round is closed: deliver with /deliver {code}"
+next_delivered: {es: "entregado; para otra versión usa /deliver {code}", en: "delivered; for another version use /deliver {code}"}
+next_on_hold: {es: "reanúdalo con `coursekit resume {code}`", en: "resume it with `coursekit resume {code}`"}
+hold_line:
+  es: "En pausa desde {since} por {by}: {reason} (estaba en «{previous}»)"
+  en: "On hold since {since} by {by}: {reason} (it was in '{previous}')"
+client_round_line:
+  es: "Revisión del cliente, ronda {round}: {outcome}{to}"
+  en: "Client review, round {round}: {outcome}{to}"
+outcome_open: {es: "abierta", en: "open"}
+outcome_changes: {es: "pidió cambios", en: "asked for changes"}
+outcome_approved: {es: "aprobada", en: "approved"}
+outcome_skipped: {es: "omitida", en: "skipped"}
+next_design_changed:
+  es: "revisa los cambios del diseño y fírmalo de nuevo con `coursekit approve design {code}`"
+  en: "review the design changes and sign it again with `coursekit approve design {code}`"
+next_step_line: {es: "Siguiente paso: {step}", en: "Next step: {step}"}
+units_one: {es: "1 unidad", en: "1 unit"}
+units: {es: "{n} unidades", en: "{n} units"}
+overview_row:
+  es: "{code} {status} {hours} h · {units}"
+  en: "{code} {status} {hours} h · {units}"
+overview_row_signed:
+  es: "{code} {status} {hours} h · {units} · diseño firmado por {by} el {date}"
+  en: "{code} {status} {hours} h · {units} · design signed by {by} on {date}"
+no_courses: {es: 'aún no hay cursos: coursekit new "<título>" <horas>', en: 'no courses yet: coursekit new "<title>" <hours>'}
+backend_line: {es: "Montaje: backend {backend}", en: "Assembly: {backend} backend"}
+state_line: {es: "Estado: {status}", en: "Status: {status}"}
+design_signed: {es: "Diseño: firmado por {by} el {at}", en: "Design: signed by {by} on {at}"}
+design_problem: {es: "Diseño: {problem}", en: "Design: {problem}"}
+unit_line:
+  es: "  U{n} {title} · {hours} h · {sections} apartados · {objectives} objetivos · mín. {words} palabras · {status}"
+  en: "  U{n} {title} · {hours} h · {sections} sections · {objectives} objectives · min. {words} words · {status}"
+unit_line_written_with:
+  es: "  U{n} {title} · {hours} h · {sections} apartados · {objectives} objetivos · mín. {words} palabras · {status} · escrita con {tool}"
+  en: "  U{n} {title} · {hours} h · {sections} sections · {objectives} objectives · min. {words} words · {status} · written with {tool}"

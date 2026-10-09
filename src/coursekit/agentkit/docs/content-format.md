@@ -56,16 +56,16 @@ Internal structure (anything else fails at assembly):
 | `accordion`, `tabs`, `carousel` | one `#### Title` per panel, tab or slide + Markdown text |
 | `timeline` | `#### <date> — <title>` per milestone (without " — ", all of it is the title) + text |
 | `flashcards`, `flashcard-gallery` | `#### Front` + text of the back |
-| `labelled-graphic` | `imagen: <exact title of the placeholder>` + `#### Point` + text; optional `posición: x,y` (0–100) under each point |
+| `labelled-graphic` | `{{k_image}}: <exact title of the placeholder>` + `#### Point` + text; optional `{{k_position}}: x,y` (0–100) under each point |
 | `dialog` | `**Character:** line`, one per line |
 | `carousel-quotes` | one quote per paragraph, with `— author` on its last line |
-| `note` | optional `título: …` + text |
+| `note` | optional `{{k_title}}: …` + text |
 | `highlight` | text |
 | `quote` | quote + `— author` on the last line |
 | `word-search`, `wordle`, `hangman` | `- WORD` per line |
 | `memory` | `- card content` per line |
-| `pasapalabra` | `- A (empieza): definition :: ANSWER` or `(contiene)`; alternatives with `/` |
-| `trivial` | `#### Category` + `pregunta: …` blocks with `- [x]` / `- [ ]` options, separated by a blank line |
+| `pasapalabra` | `- A ({{w_starts}}): definition :: ANSWER` or `({{w_contains}})`; alternatives with `/` |
+| `trivial` | `#### Category` + `{{k_question}}: …` blocks with `- [x]` / `- [ ]` options, separated by a blank line |
 
 A plain blockquote (`> text`) becomes a highlight.
 
@@ -77,22 +77,22 @@ The directives with `role: question`: `single-choice`, `multi-select`, `true-fal
 ```markdown
 :::single-choice
 {{t_question_key}} U1.2
-pregunta: <question>
+{{k_question}}: <question>
 - [ ] <distractor>
 - [x] <correct answer>
 - [ ] <distractor>
-feedback-correcto: <why it is right>
-feedback-incorrecto: <which section to review>
+{{k_feedback_correct}}: <why it is right>
+{{k_feedback_incorrect}}: <which section to review>
 :::
 ```
 
 - `single-choice` (exactly one `- [x]`) and `multi-select`: options `- [x]` / `- [ ]`.
 - `match`: lines `- term :: definition`. `sorting`: list in the right order. `order-words`:
   `- full sentence` per sentence. `sorting-groups`: `#### Category` + list of items.
-  `true-false`: `respuesta: verdadero|falso`. `fill-in-the-blank`: blanks in `pregunta:` as
-  `{answer}` (several accepted: `{a/b}`). `short-answer`: `respuestas: a | b | c`.
-- Common keys: `{{t_question_key}}`, `pregunta:`, `feedback-correcto:`, `feedback-incorrecto:`,
-  `feedback:`. Each key on one line. Every question carries `{{t_question_key}}` and feedback.
+  `true-false`: `{{k_answer}}: {{w_true}}|{{w_false}}`. `fill-in-the-blank`: blanks in `{{k_question}}:` as
+  `{{{k_answer}}}` (several accepted: `{a/b}`). `short-answer`: `{{k_answers}}: a | b | c`.
+- Common keys: `{{t_question_key}}`, `{{k_question}}:`, `{{k_feedback_correct}}:`, `{{k_feedback_incorrect}}:`,
+  `{{k_feedback}}:`. Each key on one line. Every question carries `{{t_question_key}}` and feedback.
 
 ## 4. Media placeholders
 
@@ -103,7 +103,7 @@ Exact format (shown as a visible box until the asset is produced):
 {{placeholder_field_lines}}
 ```
 
-Allowed types: {{placeholder_types}}. Per unit: {{placeholders_per_hour}} placeholders per hour
+Allowed types (what is written in the placeholder, and its id in the configuration): {{placeholder_types}}. Per unit: {{placeholders_per_hour}} placeholders per hour
 of the unit and at least {{min_placeholder_types}} different types.
 
 ## 5. `assessment.md`

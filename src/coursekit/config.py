@@ -23,6 +23,7 @@ from typing import Any
 
 import yaml
 
+from coursekit.i18n import t
 from coursekit.project import Project
 
 NAMES = ("rules", "directives", "media", "delivery")
@@ -109,7 +110,7 @@ def project_data(project: Project) -> dict:
 def effective(name: str, project: Project | None = None, course: dict | None = None) -> Layered:
     """The effective configuration `name` for the project (and course, if given)."""
     if name not in NAMES:
-        raise ValueError(f"unknown configuration {name!r} (one of: {', '.join(NAMES)})")
+        raise ValueError(t("config", "unknown_config", name=name, names=", ".join(NAMES)))
     result = Layered()
     result.merge(package_defaults(name), "package")
     if project is not None:

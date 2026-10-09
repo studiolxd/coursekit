@@ -31,8 +31,9 @@ from pathlib import Path
 
 from markdown_it import MarkdownIt
 
-from coursekit import config
+from coursekit import config, lang
 from coursekit import course as coursemod
+from coursekit.i18n import t
 from coursekit.states import history_entry
 from coursekit.util import edit_yaml, load_yaml, save_yaml
 
@@ -49,13 +50,12 @@ DIRECTIVE_CLOSE_RE = re.compile(r"^:::\s*$")
 HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 LIST_ITEM_RE = re.compile(r"^(\s*)([-*]|\d+[.)])\s+(.*)$")
 OPTION_RE = re.compile(r"^\s*[-*]\s+\[( |x|X)\]\s+(.*)$")
-KV_RE = re.compile(r"^([a-zñáéíóú-]+):\s*(.*)$")
+KV_RE = re.compile(r"^([a-zà-ÿ][a-zà-ÿ-]*):\s*(.*)$")
 
+# The brick each resource type becomes once it is produced (the type ids are those of `lang/<language>.yaml › media_types`).
 MEDIA_KIND = {
-    "Imagen": "image", "Infografía": "image", "Esquema/Diagrama": "image", "GIF animado": "image",
-    "Vídeo": "video", "Audio": "audio", "Simulación interactiva": "embed", "Demo interactiva en terminal": "embed",
-    "Image": "image", "Infographic": "image", "Diagram": "image", "Animated GIF": "image",
-    "Video": "video", "Interactive simulation": "embed", "Interactive terminal demo": "embed",
+    "image": "image", "infographic": "image", "diagram": "image", "animated_gif": "image",
+    "video": "video", "audio": "audio", "simulation": "embed", "terminal_demo": "embed",
 }
 PANEL_BRICKS = ("ACCORDION", "TABS", "CAROUSEL", "TIMELINE", "FLASHCARD_CAROUSEL", "FLASHCARD_GALLERY")
 FIELD_KEYS = ("title", "description", "how", "specs")  # in the order of the language's placeholder_fields
@@ -73,6 +73,27 @@ class Syntax:
         names = "|".join(re.escape(f) for f in t["placeholder_fields"])
         self.placeholder_field = re.compile(rf"^>\s*\*\*({names}):\*\*\s*(.*)$")
         self.field_key = dict(zip(t["placeholder_fields"], FIELD_KEYS, strict=False))
+
+    def key(self, name: str) -> str:
+        """How the key `name` of the directives is written in this language."""
+        return lang.directive_key(self.t, name)
+
+    def word(self, name: str) -> str:
+        return self.t["directive_words"][name]
+
+    def media_type(self, label: str) -> str | None:
+        return lang.media_type_id(self.t, label)
+
+    def media_label(self, type_id: str) -> str:
+        return self.t["media_types"].get(type_id, type_id)
+
+    def check_keys(self, values: dict[str, str]) -> None:
+        """A key that belongs to another language (`pregunta:` in an English course) is an error, not an ignored line."""
+        for key in values:
+            other = lang.foreign_key(self.t, key)
+            if other:
+                valid = ", ".join(sorted(lang.directive_keys(self.t)))
+                raise PlanError(t("assemble", "foreign_key", key=key, language=other, valid=valid))
 
 
 class PlanError(Exception):
@@ -129,29 +150,29 @@ def list_items(lines: list[str]) -> list[str]:
 
 # ── Directive → brick ─────────────────────────────────────────────────────────
 
-def question_content(values: dict[str, str]) -> dict:
-    content = {"question": inline(values.get("pregunta", ""))}
-    if values.get("feedback-correcto"):
-        content["feedback_correct"] = inline(values["feedback-correcto"])
-    if values.get("feedback-incorrecto"):
-        content["feedback_incorrect"] = inline(values["feedback-incorrecto"])
-    if values.get("feedback"):
-        content["feedback_general"] = inline(values["feedback"])
+def question_content(values: dict[str, str], syntax: Syntax) -> dict:
+    content = {"question": inline(values.get(syntax.key("question"), ""))}
+    for key, field in (("feedback_correct", "feedback_correct"), ("feedback_incorrect", "feedback_incorrect"),
+                       ("feedback", "feedback_general")):
+        if values.get(syntax.key(key)):
+            content[field] = inline(values[syntax.key(key)])
     return content
 
 
 def directive_brick(name: str, body: list[str], ctx: dict) -> dict:
     registry = ctx["registry"]
     if name not in registry:
-        raise PlanError(f"unknown directive ':::{name}'")
+        raise PlanError(t("assemble", "unknown_directive", name=name))
     brick_type = registry[name]["brick"]
+    syntax: Syntax = ctx["syntax"]
     values, rest = key_values(body)
+    syntax.check_keys(values)
     meta = {"directive": name}
-    if values.get("objetivo"):
-        meta["objective"] = values["objetivo"]
+    if values.get(syntax.key("objective")):
+        meta["objective"] = values[syntax.key("objective")]
 
     if brick_type in ("ACCORDION", "TABS", "CAROUSEL"):
-        items = [{"title": inline(t), "content": html(c)} for t, c in panels(body)]
+        items = [{"title": inline(text), "content": html(c)} for text, c in panels(body)]
         data = {"items": items}
     elif brick_type == "TIMELINE":
         items = []
@@ -160,21 +181,22 @@ def directive_brick(name: str, body: list[str], ctx: dict) -> dict:
             items.append({"date": date.strip() if rest_title else "", "title": inline(rest_title or title), "content": html(content)})
         data = {"items": items}
     elif brick_type in ("FLASHCARD_CAROUSEL", "FLASHCARD_GALLERY"):
-        data = {"items": [{"front": inline(t), "back": html(c)} for t, c in panels(body)]}
+        data = {"items": [{"front": inline(text), "back": html(c)} for text, c in panels(body)]}
     elif brick_type == "LABELLED_GRAPHIC":
-        image = ctx["media_by_title"].get(values.get("imagen", ""))
+        image = ctx["media_by_title"].get(values.get(syntax.key("image"), ""))
         points = panels(rest)
         items = []
         for i, (title, content) in enumerate(points):
             sub_values, sub_rest = key_values(content.splitlines())
+            syntax.check_keys(sub_values)
             x, y = 20 + (60 * i // max(1, len(points) - 1) if len(points) > 1 else 30), 50
-            if sub_values.get("posición"):
-                x, y = (float(v) for v in sub_values["posición"].split(","))
+            if sub_values.get(syntax.key("position")):
+                x, y = (float(v) for v in sub_values[syntax.key("position")].split(","))
             items.append({"x": x, "y": y, "title": inline(title), "content": html("\n".join(sub_rest))})
         data = {"properties": {"markerStyle": "numbered", "imagePath": image.get("asset_path") if image else None,
                                "imageAlt": image.get("alt") if image else None}, "items": items}
         if not image or not image.get("asset_path"):
-            ctx["warnings"].append(f"labelled-graphic: image '{values.get('imagen', '')}' not produced yet")
+            ctx["warnings"].append(t("assemble", "image_not_produced", image=values.get(syntax.key("image"), "")))
     elif brick_type == "DIALOG":
         characters, items = [], []
         for line in rest:
@@ -192,7 +214,7 @@ def directive_brick(name: str, body: list[str], ctx: dict) -> dict:
             items.append({"content": inline(" ".join(lines)), "author": inline(author) if author else ""})
         data = {"items": items}
     elif brick_type == "NOTE":
-        data = {"content": {"title": inline(values.get("título", ctx["syntax"].t["note"])), "content": html("\n".join(rest))}}
+        data = {"content": {"title": inline(values.get(syntax.key("title"), syntax.t["note"])), "content": html("\n".join(rest))}}
     elif brick_type == "HIGHLIGHT":
         data = {"content": {"content": html("\n".join(rest))}}
     elif brick_type == "QUOTE":
@@ -202,48 +224,51 @@ def directive_brick(name: str, body: list[str], ctx: dict) -> dict:
     elif brick_type in ("SINGLE_CHOICE", "MULTI_SELECT"):
         options = [(m.group(1).lower() == "x", m.group(2)) for m in map(OPTION_RE.match, rest) if m]
         if brick_type == "SINGLE_CHOICE" and sum(c for c, _ in options) != 1:
-            raise PlanError(f":::{name} needs exactly one correct option")
-        data = {"content": question_content(values), "items": [{"content": inline(t), "isCorrect": c} for c, t in options]}
+            raise PlanError(t("assemble", "one_correct_option", name=name))
+        data = {"content": question_content(values, syntax), "items": [{"content": inline(text), "isCorrect": c} for c, text in options]}
     elif brick_type == "TRUE_FALSE":
-        answer = values.get("respuesta", "").lower()
-        if answer not in ("verdadero", "falso"):
-            raise PlanError(":::true-false needs 'respuesta: verdadero|falso'")
-        data = {"properties": {"correctAnswer": "true" if answer == "verdadero" else "false"}, "content": question_content(values)}
+        answer = values.get(syntax.key("answer"), "").lower()
+        if answer not in (syntax.word("true"), syntax.word("false")):
+            raise PlanError(t("assemble", "true_false_answer", key=syntax.key("answer"), true=syntax.word("true"),
+                              false=syntax.word("false")))
+        correct = "true" if answer == syntax.word("true") else "false"
+        data = {"properties": {"correctAnswer": correct}, "content": question_content(values, syntax)}
     elif brick_type == "SORTING":
-        data = {"content": question_content(values), "items": [{"content": inline(t)} for t in list_items(rest)]}
+        data = {"content": question_content(values, syntax), "items": [{"content": inline(text)} for text in list_items(rest)]}
     elif brick_type == "MATCH":
         pairs = [item.split("::", 1) for item in list_items(rest) if "::" in item]
-        data = {"content": question_content(values), "items": [{"left": inline(a), "right": inline(b)} for a, b in pairs]}
+        data = {"content": question_content(values, syntax), "items": [{"left": inline(a), "right": inline(b)} for a, b in pairs]}
     elif brick_type == "SORTING_GROUPS":
         groups, items = [], []
         for gi, (label, content) in enumerate(panels(rest), 1):
             groups.append({"id": f"g{gi}", "label": inline(label)})
-            items += [{"content": inline(t), "groupId": f"g{gi}"} for t in list_items(content.splitlines())]
-        data = {"content": question_content(values), "groups": groups, "items": items}
+            items += [{"content": inline(text), "groupId": f"g{gi}"} for text in list_items(content.splitlines())]
+        data = {"content": question_content(values, syntax), "groups": groups, "items": items}
     elif brick_type == "FILL_IN_THE_BLANK":
-        if "{" not in values.get("pregunta", ""):
-            raise PlanError(":::fill-in-the-blank needs blanks written as {respuesta} in 'pregunta:'")
-        data = {"content": question_content(values)}
+        if "{" not in values.get(syntax.key("question"), ""):
+            raise PlanError(t("assemble", "fill_blank", example="{" + syntax.key("answer") + "}", key=syntax.key("question")))
+        data = {"content": question_content(values, syntax)}
     elif brick_type == "ORDER_WORDS":
         lines, items = [], []
         for li, sentence in enumerate(list_items(rest), 1):
             lines.append({"id": f"l{li}"})
             items += [{"content": inline(word), "lineId": f"l{li}"} for word in sentence.split()]
-        data = {"content": question_content(values), "lines": lines, "items": items}
+        data = {"content": question_content(values, syntax), "lines": lines, "items": items}
     elif brick_type == "SHORT_ANSWER":
-        answers = [a.strip() for a in values.get("respuestas", "").split("|") if a.strip()]
-        data = {"content": question_content(values), "items": [{"text": a} for a in answers]}
+        answers = [a.strip() for a in values.get(syntax.key("answers"), "").split("|") if a.strip()]
+        data = {"content": question_content(values, syntax), "items": [{"text": a} for a in answers]}
     elif brick_type in ("WORD_SEARCH", "WORDLE", "HANGMAN"):
         data = {"items": [{"word": w.split()[0].upper()} for w in list_items(rest)]}
     elif brick_type == "MEMORY":
-        data = {"items": [{"content": inline(t)} for t in list_items(rest)]}
+        data = {"items": [{"content": inline(text)} for text in list_items(rest)]}
     elif brick_type == "PASAPALABRA":
         items = []
         for item in list_items(rest):
-            m = re.match(r"^(\S{1,3})\s*\((empieza|contiene)\):\s*(.+?)\s*::\s*(.+)$", item)
+            starts, contains = syntax.word("starts"), syntax.word("contains")
+            m = re.match(rf"^(\S{{1,3}})\s*\(({re.escape(starts)}|{re.escape(contains)})\):\s*(.+?)\s*::\s*(.+)$", item)
             if not m:
-                raise PlanError(":::pasapalabra items: '- A (empieza|contiene): definición :: RESPUESTA'")
-            items.append({"letter": m.group(1).upper(), "mode": "starts" if m.group(2) == "empieza" else "contains",
+                raise PlanError(t("assemble", "pasapalabra_items", starts=starts, contains=contains))
+            items.append({"letter": m.group(1).upper(), "mode": "starts" if m.group(2) == starts else "contains",
                           "definition": m.group(3), "answer": m.group(4)})
         data = {"items": items}
     elif brick_type == "TRIVIAL":
@@ -252,20 +277,21 @@ def directive_brick(name: str, body: list[str], ctx: dict) -> dict:
             categories.append({"name": category})
             for block in content.split("\n\n"):
                 q_values, q_rest = key_values(block.splitlines())
+                syntax.check_keys(q_values)
                 options = [{"text": m.group(2), "isCorrect": m.group(1).lower() == "x"} for m in map(OPTION_RE.match, q_rest) if m]
-                if q_values.get("pregunta"):
-                    items.append({"categoryId": category, "content": inline(q_values["pregunta"]), "options": options})
+                if q_values.get(syntax.key("question")):
+                    items.append({"categoryId": category, "content": inline(q_values[syntax.key("question")]), "options": options})
         data = {"properties": {"categories": categories}, "items": items}
     else:
-        raise PlanError(f":::{name} ({brick_type}) is not supported by the assembler yet")
+        raise PlanError(t("assemble", "not_supported", name=name, brick=brick_type))
     if brick_type in PANEL_BRICKS and not data["items"]:
-        raise PlanError(f":::{name} has no panels: each one starts with a '#### Title' line")
+        raise PlanError(t("assemble", "no_panels", name=name))
     return {"type": brick_type, "data": data, "meta": meta}
 
 
 # ── Section parsing ──────────────────────────────────────────────────────────
 
-def download_bricks(asset: dict | None, download_label: str = "Descargar") -> list[dict]:
+def download_bricks(asset: dict | None, download_label: str) -> list[dict]:
     """An ATTACHMENT after the media brick for each uploaded download of the asset (e.g. a PDF)."""
     if not asset or asset.get("status") != "uploaded":
         return []
@@ -288,7 +314,8 @@ def download_bricks(asset: dict | None, download_label: str = "Descargar") -> li
     return out
 
 
-def placeholder_brick(kind: str, fields: dict, asset: dict | None, label: str = "Recurso multimedia") -> dict:
+def placeholder_brick(kind: str, fields: dict, asset: dict | None, label: str, written: str | None = None) -> dict:
+    """`kind` is the id of the resource type; `written` how the content names it (for the note that stands for it)."""
     title = fields.get("title", "")
     media = MEDIA_KIND.get(kind)
     meta = {"placeholder": kind, "title": title}
@@ -311,7 +338,7 @@ def placeholder_brick(kind: str, fields: dict, asset: dict | None, label: str = 
             return {"type": "EMBED", "data": {"properties": {"embedFolderPrefix": asset["asset_path"], "embedTitle": title}}, "meta": meta}
     names = fields.get("_names", {})
     body = "\n\n".join(f"**{names.get(k, k)}:** {fields[k]}" for k in ("description", "specs") if fields.get(k))
-    return {"type": "NOTE", "data": {"content": {"title": inline(f"{label} — {kind}: {title}"), "content": html(body)}},
+    return {"type": "NOTE", "data": {"content": {"title": inline(f"{label} — {written or kind}: {title}"), "content": html(body)}},
             "meta": meta}
 
 
@@ -364,7 +391,8 @@ def parse_blocks(lines: list[str], ctx: dict, section_key: str) -> list[dict]:
                 ctx["errors"].append(f"{section_key}: {exc}")
         elif syntax.placeholder.match(stripped):
             close_text()
-            kind = syntax.placeholder.match(stripped).group(1).strip()
+            written = syntax.placeholder.match(stripped).group(1).strip()
+            kind = syntax.media_type(written) or written
             fields: dict = {"_names": {v: k for k, v in syntax.field_key.items()}}
             while i + 1 < len(lines) and lines[i + 1].startswith(">"):
                 i += 1
@@ -374,7 +402,7 @@ def parse_blocks(lines: list[str], ctx: dict, section_key: str) -> list[dict]:
             placeholder_n += 1
             asset_id = f"{section_key}-M{placeholder_n}"
             asset = ctx["assets"].get(asset_id)
-            bricks.append(placeholder_brick(kind, fields, asset, syntax.t["placeholder"].capitalize()))
+            bricks.append(placeholder_brick(kind, fields, asset, syntax.t["placeholder"].capitalize(), written))
             bricks[-1]["meta"]["placeholder_id"] = asset_id
             bricks.extend(download_bricks(asset, syntax.t["download"]))
         elif stripped.startswith(">"):
@@ -409,7 +437,7 @@ def parse_blocks(lines: list[str], ctx: dict, section_key: str) -> list[dict]:
                 block.append(lines[i])
                 i += 1
             bricks.append({"type": "LIST", "data": {"properties": {"listType": "numbered" if numbered else "bulleted"},
-                                                    "items": [{"content": html(t)} for t in list_items(block)]}, "meta": {}})
+                                                    "items": [{"content": html(text)} for text in list_items(block)]}, "meta": {}})
             continue
         elif syntax.objective_tag.match(stripped) or stripped == "---":
             close_text()
@@ -447,11 +475,16 @@ def content_title(course: dict, unit: dict) -> str:
     return f"{coursemod.tokens(course)['unit']} {unit['n']}. {unit['title']}"
 
 
-def build_plan(course: dict, unit: dict) -> tuple[dict, list[str], list[str]]:
+def manifest_assets(course: dict) -> dict[str, dict]:
+    manifest_path = course["_dir"] / "media" / "manifest.yaml"
+    return {a["id"]: a for a in (load_yaml(manifest_path).get("assets") or [])} if manifest_path.exists() else {}
+
+
+def build_plan(course: dict, unit: dict, assets: dict[str, dict] | None = None) -> tuple[dict, list[str], list[str]]:
+    """The plan of a unit. `assets` are the media of the manifest as the plan reads them (the html backend gives its own copies)."""
     folder = coursemod.unit_dir(course["_dir"], unit["n"])
     syntax = Syntax(coursemod.tokens(course))
-    manifest_path = course["_dir"] / "media" / "manifest.yaml"
-    assets = {a["id"]: a for a in (load_yaml(manifest_path).get("assets") or [])} if manifest_path.exists() else {}
+    assets = manifest_assets(course) if assets is None else assets
     ctx = {
         "registry": config.effective("directives", course.get("_project"), course).value["directives"],
         "syntax": syntax,
@@ -466,7 +499,7 @@ def build_plan(course: dict, unit: dict) -> tuple[dict, list[str], list[str]]:
         n = int(m.group(1))
         spec = sections.get(n)
         if spec is None:
-            ctx["errors"].append(f"{syntax.t['section']} {n} is not in the design")
+            ctx["errors"].append(t("assemble", "section_not_in_design", section=syntax.t["section"], n=n))
             continue
         key = f"U{unit['n']}-S{n}"
         lessons.append({"key": key, "type": "content", "title": spec["title"], "kind": spec["kind"],
@@ -487,7 +520,7 @@ def build_plan(course: dict, unit: dict) -> tuple[dict, list[str], list[str]]:
         for brick in lesson["bricks"]:
             brick["hash"] = brick_hash(brick)
         if lesson["type"] == "content" and not lesson["bricks"]:
-            ctx["warnings"].append(f"{lesson['key']}: lesson without content")
+            ctx["warnings"].append(t("assemble", "lesson_without_content", key=lesson["key"]))
     plan = {"course": course["code"], "unit": unit["n"], "content_id": unit.get("content_id"),
             "content_title": content_title(course, unit), "lessons": lessons}
     return plan, ctx["errors"], ctx["warnings"]
@@ -513,7 +546,7 @@ def write_json(path: Path, data: dict) -> None:
 def _read(path: Path, default: dict | None = None) -> dict:
     if not path.exists():
         if default is None:
-            raise AssembleError(f"missing {path.name}: run `coursekit assemble plan` first")
+            raise AssembleError(t("assemble", "plan_missing", name=path.name))
         return default
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -581,9 +614,9 @@ def record_lesson(course: dict, unit: dict, lesson_key: str, lesson_id: str, bri
     plan = _read(plan_path)
     lesson = next((lesson for lesson in plan["lessons"] if lesson["key"] == lesson_key), None)
     if lesson is None:
-        raise AssembleError(f"lesson {lesson_key} not in the plan")
+        raise AssembleError(t("assemble", "lesson_not_in_plan", key=lesson_key))
     if len(brick_ids) != len(lesson["bricks"]):
-        raise AssembleError(f"{len(brick_ids)} brick ids but the plan has {len(lesson['bricks'])} bricks in {lesson_key}")
+        raise AssembleError(t("assemble", "brick_count_mismatch", ids=len(brick_ids), bricks=len(lesson["bricks"]), key=lesson_key))
     applied = _read(applied_path, {"lessons": {}})
     applied["lessons"][lesson_key] = {
         "lessonId": lesson_id,
@@ -591,7 +624,7 @@ def record_lesson(course: dict, unit: dict, lesson_key: str, lesson_id: str, bri
         "bricks": [{"brickId": bid, "type": b["type"], "hash": b["hash"]} for bid, b in zip(brick_ids, lesson["bricks"], strict=True)],
     }
     write_json(applied_path, applied)
-    return f"recorded {lesson_key} ({len(brick_ids)} bricks)" + mark_assembled(course)
+    return t("assemble", "recorded_lesson", key=lesson_key, count=len(brick_ids)) + mark_assembled(course)
 
 
 def record_content_title(course: dict, unit: dict) -> str:
@@ -600,7 +633,7 @@ def record_content_title(course: dict, unit: dict) -> str:
     applied = _read(applied_path, {"lessons": {}})
     applied["content_title"] = plan["content_title"]
     write_json(applied_path, applied)
-    return f"recorded content title: {plan['content_title']}" + mark_assembled(course)
+    return t("assemble", "recorded_title", title=plan["content_title"]) + mark_assembled(course)
 
 
 def unit_in_sync(course_dir: Path, n: int) -> bool:
@@ -628,17 +661,27 @@ def mark_assembled(course: dict) -> str:
     data.setdefault("history", []).append(history_entry("assembly", "Every unit assembled"))
     save_yaml(ry, data, path)
     course["status"] = "assembly"
-    return " · course: media -> assembly"
+    return t("assemble", "course_assembled")
 
 
-def link(course: dict, unit: dict, content_id: str) -> str:
+def link(course: dict, unit: dict, content_id: str | None = None, preview: str | None = None, review: str | None = None) -> str:
+    """Record the creator content of a unit and, once it exists, its preview and client-review links."""
     path = course["_dir"] / "course.yaml"
     ry, data = edit_yaml(path)
     for u in data["units"]:
         if u["n"] == unit["n"]:
-            u["content_id"] = content_id
+            if content_id:
+                u["content_id"] = content_id
+            if preview or review:
+                links = u.get("links") or {}
+                for key, value in (("preview", preview), ("review", review)):
+                    if value:
+                        links[key] = value
+                u["links"] = links
     save_yaml(ry, data, path)
-    return f"unit {unit['n']} -> creator content {content_id}"
+    parts = [t("assemble", f"linked_{key}", value=value)
+             for key, value in (("content", content_id), ("preview", preview), ("review", review)) if value]
+    return t("assemble", "linked", n=unit["n"], what="; ".join(parts))
 
 
 def check_unit(course: dict, unit: dict) -> list[str]:

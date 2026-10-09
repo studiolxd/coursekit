@@ -62,8 +62,8 @@ def test_project_yaml_overrides_config_folder(project):
 
 def test_lists_replace(project):
     p = find_project(project)
-    layered = config.effective("rules", p, {"rules": {"content": {"placeholder_types": ["Imagen"]}}})
-    assert layered.get("content", "placeholder_types") == ["Imagen"]
+    layered = config.effective("rules", p, {"rules": {"content": {"placeholder_types": ["image"]}}})
+    assert layered.get("content", "placeholder_types") == ["image"]
     assert layered.origin[("content", "placeholder_types")] == "course"
 
 
@@ -115,3 +115,16 @@ def test_cli_outside_a_project(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     assert main(["config"]) == 1
     assert "coursekit init" in capsys.readouterr().err
+
+
+def test_config_prints_every_configuration_including_dates(tmp_path, monkeypatch, capsys):
+    from coursekit.cli import main
+
+    root = tmp_path / "demo"
+    assert main(["init", str(root), "--yes", "--no-git"]) == 0
+    capsys.readouterr()
+    monkeypatch.chdir(root)
+    assert main(["config"]) == 0  # directives.yaml has a date (synced_with_creator)
+    assert "synced_with_creator" in capsys.readouterr().out
+    assert main(["config", "--json"]) == 0
+    assert "synced_with_creator" in capsys.readouterr().out

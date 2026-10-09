@@ -1,0 +1,9 @@
+# Errors of the unit and course state transitions.
+unit_not_found: {es: "unidad {n} no encontrada", en: "unit {n} not found"}
+on_hold:
+  es: "{code} está en pausa desde {since} ({reason}); estaba en «{previous}». Reanúdalo con `coursekit resume {code}`"
+  en: "{code} has been on hold since {since} ({reason}); it was in '{previous}'. Resume it with `coursekit resume {code}`"
+already_on_hold: {es: "{code} ya está en pausa", en: "{code} is already on hold"}
+not_on_hold:
+  es: "{code} no está en pausa (estado: {status})"
+  en: "{code} is not on hold (status: {status})"

@@ -16,3 +16,68 @@ assessment_instructions: Instrucciones para el alumno
 assessment_bank: Banco de preguntas
 download: Descargar
 note: Nota
+
+# Resource types of the media placeholders: the id (configuration, manifest) -> what is written in the content.
+media_types:
+  image: Imagen
+  video: Vídeo
+  animated_gif: GIF animado
+  infographic: Infografía
+  diagram: Esquema/Diagrama
+  simulation: Simulación interactiva
+  terminal_demo: Demo interactiva en terminal
+  audio: Audio
+# Keys of the "key: value" lines of the directives (the objective key is question_objective_key) ...
+directive_keys:
+  question: pregunta
+  answer: respuesta
+  answers: respuestas
+  feedback: feedback
+  feedback_correct: feedback-correcto
+  feedback_incorrect: feedback-incorrecto
+  image: imagen
+  position: posición
+  title: título
+# ... and the words some of them take.
+directive_words:
+  "true": verdadero
+  "false": falso
+  starts: empieza
+  contains: contiene
+
+# Texts of the interface of the html backend's package (buttons, feedback), in the language of the content.
+player:
+  skip: Saltar al contenido
+  lessons: Lecciones
+  previous: Anterior
+  next: Siguiente
+  progress: Progreso
+  check: Comprobar
+  retry: Reintentar
+  submit: Enviar respuestas
+  correct: Correcto
+  incorrect: Incorrecto
+  answer_true: Verdadero
+  answer_false: Falso
+  flip: Girar la tarjeta
+  slide: Diapositiva {n} de {total}
+  select: Elige…
+  move_up: Subir
+  move_down: Bajar
+  score: "Tu puntuación: {score} %"
+  passed: Has superado la prueba.
+  failed: "No has alcanzado la nota mínima ({min} %)."
+  attempts: "Intentos restantes: {n}"
+  no_attempts: No quedan intentos.
+  answer_all: Responde todas las preguntas antes de enviar.
+  finished: Has completado la unidad.
+  hotspot: Punto {n}
+  close: Cerrar
+  expected: "Respuesta correcta: {answer}"
+  words_pool: Palabras disponibles
+  words_answer: Tu frase
+  blank: Hueco {n}
+  type_answer: Escribe tu respuesta
+  question: Pregunta {n}
+  media_missing: Recurso multimedia pendiente de producir
+  transcript: Transcripción

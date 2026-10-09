@@ -1,0 +1,58 @@
+# Messages of `coursekit assemble` (plan, diff and applied state of the creator backend).
+unknown_directive:
+  es: "directiva desconocida ':::{name}'"
+  en: "unknown directive ':::{name}'"
+image_not_produced:
+  es: "labelled-graphic: la imagen '{image}' aún no está producida"
+  en: "labelled-graphic: image '{image}' not produced yet"
+one_correct_option:
+  es: ":::{name} necesita exactamente una opción correcta"
+  en: ":::{name} needs exactly one correct option"
+true_false_answer:
+  es: ":::true-false necesita '{key}: {true}|{false}'"
+  en: ":::true-false needs '{key}: {true}|{false}'"
+fill_blank:
+  es: ":::fill-in-the-blank necesita huecos escritos como {example} en '{key}:'"
+  en: ":::fill-in-the-blank needs blanks written as {example} in '{key}:'"
+pasapalabra_items:
+  es: "elementos de :::pasapalabra: '- A ({starts}|{contains}): definición :: RESPUESTA'"
+  en: ":::pasapalabra items: '- A ({starts}|{contains}): definition :: ANSWER'"
+foreign_key:
+  es: "la clave '{key}:' es del idioma «{language}»; en este curso se usan: {valid}"
+  en: "the key '{key}:' belongs to the language '{language}'; this course uses: {valid}"
+not_supported:
+  es: ":::{name} ({brick}) aún no está soportada por el ensamblador"
+  en: ":::{name} ({brick}) is not supported by the assembler yet"
+no_panels:
+  es: ":::{name} no tiene paneles: cada uno empieza con una línea '#### Título'"
+  en: ":::{name} has no panels: each one starts with a '#### Title' line"
+section_not_in_design:
+  es: "{section} {n} no está en el diseño"
+  en: "{section} {n} is not in the design"
+lesson_without_content:
+  es: "{key}: lección sin contenido"
+  en: "{key}: lesson without content"
+plan_missing:
+  es: "falta {name}: ejecuta antes `coursekit assemble plan`"
+  en: "missing {name}: run `coursekit assemble plan` first"
+lesson_not_in_plan:
+  es: "la lección {key} no está en el plan"
+  en: "lesson {key} not in the plan"
+brick_count_mismatch:
+  es: "{ids} ids de brick pero el plan tiene {bricks} bricks en {key}"
+  en: "{ids} brick ids but the plan has {bricks} bricks in {key}"
+recorded_lesson:
+  es: "registrada {key} ({count} bricks)"
+  en: "recorded {key} ({count} bricks)"
+recorded_title:
+  es: "registrado el título del contenido: {title}"
+  en: "recorded content title: {title}"
+course_assembled:
+  es: " · curso: media -> assembly"
+  en: " · course: media -> assembly"
+linked:
+  es: "unidad {n} -> {what}"
+  en: "unit {n} -> {what}"
+linked_content: {es: "contenido de creator {value}", en: "creator content {value}"}
+linked_preview: {es: "preview {value}", en: "preview {value}"}
+linked_review: {es: "enlace de revisión {value}", en: "review link {value}"}

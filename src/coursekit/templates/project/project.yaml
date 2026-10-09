@@ -20,14 +20,14 @@ platform:
     # Name of the MCP server in .mcp.json and opencode.json, and its URL
     # (e.g. https://<tenant>.slxd.app/mcp/creator).
     mcp_name: slxd-creator
-    mcp_url: ""
+    mcp_url: {mcp_url}
     organization_id: ""
 
 mirror:
   # sharepoint | onedrive | google-drive | nextcloud | folder | none
   provider: {mirror}
   # Web address of the mirror folder (links in the catalog).
-  url: ""
+  url: {mirror_url}
 
 network:
   # Extra CA certificates for TLS-inspecting proxies (paths).

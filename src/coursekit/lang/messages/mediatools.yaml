@@ -1,0 +1,19 @@
+# Errors and result of `coursekit tts` and `coursekit subtitles`.
+input_missing:
+  es: "no existe el fichero {path}"
+  en: "the file {path} does not exist"
+piper_voice:
+  es: "define PIPER_VOICE en .env (ruta a una voz .onnx) o pasa --voice"
+  en: "set PIPER_VOICE in .env (path to a .onnx voice) or pass --voice"
+piper_missing:
+  es: "piper no está instalado (coursekit setup --media)"
+  en: "piper is not installed (coursekit setup --media)"
+elevenlabs_needs:
+  es: "hacen falta ELEVENLABS_API_KEY y una voz (ELEVENLABS_VOICE_ID o --voice)"
+  en: "ELEVENLABS_API_KEY and a voice (ELEVENLABS_VOICE_ID or --voice) are needed"
+stable_ts_missing:
+  es: "stable-ts no está instalado (coursekit setup --media)"
+  en: "stable-ts is not installed (coursekit setup --media)"
+default_voice: {es: voz por defecto, en: default voice}
+wrote: {es: "escrito {out} ({provider} · {voice})", en: "wrote {out} ({provider} · {voice})"}
+wrote_vtt: {es: "escrito {out} y {vtt} ({provider} · {voice})", en: "wrote {out} and {vtt} ({provider} · {voice})"}

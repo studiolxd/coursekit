@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import pytest
 import yaml
@@ -12,16 +13,21 @@ def manifest(course_dir):
     return yaml.safe_load((course_dir / "media" / "manifest.yaml").read_text(encoding="utf-8"))["assets"]
 
 
+def import_theme(course_dir, *extra):
+    assert main(["theme", "import", str(Path(__file__).parent / "fixtures" / "creator_theme.json"), *extra]) == 0
+
+
 def test_extract_plan_and_set(course, capsys):  # noqa: F811
+    import_theme(course)
     assert main(["media", "extract", "PWD"]) == 0
     assert "manifest: 1 assets (pending 1)" in capsys.readouterr().out
     asset = manifest(course)[0]
     assert asset["id"] == "U1-S2-M1"
-    assert asset["type"] == "Infografía" and asset["title"] == "Anatomía de una contraseña"
+    assert asset["type"] == "infographic" and asset["title"] == "Anatomía de una contraseña"
     assert asset["how"] == "SVG con los tokens del proyecto."
     assert main(["media", "plan", "PWD"]) == 0
     out = capsys.readouterr().out
-    assert "U1-S2-M1 [Infografía]" in out and "agent-svg (yes)" in out
+    assert "U1-S2-M1 [infographic]" in out and "agent-svg (yes)" in out
 
     (course / "media" / "files").mkdir(exist_ok=True)
     (course / "media" / "files" / "U1-S2-M1.pdf").write_bytes(b"%PDF" + b"0" * 2000)
@@ -46,6 +52,7 @@ def test_extract_plan_and_set(course, capsys):  # noqa: F811
 
 
 def test_changed_placeholder_goes_back_to_pending(course, capsys):  # noqa: F811
+    import_theme(course)
     assert main(["media", "extract", "PWD"]) == 0
     assert main(["media", "set", "PWD", "U1-S2-M1", "--status", "produced"]) == 0
     content = course / "content" / "unit-01" / "content.md"
@@ -107,8 +114,9 @@ def test_tts_and_subtitles_with_fake_tools(course, monkeypatch, tmp_path):  # no
 
     assert calls[0][:3] == ["/fake/piper", "-m", str(Path("/voices/v.onnx"))]
     assert (tmp_path / "a.wav").exists()
-    assert main(["subtitles", "--course", "PWD", "--audio", "a.mp3", "--text", str(script), "--out", "a.vtt"]) == 0
-    assert calls[-1][:2] == ["/fake/stable-ts", "a.mp3"]
+    (tmp_path / "a.mp3").write_bytes(b"ID3")
+    assert main(["subtitles", "--course", "PWD", "--audio", str(tmp_path / "a.mp3"), "--text", str(script), "--out", "a.vtt"]) == 0
+    assert calls[-1][:2] == ["/fake/stable-ts", str(tmp_path / "a.mp3")]
     assert calls[-1][calls[-1].index("--language") + 1] == "es"
 
 

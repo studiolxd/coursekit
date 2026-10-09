@@ -92,7 +92,9 @@ sections the course needs, and justify it.
 3. `design_matrix_export` → download the `downloadUrl` (expires in 24 h) to
    `courses/<CODE>/design/<CODE>-instructional-design.xlsx`. That is what the person reviews.
 4. `coursekit sync <CODE> --check` to confirm the structure is understood and the hours add up.
-5. `coursekit publish <CODE>` so the Excel is in the mirror folder.
+5. `coursekit publish <CODE>` so the Excel is in the mirror folder: the only publication an agent runs, because
+   downloading the files is not a `coursekit` command that could do it by itself (every other command that
+   changes the course updates the mirror).
 
 ## Self-review (rubric)
 

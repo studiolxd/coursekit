@@ -5,7 +5,7 @@
 #
 # role:
 #   interactive  counts towards the interactive minimum of a content section
-#   question     practice / assessment question (needs "objetivo:")
+#   question     practice / assessment question (needs the objective key of the course language, e.g. `objective:`)
 #   static       highlighted text, does not count as interactive
 # Bricks that are not directives are listed in `not_directives` (plain Markdown, multimedia
 # placeholders, or deliberately unused). Every creator brick must be in one of the two lists:
@@ -14,66 +14,66 @@ synced_with_creator: 2026-10-08
 
 directives:
   # collection
-  accordion:          {brick: ACCORDION,          role: interactive, use: "Contenido largo dividido en secciones plegables que se abren a demanda."}
-  tabs:               {brick: TABS,               role: interactive, use: "Vistas alternativas de contenido relacionado en pestañas."}
-  carousel:           {brick: CAROUSEL,           role: interactive, use: "Diapositivas paso a paso, con portada y resumen opcionales."}
-  carousel-quotes:    {brick: CAROUSEL_QUOTES,    role: interactive, use: "Conjunto rotatorio de citas o testimonios."}
-  flashcards:         {brick: FLASHCARD_CAROUSEL, role: interactive, use: "Memorizar y recordar, una tarjeta cada vez (término ↔ definición)."}
-  flashcard-gallery:  {brick: FLASHCARD_GALLERY,  role: interactive, use: "Rejilla de tarjetas para autoevaluar el recuerdo."}
-  labelled-graphic:   {brick: LABELLED_GRAPHIC,   role: interactive, use: "Imagen con puntos calientes que explican sus partes (diagramas)."}
-  timeline:           {brick: TIMELINE,           role: interactive, use: "Hechos o pasos cronológicos o secuenciales."}
-  dialog:             {brick: DIALOG,             role: interactive, use: "Conversación guionizada entre personajes (roleplay, ejemplos resueltos)."}
+  accordion:          {brick: ACCORDION,          role: interactive, use: "Long content split into collapsible sections that open on demand."}
+  tabs:               {brick: TABS,               role: interactive, use: "Alternative views of related content in tabs."}
+  carousel:           {brick: CAROUSEL,           role: interactive, use: "Step-by-step slides, with optional cover and summary."}
+  carousel-quotes:    {brick: CAROUSEL_QUOTES,    role: interactive, use: "Rotating set of quotes or testimonials."}
+  flashcards:         {brick: FLASHCARD_CAROUSEL, role: interactive, use: "Memorise and recall, one card at a time (term ↔ definition)."}
+  flashcard-gallery:  {brick: FLASHCARD_GALLERY,  role: interactive, use: "Grid of cards to self-assess recall."}
+  labelled-graphic:   {brick: LABELLED_GRAPHIC,   role: interactive, use: "Image with hotspots that explain its parts (diagrams)."}
+  timeline:           {brick: TIMELINE,           role: interactive, use: "Chronological or sequential facts or steps."}
+  dialog:             {brick: DIALOG,             role: interactive, use: "Scripted conversation between characters (role play, worked examples)."}
   # question
-  single-choice:      {brick: SINGLE_CHOICE,      role: question, use: "Comprobar la comprensión con una única opción correcta."}
-  multi-select:       {brick: MULTI_SELECT,       role: question, use: "Evaluar cuando varias opciones pueden ser correctas."}
-  true-false:         {brick: TRUE_FALSE,         role: question, use: "Comprobación rápida de una afirmación."}
-  sorting:            {brick: SORTING,            role: question, use: "Ordenar elementos en la secuencia correcta."}
-  match:              {brick: MATCH,              role: question, use: "Emparejar elementos de la izquierda con los de la derecha."}
-  sorting-groups:     {brick: SORTING_GROUPS,     role: question, use: "Clasificar elementos en sus categorías."}
-  fill-in-the-blank:  {brick: FILL_IN_THE_BLANK,  role: question, use: "Recordar palabras concretas dentro de una frase (huecos)."}
-  order-words:        {brick: ORDER_WORDS,        role: question, use: "Reconstruir frases a partir de palabras desordenadas."}
-  short-answer:       {brick: SHORT_ANSWER,       role: question, use: "Respuesta libre comparada con una lista de respuestas aceptadas."}
+  single-choice:      {brick: SINGLE_CHOICE,      role: question, use: "Check understanding with a single correct option."}
+  multi-select:       {brick: MULTI_SELECT,       role: question, use: "Assess when several options can be correct."}
+  true-false:         {brick: TRUE_FALSE,         role: question, use: "Quick check of a statement."}
+  sorting:            {brick: SORTING,            role: question, use: "Put items in the right sequence."}
+  match:              {brick: MATCH,              role: question, use: "Match items on the left with those on the right."}
+  sorting-groups:     {brick: SORTING_GROUPS,     role: question, use: "Sort items into their categories."}
+  fill-in-the-blank:  {brick: FILL_IN_THE_BLANK,  role: question, use: "Recall specific words within a sentence (blanks)."}
+  order-words:        {brick: ORDER_WORDS,        role: question, use: "Rebuild sentences from scrambled words."}
+  short-answer:       {brick: SHORT_ANSWER,       role: question, use: "Free answer compared with a list of accepted answers."}
   # game (count as interactive; use sparingly, for review or reward)
-  word-search:        {brick: WORD_SEARCH,        role: interactive, use: "Sopa de letras; refuerzo de vocabulario."}
-  wordle:             {brick: WORDLE,             role: interactive, use: "Adivinar la palabra; vocabulario."}
-  hangman:            {brick: HANGMAN,            role: interactive, use: "Ahorcado; vocabulario."}
-  pasapalabra:        {brick: PASAPALABRA,        role: interactive, use: "Rosco con una pista por letra; repaso amplio de un tema."}
-  memory:             {brick: MEMORY,             role: interactive, use: "Parejas de memoria; recuerdo y asociación."}
-  trivial:            {brick: TRIVIAL,            role: interactive, use: "Trivial por categorías; repaso gamificado."}
+  word-search:        {brick: WORD_SEARCH,        role: interactive, use: "Word search; vocabulary reinforcement."}
+  wordle:             {brick: WORDLE,             role: interactive, use: "Guess the word; vocabulary."}
+  hangman:            {brick: HANGMAN,            role: interactive, use: "Hangman; vocabulary."}
+  pasapalabra:        {brick: PASAPALABRA,        role: interactive, use: "Word wheel with one clue per letter; broad review of a topic."}
+  memory:             {brick: MEMORY,             role: interactive, use: "Memory pairs; recall and association."}
+  trivial:            {brick: TRIVIAL,            role: interactive, use: "Trivia by category; gamified review."}
   # static text
-  note:               {brick: NOTE,               role: static, use: "Nota, consejo o advertencia separada del texto principal."}
-  highlight:          {brick: HIGHLIGHT,          role: static, use: "Destacar una idea clave."}
-  quote:              {brick: QUOTE,              role: static, use: "Cita de una persona experta o fuente, con atribución."}
+  note:               {brick: NOTE,               role: static, use: "Note, tip or warning set apart from the main text."}
+  highlight:          {brick: HIGHLIGHT,          role: static, use: "Highlight a key idea."}
+  quote:              {brick: QUOTE,              role: static, use: "Quote from an expert or a source, with attribution."}
 
 not_directives:
-  HEADING: "### / #### en Markdown"
-  TEXT: "párrafos en Markdown"
-  LIST: "listas en Markdown"
-  TABLE: "tablas en Markdown"
-  CODE: "bloques de código en Markdown"
-  CHART: "sin uso por ahora (los datos van en tablas o en un placeholder Infografía)"
-  SEPARATOR: "lo decide el montaje en creator"
-  IMAGE: "placeholder Imagen / Infografía / Esquema/Diagrama / GIF animado"
-  IMAGE_TEXT: "placeholder Imagen junto al texto (montaje)"
-  IMAGE_CAROUSEL: "varios placeholders Imagen seguidos (montaje)"
-  IMAGE_GALLERY: "varios placeholders Imagen seguidos (montaje)"
-  VIDEO: "placeholder Vídeo"
-  VIDEO_CAROUSEL: "varios placeholders Vídeo seguidos (montaje)"
-  VIDEO_GALLERY: "varios placeholders Vídeo seguidos (montaje)"
-  AUDIO: "placeholder Audio"
-  EMBED: "placeholder Simulación interactiva / Demo interactiva en terminal"
-  ATTACHMENT: "sin uso por ahora"
-  PUZZLE: "juego con imagen: sin uso por ahora"
-  SLIDING_PUZZLE: "juego con imagen: sin uso por ahora"
+  HEADING: "### / #### in Markdown"
+  TEXT: "paragraphs in Markdown"
+  LIST: "lists in Markdown"
+  TABLE: "tables in Markdown"
+  CODE: "code blocks in Markdown"
+  CHART: "not used for now (data goes in tables or in an infographic placeholder)"
+  SEPARATOR: "decided by the assembly in creator"
+  IMAGE: "placeholder of type image, infographic, diagram or animated_gif"
+  IMAGE_TEXT: "image placeholder next to the text (assembly)"
+  IMAGE_CAROUSEL: "several image placeholders in a row (assembly)"
+  IMAGE_GALLERY: "several image placeholders in a row (assembly)"
+  VIDEO: "placeholder of type video"
+  VIDEO_CAROUSEL: "several video placeholders in a row (assembly)"
+  VIDEO_GALLERY: "several video placeholders in a row (assembly)"
+  AUDIO: "placeholder of type audio"
+  EMBED: "placeholder of type simulation or terminal_demo"
+  ATTACHMENT: "not used for now"
+  PUZZLE: "image game: not used for now"
+  SLIDING_PUZZLE: "image game: not used for now"
 
 # Common e-learning components that are NOT creator bricks, and what to use instead.
 component_equivalents:
-  stepper: carousel (o timeline si es una secuencia temporal)
+  stepper: carousel (or timeline for a temporal sequence)
   hotspots: labelled-graphic
-  reveal: accordion o flashcards
+  reveal: accordion or flashcards
   toggle-compare: tabs
-  checklist: multi-select (como autoevaluación)
-  tooltips: note o glosario en accordion
+  checklist: multi-select (as a self-assessment)
+  tooltips: note, or a glossary in an accordion
   modal: accordion
-  escenario-rama: dialog (las ramas complejas, placeholder "Simulación interactiva")
-  terminal-simulado: placeholder "Demo interactiva en terminal" (se produce como EMBED)
+  branching-scenario: "dialog (complex branches: a placeholder of type simulation)"
+  simulated-terminal: placeholder of type terminal_demo (it is produced as EMBED)

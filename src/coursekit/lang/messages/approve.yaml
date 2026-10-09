@@ -1,0 +1,57 @@
+# Messages of `coursekit approve` (sign-offs) and `coursekit reviewed`.
+no_identity:
+  es: "no hay identidad de firma: ejecuta `coursekit setup --identity` (COURSEKIT_USER_NAME / _EMAIL en .env)"
+  en: "no signing identity: run `coursekit setup --identity` (COURSEKIT_USER_NAME / _EMAIL in .env)"
+matrix_missing:
+  es: "falta design/matrix.json: pide al agente de diseño que exporte antes el diseño"
+  en: "design/matrix.json is missing: ask the design agent to export the design first"
+design_errors:
+  es: "el diseño tiene {count} errores de validación (design/validation.json)"
+  en: "the design has {count} validation errors (design/validation.json)"
+excel_none: {es: "(ninguno)", en: "(none)"}
+design_summary:
+  es: "{code} — {title} ({hours} h)\n  matriz de slxd: {matrix_id} · actualizada {updated}\n  unidades: {units} · Excel: {excel}"
+  en: "{code} — {title} ({hours} h)\n  slxd matrix: {matrix_id} · updated {updated}\n  units: {units} · Excel: {excel}"
+design_confirm:
+  es: "{summary}\n¿Apruebas este diseño instruccional? Firmas como {who}"
+  en: "{summary}\nApprove this instructional design? You sign as {who}"
+cancelled: {es: "aprobación cancelada", en: "approval cancelled"}
+design_approved_uncommitted:
+  es: "diseño aprobado por {who} (registrado, sin commit)"
+  en: "design approved by {who} (recorded, not committed)"
+design_approved: {es: "diseño aprobado por {who}", en: "design approved by {who}"}
+unit_not_found: {es: "unidad {n} no encontrada", en: "unit {n} not found"}
+unit_fails_verification_errors:
+  es: "la unidad {n} no pasa la verificación ({count} errores: coursekit verify)"
+  en: "unit {n} does not pass verification ({count} errors: coursekit verify)"
+needs_review:
+  es: "la unidad {n} está '{status}': necesita antes la revisión (con IA: coursekit review y coursekit reviewed; de una persona: coursekit reviewed CODE N --by NOMBRE)"
+  en: "unit {n} is '{status}': it needs its review first (AI: coursekit review and coursekit reviewed; a person's: coursekit reviewed CODE N --by NAME)"
+changed_since_review:
+  es: "la unidad {n} ha cambiado desde la revisión con IA ({parts}): vuelve a revisarla con `coursekit review` o firma igualmente con --force"
+  en: "unit {n} changed after its AI review ({parts}): review it again with `coursekit review` or sign anyway with --force"
+review_missing: {es: "falta la revisión con IA {path}", en: "missing AI review {path}"}
+content_confirm:
+  es: "¿Apruebas la unidad {n} — {title} (mín. {words} palabras)? Firmas como {who}"
+  en: "Approve unit {n} — {title} (min. {words} words)? You sign as {who}"
+unit_approved_uncommitted:
+  es: "unidad {n} aprobada por {who} (registrada, sin commit)"
+  en: "unit {n} approved by {who} (recorded, not committed)"
+unit_approved: {es: "unidad {n} aprobada por {who}", en: "unit {n} approved by {who}"}
+file_missing: {es: "falta {path}", en: "missing {path}"}
+unit_fails_verification:
+  es: "la unidad {n} no pasa la verificación"
+  en: "unit {n} does not pass verification"
+reviewed: {es: "unidad {n}: revisada", en: "unit {n}: reviewed"}
+reviewed_course:
+  es: "unidad {n}: revisada · curso {old} -> {new}"
+  en: "unit {n}: reviewed · course {old} -> {new}"
+reviewed_human: {es: "unidad {n}: revisada por {by}", en: "unit {n}: reviewed by {by}"}
+reviewed_human_course:
+  es: "unidad {n}: revisada por {by} · curso {old} -> {new}"
+  en: "unit {n}: reviewed by {by} · course {old} -> {new}"
+reviewed_by_note: {es: "Unidad {n}: revisada por {by}", en: "Unit {n}: reviewed by {by}"}
+report_not_found: {es: "no existe el informe {path}", en: "the report {path} does not exist"}
+report_outside:
+  es: "el informe {path} debe estar dentro de la carpeta del curso {course} (lo normal: reviews/)"
+  en: "the report {path} must be inside the folder of course {course} (usually reviews/)"

@@ -10,9 +10,12 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from coursekit import __version__, config, identity
+from coursekit import __version__, config, identity, store
 from coursekit import agents as agentsmod
+from coursekit import theme as thememod
+from coursekit.i18n import t
 from coursekit.project import Project
+from coursekit.setup import assembly_backend as setup_assembly_backend
 from coursekit.setup import ca_bundle
 from coursekit.util import git
 
@@ -46,8 +49,8 @@ def tool_sections(project: Project) -> Section:
     values = agentsmod.context(project)
     mcp = values["mcp_name"]
     url = str(((config.project_data(project).get("platform") or {}).get("slxd") or {}).get("mcp_url") or "")
-    s = Section("Agent tools")
-    s.add(bool(url) or None, f"slxd MCP server '{mcp}'" + ("" if url else ": no mcp_url in project.yaml › platform.slxd"))
+    s = Section(t("doctor", "section_tools"))
+    s.add(bool(url) or None, t("doctor", "mcp_server" if url else "mcp_no_url", mcp=mcp))
     checks = {
         "claude": (root / ".claude/skills/content-writing/SKILL.md", root / ".claude/commands/write-unit.md",
                    mcp in (_read_json(root / ".mcp.json").get("mcpServers") or {})),
@@ -59,64 +62,81 @@ def tool_sections(project: Project) -> Section:
     names = {"claude": "Claude Code", "opencode": "opencode", "codex": "Codex"}
     for tool, (skill, command, has_mcp) in checks.items():
         if not shutil.which(tool):
-            s.add(None, f"{names[tool]}: not installed")
+            s.add(None, t("doctor", "not_installed", name=names[tool]))
             continue
         sees = skill.exists() and command.exists()
-        s.add(sees, f"{names[tool]}: skills and commands", "coursekit agents")
+        s.add(sees, t("doctor", "skills_commands", name=names[tool]), "coursekit agents")
         if url:
-            s.add(bool(has_mcp), f"{names[tool]}: MCP {mcp}", "coursekit agents")
+            s.add(bool(has_mcp), t("doctor", "mcp_of_tool", name=names[tool], mcp=mcp), "coursekit agents")
     for role in agentsmod.ROLES:
         tool, model = agentsmod.role(role)
-        s.add(shutil.which(tool) is not None, f"{role}: {tool} · {model or 'default model'}",
-              f"install {tool} or change {role.upper()}_AGENT in .env")
+        s.add(shutil.which(tool) is not None, t("doctor", "role_line", role=role, tool=tool, model=model or t("doctor", "default_model")),
+              t("doctor", "role_hint", tool=tool, key=f"{role.upper()}_AGENT"))
     if agentsmod.role("writer") == agentsmod.role("reviewer"):
-        s.add(None, "writer and reviewer use the same tool and model (another model catches more)")
+        s.add(None, t("doctor", "same_model"))
     return s
 
 
 def collect(project: Project) -> list[Section]:
-    base = Section("Base")
-    base.add(sys.version_info >= (3, 12), f"coursekit {__version__} (Python {sys.version_info[0]}.{sys.version_info[1]})")
-    base.add(project.env_file.exists(), ".env", "coursekit setup")
+    base = Section(t("doctor", "section_base"))
+    python = f"{sys.version_info[0]}.{sys.version_info[1]}"
+    base.add(sys.version_info >= (3, 12), t("doctor", "coursekit_line", version=__version__, python=python))
+    base.add(project.env_file.exists(), t("doctor", "env_file"), "coursekit setup")
     who = identity.current()
-    base.add(who is not None, f"signing identity: {who}" if who else "signing identity", "coursekit setup --identity")
+    label = t("doctor", "identity_with", who=who) if who else t("doctor", "identity_without")
+    base.add(who is not None, label, "coursekit setup --identity")
     hooks = git("config", "--get", "core.hooksPath", cwd=project.root)
     is_repo = bool(git("rev-parse", "--show-toplevel", cwd=project.root))
-    base.add(bool(hooks) if is_repo else None, "git hooks" if is_repo else "not a git repository", "coursekit setup")
-    base.add(importlib.util.find_spec("markitdown") is not None, "MarkItDown (coursekit brief)", "reinstall coursekit")
-    base.add(shutil.which("node") is not None, "Node (web links of brief/links.md)", "coursekit setup --media")
+    base.add(bool(hooks) if is_repo else None, t("doctor", "git_hooks" if is_repo else "not_a_repo"), "coursekit setup")
+    base.add(importlib.util.find_spec("markitdown") is not None, t("doctor", "markitdown"), t("doctor", "markitdown_hint"))
+    base.add(shutil.which("node") is not None, t("doctor", "node_line"), "coursekit setup --media")
 
-    net = Section("Network")
+    net = Section(t("doctor", "section_network"))
     cert = ca_bundle(project)
     if cert:
-        net.add(bool(os.environ.get("NODE_EXTRA_CA_CERTS")), f"corporate CA certificate: NODE_EXTRA_CA_CERTS ({cert})", "coursekit setup")
+        net.add(bool(os.environ.get("NODE_EXTRA_CA_CERTS")), t("doctor", "ca_set", cert=cert), "coursekit setup")
     else:
-        net.add(None, "no corporate CA certificate configured or found (project.yaml › network)")
+        net.add(None, t("doctor", "ca_none"))
 
-    mirror = Section("Mirror folder")
+    mirror = Section(t("doctor", "section_mirror"))
     provider = str((config.project_data(project).get("mirror") or {}).get("provider") or "none")
     if provider == "none":
-        mirror.add(None, "no mirror folder (project.yaml › mirror)")
+        mirror.add(None, t("doctor", "mirror_none"))
     else:
         folder = os.environ.get("MIRROR_DIR", "")
-        mirror.add(bool(folder) and Path(folder).exists(), f"{provider}: MIRROR_DIR", "set it in .env (local path of the synced folder)")
+        mirror.add(bool(folder) and Path(folder).exists(), t("doctor", "mirror_dir", provider=provider), t("doctor", "mirror_hint"))
 
-    media = Section("Media (optional: coursekit setup --media)")
+    if setup_assembly_backend(project) == "html":
+        builders = sorted(store.workspaces_dir().glob("html-builder-*")) if store.workspaces_dir().is_dir() else []
+        base.add(bool(builders) or None, t("doctor", "html_builder"), "coursekit setup")
+
+    theme = Section(t("doctor", "section_theme"))
+    found = thememod.status(project)
+    theme.add(True if found.state == "derived" else None, t("doctor", f"theme_{found.state}"), t("doctor", "theme_hint"))
+
+    media = Section(t("doctor", "section_media"))
     for tool in ("ffmpeg", "vhs", "asciinema", "piper", "stable-ts"):
         if tool == "asciinema" and os.name == "nt":
-            media.add(None, "asciinema: not available on Windows (terminal demos fall back to VHS)")
+            media.add(None, t("doctor", "asciinema_windows"))
             continue
         media.add(shutil.which(tool) is not None, tool, "coursekit setup --media")
+    if store.home().exists():
+        media.add(None, t("doctor", "store", path=store.home().as_posix(), size=store.human(store.size(store.home()))))
+    remotion_dir = project.root / "tools" / "remotion"
+    if remotion_dir.exists():
+        media.add((remotion_dir / "node_modules").is_dir(), t("doctor", "remotion_deps"), "coursekit setup --media")
     voice = os.environ.get("PIPER_VOICE", "")
     media.add(bool(voice) and Path(voice).exists(), "PIPER_VOICE", "coursekit setup --media")
     for key in ("ELEVENLABS_API_KEY", "AZURE_SPEECH_KEY", "GOOGLE_TTS_API_KEY", "MAGNIFIC_API_KEY"):
-        media.add(bool(os.environ.get(key)) or None, f"{key} (optional)")
-    return [base, tool_sections(project), net, mirror, media]
+        media.add(bool(os.environ.get(key)) or None, t("doctor", "key_optional", key=key))
+    if os.environ.get("AZURE_SPEECH_KEY") and not os.environ.get("AZURE_SPEECH_REGION"):
+        media.add(False, "AZURE_SPEECH_REGION", t("doctor", "azure_region_hint"))
+    return [base, tool_sections(project), net, mirror, theme, media]
 
 
 def render(sections: list[Section]) -> str:
     out = []
-    marks = {"ok": "ok     ", "missing": "missing", "info": "info   "}
+    marks = {status: t("doctor", f"mark_{status}").ljust(7) for status in ("ok", "missing", "info")}
     for section in sections:
         out.append(section.title)
         for c in section.checks:

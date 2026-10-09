@@ -10,13 +10,22 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from coursekit.i18n import t
+
 
 class CatalogError(Exception):
     pass
 
 
 def creator_bricks(path: Path) -> dict[str, dict]:
-    data = json.loads(path.read_text(encoding="utf-8"))
+    if not path.is_file():
+        raise CatalogError(t("directives", "catalog_missing", path=path.as_posix()))
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except ValueError as exc:
+        raise CatalogError(t("directives", "not_a_catalog", path=path.as_posix())) from exc
+    if not isinstance(data, dict):
+        raise CatalogError(t("directives", "not_a_catalog", path=path.as_posix()))
     for key in ("result", "structuredContent"):
         if "categories" not in data and isinstance(data.get(key), dict):
             data = data[key]
@@ -25,7 +34,7 @@ def creator_bricks(path: Path) -> dict[str, dict]:
         for item in category.get("types", []):
             bricks[item["type"]] = {"category": category.get("category"), "whenToUse": item.get("whenToUse")}
     if not bricks:
-        raise CatalogError(f"{path} does not look like a list_brick_types result (no 'categories')")
+        raise CatalogError(t("directives", "not_a_catalog", path=path.as_posix()))
     return bricks
 
 
@@ -34,7 +43,14 @@ def check(registry: dict, catalog: Path) -> tuple[list[str], list[str], int]:
     mapped = {d["brick"]: name for name, d in (registry.get("directives") or {}).items()}
     ignored = set(registry.get("not_directives") or {})
     creator = creator_bricks(catalog)
-    new = [f"NEW     {b} [{creator[b]['category']}] {creator[b]['whenToUse']}" for b in sorted(set(creator) - set(mapped) - ignored)]
-    removed = [f"REMOVED {b} (in {f'directive {mapped[b]!r}' if b in mapped else 'not_directives'})"
-               for b in sorted((set(mapped) | ignored) - set(creator))]
+    new = [
+        t("directives", "new_brick", brick=b, category=creator[b]["category"], when=creator[b]["whenToUse"])
+        for b in sorted(set(creator) - set(mapped) - ignored)
+    ]
+    removed = [
+        t("directives", "removed_directive", brick=b, directive=repr(mapped[b]))
+        if b in mapped
+        else t("directives", "removed_ignored", brick=b)
+        for b in sorted((set(mapped) | ignored) - set(creator))
+    ]
     return new, removed, len(creator)

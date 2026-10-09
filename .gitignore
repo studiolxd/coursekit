@@ -5,5 +5,3 @@ dist/
 build/
 .pytest_cache/
 .ruff_cache/
-# Local list of terms that must never reach this public repository (see tools/check_terms.py).
-.forbidden-terms

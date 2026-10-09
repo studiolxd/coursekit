@@ -68,7 +68,8 @@ them against the previous review, or the person names them with `--parts`):
 ```
 
 3. Run `coursekit reviewed <CODE> <N>`: it verifies again and marks the unit as reviewed (if it
-   fails, fix and repeat). Never edit statuses by hand.
+   fails, fix and repeat). Never edit statuses by hand. Never pass `--by` to it: that option records the review
+   of a person.
 4. Remind the person that, after their editorial review, they sign with `/approve-unit <CODE> <N>`.
 
 Do not commit or push unless asked.
