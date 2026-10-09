@@ -100,7 +100,7 @@ Las skills y los comandos leen los números de producción de tu configuración:
 
 | Comando | Argumentos | Qué hace |
 |---|---|---|
-| `/new-course` | `"<title>" <hours> [--code ABC101] [--no-intro] [--no-summary] [indications]` | Crea el curso y construye en slxd la propuesta de diseño instruccional para revisión humana. Ejecuta `coursekit theme show` y, si el proyecto no tiene tokens de diseño, te avisa en su resumen de que ejecutes `/define-theme` antes de producir multimedia. |
+| `/new-course` | `"<title>" <hours> [--code ABC101] [--no-intro] [--no-summary] [--no-material] [indications]` | Crea el curso y construye en slxd la propuesta de diseño instruccional para revisión humana. Ejecuta `coursekit theme show` y, si el proyecto no tiene tokens de diseño, te avisa en su resumen de que ejecutes `/define-theme` antes de producir multimedia. Si no hay material, el agente pregunta antes de diseñar (salvo con `--no-material`) y, si sigues sin él, marca el temario como suposición. |
 | `/design-change` | `<CODE> <changes>` | Aplica en slxd los cambios que pidas sobre la propuesta de diseño. |
 | `/approve-design` | `<CODE>` | Prepara la firma del diseño y te dice cómo firmarlo. |
 | `/define-theme` | `[CODE]` | Define el theme en slxd creator y deriva de él los tokens de diseño de la multimedia. Con el backend html no hay theme de plataforma: escribe o adapta la hoja de estilos `theme/maqueta.css` con la marca en sus variables CSS y ejecuta `coursekit theme import theme/maqueta.css`. Sin código trabaja sobre el theme del proyecto, que heredan todos los cursos; con código, sobre el theme propio de ese curso (`courses/<CODE>/theme/`, anotado en `slxd.theme_id`), que gana para él. Lista los themes de la plataforma, eliges o creas uno (desde cero, desde un preset o como copia), lo adapta con los colores y las fuentes de la marca, guarda el resultado de `get_theme` en `.cache/theme/get_theme.json` y ejecuta `coursekit theme import`. Nunca escribe `tokens.json` a mano. El theme lo validas tú, como validas el diseño. Mira [Theme y tokens de diseño](02-workflow.md#theme-y-tokens-de-diseño). |
@@ -141,14 +141,14 @@ Cada persona se autentica con su cuenta de slxd (OAuth) la primera vez que una h
 
 ## Permisos: qué no pueden hacer los agentes
 
-Los agentes nunca deben firmar nada. Las aprobaciones solo las registra `coursekit approve`, que solo ejecuta una persona; los agentes te dicen qué escribir. Lo mismo vale para las decisiones de personas que anotan otros comandos: `coursekit client` (rondas de revisión del cliente y lo que decidió el cliente) y `coursekit hold` / `coursekit resume` (pausar un curso). El `AGENTS.md` del proyecto también indica a cada herramienta que no haga commit ni push salvo que se lo pidas, que no escriba credenciales en ficheros versionados y que no instale software (te piden que ejecutes `coursekit setup`).
+Los agentes nunca deben firmar nada. Las aprobaciones solo las registra `coursekit approve`, que solo ejecuta una persona; los agentes te dicen qué escribir. Lo mismo vale para las decisiones de personas que anotan otros comandos: `coursekit client` (rondas de revisión del cliente y lo que decidió el cliente) y `coursekit hold` / `coursekit resume` (pausar un curso). `coursekit handoff` también está denegado: firma por sí solo, así que un agente que pudiera lanzarlo estaría firmando. El `AGENTS.md` del proyecto también indica a cada herramienta que no haga commit ni push salvo que se lo pidas, que no escriba credenciales en ficheros versionados y que no instale software (te piden que ejecutes `coursekit setup`).
 
 coursekit aplica lo esencial en cada herramienta:
 
 | Herramienta | Denegado por configuración | Dónde |
 |---|---|---|
-| Claude Code | `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit reviewed ... --by`, `git push` | `permissions.deny` en `.claude/settings.json` |
-| opencode | `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `git push` | `permission.bash` en `opencode.json` |
+| Claude Code | `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff`, `coursekit reviewed ... --by`, `git push` | `permissions.deny` en `.claude/settings.json` |
+| opencode | `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff`, `git push` | `permission.bash` en `opencode.json` |
 | Agentes `writer` y `reviewer` de opencode | los mismos cuatro comandos `coursekit`, además `git commit`; cualquier otro comando de shell pregunta antes; `coursekit verify`, `status`, `brief`, `outline`, `config`, `git status` y `git diff` están permitidos (el revisor también puede ejecutar `coursekit reviewed`) | `.opencode/agent/*.md` |
 | Codex | nada en la configuración: se apoya en las instrucciones de `AGENTS.md` | |
 
@@ -218,7 +218,7 @@ Cómo se llama a cada herramienta y sus límites:
 
 | Herramienta | Comando (simplificado) | Límites |
 |---|---|---|
-| Claude Code | `claude -p ... --permission-mode acceptEdits --allowedTools ... --disallowedTools ...` | Permitido: leer, editar y escribir ficheros, skills, y solo estos comandos de shell: `coursekit verify`, `brief`, `status`, `outline`, `config`, `git status`, `git diff` (el revisor también `coursekit reviewed`). Los roles `design`, `media` y `assembly` reciben además el servidor MCP de slxd, cualquier comando `coursekit` y la descarga web. Siempre denegado: `git commit`, `git push`, `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`. |
+| Claude Code | `claude -p ... --permission-mode acceptEdits --allowedTools ... --disallowedTools ...` | Permitido: leer, editar y escribir ficheros, skills, y solo estos comandos de shell: `coursekit verify`, `brief`, `status`, `outline`, `config`, `git status`, `git diff` (el revisor también `coursekit reviewed`). Los roles `design`, `media` y `assembly` reciben además el servidor MCP de slxd, cualquier comando `coursekit` y la descarga web. Siempre denegado: `git commit`, `git push`, `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff`. |
 | opencode | `opencode run [--agent writer\|reviewer] --auto --format json ...` | El redactor y el revisor se ejecutan como los agentes generados, con sus permisos; la instrucción apunta al fichero del comando porque `run` no tiene comandos con barra. |
 | Codex | `codex exec --sandbox workspace-write --json -o <log>.last.txt ...` | Sandbox con escritura en el espacio de trabajo. |
 

@@ -113,6 +113,15 @@ help_new_language:
   en: "course language (default: project.yaml › content_language)"
 help_new_no_intro: {es: "unidades sin el apartado de introducción inicial", en: "units without the opening introduction section"}
 help_new_no_summary: {es: "unidades sin el apartado de resumen final", en: "units without the closing summary section"}
+help_handoff:
+  es: "todo el proceso de un curso sin intervención (firma como Coursekit Handoff y sin revisión del cliente): título y horas, o el código de uno que se quedó a medias"
+  en: "the whole process of a course by itself (it signs as Coursekit Handoff, with no client review): title and hours, or the code of one that stopped half way"
+help_handoff_target: {es: "título del curso nuevo (con las horas) o código de un curso para continuarlo", en: "title of a new course (with its hours) or the code of a course to carry on"}
+help_handoff_hours: {es: "horas del curso nuevo (sin ellas, continúa el curso con ese código)", en: "hours of the new course (without them, it carries on the course with that code)"}
+help_handoff_rounds: {es: "intentos por paso antes de parar (por defecto: rules › handoff › rounds)", en: "attempts per step before it stops (default: rules › handoff › rounds)"}
+handoff_resume_options:
+  es: "--code, --no-intro, --no-summary y --notes solo valen al crear un curso: para continuar uno, `coursekit handoff CODIGO`"
+  en: "--code, --no-intro, --no-summary and --notes only apply when creating a course: to carry on one, `coursekit handoff CODE`"
 help_new_notes: {es: "instrucciones extra para el diseño instruccional", en: "extra instructions for the instructional design"}
 help_status:
   es: "estado de todos los cursos, o detalle y siguiente paso de uno"

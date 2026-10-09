@@ -199,7 +199,7 @@ Después:
 
 Una herramienta que no esté instalada aparece como `(no instalado)`. En Codex, pide el mismo comando por su nombre: seguirá `.coursekit/agents/commands/new-course.md`.
 
-Si ejecutaste `init` en una terminal y la URL del MCP está puesta, también te ofrece "¿Crear ya tu primer curso con `<herramienta>`?" (la herramienta del rol de diseño, si está instalada). Responde que sí y escribe el título del curso y sus horas (`1.5` o `1,5`): ejecuta `coursekit run new-course` por ti.
+Si ejecutaste `init` en una terminal y la URL del MCP está puesta, también te ofrece "¿Crear ya tu primer curso con `<herramienta>`?" (la herramienta del rol de diseño, si está instalada). Responde que sí y antes te pregunta si tienes material de partida (documentos, enlaces o indicaciones): si lo tienes, te muestra dónde dejarlo (`brief/sources/`, `brief/links.md`, `brief/notes.md`) y espera a que pulses Enter; si no, el diseño parte sin él y su temario queda marcado como suposición. Después escribe el título del curso y sus horas (`1.5` o `1,5`) y te pregunta si hacer todo el proceso solo (modo handoff, mira [Flujo de trabajo](02-workflow.md#modo-handoff)): con no ejecuta `coursekit run new-course` por ti, con sí ejecuta `coursekit handoff`.
 
 Antes de crear el curso conviene dejar material de referencia en `brief/sources/`, URLs en `brief/links.md` e indicaciones generales en `brief/notes.md`, y ejecutar `coursekit brief`.
 

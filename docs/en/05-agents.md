@@ -100,7 +100,7 @@ Skills and commands read the production numbers from your configuration: words p
 
 | Command | Arguments | What it does |
 |---|---|---|
-| `/new-course` | `"<title>" <hours> [--code ABC101] [--no-intro] [--no-summary] [indications]` | Creates the course and builds the instructional design proposal in slxd for human review. It runs `coursekit theme show` and, if the project has no design tokens, tells you in its summary to run `/define-theme` before producing media. |
+| `/new-course` | `"<title>" <hours> [--code ABC101] [--no-intro] [--no-summary] [--no-material] [indications]` | Creates the course and builds the instructional design proposal in slxd for human review. It runs `coursekit theme show` and, if the project has no design tokens, tells you in its summary to run `/define-theme` before producing media. If there is no material the agent asks before designing (unless `--no-material`) and, if you go on without it, marks the syllabus as an assumption. |
 | `/design-change` | `<CODE> <changes>` | Applies in slxd the changes you ask for on the design proposal. |
 | `/approve-design` | `<CODE>` | Prepares the sign-off of the design and tells you how to sign it. |
 | `/define-theme` | `[CODE]` | Defines the theme in slxd creator and derives the design tokens of the media from it. With the html backend there is no platform theme: it writes or adapts the stylesheet `theme/maqueta.css` with the brand in its CSS variables and runs `coursekit theme import theme/maqueta.css`. Without a code it works on the theme of the project, which every course inherits; with a code, on the own theme of that course (`courses/<CODE>/theme/`, recorded in `slxd.theme_id`), which wins for it. It lists the platform's themes, you choose or create one (from nothing, from a preset or as a copy), it adapts it with the brand colours and fonts, saves the `get_theme` result to `.cache/theme/get_theme.json` and runs `coursekit theme import`. It never writes `tokens.json` by hand. You validate the theme as you validate the design. See [Theme and design tokens](02-workflow.md#theme-and-design-tokens). |
@@ -141,14 +141,14 @@ Each person authenticates with their slxd account (OAuth) the first time a tool 
 
 ## Permissions: what agents may not do
 
-Agents must never sign anything. Approvals are recorded only by `coursekit approve`, which only a person runs; agents tell you what to type. The same goes for the decisions of people that other commands record: `coursekit client` (rounds of client review and what the client decided) and `coursekit hold` / `coursekit resume` (pausing a course). The project's `AGENTS.md` also tells every tool not to commit or push unless you ask, not to write credentials in versioned files and not to install software (they ask you to run `coursekit setup` instead).
+Agents must never sign anything. Approvals are recorded only by `coursekit approve`, which only a person runs; agents tell you what to type. The same goes for the decisions of people that other commands record: `coursekit client` (rounds of client review and what the client decided) and `coursekit hold` / `coursekit resume` (pausing a course). `coursekit handoff` is denied too: it signs by itself, so an agent that could start it would be signing. The project's `AGENTS.md` also tells every tool not to commit or push unless you ask, not to write credentials in versioned files and not to install software (they ask you to run `coursekit setup` instead).
 
 coursekit enforces the essentials in each tool:
 
 | Tool | Denied by configuration | Where |
 |---|---|---|
-| Claude Code | `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit reviewed ... --by`, `git push` | `permissions.deny` in `.claude/settings.json` |
-| opencode | `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `git push` | `permission.bash` in `opencode.json` |
+| Claude Code | `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff`, `coursekit reviewed ... --by`, `git push` | `permissions.deny` in `.claude/settings.json` |
+| opencode | `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff`, `git push` | `permission.bash` in `opencode.json` |
 | opencode `writer` and `reviewer` agents | the same four `coursekit` commands, also `git commit`; any other shell command asks first; `coursekit verify`, `status`, `brief`, `outline`, `config`, `git status` and `git diff` are allowed (the reviewer may also run `coursekit reviewed`) | `.opencode/agent/*.md` |
 | Codex | nothing in configuration: it relies on the `AGENTS.md` instructions | |
 
@@ -218,7 +218,7 @@ How each tool is called, and its limits:
 
 | Tool | Command (simplified) | Limits |
 |---|---|---|
-| Claude Code | `claude -p ... --permission-mode acceptEdits --allowedTools ... --disallowedTools ...` | Allowed: read, edit and write files, skills, and only these shell commands: `coursekit verify`, `brief`, `status`, `outline`, `config`, `git status`, `git diff` (the reviewer also `coursekit reviewed`). The `design`, `media` and `assembly` roles also get the slxd MCP server, any `coursekit` command and web fetch. Always denied: `git commit`, `git push`, `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`. |
+| Claude Code | `claude -p ... --permission-mode acceptEdits --allowedTools ... --disallowedTools ...` | Allowed: read, edit and write files, skills, and only these shell commands: `coursekit verify`, `brief`, `status`, `outline`, `config`, `git status`, `git diff` (the reviewer also `coursekit reviewed`). The `design`, `media` and `assembly` roles also get the slxd MCP server, any `coursekit` command and web fetch. Always denied: `git commit`, `git push`, `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff`. |
 | opencode | `opencode run [--agent writer\|reviewer] --auto --format json ...` | Writer and reviewer run as the generated agents with their permissions; the instruction points at the command file because `run` has no slash commands. |
 | Codex | `codex exec --sandbox workspace-write --json -o <log>.last.txt ...` | Workspace-write sandbox. |
 

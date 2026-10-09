@@ -312,6 +312,8 @@ The interface language does not touch the content. The words of `content.md` (he
 
 **Can an agent sign for me?** No. `coursekit approve` is denied in the generated settings of Claude Code and opencode, and the project instructions forbid it for every tool. Use `!` in the chat if you want to sign without leaving it. The same applies to `coursekit client` (rounds of client review), `coursekit hold` and `coursekit resume`.
 
+**Can the whole process run without me?** Yes: `coursekit handoff "<title>" <hours>`. It signs as Coursekit Handoff and nobody reviews the course; see [Workflow](02-workflow.md#handoff-mode). If it stops, it says why; fix it and run `coursekit handoff <CODE>` to carry on.
+
 **Is the client review mandatory?** Not by default. It is if the project says so (`client_review.required: true` in `config/delivery.yaml`) or the course does (`delivery › client_review › required` in its `course.yaml`). See [Workflow](02-workflow.md#client-review-optional).
 
 **How do I pause a course?** `coursekit hold <CODE> --reason "..."`, and `coursekit resume <CODE>` to continue. See [Workflow](02-workflow.md#pause-a-course).

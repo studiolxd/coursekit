@@ -95,9 +95,25 @@ next_mcp:
   es: "  · Servidor MCP de slxd: falta su URL, y sin ella el diseño no puede conectar con creator. Ponla en project.yaml › platform.slxd.mcp_url y ejecuta `coursekit agents`."
   en: "  · slxd MCP server: its URL is missing, and without it the design cannot connect to creator. Set it in project.yaml › platform.slxd.mcp_url and run `coursekit agents`."
 create_ask: {es: "¿Crear ya tu primer curso con {tool}?", en: "Create your first course now with {tool}?"}
+material_ask:
+  es: "Antes de diseñar: ¿tienes material de partida (documentos, enlaces o indicaciones) que quieras que use el diseño?"
+  en: "Before designing: do you have reference material (documents, links or indications) you want the design to use?"
+material_none:
+  es: "  Sin material de partida: el diseño será una propuesta razonable para el título y el público, marcada como suposición. Podrás añadirlo después y pedir /design-change."
+  en: "  No reference material: the design will be a reasonable proposal for the title and audience, marked as an assumption. You can add it later and ask for /design-change."
+material_where:
+  es: "  Déjalo ahora en el proyecto:\n    · documentos de cualquier formato: {sources}\n    · URLs de documentación web: {links}\n    · indicaciones generales: {notes}"
+  en: "  Drop it in the project now:\n    · documents of any format: {sources}\n    · web documentation URLs: {links}\n    · general indications: {notes}"
+material_wait: {es: "Pulsa Enter cuando lo hayas dejado", en: "Press Enter when you have put it there"}
 create_title: {es: Título del curso, en: Course title}
 create_title_bad: {es: "  escribe el título del curso", en: "  enter the course title"}
 create_hours: {es: "Horas del curso", en: "Course hours"}
+handoff_ask:
+  es: "¿Hacer todo el proceso solo, hasta la entrega (modo handoff: firma como Coursekit Handoff y nadie revisa el curso)?"
+  en: "Do the whole process by itself, up to the delivery (handoff mode: it signs as Coursekit Handoff and nobody reviews the course)?"
+handoff_notice:
+  es: "  Modo handoff: puede tardar y gastar créditos de los proveedores configurados. Si se para, continúa con `coursekit handoff <CODIGO>`."
+  en: "  Handoff mode: it can take a while and spend credits of the configured providers. If it stops, carry on with `coursekit handoff <CODE>`."
 create_hours_bad: {es: "  escribe un número de horas mayor que 0", en: "  enter a number of hours greater than 0"}
 help_mcp_url:
   es: "URL del servidor MCP de slxd (project.yaml › platform.slxd.mcp_url)"

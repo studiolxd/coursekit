@@ -224,7 +224,7 @@ def test_the_first_course_can_be_started_at_the_end(tmp_path, monkeypatch):
 
     url = "https://acme.slxd.app/mcp/creator"
     answers = iter(["en", "", "Demo", "ACME", "", "", "", url, "none", "Ana Pérez", "ana@example.com", "", "n",
-                    "", "", "Passwords \"101\"", "abc", "0", "1,5"])
+                    "", "", "", "Passwords \"101\"", "abc", "0", "1,5", ""])
     launched = []
     monkeypatch.chdir(tmp_path)  # init changes folder to start the course: restore it afterwards
     monkeypatch.setattr("sys.stdin.isatty", lambda: True, raising=False)
@@ -235,3 +235,58 @@ def test_the_first_course_can_be_started_at_the_end(tmp_path, monkeypatch):
     assert len(launched) == 1
     tool, text = launched[0]
     assert tool == "claude" and '/new-course "Passwords 101" 1.5' in text
+
+
+def test_the_wizard_pauses_for_the_reference_material_before_the_first_course(tmp_path, monkeypatch, capsys):
+    from coursekit import launch
+
+    url = "https://acme.slxd.app/mcp/creator"
+    prompts = []
+    answers = iter(["en", "", "Demo", "ACME", "", "", "", url, "none", "Ana Pérez", "ana@example.com", "", "n",
+                    "", "y", "", "Passwords", "1", ""])
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True, raising=False)
+    monkeypatch.setattr("builtins.input", lambda prompt: prompts.append(prompt) or next(answers))
+    monkeypatch.setattr("shutil.which", lambda tool: "/bin/" + tool)
+    monkeypatch.setattr(launch, "execute", lambda project, agent, text, headless, log: (0, None, ""))
+    capsys.readouterr()
+    assert main(["init", str(tmp_path / "demo"), "--no-git"]) == 0
+    out = capsys.readouterr().out
+    asked = [p for p in prompts if p.startswith("Before designing")]
+    assert len(asked) == 1
+    assert "brief/sources" in out and "brief/links.md" in out and "brief/notes.md" in out
+    assert any(p.startswith("Press Enter when") for p in prompts)
+    assert prompts.index(asked[0]) < next(i for i, p in enumerate(prompts) if p.startswith("Course title"))
+
+
+def test_the_wizard_without_material_says_the_design_starts_on_assumptions(tmp_path, monkeypatch, capsys):
+    from coursekit import launch
+
+    url = "https://acme.slxd.app/mcp/creator"
+    answers = iter(["en", "", "Demo", "ACME", "", "", "", url, "none", "Ana Pérez", "ana@example.com", "", "n",
+                    "", "", "Passwords", "1", ""])
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True, raising=False)
+    monkeypatch.setattr("builtins.input", lambda prompt: next(answers))
+    monkeypatch.setattr("shutil.which", lambda tool: "/bin/" + tool)
+    monkeypatch.setattr(launch, "execute", lambda project, agent, text, headless, log: (0, None, ""))
+    assert main(["init", str(tmp_path / "demo"), "--no-git"]) == 0
+    assert "marked as an assumption" in capsys.readouterr().out
+
+
+def test_the_wizard_can_hand_the_whole_process_off(tmp_path, monkeypatch, capsys):
+    url = "https://acme.slxd.app/mcp/creator"
+    answers = iter(["en", "", "Demo", "ACME", "", "", "", url, "none", "Ana Pérez", "ana@example.com", "", "n",
+                    "", "", "Passwords", "1", "y"])
+    started = []
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True, raising=False)
+    monkeypatch.setattr("builtins.input", lambda prompt: next(answers))
+    monkeypatch.setattr("shutil.which", lambda tool: "/bin/" + tool)
+    from coursekit import handoff
+
+    monkeypatch.setattr(handoff, "start", lambda *args, **kwargs: started.append(args) or {"code": "PASSWORDS", "status": "delivered"})
+    monkeypatch.setattr("coursekit.status.detail", lambda course: "detail")
+    assert main(["init", str(tmp_path / "demo"), "--no-git"]) == 0
+    assert len(started) == 1 and started[0][1:3] == ("Passwords", 1.0)
+    assert "Handoff mode" in capsys.readouterr().out

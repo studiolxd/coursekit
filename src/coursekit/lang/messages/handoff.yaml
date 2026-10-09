@@ -1,0 +1,77 @@
+# `coursekit handoff`: the whole production of a course by itself.
+start_line:
+  es: "handoff {code}: todo el proceso hasta la entrega, sin intervención y sin revisión del cliente. Las firmas las pone {who}; ninguna persona revisa el curso."
+  en: "handoff {code}: the whole process up to the delivery, by itself and with no client review. The signatures are given by {who}; no person reviews the course."
+resume_line:
+  es: "handoff {code}: continúa desde «{status}». Las firmas las pone {who}; ninguna persona revisa el curso."
+  en: "handoff {code}: carrying on from \"{status}\". The signatures are given by {who}; no person reviews the course."
+stage_line: {es: "── {status}", en: "── {status}"}
+agent_line:
+  es: "  · agente {role} ({label}): /{command} {arguments}"
+  en: "  · {role} agent ({label}): /{command} {arguments}"
+unit_line:
+  es: "  · unidad {n}: {command} ({label})"
+  en: "  · unit {n}: {command} ({label})"
+signed_line: {es: "  · {text}", en: "  · {text}"}
+warning_line: {es: "  aviso: {text}", en: "  warning: {text}"}
+not_ready_line:
+  es: "  · unidad {n}: la revisión con IA dice «not ready»; el redactor la corrige y se revisa de nuevo"
+  en: "  · unit {n}: the AI review says \"not ready\"; the writer fixes it and it is reviewed again"
+see_log: {es: " (sesión en {path})", en: " (session in {path})"}
+bad_rounds:
+  es: "rules › handoff › rounds debe ser un número entero mayor que 0, no «{value}»"
+  en: "rules › handoff › rounds must be a whole number greater than 0, not \"{value}\""
+course_exists:
+  es: "el curso {code} ya existe; para continuarlo: coursekit handoff {code}"
+  en: "course {code} already exists; to carry it on: coursekit handoff {code}"
+course_not_created:
+  es: "el agente de diseño no creó el curso {code}"
+  en: "the design agent did not create course {code}"
+design_not_exported:
+  es: "{code}: la propuesta de diseño no se exportó a design/ (falta matrix.json)"
+  en: "{code}: the design proposal was not exported to design/ (matrix.json is missing)"
+design_not_signable:
+  es: "{code}: el diseño no se puede firmar: {problem}"
+  en: "{code}: the design cannot be signed: {problem}"
+unit_not_written:
+  es: "{code}: la unidad {n} no queda verificada tras los intentos (estado: {status})"
+  en: "{code}: unit {n} is not verified after the attempts (status: {status})"
+unit_not_reviewed:
+  es: "{code}: la unidad {n} no queda revisada tras los intentos (estado: {status})"
+  en: "{code}: unit {n} is not reviewed after the attempts (status: {status})"
+unit_not_ready:
+  es: "{code}: la revisión con IA sigue diciendo «not ready» en la unidad {n} tras corregirla (reviews/unit-{n:02d}-ai-review.md)"
+  en: "{code}: the AI review still says \"not ready\" for unit {n} after fixing it (reviews/unit-{n:02d}-ai-review.md)"
+unit_not_signable:
+  es: "{code}: la unidad {n} no se puede firmar: {problem}"
+  en: "{code}: unit {n} cannot be signed: {problem}"
+theme_missing:
+  es: "{code}: el multimedia necesita el theme y no se pudo definir (/define-theme)"
+  en: "{code}: the media needs the theme and it could not be defined (/define-theme)"
+media_pending:
+  es: "{code}: quedan recursos multimedia sin producir tras los intentos: {assets}"
+  en: "{code}: media assets are still not produced after the attempts: {assets}"
+not_assembled:
+  es: "{code}: el curso no queda montado tras los intentos (/assemble)"
+  en: "{code}: the course is not assembled after the attempts (/assemble)"
+not_delivered:
+  es: "{code}: el curso no queda entregado tras los intentos (/deliver)"
+  en: "{code}: the course is not delivered after the attempts (/deliver)"
+client_review_required:
+  es: "{code}: el proyecto exige la revisión del cliente para entregar (client_review.required) y el handoff no la hace"
+  en: "{code}: the project requires the client review to deliver (client_review.required) and handoff does not do it"
+stopped_on_hold:
+  es: "{code}: el curso está en pausa; continúa con `coursekit resume {code}` y después `coursekit handoff {code}`"
+  en: "{code}: the course is on hold; bring it back with `coursekit resume {code}` and then `coursekit handoff {code}`"
+stopped_client_review:
+  es: "{code}: hay una ronda de revisión del cliente abierta; el handoff no la gestiona (`coursekit client {code} ...`)"
+  en: "{code}: a client review round is open; handoff does not handle it (`coursekit client {code} ...`)"
+no_progress:
+  es: "{code}: el paso «{status}» no avanzó nada; míralo con `coursekit status {code}`"
+  en: "{code}: the \"{status}\" step moved nothing; look at it with `coursekit status {code}`"
+stopped:
+  es: "handoff parado. {reason}\nPara seguir donde se quedó, una vez resuelto:  coursekit handoff {code}"
+  en: "handoff stopped. {reason}\nTo carry on where it stopped, once solved:  coursekit handoff {code}"
+done:
+  es: "handoff terminado: {code} entregado. Las firmas son de {who}: ninguna persona ha revisado este curso."
+  en: "handoff finished: {code} delivered. The signatures are {who}'s: no person has reviewed this course."

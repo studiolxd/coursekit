@@ -41,7 +41,7 @@ Commands load `.env` (at the project root) into the process environment before r
 
 | Marker | Meaning |
 |---|---|
-| People only | The command signs or changes something that belongs to a person. The generated agent configurations deny it (`coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit reviewed --by`). |
+| People only | The command signs or changes something that belongs to a person. The generated agent configurations deny it (`coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff`, `coursekit reviewed --by`). |
 | Agents | The agent of a role runs it as part of a skill or slash command. People can run it too. |
 | Both | Everyday commands for people and agents alike. |
 
@@ -73,7 +73,7 @@ While a course is `on_hold`, the commands that change its work are refused with 
 | Phase | Commands |
 |---|---|
 | Project and machine | `coursekit help`, `coursekit init`, `coursekit config`, `coursekit rules`, `coursekit agents`, `coursekit setup`, `coursekit doctor`, `coursekit uninstall`, `coursekit roles` |
-| Courses and design | `coursekit new`, `coursekit status`, `coursekit sync`, `coursekit outline`, `coursekit brief` |
+| Courses and design | `coursekit new`, `coursekit handoff`, `coursekit status`, `coursekit sync`, `coursekit outline`, `coursekit brief` |
 | Verification and sign-off | `coursekit verify`, `coursekit reviewed`, `coursekit approve` |
 | Course state and client review | `coursekit hold`, `coursekit resume`, `coursekit client` |
 | Launching agents | `coursekit write`, `coursekit review`, `coursekit run` |
@@ -123,7 +123,7 @@ coursekit init [folder] [--update] [--name NAME] [--client CLIENT]
 
 What it does:
 
-- With a terminal and without `--yes` it asks for every value above (the slxd MCP URL with either backend), then offers to create the first course with the design agent, only when the URL was given.
+- With a terminal and without `--yes` it asks for every value above (the slxd MCP URL with either backend), then offers to create the first course with the design agent, only when the URL was given (it first asks whether you have reference material and waits while you drop it in `brief/`).
 - Creates the folders `courses/`, `brief/sources/`, `config/`, `theme/`, `.agents/`; seeds `project.yaml`, `brief/notes.md` and `brief/links.md`; writes the managed files `AGENTS.md`, `CLAUDE.md`, `.env.example`, `.gitignore`, `config/<name>.example.yaml` (rules, directives, media, delivery) and `.githooks/post-merge`, `.githooks/post-checkout`; runs `git init` unless `--no-git`.
 - Then runs the same steps as [`coursekit setup`](#coursekit-setup) (`.env`, `COURSEKIT_LANG` in `.env`, signing identity, git hooks, roles, agents, the html builder with the html backend, diagnosis) and prints the next steps. When the MCP URL is empty, with either backend, the next steps warn that the design cannot connect to creator until `project.yaml › platform.slxd.mcp_url` is set and `coursekit agents` is run.
 - `--update` writes nothing outside the managed files and prints `created`, `updated`, `unchanged` or `kept` for each.
@@ -181,7 +181,7 @@ Generates the skills, slash commands and agent settings for Claude Code, opencod
 coursekit agents
 ```
 
-No arguments. Writes the rendered files to `.claude/`, `.opencode/`, `.coursekit/agents/` and `.coursekit/docs/`, and merges (never replaces) the tool configuration into `.mcp.json`, `opencode.json`, `.claude/settings.json` and `.codex/config.toml`, including the denial of `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume` and `git push` to the agents. Only files coursekit generated (they carry a marker) are overwritten or removed. Prints `agents: N written, M unchanged, K removed` and lists the configuration files it updated and the files it kept because you edited them. Details in [05-agents.md](05-agents.md).
+No arguments. Writes the rendered files to `.claude/`, `.opencode/`, `.coursekit/agents/` and `.coursekit/docs/`, and merges (never replaces) the tool configuration into `.mcp.json`, `opencode.json`, `.claude/settings.json` and `.codex/config.toml`, including the denial of `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff` and `git push` to the agents. Only files coursekit generated (they carry a marker) are overwritten or removed. Prints `agents: N written, M unchanged, K removed` and lists the configuration files it updated and the files it kept because you edited them. Details in [05-agents.md](05-agents.md).
 
 ```
 coursekit agents
@@ -305,6 +305,29 @@ Creates `courses/<CODE>/` with `course.yaml` (status `design`), the folders `bri
 
 ```
 coursekit new "Strong passwords" 2 --code PWD --notes "Focus on office staff"
+```
+
+### `coursekit handoff`
+
+Takes a course from its title and hours to its delivery by itself, with nobody reviewing anything on the way: the design, the writing, the AI review, the sign-offs, the media, the assembly and the delivery. Who: people only (the agents cannot run it). Details and limits in [Handoff mode](02-workflow.md#handoff-mode).
+
+```
+coursekit handoff [--code CODE] [--no-intro] [--no-summary] [--notes NOTES] [--rounds ROUNDS] target [hours]
+```
+
+| Argument | Values / default | Meaning |
+|---|---|---|
+| `target` | text | With `hours`: the title of the new course (quote it). Without them: the code of a course to carry on from where it stopped. |
+| `hours` | number; optional | Total duration. It makes `handoff` create a new course. |
+| `--code CODE` | default: the title as an upper-case slug | Course code. Only when creating. |
+| `--no-intro`, `--no-summary`, `--notes NOTES` | as in [`coursekit new`](#coursekit-new) | Only when creating; with a code to carry on they are refused (exit code 2). |
+| `--rounds ROUNDS` | whole number; default `rules › handoff › rounds` (`2`) | Attempts per step before it stops. |
+
+It runs, headless and in order, the agent of each role, and decides each step from the status of the course. The signatures of the design and of every unit are given by coursekit itself as **Coursekit Handoff** (never as a person), and each approval records `via: handoff`. It does not do the client's review and it does not start if the project requires it (`client_review.required`). When a step still fails after its attempts it stops with exit code 1, says why and how to go on (`coursekit handoff <CODE>`). It can take a long time and spend credits of the configured media providers.
+
+```
+coursekit handoff "Strong passwords" 2 --code PWD
+coursekit handoff PWD
 ```
 
 ### `coursekit status`
@@ -913,7 +936,7 @@ The slash commands live in `src/coursekit/agentkit/commands/` and are generated 
 
 | Slash command | CLI it uses | Role | Who may run it |
 |---|---|---|---|
-| `/new-course "<title>" <hours> [--code ABC101] [--no-intro] [--no-summary] [notes]` | `coursekit new`, `coursekit brief`, `coursekit theme show`, `coursekit publish` | `design` | People, from the AI tool or `coursekit run new-course`. The agent never signs or commits. When the project has no theme tokens, its summary tells the person to run `/define-theme`. |
+| `/new-course "<title>" <hours> [--code ABC101] [--no-intro] [--no-summary] [--no-material] [notes]` | `coursekit new`, `coursekit brief`, `coursekit theme show` | `design` | People, from the AI tool or `coursekit run new-course`. The agent never signs or commits. When the project has no theme tokens, its summary tells the person to run `/define-theme`. If there is no material the agent asks before designing (unless `--no-material`) and, if you go on without it, marks the syllabus as an assumption. |
 | `/design-change <CODE> <changes>` | `coursekit brief`, `coursekit publish` | `design` | People. The design is applied in slxd; a signed design must be signed again. |
 | `/approve-design <CODE>` | `coursekit sync --check`, `coursekit publish`; the person then runs `coursekit approve design <CODE> --yes` | `design` | The agent prepares it; only a person signs. |
 | `/define-theme [CODE]` | `coursekit theme show`, `coursekit theme import` | `design` | People, or the design agent. With the creator backend it chooses or adapts the theme in the platform, saves `get_theme` to `.cache/theme/get_theme.json` and derives the tokens. With the html backend there is no platform theme: it writes or adapts `theme/maqueta.css` and runs `coursekit theme import theme/maqueta.css`. Without a code it defines the project theme; with one, the own theme of that course. Never edits `tokens.json` by hand. |

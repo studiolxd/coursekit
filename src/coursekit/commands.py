@@ -13,6 +13,7 @@ from coursekit import brief as briefmod
 from coursekit import catalog as catalogmod
 from coursekit import course as coursemod
 from coursekit import delivery as deliverymod
+from coursekit import handoff as handoffmod
 from coursekit import init as initmod
 from coursekit import media as mediamod
 from coursekit import publish as publishmod
@@ -61,6 +62,30 @@ def cmd_new(args: argparse.Namespace) -> int:
     )
     print(t("commands", "new_created", path=folder.relative_to(project.root).as_posix(), hours=args.hours))
     _mirror(project, folder.name)
+    return 0
+
+
+def cmd_handoff(args: argparse.Namespace) -> int:
+    project = _project()
+    rounds = args.rounds or handoffmod.rounds_setting(project)
+    log = lambda message: print(message, flush=True)  # noqa: E731
+    mirror = lambda code: _mirror(project, code)  # noqa: E731
+    starting = args.hours is not None
+    code = handoffmod.course_code(args.target, args.code) if starting else args.target.upper()
+    try:
+        if starting:
+            flags = [flag for flag, on in (("--no-intro", args.no_intro), ("--no-summary", args.no_summary)) if on]
+            course = handoffmod.start(project, args.target, args.hours, args.code, flags, args.notes, rounds, log, mirror)
+        else:
+            if args.no_intro or args.no_summary or args.notes or args.code:
+                print(t("commands", "handoff_resume_options"), file=sys.stderr)
+                return 2
+            course = handoffmod.resume(project, args.target, rounds, log, mirror)
+    except handoffmod.HandoffError as exc:
+        print(t("handoff", "stopped", code=code, reason=exc), file=sys.stderr)
+        return 1
+    print(t("handoff", "done", code=course["code"], who=handoffmod.HANDOFF.name))
+    print(status.detail(course))
     return 0
 
 
@@ -604,6 +629,16 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--notes", default="", help=t("commands", "help_new_notes"))
     p.set_defaults(func=cmd_new)
 
+    p = sub.add_parser("handoff", help=t("commands", "help_handoff"))
+    p.add_argument("target", help=t("commands", "help_handoff_target"))
+    p.add_argument("hours", nargs="?", type=float, help=t("commands", "help_handoff_hours"))
+    p.add_argument("--code", help=t("commands", "help_new_code"))
+    p.add_argument("--no-intro", action="store_true", help=t("commands", "help_new_no_intro"))
+    p.add_argument("--no-summary", action="store_true", help=t("commands", "help_new_no_summary"))
+    p.add_argument("--notes", default="", help=t("commands", "help_new_notes"))
+    p.add_argument("--rounds", type=int, help=t("commands", "help_handoff_rounds"))
+    p.set_defaults(func=cmd_handoff)
+
     p = sub.add_parser("status", help=t("commands", "help_status"))
     p.add_argument("code", nargs="?")
     p.set_defaults(func=cmd_status)
@@ -783,7 +818,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.set_defaults(func=cmd_brief)
 
 
-ERRORS = (coursemod.CourseNotFound, coursemod.RuleError, approve.ApprovalError, FileExistsError, launch.LaunchError,
-          assemblemod.AssembleError, directives.CatalogError, mediamod.MediaError, voices.VoiceError, mediatools.ToolError,
-          deliverymod.DeliveryError, publishmod.PublishError, thememod.ThemeError, statesmod.StateError,
+ERRORS = (handoffmod.HandoffError, coursemod.CourseNotFound, coursemod.RuleError, approve.ApprovalError, FileExistsError,
+          launch.LaunchError, assemblemod.AssembleError, directives.CatalogError, mediamod.MediaError, voices.VoiceError,
+          mediatools.ToolError, deliverymod.DeliveryError, publishmod.PublishError, thememod.ThemeError, statesmod.StateError,
           clientreview.ClientReviewError, HtmlBuildError)

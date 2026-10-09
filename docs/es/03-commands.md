@@ -41,7 +41,7 @@ Los comandos cargan `.env` (en la raíz del proyecto) en el entorno del proceso 
 
 | Marca | Significado |
 |---|---|
-| Solo personas | El comando firma o cambia algo que pertenece a una persona. Las configuraciones de agente generadas lo deniegan (`coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit reviewed --by`). |
+| Solo personas | El comando firma o cambia algo que pertenece a una persona. Las configuraciones de agente generadas lo deniegan (`coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff`, `coursekit reviewed --by`). |
 | Agentes | El agente de un rol lo ejecuta dentro de una skill o un comando de barra. Las personas también pueden ejecutarlo. |
 | Ambos | Comandos de uso diario, para personas y agentes por igual. |
 
@@ -73,7 +73,7 @@ Mientras un curso está en `on_hold`, los comandos que cambian su trabajo se rec
 | Fase | Comandos |
 |---|---|
 | Proyecto y máquina | `coursekit help`, `coursekit init`, `coursekit config`, `coursekit rules`, `coursekit agents`, `coursekit setup`, `coursekit doctor`, `coursekit uninstall`, `coursekit roles` |
-| Cursos y diseño | `coursekit new`, `coursekit status`, `coursekit sync`, `coursekit outline`, `coursekit brief` |
+| Cursos y diseño | `coursekit new`, `coursekit handoff`, `coursekit status`, `coursekit sync`, `coursekit outline`, `coursekit brief` |
 | Verificación y firma | `coursekit verify`, `coursekit reviewed`, `coursekit approve` |
 | Estado del curso y revisión del cliente | `coursekit hold`, `coursekit resume`, `coursekit client` |
 | Lanzar agentes | `coursekit write`, `coursekit review`, `coursekit run` |
@@ -123,7 +123,7 @@ coursekit init [folder] [--update] [--name NAME] [--client CLIENT]
 
 Qué hace:
 
-- Con terminal y sin `--yes` pregunta cada uno de los valores anteriores (la URL del MCP de slxd con cualquiera de los dos backends) y después ofrece crear el primer curso con el agente de diseño, solo cuando se dio la URL.
+- Con terminal y sin `--yes` pregunta cada uno de los valores anteriores (la URL del MCP de slxd con cualquiera de los dos backends) y después ofrece crear el primer curso con el agente de diseño, solo cuando se dio la URL (antes pregunta si tienes material de partida y espera mientras lo dejas en `brief/`).
 - Crea las carpetas `courses/`, `brief/sources/`, `config/`, `theme/`, `.agents/`; siembra `project.yaml`, `brief/notes.md` y `brief/links.md`; escribe los ficheros gestionados `AGENTS.md`, `CLAUDE.md`, `.env.example`, `.gitignore`, `config/<name>.example.yaml` (rules, directives, media, delivery) y `.githooks/post-merge`, `.githooks/post-checkout`; ejecuta `git init` salvo con `--no-git`.
 - Después ejecuta los mismos pasos que [`coursekit setup`](#coursekit-setup) (`.env`, `COURSEKIT_LANG` en `.env`, identidad de firma, hooks de git, roles, agentes, el constructor html con el backend html, diagnóstico) e imprime los siguientes pasos. Cuando la URL del MCP está vacía, con cualquiera de los dos backends, los siguientes pasos avisan de que el diseño no puede conectar con creator hasta que se rellene `project.yaml › platform.slxd.mcp_url` y se ejecute `coursekit agents`.
 - `--update` no escribe nada fuera de los ficheros gestionados e imprime `creado`, `actualizado`, `sin cambios` o `conservado` para cada uno.
@@ -181,7 +181,7 @@ Genera las skills, los comandos de barra y la configuración de los agentes para
 coursekit agents
 ```
 
-Sin argumentos. Escribe los ficheros generados en `.claude/`, `.opencode/`, `.coursekit/agents/` y `.coursekit/docs/`, y combina (nunca sustituye) la configuración de cada herramienta en `.mcp.json`, `opencode.json`, `.claude/settings.json` y `.codex/config.toml`, incluida la denegación de `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume` y `git push` a los agentes. Solo se sobrescriben o eliminan los ficheros que coursekit generó (llevan una marca). Imprime `agentes: N escritos, M sin cambios, K eliminados` y lista los ficheros de configuración que actualizó y los que conservó porque los editaste. Detalles en [05-agents.md](05-agents.md).
+Sin argumentos. Escribe los ficheros generados en `.claude/`, `.opencode/`, `.coursekit/agents/` y `.coursekit/docs/`, y combina (nunca sustituye) la configuración de cada herramienta en `.mcp.json`, `opencode.json`, `.claude/settings.json` y `.codex/config.toml`, incluida la denegación de `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff` y `git push` a los agentes. Solo se sobrescriben o eliminan los ficheros que coursekit generó (llevan una marca). Imprime `agentes: N escritos, M sin cambios, K eliminados` y lista los ficheros de configuración que actualizó y los que conservó porque los editaste. Detalles en [05-agents.md](05-agents.md).
 
 ```
 coursekit agents
@@ -305,6 +305,29 @@ Crea `courses/<CODE>/` con `course.yaml` (estado `design`), las carpetas `brief/
 
 ```
 coursekit new "Contraseñas seguras" 2 --code PWD --notes "Centrado en personal de oficina"
+```
+
+### `coursekit handoff`
+
+Lleva un curso desde su título y sus horas hasta su entrega por sí solo, sin que nadie revise nada por el camino: el diseño, la redacción, la revisión con IA, las firmas, el multimedia, el montaje y la entrega. Quién: solo personas (los agentes no pueden ejecutarlo). Detalles y límites en [Modo handoff](02-workflow.md#modo-handoff).
+
+```
+coursekit handoff [--code CODE] [--no-intro] [--no-summary] [--notes NOTES] [--rounds ROUNDS] target [hours]
+```
+
+| Argumento | Valores / por defecto | Significado |
+|---|---|---|
+| `target` | texto | Con `hours`: el título del curso nuevo (entrecomíllalo). Sin ellas: el código de un curso para continuarlo donde se quedó. |
+| `hours` | número; opcional | Duración total. Hace que `handoff` cree un curso nuevo. |
+| `--code CODE` | por defecto: el título como slug en mayúsculas | Código del curso. Solo al crear. |
+| `--no-intro`, `--no-summary`, `--notes NOTES` | como en [`coursekit new`](#coursekit-new) | Solo al crear; con un código para continuar se rechazan (código de salida 2). |
+| `--rounds ROUNDS` | número entero; por defecto `rules › handoff › rounds` (`2`) | Intentos por paso antes de parar. |
+
+Ejecuta, sin interfaz y en orden, el agente de cada rol, y decide cada paso según el estado del curso. Las firmas del diseño y de cada unidad las pone coursekit mismo como **Coursekit Handoff** (nunca como una persona), y cada aprobación anota `via: handoff`. No hace la revisión del cliente y no empieza si el proyecto la exige (`client_review.required`). Cuando un paso sigue fallando tras sus intentos, se para con código de salida 1, dice por qué y cómo seguir (`coursekit handoff <CODE>`). Puede tardar mucho y gastar créditos de los proveedores de multimedia configurados.
+
+```
+coursekit handoff "Contraseñas seguras" 2 --code PWD
+coursekit handoff PWD
 ```
 
 ### `coursekit status`
@@ -913,7 +936,7 @@ Los comandos de barra viven en `src/coursekit/agentkit/commands/` y `coursekit a
 
 | Comando de barra | CLI que usa | Rol | Quién puede ejecutarlo |
 |---|---|---|---|
-| `/new-course "<title>" <hours> [--code ABC101] [--no-intro] [--no-summary] [notas]` | `coursekit new`, `coursekit brief`, `coursekit theme show`, `coursekit publish` | `design` | Personas, desde la herramienta de IA o con `coursekit run new-course`. El agente nunca firma ni hace commit. Cuando el proyecto no tiene tokens del tema, su resumen indica a la persona que ejecute `/define-theme`. |
+| `/new-course "<title>" <hours> [--code ABC101] [--no-intro] [--no-summary] [--no-material] [notas]` | `coursekit new`, `coursekit brief`, `coursekit theme show` | `design` | Personas, desde la herramienta de IA o con `coursekit run new-course`. El agente nunca firma ni hace commit. Cuando el proyecto no tiene tokens del tema, su resumen indica a la persona que ejecute `/define-theme`. Si no hay material, el agente pregunta antes de diseñar (salvo con `--no-material`) y, si sigues sin él, marca el temario como suposición. |
 | `/design-change <CODE> <cambios>` | `coursekit brief`, `coursekit publish` | `design` | Personas. El diseño se aplica en slxd; un diseño ya firmado debe firmarse de nuevo. |
 | `/approve-design <CODE>` | `coursekit sync --check`, `coursekit publish`; después la persona ejecuta `coursekit approve design <CODE> --yes` | `design` | El agente lo prepara; solo una persona firma. |
 | `/define-theme [CODE]` | `coursekit theme show`, `coursekit theme import` | `design` | Personas, o el agente de diseño. Con el backend creator elige o adapta el tema en la plataforma, guarda `get_theme` en `.cache/theme/get_theme.json` y deriva los tokens. Con el backend html no hay tema de plataforma: escribe o adapta `theme/maqueta.css` y ejecuta `coursekit theme import theme/maqueta.css`. Sin código define el tema del proyecto; con código, el tema propio de ese curso. Nunca edita `tokens.json` a mano. |

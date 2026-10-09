@@ -47,13 +47,32 @@ The Markdown of each unit is the source of truth. Anything wrong in Creator (or 
 
 Each agent runs on one of five **roles**: `design`, `writer`, `reviewer`, `media` and `assembly`. Each role has a tool (`claude`, `opencode`, `codex`) and a model, kept in `.env` (`DESIGN_AGENT`, `DESIGN_MODEL`, and so on). `coursekit roles` shows them. A review is best done by a different model than the writer: coursekit warns when both are the same. See [Agents](05-agents.md).
 
-**Only a person signs.** `coursekit approve` records your name, the time and a fingerprint of what you approved, and commits it with you as author. The agent settings deny agents to run it, and also `coursekit client`, `coursekit hold` and `coursekit resume`, which record decisions of people. From an agent chat you can run it yourself by prefixing the line with `!`:
+**Only a person signs.** `coursekit approve` records your name, the time and a fingerprint of what you approved, and commits it with you as author. The agent settings deny agents to run it, and also `coursekit client`, `coursekit hold` and `coursekit resume`, which record decisions of people. The one exception is [handoff mode](#handoff-mode), where coursekit itself signs, marked, as Coursekit Handoff. From an agent chat you can run it yourself by prefixing the line with `!`:
 
 ```text
 ! coursekit approve design PWD --yes
 ```
 
 In your own terminal, without `--yes`, it asks for confirmation first. Without a terminal and without `--yes` it refuses. `--no-commit` records the approval without committing.
+
+## Handoff mode
+
+`coursekit handoff "<title>" <hours>` takes a course from its title to its delivery **by itself**: nobody reviews the design, the units or the media on the way, and there is no client review. It is meant for courses whose quality you accept without a person's reading; use the normal flow when someone has to review.
+
+| Status of the course | What handoff does |
+|---|---|
+| (new) | The design agent proposes the design (`/new-course`, without asking for reference material). |
+| `design` | The design agent refreshes and validates the export (`/approve-design`); coursekit signs the design as **Coursekit Handoff**. If it cannot be signed, the design agent fixes it and it tries again. |
+| `design_approved`, `writing` | The writer agent writes each unit until it verifies. |
+| `ai_review` | The reviewer agent reviews each unit. If its report ends with `<!-- result: not_ready -->`, the writer fixes the unit and it is reviewed again. |
+| `editorial_review` | coursekit signs each unit as Coursekit Handoff. |
+| `media` | If the media needs the theme and the project has none, the design agent defines it (`/define-theme`); the media agent produces the assets; the assembly agent assembles. |
+| `assembly` | The assembly agent delivers (`/deliver`). |
+
+- **Signatures.** Every approval it gives is by `Coursekit Handoff <handoff@coursekit.local>` and carries `via: handoff` in `course.yaml › approvals`, and the commit has that author, so it is never mistaken for a person's. The agents still cannot sign nor run `coursekit handoff`: the signature is given by coursekit, not by them.
+- **Attempts.** Each step is tried `rules › handoff › rounds` times (`--rounds`). If it still fails (a unit that does not verify, an AI review that stays `not_ready`, media assets left to produce, a course that does not assemble or deliver) it stops, with exit code 1, and the message says what failed and where the agent session is logged (`.cache/logs/`).
+- **Carry on.** `coursekit handoff <CODE>` continues from the current status, without repeating what is signed. If the course is `on_hold` or in `client_review` it stops: handoff does not handle either.
+- **What it needs.** The roles of the `.env` and the slxd MCP URL, like the normal flow, and the providers of the media you want produced. It cannot ask: doubts are left written in the units (`<!-- VERIFICAR -->`) and in the reports.
 
 ## Statuses
 

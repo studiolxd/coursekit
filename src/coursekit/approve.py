@@ -9,6 +9,9 @@ never the git identity. The approval is stored in course.yaml › approvals with
 fingerprint of what was approved, and committed with that person as author. Agents must never
 run this command: the generated agent configurations deny it. A person confirms in a terminal,
 or with --yes when running it from an agent chat with `!` (which runs as the person).
+
+Handoff mode (`coursekit handoff`) signs by itself with its own identity: it passes `who` and `via="handoff"`, and
+the approval records `via`, so a delegated signature is never mistaken for a person's.
 """
 
 from __future__ import annotations
@@ -66,7 +69,8 @@ def commit(paths: list[Path], message: str, who: identity.Identity, cwd: Path) -
     return result.returncode == 0
 
 
-def approve_design(course: dict, confirm: Confirm, do_commit: bool = True) -> str:
+def approve_design(course: dict, confirm: Confirm, do_commit: bool = True, who: identity.Identity | None = None,
+                   via: str | None = None) -> str:
     course_dir: Path = course["_dir"]
     design = course_dir / "design"
     matrix = design / "matrix.json"
@@ -83,7 +87,7 @@ def approve_design(course: dict, confirm: Confirm, do_commit: bool = True) -> st
     graph = json.loads(matrix.read_text(encoding="utf-8"))
     meta = graph.get("matrix") or {}
     check = sync(course, check_only=True)
-    who = signer()
+    who = who or signer()
     summary = t(
         "approve", "design_summary",
         code=course["code"], title=course["title"], hours=course["design"]["hours"],
@@ -102,13 +106,16 @@ def approve_design(course: dict, confirm: Confirm, do_commit: bool = True) -> st
         "snapshot_sha256": sha256_file(matrix),
         "excel": excel[-1].name if excel else None,
     }
+    if via:
+        entry["via"] = via
     _record(course_dir, entry, "design_approved", "Instructional design approved")
     if do_commit and not commit([course_dir], f"Design approval {course['code']}", who, course_dir):
         return t("approve", "design_approved_uncommitted", who=who)
     return t("approve", "design_approved", who=who)
 
 
-def approve_content(course: dict, n: int, confirm: Confirm, do_commit: bool = True, force: bool = False) -> str:
+def approve_content(course: dict, n: int, confirm: Confirm, do_commit: bool = True, force: bool = False,
+                    who: identity.Identity | None = None, via: str | None = None) -> str:
     problem = coursemod.approval_problem(course)
     if problem:
         raise ApprovalError(problem)
@@ -132,7 +139,7 @@ def approve_content(course: dict, n: int, confirm: Confirm, do_commit: bool = Tr
         raise ApprovalError(t("approve", "changed_since_review", n=n, parts=", ".join(changed)))
     folder = coursemod.unit_dir(course_dir, n)
     files = [folder / "content.md", folder / "assessment.md"]
-    who = signer()
+    who = who or signer()
     words = format_number(sum(s["min_words"] for s in unit.get("sections") or []), coursemod.language(course))
     if not confirm(t("approve", "content_confirm", n=n, title=unit["title"], words=words, who=who)):
         raise ApprovalError(t("approve", "cancelled"))
@@ -143,6 +150,8 @@ def approve_content(course: dict, n: int, confirm: Confirm, do_commit: bool = Tr
         "at": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
         "files_sha256": {f.name: sha256_file(f) for f in files if f.exists()},
     }
+    if via:
+        entry["via"] = via
     _record(course_dir, entry, None, f"Unit {n} approved")
     set_unit_status(course_dir, n, "approved", by=str(who))
     own_report = (unit.get("review") or {}).get("report")

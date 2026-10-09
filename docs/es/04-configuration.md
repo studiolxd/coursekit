@@ -208,6 +208,7 @@ La estructura (unidades, apartados, objetivos, horas) no se fija aquí: sale del
 | `design.objectives_per_unit` | `"2–4"` | Orientación: objetivos por unidad. |
 | `design.intro_summary_hours` | `"0.2–0.3"` | Orientación: horas de la introducción y del resumen. |
 | `review.ai` | `required` | `required`, `skip` | `required`: una revisión con IA precede a la firma de cada unidad. `skip`: una unidad que pasa `coursekit verify` cuenta como revisada y la revisión es la firma de la persona. En ambos casos una persona puede registrar su propia revisión de una unidad con `coursekit reviewed --by`. |
+| `handoff.rounds` | `2` | Intentos por paso de `coursekit handoff` (redactar una unidad, su revisión con sus correcciones, la firma del diseño, el multimedia, el montaje, la entrega) antes de parar. `--rounds` lo cambia en una ejecución. |
 | `content.word_margin` | `0.05` | Margen recomendado sobre las palabras mínimas (`0.05` = 5 %). Por debajo, `coursekit verify` avisa; por debajo del propio mínimo, da error. |
 | `content.placeholders_per_hour` | `2.5` | Marcadores de recurso multimedia exigidos por hora de unidad (redondeado hacia arriba). |
 | `content.min_placeholder_types` | `4` | Tipos distintos de marcador exigidos por unidad (limitado por el número de marcadores exigidos). |

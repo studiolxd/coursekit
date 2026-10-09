@@ -61,7 +61,7 @@ _BASE_TOOLS = ["Read", "Edit", "Write", "Glob", "Grep", "Skill", "TodoWrite",
                "Bash(coursekit verify:*)", "Bash(coursekit brief:*)", "Bash(coursekit status:*)",
                "Bash(coursekit outline:*)", "Bash(coursekit config:*)", "Bash(git status:*)", "Bash(git diff:*)"]
 CLAUDE_DENY = ["Bash(git commit:*)", "Bash(git push:*)", "Bash(coursekit approve:*)", "Bash(coursekit client:*)", "Bash(coursekit hold:*)",
-               "Bash(coursekit resume:*)"]
+               "Bash(coursekit resume:*)", "Bash(coursekit handoff:*)"]
 
 
 class LaunchError(Exception):
@@ -210,7 +210,7 @@ class UnitResult:
 
 
 def run_unit(project: Project, code: str, role: str, n: int, agent: Agent, headless: bool,
-             full: bool = False, parts_given: str | None = None) -> UnitResult:
+             full: bool = False, parts_given: str | None = None, note: str = "") -> UnitResult:
     course = coursemod.load(project, code)
     unit = next((u for u in _units(course) if u["n"] == n), None)
     if unit is None:
@@ -231,6 +231,7 @@ def run_unit(project: Project, code: str, role: str, n: int, agent: Agent, headl
                       f"{', '.join(parts)}. Follow the \"Partial review\" section of the skill.")
     else:
         record(course["_dir"], n, "written_with", agent.label)
+    extra += note
     command = "write-unit" if role == "writer" else "review-unit"
     text = prompt(agent, command, f"{course['code']} {n}", headless, extra)
     kind = "write" if role == "writer" else "review"

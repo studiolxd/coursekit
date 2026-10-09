@@ -199,7 +199,7 @@ Then:
 
 A tool that is not installed is shown as `(not installed)`. In Codex, ask for the same command by name: it follows `.coursekit/agents/commands/new-course.md`.
 
-If you ran `init` in a terminal and the MCP URL is set, it also offers "Create your first course now with `<tool>`?" (the tool of the design role, if installed). Answer yes, then give the course title and its hours (`1.5` or `1,5`): it runs `coursekit run new-course` for you.
+If you ran `init` in a terminal and the MCP URL is set, it also offers "Create your first course now with `<tool>`?" (the tool of the design role, if installed). Answer yes and it first asks whether you have reference material (documents, links or indications): if you do, it shows where to drop it (`brief/sources/`, `brief/links.md`, `brief/notes.md`) and waits for you to press Enter; if you do not, the design starts without it and its syllabus is marked as an assumption. Then give the course title and its hours (`1.5` or `1,5`), and it asks whether to do the whole process by itself (handoff mode, see [Workflow](02-workflow.md#handoff-mode)): with no it runs `coursekit run new-course` for you, with yes it runs `coursekit handoff`.
 
 Before creating the course, it helps to drop reference material in `brief/sources/`, URLs in `brief/links.md` and general indications in `brief/notes.md`, then run `coursekit brief`.
 

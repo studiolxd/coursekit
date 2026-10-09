@@ -312,6 +312,8 @@ El idioma de la interfaz no toca el contenido. Las palabras de `content.md` (enc
 
 **¿Puede firmar un agente por mí?** No. `coursekit approve` está denegado en los ajustes generados de Claude Code y opencode, y las instrucciones del proyecto lo prohíben para cualquier herramienta. Usa `!` en el chat si quieres firmar sin salir de él. Lo mismo vale para `coursekit client` (rondas de revisión del cliente), `coursekit hold` y `coursekit resume`.
 
+**¿Puede ejecutarse todo el proceso sin mí?** Sí: `coursekit handoff "<título>" <horas>`. Firma como Coursekit Handoff y nadie revisa el curso; mira [Flujo de trabajo](02-workflow.md#modo-handoff). Si se para, dice por qué; corrígelo y ejecuta `coursekit handoff <CODE>` para continuar.
+
 **¿Es obligatoria la revisión del cliente?** No por defecto. Lo es si el proyecto lo dice (`client_review.required: true` en `config/delivery.yaml`) o el curso (`delivery › client_review › required` en su `course.yaml`). Mira [Flujo de trabajo](02-workflow.md#revisión-del-cliente-opcional).
 
 **¿Cómo pauso un curso?** `coursekit hold <CODE> --reason "..."`, y `coursekit resume <CODE>` para continuar. Mira [Flujo de trabajo](02-workflow.md#pausar-un-curso).

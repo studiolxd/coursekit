@@ -208,6 +208,7 @@ Structure (units, sections, objectives, hours) is not set here: it comes from ea
 | `design.objectives_per_unit` | `"2–4"` | Guidance: objectives per unit. |
 | `design.intro_summary_hours` | `"0.2–0.3"` | Guidance: hours for the introduction and the summary. |
 | `review.ai` | `required` | `required`, `skip` | `required`: an AI review comes before each unit's sign-off. `skip`: a unit that passes `coursekit verify` counts as reviewed and the person's sign-off is the review. Either way a person can record their own review of a unit with `coursekit reviewed --by`. |
+| `handoff.rounds` | `2` | Attempts per step of `coursekit handoff` (writing a unit, its review with its fixes, the design sign-off, media, assembly, delivery) before it stops. `--rounds` changes it for one run. |
 | `content.word_margin` | `0.05` | Recommended margin over the minimum words (`0.05` = 5 %). Below it, `coursekit verify` warns; below the minimum itself it is an error. |
 | `content.placeholders_per_hour` | `2.5` | Media placeholders required per unit hour (rounded up). |
 | `content.min_placeholder_types` | `4` | Distinct placeholder types required per unit (capped by the number of placeholders required). |

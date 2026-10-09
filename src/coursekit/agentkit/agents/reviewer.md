@@ -21,6 +21,7 @@ permission:
     "*coursekit client*": deny
     "*coursekit hold*": deny
     "*coursekit resume*": deny
+    "*coursekit handoff*": deny
     "*coursekit reviewed*--by*": deny
 ---
 

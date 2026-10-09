@@ -47,13 +47,32 @@ El Markdown de cada unidad es la fuente de verdad. Lo que esté mal en Creator (
 
 Cada agente trabaja con uno de cinco **roles**: `design`, `writer`, `reviewer`, `media` y `assembly`. Cada rol tiene una herramienta (`claude`, `opencode`, `codex`) y un modelo, que se guardan en `.env` (`DESIGN_AGENT`, `DESIGN_MODEL`, etc.). `coursekit roles` los muestra. Conviene que revise un modelo distinto del que redactó: coursekit avisa cuando son el mismo. Mira [Agentes](05-agents.md).
 
-**Solo firma una persona.** `coursekit approve` registra tu nombre, la hora y una huella de lo que apruebas, y lo confirma (commit) contigo como autor. Los ajustes de agente prohíben a los agentes ejecutarlo, y también `coursekit client`, `coursekit hold` y `coursekit resume`, que anotan decisiones de personas. Desde el chat de un agente puedes ejecutarlo tú poniendo `!` delante de la línea:
+**Solo firma una persona.** `coursekit approve` registra tu nombre, la hora y una huella de lo que apruebas, y lo confirma (commit) contigo como autor. Los ajustes de agente prohíben a los agentes ejecutarlo, y también `coursekit client`, `coursekit hold` y `coursekit resume`, que anotan decisiones de personas. La única excepción es el [modo handoff](#modo-handoff), donde coursekit mismo firma, con marca, como Coursekit Handoff. Desde el chat de un agente puedes ejecutarlo tú poniendo `!` delante de la línea:
 
 ```text
 ! coursekit approve design PWD --yes
 ```
 
 En tu propia terminal, sin `--yes`, antes te pide confirmación. Sin terminal y sin `--yes`, se niega. `--no-commit` registra la aprobación sin hacer commit.
+
+## Modo handoff
+
+`coursekit handoff "<título>" <horas>` lleva un curso desde su título hasta su entrega **por sí solo**: nadie revisa el diseño, las unidades ni el multimedia por el camino, y no hay revisión del cliente. Sirve para cursos cuya calidad aceptas sin la lectura de una persona; usa el flujo normal cuando alguien tenga que revisar.
+
+| Estado del curso | Qué hace handoff |
+|---|---|
+| (nuevo) | El agente de diseño propone el diseño (`/new-course`, sin pedir material de partida). |
+| `design` | El agente de diseño actualiza y valida la exportación (`/approve-design`); coursekit firma el diseño como **Coursekit Handoff**. Si no se puede firmar, el agente de diseño lo corrige y se intenta de nuevo. |
+| `design_approved`, `writing` | El agente redactor escribe cada unidad hasta que verifica. |
+| `ai_review` | El agente revisor revisa cada unidad. Si su informe termina con `<!-- result: not_ready -->`, el redactor corrige la unidad y se revisa de nuevo. |
+| `editorial_review` | coursekit firma cada unidad como Coursekit Handoff. |
+| `media` | Si el multimedia necesita el theme y el proyecto no lo tiene, el agente de diseño lo define (`/define-theme`); el agente de multimedia produce los recursos; el de montaje monta. |
+| `assembly` | El agente de montaje entrega (`/deliver`). |
+
+- **Firmas.** Toda aprobación que da es de `Coursekit Handoff <handoff@coursekit.local>` y lleva `via: handoff` en `course.yaml › approvals`, y el commit tiene ese autor, así que nunca se confunde con la de una persona. Los agentes siguen sin poder firmar ni ejecutar `coursekit handoff`: la firma la pone coursekit, no ellos.
+- **Intentos.** Cada paso se intenta `rules › handoff › rounds` veces (`--rounds`). Si sigue fallando (una unidad que no verifica, una revisión con IA que sigue en `not_ready`, recursos multimedia sin producir, un curso que no se monta o no se entrega) se para, con código de salida 1, y el mensaje dice qué falló y dónde queda el registro de la sesión del agente (`.cache/logs/`).
+- **Continuar.** `coursekit handoff <CODE>` sigue desde el estado actual, sin repetir lo ya firmado. Si el curso está `on_hold` o en `client_review` se para: handoff no gestiona ninguno.
+- **Qué necesita.** Los roles del `.env` y la URL del MCP de slxd, como el flujo normal, y los proveedores del multimedia que quieras producir. No puede preguntar: las dudas quedan escritas en las unidades (`<!-- VERIFICAR -->`) y en los informes.
 
 ## Estados
 

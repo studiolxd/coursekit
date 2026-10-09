@@ -59,6 +59,7 @@ them against the previous review, or the person names them with `--parts`):
 ```markdown
 # AI review — <CODE> · Unit N
 > **Reviewer:** <model> · **Date:** YYYY-MM-DD · **Result:** ready | ready with changes | not ready
+<!-- result: ready | ready_with_changes | not_ready -->
 
 ## Summary
 ## Findings
@@ -67,6 +68,8 @@ them against the previous review, or the person names them with `--parts`):
 ## Proposals awaiting a human decision
 ```
 
+   The `<!-- result: … -->` line repeats the **Result** with one of its three values, as written there (untranslated,
+   with underscores): tools read it. Update it too when a partial review changes the Result.
 3. Run `coursekit reviewed <CODE> <N>`: it verifies again and marks the unit as reviewed (if it
    fails, fix and repeat). Never edit statuses by hand. Never pass `--by` to it: that option records the review
    of a person.

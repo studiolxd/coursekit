@@ -55,11 +55,26 @@ def _print_next_steps(root: Path, mcp_missing: bool = False) -> None:
     print(t("cli", "next_status"))
 
 
+def _pause_for_material(root: Path) -> bool:
+    """Before the design starts, give the person the chance to drop the reference material in the project.
+
+    Returns whether there is material (or the person will add it): when not, the design is told not to ask again."""
+    brief = root / "brief"
+    if not initmod.confirm(t("cli", "material_ask"), default=False):
+        print(t("cli", "material_none"))
+        return False
+    print(t("cli", "material_where", sources=(brief / "sources").as_posix(), links=(brief / "links.md").as_posix(),
+            notes=(brief / "notes.md").as_posix()))
+    initmod.ask(t("cli", "material_wait"), "")
+    return True
+
+
 def _offer_first_course(root: Path) -> int:
     """Offer to create the first course now, with the tool of the design role (when it is installed)."""
     tool = agentsmod.role("design")[0]
     if not shutil.which(tool) or not initmod.confirm(t("cli", "create_ask", tool=tool)):
         return 0
+    has_material = _pause_for_material(root)
     while True:
         title = initmod.ask(t("cli", "create_title"), "").replace('"', "").strip()
         if title:
@@ -74,7 +89,10 @@ def _offer_first_course(root: Path) -> int:
             pass
         print(t("cli", "create_hours_bad"), file=sys.stderr)
     os.chdir(root)
-    return main(["run", "new-course", title, text])
+    if initmod.confirm(t("cli", "handoff_ask"), default=False):
+        print(t("cli", "handoff_notice"))
+        return main(["handoff", title, text])
+    return main(["run", "new-course", title, text] + ([] if has_material else ["--no-material"]))
 
 
 def cmd_init(args: argparse.Namespace) -> int:
