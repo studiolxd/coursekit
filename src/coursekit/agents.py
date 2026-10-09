@@ -87,6 +87,21 @@ def default_model(name: str, tool: str) -> str:
     return str(((role_defaults().get(name) or {}).get("models") or {}).get(tool) or "")
 
 
+def server_key(name: str) -> str:
+    """How Claude Code writes the name of an MCP server in the names of its tools (`mcp__<key>__<tool>`)."""
+    return re.sub(r"[^A-Za-z0-9_-]", "_", name)
+
+
+def connector_server(project: Project) -> str | None:
+    """Key of the claude.ai connector of creator that the person logged in at account level, when the project says to use it
+    (project.yaml › platform.slxd.connector: its name as Claude Code lists it, with or without the "claude.ai " prefix)."""
+    slxd = (config.project_data(project).get("platform") or {}).get("slxd") or {}
+    name = str(slxd.get("connector") or "").strip()
+    if not name:
+        return None
+    return server_key(name if name.lower().startswith("claude.ai") else f"claude.ai {name}")
+
+
 def context(project: Project) -> dict[str, str]:
     data = config.project_data(project)
     content_language = str(data.get("content_language") or "es")

@@ -343,6 +343,19 @@ Si la revisión del cliente no es obligatoria y no la quieres, no hay nada que h
 
 Registrar el mismo paquete dos veces añade una segunda entrada a `course.yaml › deliveries`; no hace daño, pero no hace falta.
 
+### Problemas con el servidor MCP
+
+Una sesión sin interfaz (el handoff, `--headless`) no puede iniciar sesión en creator ni pedir un permiso. Cuando el agente de diseño no pudo usar creator, el handoff se para y nombra la causa, leída del registro de la sesión (`.cache/logs/`):
+
+| Qué dice la parada | Significado y arreglo |
+|---|---|
+| `el servidor MCP «slxd-creator» no está autorizado (estado: needs-auth) ...` | El servidor de `.mcp.json` no tiene sesión. Abre tu herramienta de IA en la carpeta del proyecto y autorízalo una vez con `/mcp`; o inicia sesión en el conector de creator de tu cuenta y pon `platform.slxd.connector` |
+| `el agente intentó usar las herramientas de «claude.ai <nombre>», pero en una sesión sin interfaz no están permitidas ...` | Creator está conectado por tu cuenta (un conector de claude.ai), cuyas herramientas se llaman distinto que las del servidor del proyecto. Pon `platform.slxd.connector: "<nombre>"` en `project.yaml` (viene en el mensaje) y vuelve a lanzarlo |
+| `el conector «claude.ai <nombre>» de platform.slxd.connector está en estado needs-auth, no conectado ...` | El conector que nombraste no tiene sesión: inicia sesión en él desde tu herramienta de IA (`/mcp`) |
+| `El agente dijo: ...` en vez de una causa | El registro no muestra un problema con los servidores; las palabras del propio agente son la mejor pista. La sesión completa está en `.cache/logs/` |
+
+Continúa con `coursekit handoff <CODE>`: si la propuesta de diseño nunca llegó a crearse en creator, vuelve a diseñar el curso (`/new-course` sobre el curso existente); si solo falta la exportación, la pide.
+
 ### Paradas del handoff
 
 `coursekit handoff` termina con `handoff parado. <motivo>` y `Para seguir donde se quedó, una vez resuelto:  coursekit handoff <CODE>` (código de salida 1). Los motivos que no son una unidad que no verifica (mira [Problemas al firmar](#problemas-al-firmar)):

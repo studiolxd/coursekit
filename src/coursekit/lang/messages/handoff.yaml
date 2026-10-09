@@ -72,3 +72,9 @@ stopped:
 done:
   es: "handoff terminado: {code} entregado. Las firmas son de {who}: ninguna persona ha revisado este curso."
   en: "handoff finished: {code} delivered. The signatures are {who}'s: no person has reviewed this course."
+cause_line:
+  es: "  Causa: {text}"
+  en: "  Cause: {text}"
+agent_said_line:
+  es: "  El agente dijo: {text}"
+  en: "  The agent said: {text}"

@@ -343,6 +343,19 @@ If the client review is not mandatory and you do not want it, there is nothing t
 
 Recording the same package twice adds a second entry to `course.yaml › deliveries`; it does no harm, but it is not needed.
 
+### MCP server problems
+
+A session without an interface (the handoff, `--headless`) cannot sign in to creator and cannot ask for a permission. When the design agent could not use creator, the handoff stops and names the cause, read from the log of the session (`.cache/logs/`):
+
+| What the stop says | Meaning and fix |
+|---|---|
+| `the MCP server "slxd-creator" is not authorized (status: needs-auth) ...` | The server of `.mcp.json` has no session. Open your AI tool in the project folder and authorize it once with `/mcp`; or log in to the creator connector of your account and set `platform.slxd.connector` |
+| `the agent tried to use the tools of "claude.ai <name>", but they are not allowed in a session without an interface ...` | Creator is connected through your account (a claude.ai connector), whose tools have another name than the project server. Set `platform.slxd.connector: "<name>"` in `project.yaml` (it is in the message) and run it again |
+| `the connector "claude.ai <name>" in platform.slxd.connector is needs-auth, not connected ...` | The connector you named is not logged in: log in to it from your AI tool (`/mcp`) |
+| `The agent said: ...` instead of a cause | The log does not show a problem with the servers; the agent's own words are the best clue. The full session is in `.cache/logs/` |
+
+Carry on with `coursekit handoff <CODE>`: when the design proposal was never created in creator it designs the course again (`/new-course` on the existing course); when only the export is missing it asks for the export.
+
 ### Handoff stops
 
 `coursekit handoff` ends with `handoff stopped. <reason>` and `To carry on where it stopped, once solved:  coursekit handoff <CODE>` (exit code 1). The reasons that are not about a unit failing to verify (see [Signing problems](#signing-problems)):

@@ -119,12 +119,12 @@ def theme_note(project: Project, backend: str) -> str:
     )
 
 
-def _agent(ctx: Context, role: str, command: str, arguments: str, name: str, extra: str = "") -> tuple[int, Path | None]:
+def _agent(ctx: Context, role: str, command: str, arguments: str, name: str, extra: str = "") -> tuple[int, Path | None, str]:
     agent = launch.agent_for(role)
     ctx.log(t("handoff", "agent_line", role=role, label=agent.label, command=command, arguments=arguments))
     text = launch.prompt(agent, command, arguments, True, AUTONOMOUS_NOTE + extra)
-    code, log, _ = launch.execute(ctx.project, agent, text, True, f"{ctx.code}-{name}-handoff")
-    return code, log
+    code, log, summary = launch.execute(ctx.project, agent, text, True, f"{ctx.code}-{name}-handoff")
+    return code, log, summary
 
 
 def _where(log: Path | None, project: Project) -> str:
@@ -142,18 +142,40 @@ def _unit(ctx: Context, role: str, n: int, note: str = "") -> launch.UnitResult:
     return result
 
 
-def _stuck(ctx: Context, key: str, log: Path | None = None, **values) -> HandoffError:
-    return HandoffError(t("handoff", key, code=ctx.code, **values) + _where(log, ctx.project))
+def _why(ctx: Context, log: Path | None, summary: str) -> str:
+    """The cause of an agent that did not do its job: what its session log says about creator (not authorized, not allowed), else
+    what the agent itself said at the end."""
+    blocker = launch.mcp_blocker(ctx.project, log) if log else None
+    if blocker:
+        return "\n" + t("handoff", "cause_line", text=blocker)
+    text = " ".join(summary.split())[:700]
+    return "\n" + t("handoff", "agent_said_line", text=text) if text else ""
+
+
+def _stuck(ctx: Context, key: str, log: Path | None = None, why: str = "", **values) -> HandoffError:
+    return HandoffError(t("handoff", key, code=ctx.code, **values) + _where(log, ctx.project) + why)
 
 
 # ── stages ────────────────────────────────────────────────────────────────────────────────
 
+def _propose(ctx: Context, course: dict) -> None:
+    """The design proposal has to exist in slxd and be exported to design/. When the matrix was never created the design agent
+    designs the course (`/new-course` works on the existing one); when it exists and only the export is missing it exports it."""
+    if not (course.get("slxd") or {}).get("matrix_id"):
+        hours = course["design"]["hours"]
+        hours = int(hours) if float(hours).is_integer() else hours
+        arguments = f'"{course["title"]}" {hours} --code {ctx.code} --no-material'
+        _, log, summary = _agent(ctx, "design", "new-course", arguments, "new-course")
+    else:
+        _, log, summary = _agent(ctx, "design", "design-change", DESIGN_EXPORT.format(code=ctx.code), "design")
+    if not (ctx.course()["_dir"] / "design" / "matrix.json").exists():
+        raise _stuck(ctx, "design_not_exported", log, why=_why(ctx, log, summary))
+
+
 def _design(ctx: Context, course: dict) -> None:
     """Proposal exported and valid, then signed."""
     if not (course["_dir"] / "design" / "matrix.json").exists():
-        _, log = _agent(ctx, "design", "design-change", DESIGN_EXPORT.format(code=ctx.code), "design")
-        if not (ctx.course()["_dir"] / "design" / "matrix.json").exists():
-            raise _stuck(ctx, "design_not_exported", log)
+        _propose(ctx, course)
     _agent(ctx, "design", "approve-design", ctx.code, "approve-design")
     problem = ""
     for attempt in range(1, ctx.rounds + 1):
@@ -236,28 +258,28 @@ def _media(ctx: Context, course: dict) -> None:
                 raise _stuck(ctx, "theme_missing")
         log = None
         for _ in range(ctx.rounds):
-            _, log = _agent(ctx, "media", "produce-media", ctx.code, "media")
+            _, log, summary = _agent(ctx, "media", "produce-media", ctx.code, "media")
             pending = _pending_media(ctx.course())
             if not pending:
                 break
         if pending:
-            raise _stuck(ctx, "media_pending", log, assets=", ".join(a["id"] for a in pending))
+            raise _stuck(ctx, "media_pending", log, why=_why(ctx, log, summary), assets=", ".join(a["id"] for a in pending))
     ctx.mirror()
     log = None
     for _ in range(ctx.rounds):
-        _, log = _agent(ctx, "assembly", "assemble", ctx.code, "assemble")
+        _, log, summary = _agent(ctx, "assembly", "assemble", ctx.code, "assemble")
         if ctx.course()["status"] != "media":
             return
-    raise _stuck(ctx, "not_assembled", log)
+    raise _stuck(ctx, "not_assembled", log, why=_why(ctx, log, summary))
 
 
 def _deliver(ctx: Context, course: dict) -> None:
     log = None
     for _ in range(ctx.rounds):
-        _, log = _agent(ctx, "assembly", "deliver", ctx.code, "deliver")
+        _, log, summary = _agent(ctx, "assembly", "deliver", ctx.code, "deliver")
         if ctx.course()["status"] == "delivered":
             return
-    raise _stuck(ctx, "not_delivered", log)
+    raise _stuck(ctx, "not_delivered", log, why=_why(ctx, log, summary))
 
 
 STAGES = {
@@ -310,11 +332,7 @@ def start(project: Project, title: str, hours: float, code: str | None, intro: b
     mirror(code)
     if pause:
         pause(folder)
-    hours_text = int(hours) if float(hours).is_integer() else hours
-    arguments = " ".join([f'"{title}"', str(hours_text), "--code", code, "--no-material"])  # the course exists: the agent only designs
-    ctx = Context(project, code, rounds, log, lambda: mirror(code))
-    _agent(ctx, "design", "new-course", arguments, "new-course")
-    return proceed(ctx)
+    return proceed(Context(project, code, rounds, log, lambda: mirror(code)))  # the design agent proposes the course first
 
 
 def resume(project: Project, code: str, rounds: int, log: Log, mirror: Callable[[str], None]) -> dict:

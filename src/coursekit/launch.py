@@ -22,6 +22,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import os
+import re
 import shutil
 import subprocess
 from dataclasses import dataclass
@@ -115,7 +116,7 @@ def interactive_args(agent: Agent, text: str) -> list[str]:
     return [exe, *(["--model", agent.model] if agent.model else []), text]
 
 
-def headless_args(agent: Agent, text: str, last_message: Path, mcp_name: str) -> list[str]:
+def headless_args(agent: Agent, text: str, last_message: Path, mcp_name: str, connector: str | None = None) -> list[str]:
     exe = _exe(agent.tool)
     with_model = ["--model", agent.model] if agent.model else []
     if agent.tool == "claude":
@@ -123,7 +124,7 @@ def headless_args(agent: Agent, text: str, last_message: Path, mcp_name: str) ->
         if agent.role == "reviewer":
             allowed.append("Bash(coursekit reviewed:*)")
         if agent.role in ("design", "media", "assembly"):
-            allowed += [f"mcp__{mcp_name}", "Bash(coursekit:*)", "WebFetch"]
+            allowed += [f"mcp__{mcp_name}", *([f"mcp__{connector}"] if connector else []), "Bash(coursekit:*)", "WebFetch"]
         return [exe, "-p", text, *with_model, "--permission-mode", "acceptEdits",
                 "--allowedTools", *allowed, "--disallowedTools", *CLAUDE_DENY,
                 "--output-format", "stream-json", "--verbose"]
@@ -131,6 +132,44 @@ def headless_args(agent: Agent, text: str, last_message: Path, mcp_name: str) ->
         named = ["--agent", agent.role] if agent.role in ("writer", "reviewer") else []
         return [exe, "run", *named, *with_model, "--auto", "--format", "json", text]
     return [exe, "exec", *with_model, "--sandbox", "workspace-write", "--json", "-o", str(last_message), text]
+
+
+def mcp_blocker(project: Project, log: Path) -> str | None:
+    """Why a headless Claude Code session could not use creator, read from its log: the session lists the MCP servers with their
+    status when it starts, and the tools it was not allowed to call end in an error. None when the log says nothing of the kind."""
+    servers: dict[str, str] = {}
+    denied: list[str] = []
+    try:
+        lines = log.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return None
+    for line in lines:
+        try:
+            event = json.loads(line)
+        except ValueError:
+            continue
+        if event.get("type") == "system" and event.get("subtype") == "init":
+            servers = {m.get("name", ""): m.get("status", "") for m in event.get("mcp_servers") or []}
+        elif event.get("type") == "user" and isinstance(event.get("message", {}).get("content"), list):
+            for item in event["message"]["content"]:
+                body = item.get("content") if isinstance(item, dict) else None
+                if isinstance(item, dict) and item.get("is_error") and isinstance(body, str) and "haven't granted" in body:
+                    found = re.search(r"use (mcp__[^\s,]+)", body)
+                    if found:
+                        denied.append(found.group(1))
+    mine, connector = agentsmod.context(project)["mcp_name"], agentsmod.connector_server(project)
+    by_key = {agentsmod.server_key(name): (name, status) for name, status in servers.items()}
+    for tool in denied:
+        key = tool.split("__")[1] if tool.count("__") >= 2 else ""
+        if key and key not in (agentsmod.server_key(mine), connector):
+            name = by_key.get(key, (key, ""))[0]
+            return t("launch", "mcp_not_allowed", server=name, connector=name.removeprefix("claude.ai ").strip())
+    if connector and connector in by_key and by_key[connector][1] != "connected":
+        return t("launch", "connector_not_connected", server=by_key[connector][0], status=by_key[connector][1])
+    own = by_key.get(agentsmod.server_key(mine))
+    if own and own[1] != "connected" and not (connector and by_key.get(connector, ("", ""))[1] == "connected"):
+        return t("launch", "mcp_needs_auth", server=own[0], status=own[1])
+    return None
 
 
 def final_message(tool: str, log: Path, last_message: Path) -> str:
@@ -162,7 +201,7 @@ def execute(project: Project, agent: Agent, text: str, headless: bool, log_name:
     log = logs / f"{log_name}-{stamp}.log"
     last_message = log.with_suffix(".last.txt")
     mcp_name = agentsmod.context(project)["mcp_name"]
-    args = headless_args(agent, text, last_message, mcp_name)
+    args = headless_args(agent, text, last_message, mcp_name, agentsmod.connector_server(project))
     # A clean session even when launched from inside another agent (e.g. Claude Code).
     env = {k: v for k, v in os.environ.items() if not k.startswith("CLAUDE")}
     with log.open("w", encoding="utf-8") as fh:

@@ -26,6 +26,9 @@ platform:
     # (e.g. https://<tenant>.slxd.app/mcp/creator).
     mcp_name: slxd-creator
     mcp_url: {mcp_url}
+    # Optional: use the creator connector you logged in at account level instead of the server above. Its name as your AI
+    # tool lists it (for example "SLXD Creator Studio LXD"); sessions without an interface may then use its tools.
+    connector: ""
     organization_id: ""
 
 mirror:

@@ -1,5 +1,6 @@
 import json
 
+import pytest
 import yaml
 
 from coursekit import init
@@ -292,3 +293,37 @@ def test_the_wizard_can_hand_the_whole_process_off(tmp_path, monkeypatch, capsys
     assert main(["init", str(tmp_path / "demo"), "--no-git"]) == 0
     assert len(started) == 1 and started[0][1:3] == ("Passwords", 1.0)
     assert "Handoff mode" in capsys.readouterr().out
+
+
+def test_pending_lines_are_what_a_paste_leaves_and_never_wait():
+    import os
+
+    reader, writer = os.pipe()
+    stream = os.fdopen(reader, "r", encoding="utf-8")
+    assert init.pending_lines(stream) == []  # nothing waiting: it returns at once, it does not block
+    os.write(writer, b"second line\n\nthird line\n")
+    assert init.pending_lines(stream) == ["second line", "third line"]
+    assert init.pending_lines(stream) == []
+    os.close(writer)
+    stream.close()
+
+
+def test_a_free_text_answer_pasted_over_several_lines_is_one_answer(monkeypatch):
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True, raising=False)
+    monkeypatch.setattr("builtins.input", lambda prompt: "Cercano y fresco:")
+    monkeypatch.setattr(init, "pending_lines", lambda stream=None: ["frases cortas  ", "y ejemplos."])
+    assert init.ask("Tono") == "Cercano y fresco: frases cortas y ejemplos."
+
+
+def test_choice_questions_do_not_swallow_what_follows(monkeypatch):
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True, raising=False)
+    monkeypatch.setattr("builtins.input", lambda prompt: "")
+    monkeypatch.setattr(init, "pending_lines", lambda stream=None: pytest.fail("a choice question must not read ahead"))
+    assert init.ask("Backend", "creator", ("creator", "html")) == "creator"
+
+
+def test_without_a_terminal_nothing_is_read_ahead(monkeypatch):
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False, raising=False)
+    monkeypatch.setattr("builtins.input", lambda prompt: "answer")
+    monkeypatch.setattr(init, "pending_lines", lambda stream=None: pytest.fail("no terminal: nothing to read ahead"))
+    assert init.ask("Question") == "answer"

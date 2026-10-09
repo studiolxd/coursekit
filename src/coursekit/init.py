@@ -15,6 +15,7 @@ from __future__ import annotations
 import getpass
 import hashlib
 import json
+import os
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -234,20 +235,54 @@ def update(root: Path) -> Report:
     return report
 
 
+def pending_lines(stream=None) -> list[str]:
+    """The lines already waiting on the input, which is what a multi-line paste leaves behind after the first one. It never waits
+    for more; if the input cannot be inspected (no terminal, an unusual one) there are none."""
+    stream = stream or sys.stdin
+    lines: list[str] = []
+    try:
+        if os.name == "nt":  # best effort: the console keeps the pasted keys until they are read
+            import msvcrt
+
+            text = ""
+            while msvcrt.kbhit():
+                text += msvcrt.getwch()
+            lines = [part for part in text.replace("\r", "\n").split("\n")]
+        else:
+            import select
+
+            fd, data = stream.fileno(), b""
+            while select.select([fd], [], [], 0)[0]:  # read the descriptor itself: a buffered reader would hide what it already took
+                chunk = os.read(fd, 65536)
+                if not chunk:
+                    break
+                data += chunk
+            lines = data.decode("utf-8", errors="replace").splitlines()
+    except (OSError, ValueError, ImportError):
+        return []
+    return [line for line in lines if line.strip()]
+
+
 def ask(
     prompt: str,
     default: str = "",
     choices: tuple[str, ...] | None = None,
     labels: dict[str, str] | None = None,
 ) -> str:
-    """Ask on the terminal. `labels` maps a choice to the text shown for it; either one is accepted as the answer."""
+    """Ask on the terminal. `labels` maps a choice to the text shown for it; either one is accepted as the answer.
+
+    A free-text answer pasted over several lines is one answer: the lines that arrive with it are joined with spaces, instead
+    of each one answering the next question."""
     shown_choices = [(labels or {}).get(c, c) for c in choices or ()]
     hint = f" [{'/'.join(shown_choices)}]" if choices else ""
     shown = f" ({(labels or {}).get(default, default)})" if default else ""
     while True:
-        value = input(f"{prompt}{hint}{shown}: ").strip() or default
+        value = input(f"{prompt}{hint}{shown}: ").strip()
         if not choices:
-            return value
+            if sys.stdin.isatty():
+                value = " ".join([value, *(line.strip() for line in pending_lines())]).strip()
+            return value or default
+        value = value or default
         for choice, label in zip(choices, shown_choices, strict=True):
             if value.lower() in (choice.lower(), label.lower()):
                 return choice
