@@ -24,9 +24,6 @@ bad_rounds:
 course_exists:
   es: "el curso {code} ya existe; para continuarlo: coursekit handoff {code}"
   en: "course {code} already exists; to carry it on: coursekit handoff {code}"
-course_not_created:
-  es: "el agente de diseño no creó el curso {code}"
-  en: "the design agent did not create course {code}"
 design_not_exported:
   es: "{code}: la propuesta de diseño no se exportó a design/ (falta matrix.json)"
   en: "{code}: the design proposal was not exported to design/ (matrix.json is missing)"

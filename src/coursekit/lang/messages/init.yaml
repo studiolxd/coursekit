@@ -5,6 +5,9 @@ client: {es: Cliente, en: Client}
 tone: {es: Tono, en: Tone}
 address: {es: Tratamiento, en: Address}
 backend: {es: Backend de montaje, en: Assembly backend}
+theme_source:
+  es: "Theme del curso en creator (el del tenant, o uno que se crea con el material de branding de theme/branding/)"
+  en: "Theme of the course in creator (the tenant's default, or one made from the branding material in theme/branding/)"
 mirror: {es: Carpeta espejo, en: Mirror folder}
 mirror_dir: {es: Ruta local de la carpeta sincronizada, en: Local path of the synced folder}
 mirror_dir_missing:

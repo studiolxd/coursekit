@@ -65,6 +65,19 @@ def cmd_new(args: argparse.Namespace) -> int:
     return 0
 
 
+def _pause_for_material(project: Project, folder: Path) -> None:
+    """The course folders exist: wait while the person drops the reference material, then the process goes on by itself."""
+    rel = lambda path: path.relative_to(project.root).as_posix()  # noqa: E731
+    brief = folder / "brief"
+    print(t("commands", "handoff_pause", code=folder.name, sources=rel(brief / "sources"), links=rel(brief / "links.md"),
+            notes=rel(brief / "notes.md"), general=rel(project.brief_dir)))
+    if thememod.needs_branding(project):  # the look comes from brand material that is not there yet
+        html = (config.project_data(project).get("assembly") or {}).get("backend") == "html"
+        key = "handoff_pause_branding_html" if html else "handoff_pause_branding"
+        print(t("commands", key, branding=rel(thememod.branding_dir(project))))
+    initmod.ask(t("commands", "handoff_pause_wait"), "")
+
+
 def cmd_handoff(args: argparse.Namespace) -> int:
     project = _project()
     rounds = args.rounds or handoffmod.rounds_setting(project)
@@ -72,12 +85,13 @@ def cmd_handoff(args: argparse.Namespace) -> int:
     mirror = lambda code: _mirror(project, code)  # noqa: E731
     starting = args.hours is not None
     code = handoffmod.course_code(args.target, args.code) if starting else args.target.upper()
+    pause = None if args.no_pause or not sys.stdin.isatty() else lambda folder: _pause_for_material(project, folder)
     try:
         if starting:
-            flags = [flag for flag, on in (("--no-intro", args.no_intro), ("--no-summary", args.no_summary)) if on]
-            course = handoffmod.start(project, args.target, args.hours, args.code, flags, args.notes, rounds, log, mirror)
+            course = handoffmod.start(project, args.target, args.hours, args.code, not args.no_intro, not args.no_summary, args.notes,
+                                      rounds, log, mirror, pause)
         else:
-            if args.no_intro or args.no_summary or args.notes or args.code:
+            if args.no_intro or args.no_summary or args.notes or args.code or args.no_pause:
                 print(t("commands", "handoff_resume_options"), file=sys.stderr)
                 return 2
             course = handoffmod.resume(project, args.target, rounds, log, mirror)
@@ -587,10 +601,12 @@ def cmd_theme(args: argparse.Namespace) -> int:
         print(t("commands", "theme_wrote", path=rel(thememod.write_css(project, course))))
         return 0
     if args.action == "import":
-        if not args.file:
+        project_backend = (config.project_data(project).get("assembly") or {}).get("backend") or "creator"
+        backend = coursemod.backend(course) if course else project_backend
+        if not args.file and backend != "html":
             print(t("commands", "theme_import_needs_file"), file=sys.stderr)
             return 2
-        path, tokens = thememod.import_creator(project, course, Path(args.file))
+        path, tokens = thememod.import_creator(project, course, Path(args.file) if args.file else None)
         origin = tokens["origin"]
         if origin["source"] == "css":
             print(t("commands", "theme_imported_css", path=rel(path), file=origin["file"]))
@@ -639,6 +655,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--no-summary", action="store_true", help=t("commands", "help_new_no_summary"))
     p.add_argument("--notes", default="", help=t("commands", "help_new_notes"))
     p.add_argument("--rounds", type=int, help=t("commands", "help_handoff_rounds"))
+    p.add_argument("--no-pause", action="store_true", help=t("commands", "help_handoff_no_pause"))
     p.set_defaults(func=cmd_handoff)
 
     p = sub.add_parser("status", help=t("commands", "help_status"))

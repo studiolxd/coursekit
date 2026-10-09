@@ -9,7 +9,8 @@ $ARGUMENTS
 
 1. Separate the title (in quotes), the hours, the options `--code`, `--no-intro`, `--no-summary`,
    `--no-material` (only for you: do not pass it to `coursekit new`) and the rest as free indications. If the title or the hours are missing, ask for them and stop.
-2. Run `coursekit new "<title>" <hours> [options] --notes "<indications>"`.
+2. Run `coursekit new "<title>" <hours> [options] --notes "<indications>"`, unless `courses/<CODE>/course.yaml` already
+   exists (the course was created before, for example in handoff mode): then skip this step and work on it as it is.
 3. Run `coursekit brief <CODE>` and read `brief/index.md` and `brief/notes.md`. If there is no
    material (no documents, no web links, no notes beyond the template, in the course or in the
    project) and `--no-material` was not given, **stop before designing** and ask the person, in

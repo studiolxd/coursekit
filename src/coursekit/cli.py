@@ -31,7 +31,14 @@ def _print_report(report: initmod.Report) -> None:
             print(f"  {label}: {item}")
 
 
-def _print_next_steps(root: Path, mcp_missing: bool = False) -> None:
+def _branding_hint(answers: initmod.Answers) -> str | None:
+    """Which notice about the brand material the person gets: html (a stylesheet or the base look) or a theme made from it."""
+    if answers.backend == "html":
+        return "html"
+    return "branding" if answers.theme_source == "branding" else None
+
+
+def _print_next_steps(root: Path, mcp_missing: bool = False, branding: str | None = None) -> None:
     """Invite the person to open an AI tool and create the first course."""
     here = Path.cwd().resolve()
     folder = "." if root == here else (root.relative_to(here) if root.is_relative_to(here) else root).as_posix()
@@ -43,6 +50,8 @@ def _print_next_steps(root: Path, mcp_missing: bool = False) -> None:
     if mcp_missing:
         print(t("cli", "next_mcp"))
     print(t("cli", "next_brief"))
+    if branding:
+        print(t("cli", f"next_branding_{branding}"))
     print(t("cli", "next_config"))
     print()
     print(t("cli", "next_then"))
@@ -74,7 +83,6 @@ def _offer_first_course(root: Path) -> int:
     tool = agentsmod.role("design")[0]
     if not shutil.which(tool) or not initmod.confirm(t("cli", "create_ask", tool=tool)):
         return 0
-    has_material = _pause_for_material(root)
     while True:
         title = initmod.ask(t("cli", "create_title"), "").replace('"', "").strip()
         if title:
@@ -91,7 +99,8 @@ def _offer_first_course(root: Path) -> int:
     os.chdir(root)
     if initmod.confirm(t("cli", "handoff_ask"), default=False):
         print(t("cli", "handoff_notice"))
-        return main(["handoff", title, text])
+        return main(["handoff", title, text])  # it waits for the material itself, once the course folders exist
+    has_material = _pause_for_material(root)
     return main(["run", "new-course", title, text] + ([] if has_material else ["--no-material"]))
 
 
@@ -114,6 +123,7 @@ def cmd_init(args: argparse.Namespace) -> int:
     answers.tone = args.tone or ""
     answers.address = args.address or ""
     answers.backend = args.backend
+    answers.theme_source = args.theme_source
     answers.mirror = args.mirror
     answers.mcp_url = args.mcp_url or ""
     answers.mirror_dir = args.mirror_dir or ""
@@ -130,6 +140,9 @@ def cmd_init(args: argparse.Namespace) -> int:
         answers.address = initmod.ask(t("init", "address"), answers.address or options[0], options)
         answers.backend = initmod.ask(t("init", "backend"), answers.backend, initmod.BACKENDS, labels=initmod.BACKEND_LABELS)
         answers.mcp_url = initmod.ask_url(t("init", "mcp_url"), answers.mcp_url)  # the design is done in creator with either backend
+        if answers.backend == "creator":  # with html the look is a stylesheet, not a theme of the platform
+            answers.theme_source = initmod.ask(t("init", "theme_source"), answers.theme_source, initmod.THEME_SOURCES,
+                                               labels=initmod.THEME_SOURCE_LABELS)
         answers.mirror = initmod.ask(t("init", "mirror"), answers.mirror, initmod.MIRRORS)
         if answers.mirror in initmod.MIRRORS_WITH_DETAILS:
             answers.mirror_dir = initmod.ask(t("init", "mirror_dir"), answers.mirror_dir).strip("\"'")
@@ -160,7 +173,7 @@ def cmd_init(args: argparse.Namespace) -> int:
     if code != 0:
         return code
     mcp_missing = not answers.mcp_url
-    _print_next_steps(root, mcp_missing)
+    _print_next_steps(root, mcp_missing, branding=_branding_hint(answers))
     if interactive and not mcp_missing:
         return _offer_first_course(root)
     return 0
@@ -232,6 +245,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--tone")
     p.add_argument("--address", help=t("cli", "init_address"))
     p.add_argument("--backend", choices=initmod.BACKENDS, default="creator")
+    p.add_argument("--theme-source", choices=initmod.THEME_SOURCES, default="tenant_default", help=t("cli", "help_theme_source"))
     p.add_argument("--mirror", choices=initmod.MIRRORS, default="none")
     p.add_argument("--mcp-url", help=t("cli", "help_mcp_url"))
     p.add_argument("--mirror-dir", help=t("cli", "init_mirror_dir"))

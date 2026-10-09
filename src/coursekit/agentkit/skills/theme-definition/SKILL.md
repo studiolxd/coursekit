@@ -15,17 +15,29 @@ come from. One theme per project, which every course inherits; a course can have
 
 1. `coursekit theme show` (project) or `coursekit theme show --course <CODE>`. If the tokens already come from a
    platform theme, say which and ask whether to redo them; do not change them unprompted.
-2. Read the brand material of the client (`brief/index.md`, `brief/notes.md`) for colours, fonts and logos.
+2. Read the brand material of the client for colours, fonts and logos: the files in `theme/branding/` (logos, font files,
+   guidelines, colour lists: open images and PDFs directly) and `brief/index.md`, `brief/notes.md`.
+3. The choice made when the project was created is `project.yaml › theme › source` (creator backend): `tenant_default` (the
+   default theme of the organization) or `branding` (a theme made from `theme/branding/`). Follow it; ask only when you can ask.
 
 ## 2. The theme in the platform (creator backend)
 
 With the html backend (`coursekit status` says it) there is no platform theme: the theme is the stylesheet of the project. Write
-or adapt `theme/maqueta.css` with the brand in the CSS variables of the base layout (`--color-accent`, `--color-text`,
+or adapt `theme/maqueta.css` with the brand (from `theme/branding/`) in the CSS variables of the base layout (`--color-accent`, `--color-text`,
 `--color-background`, `--font-family`, `--radius`… the list is the `:root` of the base layout; `coursekit theme import` explains
 what it understood), run `coursekit theme import theme/maqueta.css` and go to step 4; the build uses that stylesheet and the
-tokens. Never edit `tokens.json` by hand.
+tokens. If there is no brand material at all and the person has no stylesheet, write nothing and run
+`coursekit theme import` without a file: the tokens are those of the base layout. Never edit `tokens.json` by hand.
 
 For the creator backend:
+
+- `source: tenant_default`: `list_themes`, take the theme with `isDefault`, and go to step 3 with it. Do not create or
+  change themes (the system default is read-only); new contents get it by themselves. In a session with a person, say
+  which theme it is before importing it.
+- `source: branding`: make the theme from `theme/branding/` as in the list below. If that folder has no material, use
+  the default theme as above and say so in your summary.
+
+Otherwise, or when the person asks for something else:
 
 1. `list_themes`: show the library to the person.
 2. Choose with them: an existing theme; a new one (`create_theme` from nothing, from a preset

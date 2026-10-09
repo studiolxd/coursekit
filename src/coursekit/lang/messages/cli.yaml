@@ -115,6 +115,15 @@ handoff_notice:
   es: "  Modo handoff: puede tardar y gastar créditos de los proveedores configurados. Si se para, continúa con `coursekit handoff <CODIGO>`."
   en: "  Handoff mode: it can take a while and spend credits of the configured providers. If it stops, carry on with `coursekit handoff <CODE>`."
 create_hours_bad: {es: "  escribe un número de horas mayor que 0", en: "  enter a number of hours greater than 0"}
+help_theme_source:
+  es: "creator: theme del tenant (por defecto) o uno creado con el material de theme/branding/"
+  en: "creator: the tenant's default theme (default) or one made from the material in theme/branding/"
+next_branding_html:
+  es: "  · Marca: el backend html usa la hoja de estilos theme/maqueta.css (o el aspecto base). Deja tu marca en theme/branding/ (logos, tipografías, guía) o tu propia hoja en theme/maqueta.css; sin ellas el curso sale con el aspecto base."
+  en: "  · Brand: the html backend uses the stylesheet theme/maqueta.css (or the base look). Put your brand in theme/branding/ (logos, fonts, guidelines) or your own stylesheet in theme/maqueta.css; without them the course gets the base look."
+next_branding_branding:
+  es: "  · Marca: elegiste crear el theme con el material de branding. Déjalo en theme/branding/ (logos, tipografías, guía, colores); sin material se usa el theme del tenant."
+  en: "  · Brand: you chose to make the theme from the branding material. Put it in theme/branding/ (logos, fonts, guidelines, colours); without material the tenant's default theme is used."
 help_mcp_url:
   es: "URL del servidor MCP de slxd (project.yaml › platform.slxd.mcp_url)"
   en: "slxd MCP server URL (project.yaml › platform.slxd.mcp_url)"

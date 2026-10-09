@@ -54,11 +54,13 @@ MANAGED = {
     "githooks/post-checkout": ".githooks/post-checkout",
 }
 EXECUTABLE = (".githooks/post-merge", ".githooks/post-checkout")
-FOLDERS = ("courses", "brief/sources", "config", "theme", ".agents")
+FOLDERS = ("courses", "brief/sources", "config", "theme", "theme/branding", ".agents")
 
 LANGUAGES = ("es", "en")
 BACKENDS = ("creator", "html")
 BACKEND_LABELS = {"creator": "SLXD Creator", "html": "HTML"}
+THEME_SOURCES = ("tenant_default", "branding")
+THEME_SOURCE_LABELS = {"tenant_default": "tenant default", "branding": "branding"}
 LANGUAGE_PROMPT = "Idioma / Language"
 MIRRORS_WITH_DETAILS = ("sharepoint", "onedrive", "google-drive", "nextcloud", "folder")
 MIRRORS = ("sharepoint", "onedrive", "google-drive", "nextcloud", "folder", "none")
@@ -74,6 +76,7 @@ class Answers:
     tone: str = ""
     address: str = ""
     backend: str = "creator"
+    theme_source: str = "tenant_default"  # creator backend: the default theme of the tenant, or one made from theme/branding/
     mirror: str = "none"
     mirror_url: str = ""
     mcp_url: str = ""
@@ -89,6 +92,7 @@ class Answers:
             "tone": self.tone,
             "address": address,
             "backend": self.backend,
+            "theme_source": self.theme_source,
             "mirror": self.mirror,
             "mirror_url": self.mirror_url,
             "mcp_url": self.mcp_url,
@@ -163,6 +167,7 @@ def values_from_project(root: Path) -> dict[str, str]:
         tone=str(data.get("tone") or ""),
         address=str(data.get("address") or ""),
         backend=(data.get("assembly") or {}).get("backend") or "creator",
+        theme_source=str((data.get("theme") or {}).get("source") or "tenant_default"),
         mirror=(data.get("mirror") or {}).get("provider") or "none",
         mirror_url=str((data.get("mirror") or {}).get("url") or ""),
         mcp_url=str(((data.get("platform") or {}).get("slxd") or {}).get("mcp_url") or ""),

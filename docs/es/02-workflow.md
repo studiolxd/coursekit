@@ -67,16 +67,18 @@ coursekit handoff "Contraseñas seguras" 2 --code PWD   # un curso nuevo, desde 
 coursekit handoff PWD                                  # continúa un curso que se paró
 ```
 
-`--rounds` fija los intentos. `--code`, `--no-intro`, `--no-summary` y `--notes` se pasan a `/new-course` (handoff añade siempre `--no-material`); solo tienen sentido al crear el curso, y al continuar coursekit los rechaza (código de salida 2).
+`--rounds` fija los intentos. `--code`, `--no-intro`, `--no-summary` y `--notes` crean el curso como [`coursekit new`](03-commands.md#coursekit-new); ellos y `--no-pause` solo tienen sentido al crearlo, y al continuar coursekit los rechaza (código de salida 2).
+
+La única pausa es al principio: con las carpetas del curso ya creadas, en una terminal, espera a que dejes el material de partida del curso (`courses/<CODE>/brief/`) y pulses Enter. `--no-pause` la omite; sin terminal nunca espera. Cuando el aspecto del proyecto sale de material de marca que aún no está (backend html, o creator con `theme.source: branding`), la pausa también te recuerda que lo dejes en `theme/branding/`. Después sigue solo, y nunca pregunta por el theme: sigue `theme.source`.
 
 | Estado del curso | Qué hace handoff |
 |---|---|
-| (nuevo) | El agente de diseño propone el diseño (`/new-course`, sin pedir material de partida). |
+| (nuevo) | coursekit crea las carpetas del curso y espera al material de partida (mira arriba); después el agente de diseño propone el diseño (`/new-course` sobre el curso ya creado; no pide material). |
 | `design` | Si todavía no existe `design/matrix.json`, el agente de diseño exporta la propuesta (`/design-change`). Después actualiza y valida la exportación (`/approve-design`); coursekit firma el diseño como **Coursekit Handoff**. Si no se puede firmar, el agente de diseño lo corrige y se intenta de nuevo. |
 | `design_approved`, `writing` | El agente redactor escribe cada unidad hasta que verifica. |
 | `ai_review` | El agente revisor revisa cada unidad. Si la línea `<!-- result: ... -->` de su informe dice `not_ready` (mira [Revisión con IA](#4-revisión-con-ia)), el redactor corrige la unidad y se revisa de nuevo. Con `review.ai: skip` esta fase no ocurre: las unidades ya están `reviewed`. |
 | `editorial_review` | coursekit firma cada unidad como Coursekit Handoff. |
-| `media` | coursekit extrae el manifiesto de multimedia. Si un recurso pendiente es de un tipo que usa el theme (`uses_theme`) y los tokens de diseño no están derivados (faltan o están escritos a mano), el agente de diseño define el theme (`/define-theme`); el agente de multimedia produce los recursos (`/produce-media`); el de montaje monta (`/assemble`). |
+| `media` | coursekit extrae el manifiesto de multimedia. Si un recurso pendiente es de un tipo que usa el theme (`uses_theme`) y los tokens de diseño no están derivados (faltan o están escritos a mano), el agente de diseño define el theme (`/define-theme`) según `project.yaml › theme.source` y el material de `theme/branding/`, sin preguntar; el agente de multimedia produce los recursos (`/produce-media`); el de montaje monta (`/assemble`). |
 | `assembly` | El agente de montaje entrega (`/deliver`). |
 
 - **Firmas.** Toda aprobación que da es de `Coursekit Handoff <handoff@coursekit.local>` y lleva `via: handoff` en `course.yaml › approvals`, y el commit tiene ese autor, así que nunca se confunde con la de una persona. Los agentes siguen sin poder firmar ni ejecutar `coursekit handoff`: la firma la pone coursekit, no ellos.
@@ -359,8 +361,8 @@ Los gráficos, simulaciones y vídeos de un curso usan los colores y las fuentes
 
 Qué hace `/define-theme [CODE]` (rol de diseño, skill `theme-definition`):
 
-1. Mira `coursekit theme show` para saber si los tokens ya vienen de un theme de la plataforma (si es así, pregunta antes de rehacerlos) y lee el material de marca de `brief/` en busca de colores, fuentes y logotipos.
-2. Lista los themes de la plataforma y eliges uno o creas uno nuevo: desde cero, desde un preset o como copia de uno existente. Un cambio en un theme cambia todos los contenidos que lo usan, así que, para cambiar solo un curso, el agente copia el theme y enlaza la copia.
+1. Mira `coursekit theme show` para saber si los tokens ya vienen de un theme de la plataforma (si es así, pregunta antes de rehacerlos) y lee el material de marca en busca de colores, fuentes y logotipos: `theme/branding/` (logos, ficheros de tipografías, guía, listas de colores) y `brief/`. La elección hecha al crear el proyecto es `project.yaml › theme.source`.
+2. Con `tenant_default` toma el theme que la plataforma marca por defecto (`isDefault`) y no crea ni cambia nada. Con `branding` crea el theme a partir de `theme/branding/` (sin material, usa el por defecto y lo dice). En una sesión con una persona, o cuando esta pide otra cosa, lista los themes de la plataforma y eliges uno o creas uno nuevo: desde cero, desde un preset o como copia de uno existente. Un cambio en un theme cambia todos los contenidos que lo usan, así que, para cambiar solo un curso, el agente copia el theme y enlaza la copia.
 3. Lo adapta con los colores y las fuentes de la marca (`update_theme`) y te cuenta los avisos de la plataforma.
 4. Guarda el resultado de `get_theme` en `.cache/theme/get_theme.json` y ejecuta `coursekit theme import .cache/theme/get_theme.json`. Eso escribe `theme/tokens.json` y `theme/tokens.css` con un `origin`: id del theme, nombre, versión y fecha. Imprime las notas y el contraste de cada par de colores; si algún par no llega al mínimo, el color se corrige en la plataforma y se vuelve a importar, nunca se edita en los tokens.
 5. Te resume el resultado. **El theme lo validas tú, como validas el diseño.**
@@ -387,7 +389,7 @@ La lista de tipos que necesitan tokens es `uses_theme` en la configuración de `
 
 Notas: si el theme de la plataforma tiene modo oscuro, los tokens son los del modo claro. El texto atenuado, las superficies, la línea, el radio, el espaciado y la sombra no existen en el theme de la plataforma; coursekit los deriva y la importación los enumera.
 
-Con el backend de montaje `html` no hay theme de plataforma. Los tokens se derivan de las variables CSS de la hoja de estilos `theme/maqueta.css` puesta sobre el layout base del paquete (`--color-accent`, `--color-text`, `--font-family`, `--radius`...). `/define-theme` escribe o adapta esa hoja de estilos y ejecuta `coursekit theme import theme/maqueta.css`; los tokens llevan como origen la hoja de estilos y su huella. El paquete se estila con el layout base, después los tokens, después `theme/maqueta.css` del proyecto y `courses/<CODE>/theme/maqueta.css` del curso si existe, que pueden reestilar cualquier cosa.
+Con el backend de montaje `html` no hay theme de plataforma. Los tokens se derivan de las variables CSS de la hoja de estilos `theme/maqueta.css` puesta sobre el layout base del paquete (`--color-accent`, `--color-text`, `--font-family`, `--radius`...). `/define-theme` escribe o adapta esa hoja de estilos con el material de `theme/branding/` y ejecuta `coursekit theme import theme/maqueta.css` (sin hoja y sin material, `coursekit theme import` sin fichero deriva los tokens de la maqueta base); los tokens llevan como origen la hoja de estilos y su huella. El paquete se estila con el layout base, después los tokens, después `theme/maqueta.css` del proyecto y `courses/<CODE>/theme/maqueta.css` del curso si existe, que pueden reestilar cualquier cosa.
 
 ## Cambios tras la aprobación
 

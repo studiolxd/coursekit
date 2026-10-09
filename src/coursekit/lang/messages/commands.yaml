@@ -118,6 +118,19 @@ help_handoff:
   en: "the whole process of a course by itself (it signs as Coursekit Handoff, with no client review): title and hours, or the code of one that stopped half way"
 help_handoff_target: {es: "título del curso nuevo (con las horas) o código de un curso para continuarlo", en: "title of a new course (with its hours) or the code of a course to carry on"}
 help_handoff_hours: {es: "horas del curso nuevo (sin ellas, continúa el curso con ese código)", en: "hours of the new course (without them, it carries on the course with that code)"}
+help_handoff_no_pause:
+  es: "no esperar al material de partida tras crear las carpetas del curso (sin terminal nunca espera)"
+  en: "do not wait for the reference material after creating the course folders (without a terminal it never waits)"
+handoff_pause:
+  es: "Curso {code} creado. Antes de seguir solo, deja el material de partida si lo tienes:\n  · documentos de cualquier formato: {sources}\n  · URLs de documentación web: {links}\n  · indicaciones del curso: {notes}\n  (el material general del proyecto está en {general}/)"
+  en: "Course {code} created. Before it goes on by itself, drop the reference material if you have it:\n  · documents of any format: {sources}\n  · web documentation URLs: {links}\n  · course indications: {notes}\n  (the material of the whole project is in {general}/)"
+handoff_pause_branding:
+  es: "  · marca para el theme (logos, tipografías, guía, colores): {branding}/ (sin material se usa el theme del tenant)"
+  en: "  · brand for the theme (logos, fonts, guidelines, colours): {branding}/ (without material the tenant's default theme is used)"
+handoff_pause_branding_html:
+  es: "  · marca para la hoja de estilos (logos, tipografías, guía, colores): {branding}/, o tu propia hoja en theme/maqueta.css (sin ellas, aspecto base)"
+  en: "  · brand for the stylesheet (logos, fonts, guidelines, colours): {branding}/, or your own stylesheet in theme/maqueta.css (without them, the base look)"
+handoff_pause_wait: {es: "Pulsa Enter para continuar (con o sin material)", en: "Press Enter to go on (with or without material)"}
 help_handoff_rounds: {es: "intentos por paso antes de parar (por defecto: rules › handoff › rounds)", en: "attempts per step before it stops (default: rules › handoff › rounds)"}
 handoff_resume_options:
   es: "--code, --no-intro, --no-summary y --notes solo valen al crear un curso: para continuar uno, `coursekit handoff CODIGO`"

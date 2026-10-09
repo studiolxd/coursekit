@@ -48,7 +48,9 @@ class Agents:
 
     def new_course(self, arguments):
         assert "--no-material" in arguments and "--code PWD" in arguments
-        assert main(["new", "Contraseñas seguras", "1", "--code", "PWD"]) == 0
+        self.existed = (self.course / "course.yaml").exists()  # handoff creates the course folders before the agent
+        if not self.existed:
+            assert main(["new", "Contraseñas seguras", "1", "--code", "PWD"]) == 0
         write_course_rules(self.course)
         shutil.copy(FIXTURES / "matrix.json", self.course / "design" / "matrix.json")
 
@@ -111,6 +113,7 @@ def test_the_whole_process_by_itself_signed_as_handoff(project, monkeypatch, cap
     out = capsys.readouterr().out
     assert fake.calls == ["new-course", "approve-design", "write-unit", "review-unit", "define-theme", "produce-media", "assemble",
                           "deliver"]
+    assert fake.existed  # the course was created by handoff itself, then the design agent worked on it
     info = data(project)
     assert info["status"] == "delivered"
     assert [u["status"] for u in info["units"]] == ["approved"]
@@ -208,3 +211,33 @@ def test_the_rounds_come_from_the_rules(project, monkeypatch, capsys):
     fake.skip["write-unit"] = 1
     assert main(["handoff", "Contraseñas seguras", "1", "--code", "PWD"]) == 1
     assert fake.calls.count("write-unit") == 1
+
+
+def test_it_waits_for_the_material_once_the_course_folders_exist(project, monkeypatch, capsys):
+    fake = Agents(project, monkeypatch)
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True, raising=False)
+    prompts = []
+
+    def enter(prompt):
+        prompts.append(prompt)
+        assert (project / "courses" / "PWD" / "brief" / "sources").is_dir() and fake.calls == []  # folders yes, agents not yet
+        (project / "courses" / "PWD" / "brief" / "sources" / "guide.md").write_text("# Guide\n", encoding="utf-8")
+        return ""
+
+    monkeypatch.setattr("builtins.input", enter)
+    assert main(["handoff", "Contraseñas seguras", "1", "--code", "PWD"]) == 0
+    out = capsys.readouterr().out
+    assert len(prompts) == 1 and prompts[0].startswith("Press Enter to go on")
+    assert "courses/PWD/brief/sources" in out and "courses/PWD/brief/links.md" in out and "courses/PWD/brief/notes.md" in out
+    assert (project / "courses" / "PWD" / "brief" / "sources" / "guide.md").exists()
+    assert fake.calls[0] == "new-course"
+
+
+def test_no_pause_and_a_resume_never_wait(project, monkeypatch):
+    fake = Agents(project, monkeypatch)
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True, raising=False)
+    monkeypatch.setattr("builtins.input", lambda prompt: pytest.fail("it must not wait"))
+    assert main(["handoff", "Contraseñas seguras", "1", "--code", "PWD", "--no-pause", "--rounds", "1"]) == 0
+    assert main(["handoff", "PWD"]) == 0  # already delivered: nothing to wait for
+    assert main(["handoff", "PWD", "--no-pause"]) == 2  # the option only makes sense when creating
+    assert fake.calls.count("new-course") == 1

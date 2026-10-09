@@ -102,7 +102,8 @@ coursekit init [folder] [--update] [--name NAME] [--client CLIENT]
                [--language {es,en}] [--ui-language {es,en}] [--tone TONE]
                [--address ADDRESS] [--backend {creator,html}]
                [--mirror {sharepoint,onedrive,google-drive,nextcloud,folder,none}]
-               [--mcp-url MCP_URL] [--mirror-dir MIRROR_DIR] [--mirror-url MIRROR_URL]
+               [--theme-source {tenant_default,branding}] [--mcp-url MCP_URL]
+               [--mirror-dir MIRROR_DIR] [--mirror-url MIRROR_URL]
                [--yes] [--no-git]
 ```
 
@@ -117,6 +118,7 @@ coursekit init [folder] [--update] [--name NAME] [--client CLIENT]
 | `--tone TONE` | free text | Tone of voice for the content. |
 | `--address ADDRESS` | `tu` or `usted` (`es`); `you` (`en`) | How the content addresses the learner. An invalid value without a terminal exits with code 1. |
 | `--backend {creator,html}` | default `creator` | Assembly backend, saved in `project.yaml › assembly.backend`: `creator` loads the units into slxd creator; `html` builds each unit as a SCORM package with coursekit (see [`coursekit assemble`](#coursekit-assemble)). A course can use the other one: [04-configuration.md](04-configuration.md#projectyaml). |
+| `--theme-source {tenant_default,branding}` | default `tenant_default` | Creator backend only: where the theme comes from, saved in `project.yaml › theme.source`. `tenant_default`: the default theme of the organization in creator. `branding`: a theme made by `/define-theme` from the material in `theme/branding/`. |
 | `--mirror PROVIDER` | `sharepoint`, `onedrive`, `google-drive`, `nextcloud`, `folder`, `none`; default `none` | Provider of the shared mirror folder. |
 | `--mcp-url MCP_URL` | URL | Address of the slxd MCP server; saved in `project.yaml › platform.slxd.mcp_url`. Asked with either backend, because the instructional design is always done in creator. An invalid URL exits with code 1. |
 | `--mirror-dir MIRROR_DIR` | local path | Path of the synced mirror folder; saved in `.env` as `MIRROR_DIR`. |
@@ -126,7 +128,7 @@ coursekit init [folder] [--update] [--name NAME] [--client CLIENT]
 
 What it does:
 
-- With a terminal and without `--yes` it asks for every value above (the slxd MCP URL with either backend), then offers to create the first course with the design agent, only when the URL was given and the design tool is installed (it first asks whether you have reference material and waits while you drop it in `brief/`, then the title and the hours, then whether to run the whole process in handoff mode with [`coursekit handoff`](#coursekit-handoff); otherwise it launches `/new-course`).
+- With a terminal and without `--yes` it asks for every value above (the slxd MCP URL with either backend), then offers to create the first course with the design agent, only when the URL was given and the design tool is installed (it asks the title and the hours, then whether to run the whole process in handoff mode with [`coursekit handoff`](#coursekit-handoff), which waits for the material itself; otherwise it asks whether you have reference material, waits while you drop it in `brief/` and launches `/new-course`).
 - Creates the folders `courses/`, `brief/sources/`, `config/`, `theme/`, `.agents/`; seeds `project.yaml`, `brief/notes.md` and `brief/links.md`; writes the managed files `AGENTS.md`, `CLAUDE.md`, `.env.example`, `.gitignore`, `config/<name>.example.yaml` (rules, directives, media, delivery) and `.githooks/post-merge`, `.githooks/post-checkout`; runs `git init` unless `--no-git`.
 - Then runs the same steps as [`coursekit setup`](#coursekit-setup) (`.env`, `COURSEKIT_LANG` in `.env`, signing identity, git hooks, roles, agents, the html builder with the html backend, diagnosis) and prints the next steps. When the MCP URL is empty, with either backend, the next steps warn that the design cannot connect to creator until `project.yaml › platform.slxd.mcp_url` is set and `coursekit agents` is run.
 - `--update` writes nothing outside the managed files (it only recreates the project folders if they are missing) and prints `created`, `updated`, `unchanged` or `kept` for each.
@@ -315,7 +317,7 @@ coursekit new "Strong passwords" 2 --code PWD --notes "Focus on office staff"
 Takes a course from its title and hours to its delivery by itself, with nobody reviewing anything on the way: the design, the writing, the AI review, the sign-offs, the media, the assembly and the delivery. Who: people only (the agents cannot run it). Details and limits in [Handoff mode](02-workflow.md#handoff-mode).
 
 ```
-coursekit handoff [--code CODE] [--no-intro] [--no-summary] [--notes NOTES] [--rounds ROUNDS] target [hours]
+coursekit handoff [--code CODE] [--no-intro] [--no-summary] [--notes NOTES] [--rounds ROUNDS] [--no-pause] target [hours]
 ```
 
 | Argument | Values / default | Meaning |
@@ -325,8 +327,9 @@ coursekit handoff [--code CODE] [--no-intro] [--no-summary] [--notes NOTES] [--r
 | `--code CODE` | default: the title as an upper-case slug | Course code. Only when creating; refused with a code to carry on (exit code 2). |
 | `--no-intro`, `--no-summary`, `--notes NOTES` | as in [`coursekit new`](#coursekit-new) | Only when creating; with a code to carry on they are refused (exit code 2), like `--code`. |
 | `--rounds ROUNDS` | whole number; default `rules › handoff › rounds` (`2`) | Attempts per step before it stops. |
+| `--no-pause` | flag | Do not wait for the reference material after creating the course folders. Without a terminal it never waits. Only when creating (refused with a code to carry on, exit code 2). |
 
-It runs, headless and in order, the agent of each role, and decides each step from the status of the course. The signatures of the design and of every unit are given by coursekit itself as **Coursekit Handoff** (never as a person), and each approval records `via: handoff`. It does not do the client's review and it does not start if the project requires it (`client_review.required`): it refuses before creating the course. When a step still fails after its attempts it stops with exit code 1, says why and how to go on (`coursekit handoff <CODE>`). It can take a long time and spend credits of the configured media providers.
+When creating, it first makes the course folders (as [`coursekit new`](#coursekit-new) does, with `--notes` as the indications of the design) and, in a terminal, **waits for you to drop the reference material** in `courses/<CODE>/brief/` (`sources/`, `links.md`, `notes.md`; the material of the project in `brief/` is read too) and press Enter. From there it runs, headless and in order, the agent of each role, and decides each step from the status of the course. The signatures of the design and of every unit are given by coursekit itself as **Coursekit Handoff** (never as a person), and each approval records `via: handoff`. It does not do the client's review and it does not start if the project requires it (`client_review.required`): it refuses before creating the course. When a step still fails after its attempts it stops with exit code 1, says why and how to go on (`coursekit handoff <CODE>`). It can take a long time and spend credits of the configured media providers.
 
 ```
 coursekit handoff "Strong passwords" 2 --code PWD
@@ -751,7 +754,7 @@ coursekit theme [--course COURSE] {tokens,check,import,show} [file]
 | Argument | Values / default | Meaning |
 |---|---|---|
 | `action` | `tokens`, `check`, `import`, `show` | See below. |
-| `file` | path; required by `import` | Creator backend: the file with the saved result of the platform tool `get_theme` (the agent saves it to `.cache/theme/get_theme.json`). Html backend: the `.css` stylesheet of the project (for example `theme/maqueta.css`). The extension decides: a file ending in `.css` is read as a stylesheet, any other as a `get_theme` result. |
+| `file` | path; required by `import` with the creator backend | Creator backend: the file with the saved result of the platform tool `get_theme` (the agent saves it to `.cache/theme/get_theme.json`). Html backend: the `.css` stylesheet of the project (for example `theme/maqueta.css`). The extension decides: a file ending in `.css` is read as a stylesheet, any other as a `get_theme` result. With the html backend the file may be left out: the tokens are then those of the base layout alone (the origin says `base layout`). |
 | `--course COURSE` | course code or folder | Work on the own theme of that course (`courses/<CODE>/theme/`) instead of the project's (`theme/`). |
 
 Where the tokens are: a course uses its own tokens when `courses/<CODE>/theme/tokens.json` exists, otherwise the project's `theme/tokens.json`. `tokens`, `check` and `show` apply that rule when given `--course`; `import --course` creates the course's own tokens. `coursekit theme show PWD` is accepted as a shortcut of `coursekit theme show --course PWD`.
@@ -939,7 +942,7 @@ The slash commands live in `src/coursekit/agentkit/commands/` and are generated 
 
 | Slash command | CLI it uses | Role | Who may run it |
 |---|---|---|---|
-| `/new-course "<title>" <hours> [--code ABC101] [--no-intro] [--no-summary] [--no-material] [notes]` | `coursekit new`, `coursekit brief`, `coursekit theme show` | `design` | People, from the AI tool or `coursekit run new-course`. The agent never signs or commits. When the project has no theme tokens, its summary tells the person to run `/define-theme`. If there is no material the agent asks before designing (unless `--no-material`) and, if you go on without it, marks the syllabus as an assumption. |
+| `/new-course "<title>" <hours> [--code ABC101] [--no-intro] [--no-summary] [--no-material] [notes]` | `coursekit new`, `coursekit brief`, `coursekit theme show` | `design` | People, from the AI tool or `coursekit run new-course`. The agent never signs or commits. If the course already exists (handoff creates it first), it skips `coursekit new` and designs on it. When the project has no theme tokens, its summary tells the person to run `/define-theme`. If there is no material the agent asks before designing (unless `--no-material`) and, if you go on without it, marks the syllabus as an assumption. |
 | `/design-change <CODE> <changes>` | `coursekit brief`, `coursekit publish` | `design` | People. The design is applied in slxd; a signed design must be signed again. |
 | `/approve-design <CODE>` | `coursekit sync --check`, `coursekit publish`; the person then runs `coursekit approve design <CODE> --yes` | `design` | The agent prepares it; only a person signs. |
 | `/define-theme [CODE]` | `coursekit theme show`, `coursekit theme import` | `design` | People, or the design agent. With the creator backend it chooses or adapts the theme in the platform, saves `get_theme` to `.cache/theme/get_theme.json` and derives the tokens. With the html backend there is no platform theme: it writes or adapts `theme/maqueta.css` and runs `coursekit theme import theme/maqueta.css`. Without a code it defines the project theme; with one, the own theme of that course. Never edits `tokens.json` by hand. |

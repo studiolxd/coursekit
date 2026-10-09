@@ -24,7 +24,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-from coursekit import approve, clientreview, config, identity, launch
+from coursekit import approve, clientreview, config, identity, launch, new
 from coursekit import course as coursemod
 from coursekit import media as mediamod
 from coursekit import theme as thememod
@@ -97,10 +97,32 @@ def _snapshot(course: dict) -> tuple:
             len(course.get("history") or []))
 
 
-def _agent(ctx: Context, role: str, command: str, arguments: str, name: str) -> tuple[int, Path | None]:
+def theme_note(project: Project, backend: str) -> str:
+    """What the design agent is told to do for the theme, from the choice made when the project was created (nobody is asked)."""
+    if backend == "html":
+        return (
+            "\n\nTHEME (html backend): if theme/maqueta.css does not exist, write it from the brand material in theme/branding/ "
+            "(and in brief/) and run `coursekit theme import theme/maqueta.css`. If there is no brand material at all, write "
+            "nothing and run `coursekit theme import` without a file: the tokens are those of the base layout. Do not ask."
+        )
+    if thememod.source(project) == "branding":
+        return (
+            "\n\nTHEME (creator backend, made from the branding): create the theme in creator from the material in "
+            "theme/branding/ (and in brief/) with create_theme and update_theme, link it, then get_theme and "
+            "`coursekit theme import`. If theme/branding/ has no material, use the organization's default theme instead "
+            "(list_themes, the one with isDefault) and say so in your summary. Do not ask."
+        )
+    return (
+        "\n\nTHEME (creator backend, the tenant's default): use the organization's default theme. list_themes, take the one "
+        "with isDefault, get_theme, save the result to .cache/theme/get_theme.json and `coursekit theme import`. Do not create "
+        "or change any theme and do not ask."
+    )
+
+
+def _agent(ctx: Context, role: str, command: str, arguments: str, name: str, extra: str = "") -> tuple[int, Path | None]:
     agent = launch.agent_for(role)
     ctx.log(t("handoff", "agent_line", role=role, label=agent.label, command=command, arguments=arguments))
-    text = launch.prompt(agent, command, arguments, True, AUTONOMOUS_NOTE)
+    text = launch.prompt(agent, command, arguments, True, AUTONOMOUS_NOTE + extra)
     code, log, _ = launch.execute(ctx.project, agent, text, True, f"{ctx.code}-{name}-handoff")
     return code, log
 
@@ -209,7 +231,7 @@ def _media(ctx: Context, course: dict) -> None:
         cfg = mediamod.config(course=course)
         needs_theme = any(a["type"] in (cfg.get("uses_theme") or []) for a in pending)
         if needs_theme and thememod.status(ctx.project, course).state != "derived":
-            _agent(ctx, "design", "define-theme", "", "theme")
+            _agent(ctx, "design", "define-theme", "", "theme", theme_note(ctx.project, coursemod.backend(course)))
             if thememod.status(ctx.project, ctx.course()).state != "derived":
                 raise _stuck(ctx, "theme_missing")
         log = None
@@ -273,21 +295,25 @@ def course_code(title: str, code: str | None) -> str:
     return code.upper() if code else slugify(title).upper()
 
 
-def start(project: Project, title: str, hours: float, code: str | None, flags: list[str], notes: str, rounds: int, log: Log,
-          mirror: Callable[[str], None]) -> dict:
-    """Create the course (the design agent proposes it) and take it to its delivery."""
+def start(project: Project, title: str, hours: float, code: str | None, intro: bool, summary: bool, notes: str, rounds: int,
+          log: Log, mirror: Callable[[str], None], pause: Callable[[Path], None] | None = None) -> dict:
+    """Create the course, wait for the person to drop the reference material (`pause`), let the design agent propose it and
+    take it to its delivery."""
     code = course_code(title, code)
     if (project.course_dir(code) / "course.yaml").exists():
         raise HandoffError(t("handoff", "course_exists", code=code))
     if (config.effective("delivery", project).value.get("client_review") or {}).get("required"):
         raise HandoffError(t("handoff", "client_review_required", code=code))
     log(t("handoff", "start_line", code=code, who=HANDOFF.name))
+    folder = new.create(project, title, hours, code=code, intro=intro, summary=summary, notes=notes)
+    log(t("commands", "new_created", path=folder.relative_to(project.root).as_posix(), hours=hours))
+    mirror(code)
+    if pause:
+        pause(folder)
     hours_text = int(hours) if float(hours).is_integer() else hours
-    arguments = " ".join([f'"{title}"', str(hours_text), "--code", code, "--no-material", *flags] + ([notes] if notes else []))
+    arguments = " ".join([f'"{title}"', str(hours_text), "--code", code, "--no-material"])  # the course exists: the agent only designs
     ctx = Context(project, code, rounds, log, lambda: mirror(code))
-    _, session = _agent(ctx, "design", "new-course", arguments, "new-course")
-    if not (project.course_dir(code) / "course.yaml").exists():
-        raise _stuck(ctx, "course_not_created", session)
+    _agent(ctx, "design", "new-course", arguments, "new-course")
     return proceed(ctx)
 
 

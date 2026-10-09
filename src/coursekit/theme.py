@@ -18,6 +18,7 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from coursekit import config
 from coursekit.i18n import t
 from coursekit.project import Project
 from coursekit.util import edit_yaml, save_yaml
@@ -391,17 +392,43 @@ def from_css(base: str, overrides: str, source: str, digest: str) -> dict:
     }
 
 
-def import_creator(project: Project, course: dict | None, file: Path) -> tuple[Path, dict]:
+def source(project: Project) -> str:
+    """Where the theme of the creator backend comes from: `tenant_default` (the default theme of the organization) or `branding`
+    (made from the material in theme/branding/). project.yaml › theme › source."""
+    return str(((config.project_data(project).get("theme") or {}).get("source")) or "tenant_default")
+
+
+def branding_dir(project: Project) -> Path:
+    return project.theme_dir / "branding"
+
+
+def has_branding(project: Project) -> bool:
+    folder = branding_dir(project)
+    return folder.is_dir() and any(p.is_file() and not p.name.startswith(".") for p in folder.rglob("*"))
+
+
+def needs_branding(project: Project) -> bool:
+    """The project has no theme tokens from a platform theme or a stylesheet yet and its look comes from brand material: with the
+    html backend always, with creator when the theme is to be made from the branding."""
+    backend = ((config.project_data(project).get("assembly") or {}).get("backend")) or "creator"
+    return status(project).state != "derived" and (backend == "html" or source(project) == "branding")
+
+
+BASE_LAYOUT = "base layout"
+
+
+def import_creator(project: Project, course: dict | None, file: Path | None) -> tuple[Path, dict]:
     """Convert a saved get_theme result, or the stylesheet of the html backend (.css), into the tokens of the project (or of the
-    course) and write tokens.json and tokens.css."""
-    if not file.is_file():
+    course) and write tokens.json and tokens.css. Without a file (html backend) the tokens are those of the base layout alone."""
+    if file is not None and not file.is_file():
         raise ThemeError(t("theme", "file_missing", path=file.as_posix()))
-    if file.suffix.lower() == ".css":
+    if file is None or file.suffix.lower() == ".css":
         from importlib import resources
 
         base = resources.files("coursekit.templates.html").joinpath("styles", "base.css").read_text(encoding="utf-8")
-        text = file.read_bytes()
-        tokens = from_css(base, text.decode("utf-8", errors="replace"), file.name, hashlib.sha256(text).hexdigest()[:12])
+        text = file.read_bytes() if file is not None else b""
+        tokens = from_css(base, text.decode("utf-8", errors="replace"), file.name if file is not None else BASE_LAYOUT,
+                          hashlib.sha256(text or base.encode("utf-8")).hexdigest()[:12])
     else:
         try:
             response = json.loads(file.read_text(encoding="utf-8"))

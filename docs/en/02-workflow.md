@@ -67,16 +67,18 @@ coursekit handoff "Strong passwords" 2 --code PWD   # a new course, from its tit
 coursekit handoff PWD                               # carry on a course that stopped
 ```
 
-`--rounds` sets the attempts. `--code`, `--no-intro`, `--no-summary` and `--notes` are passed to `/new-course` (handoff always adds `--no-material`); they only make sense when creating the course, and when carrying on coursekit refuses them (exit code 2).
+`--rounds` sets the attempts. `--code`, `--no-intro`, `--no-summary` and `--notes` create the course the way [`coursekit new`](03-commands.md#coursekit-new) does; they and `--no-pause` only make sense when creating it, and when carrying on coursekit refuses them (exit code 2).
+
+The only pause is at the start: once the course folders exist, in a terminal, it waits for you to drop the reference material of the course (`courses/<CODE>/brief/`) and press Enter. `--no-pause` skips it; without a terminal it never waits. When the look of the project comes from brand material that is not there yet (html backend, or creator with `theme.source: branding`), the pause also tells you to drop it in `theme/branding/`. After that it goes on by itself, and it never asks about the theme: it follows `theme.source`.
 
 | Status of the course | What handoff does |
 |---|---|
-| (new) | The design agent proposes the design (`/new-course`, without asking for reference material). |
+| (new) | coursekit creates the course folders and waits for the reference material (see above); then the design agent proposes the design (`/new-course` on the existing course; it does not ask for material). |
 | `design` | If `design/matrix.json` does not exist yet, the design agent exports the proposal (`/design-change`). Then it refreshes and validates the export (`/approve-design`); coursekit signs the design as **Coursekit Handoff**. If it cannot be signed, the design agent fixes it and it tries again. |
 | `design_approved`, `writing` | The writer agent writes each unit until it verifies. |
 | `ai_review` | The reviewer agent reviews each unit. If the `<!-- result: ... -->` line of its report says `not_ready` (see [AI review](#4-ai-review)), the writer fixes the unit and it is reviewed again. With `review.ai: skip` this stage does not happen: the units are already `reviewed`. |
 | `editorial_review` | coursekit signs each unit as Coursekit Handoff. |
-| `media` | coursekit extracts the media manifest. If a pending asset is of a type that uses the theme (`uses_theme`) and the design tokens are not derived (missing or written by hand), the design agent defines the theme (`/define-theme`); the media agent produces the assets (`/produce-media`); the assembly agent assembles (`/assemble`). |
+| `media` | coursekit extracts the media manifest. If a pending asset is of a type that uses the theme (`uses_theme`) and the design tokens are not derived (missing or written by hand), the design agent defines the theme (`/define-theme`) following `project.yaml › theme.source` and the material in `theme/branding/`, without asking; the media agent produces the assets (`/produce-media`); the assembly agent assembles (`/assemble`). |
 | `assembly` | The assembly agent delivers (`/deliver`). |
 
 - **Signatures.** Every approval it gives is by `Coursekit Handoff <handoff@coursekit.local>` and carries `via: handoff` in `course.yaml › approvals`, and the commit has that author, so it is never mistaken for a person's. The agents still cannot sign nor run `coursekit handoff`: the signature is given by coursekit, not by them.
@@ -359,8 +361,8 @@ The graphics, simulations and videos of a course use the colours and fonts of it
 
 What `/define-theme [CODE]` does (design role, skill `theme-definition`):
 
-1. Looks at `coursekit theme show` to see whether the tokens already come from a platform theme (if so, it asks before redoing them) and reads the brand material in `brief/` for colours, fonts and logos.
-2. Lists the themes of the platform and you choose one or create a new one: from nothing, from a preset or as a copy of an existing one. A change to a theme changes every content that uses it, so to change only one course the agent copies the theme and links the copy.
+1. Looks at `coursekit theme show` to see whether the tokens already come from a platform theme (if so, it asks before redoing them) and reads the brand material for colours, fonts and logos: `theme/branding/` (logos, font files, guidelines, colour lists) and `brief/`. The choice made when the project was created is `project.yaml › theme.source`.
+2. With `tenant_default` it takes the theme the platform marks as default (`isDefault`) and does not create or change anything. With `branding` it makes the theme from `theme/branding/` (without material, it uses the default one and says so). In a session with a person, or when the person asks for something else, it lists the themes of the platform and you choose one or create a new one: from nothing, from a preset or as a copy of an existing one. A change to a theme changes every content that uses it, so to change only one course the agent copies the theme and links the copy.
 3. Adapts it with the brand colours and fonts (`update_theme`) and reports the platform's warnings.
 4. Saves the result of `get_theme` to `.cache/theme/get_theme.json` and runs `coursekit theme import .cache/theme/get_theme.json`. That writes `theme/tokens.json` and `theme/tokens.css` with an `origin`: theme id, name, version and date. It prints the notes and the contrast of each colour pair; if a pair is below the minimum the colour is fixed in the platform and imported again, never edited in the tokens.
 5. Summarises the result for you. **You validate the theme as you validate the design.**
@@ -387,7 +389,7 @@ The list of types that need tokens is `uses_theme` in the `media` configuration 
 
 Notes: if the platform theme has a dark mode, the tokens are those of the light mode. Softer text, surfaces, line, radius, spacing and shadow do not exist in the platform theme; coursekit derives them and the import lists them.
 
-With the `html` assembly backend there is no platform theme. The tokens are derived from the CSS variables of the stylesheet `theme/maqueta.css` laid over the base layout of the package (`--color-accent`, `--color-text`, `--font-family`, `--radius`...). `/define-theme` writes or adapts that stylesheet and runs `coursekit theme import theme/maqueta.css`; the tokens carry as origin the stylesheet and its fingerprint. The package is styled with the base layout, then the tokens, then `theme/maqueta.css` of the project and `courses/<CODE>/theme/maqueta.css` of the course if it exists, which may restyle anything.
+With the `html` assembly backend there is no platform theme. The tokens are derived from the CSS variables of the stylesheet `theme/maqueta.css` laid over the base layout of the package (`--color-accent`, `--color-text`, `--font-family`, `--radius`...). `/define-theme` writes or adapts that stylesheet from the material in `theme/branding/` and runs `coursekit theme import theme/maqueta.css` (with no stylesheet and no material, `coursekit theme import` without a file derives the tokens from the base layout); the tokens carry as origin the stylesheet and its fingerprint. The package is styled with the base layout, then the tokens, then `theme/maqueta.css` of the project and `courses/<CODE>/theme/maqueta.css` of the course if it exists, which may restyle anything.
 
 ## Changes after approval
 
