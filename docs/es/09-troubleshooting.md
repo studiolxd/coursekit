@@ -26,7 +26,7 @@ Imprime qué hay instalado y configurado en este equipo para el proyecto actual.
 | `hooks de git` / `no es un repositorio git` | `info` cuando la carpeta no es un repositorio git. En otro caso, los hooks (`.githooks`) no están activos. Solución: `coursekit setup` |
 | `MarkItDown (coursekit brief)` | la biblioteca que convierte los documentos del brief. Solución: reinstala coursekit |
 | `Node (enlaces web de brief/links.md)` | solo hace falta para descargar las URLs del brief. Solución: `coursekit setup --media` |
-| `constructor del backend html (@studiolxd/scorm y esbuild)` | solo aparece cuando el proyecto monta con el backend html. `ok` cuando el constructor está instalado en el almacén de coursekit; `info`, con la solución tras la flecha, cuando no lo está. Solución: `coursekit setup` (necesita Node y npm). Mira [El backend html](#el-backend-html) |
+| `constructor del backend html (@studiolxd/scorm y esbuild)` | solo aparece cuando `project.yaml › assembly.backend` es html (un curso que usa html por su propio `course.yaml` no lo hace aparecer). `ok` cuando el constructor está instalado en el almacén de coursekit; `info`, con la solución tras la flecha, cuando no lo está. Solución: `coursekit setup` (necesita Node y npm). Mira [El backend html](#el-backend-html) |
 
 ### Herramientas de agente
 
@@ -57,7 +57,7 @@ Imprime qué hay instalado y configurado en este equipo para el proyecto actual.
 
 | Comprobación | Significado y solución |
 |---|---|
-| `tokens derivados del theme de la plataforma` | `ok`: existe `theme/tokens.json` y lleva el `origin` de un theme de la plataforma (importado con `coursekit theme import`) |
+| `tokens derivados del theme de la plataforma` | `ok`: existe `theme/tokens.json` y lleva el `origin` de un theme de la plataforma o, con el backend html, de una hoja de estilos (importado con `coursekit theme import`) |
 | `sin tokens de diseño (theme/tokens.json)` | `info`: el proyecto aún no tiene tokens. Solución: `/define-theme` antes de producir multimedia |
 | `tokens escritos a mano, no derivados de la plataforma` | `info`: existe `theme/tokens.json` pero no tiene origen de la plataforma. Solución: `/define-theme` antes de producir multimedia |
 
@@ -65,7 +65,7 @@ La comprobación mira los tokens del proyecto (`theme/`); un curso con theme pro
 
 ### Multimedia
 
-Opcional. Instala lo que falte con `coursekit setup --media`: `ffmpeg`, `vhs`, `asciinema` (no disponible en Windows; las demos de terminal usan VHS), `piper`, `stable-ts` y `PIPER_VOICE` (ruta de la voz de borrador). Las cuatro claves de API (`ELEVENLABS_API_KEY`, `AZURE_SPEECH_KEY`, `GOOGLE_TTS_API_KEY`, `MAGNIFIC_API_KEY`) muestran `ok` si están definidas e `info` si no. Además muestra dos líneas sobre lo que se instala una vez por equipo ([Dónde están las herramientas](07-media.md#dónde-están-las-herramientas)):
+Opcional. Instala lo que falte con `coursekit setup --media`: `ffmpeg`, `vhs`, `asciinema` (no disponible en Windows; las demos de terminal usan VHS), `piper`, `stable-ts` y `PIPER_VOICE` (ruta de la voz de borrador). Las cuatro claves de API (`ELEVENLABS_API_KEY`, `AZURE_SPEECH_KEY`, `GOOGLE_TTS_API_KEY`, `MAGNIFIC_API_KEY`) muestran `ok` si están definidas e `info` si no; con `AZURE_SPEECH_KEY` definida y sin `AZURE_SPEECH_REGION`, una línea `falta` `AZURE_SPEECH_REGION` pide la región de tu recurso de Azure Speech. Además muestra dos líneas sobre lo que se instala una vez por equipo ([Dónde están las herramientas](07-media.md#dónde-están-las-herramientas)):
 
 | Comprobación | Significado y solución |
 |---|---|
@@ -179,7 +179,7 @@ El backend html construye un paquete SCORM por unidad con `coursekit assemble bu
 | Mensaje | Significado y solución |
 |---|---|
 | ``<CODE> se monta con el backend html: `<acción>` es del backend creator; usa `coursekit assemble build` `` | Ejecutaste `assemble plan`, `diff`, `applied` o `link` en un curso del backend html. Son de creator. Construye con `coursekit assemble build <CODE> --unit N` |
-| ``<CODE> se monta con el backend «<backend>»: `build` es del backend html (project.yaml › assembly.backend o course.yaml › assembly.backend)`` | Ejecutaste `assemble build` en un curso del backend creator. Si quieres este curso en html, pon `assembly.backend: html` en su `course.yaml` (o en `project.yaml` para todos los cursos) y ejecuta `coursekit setup` para preparar el constructor |
+| ``<CODE> se monta con el backend «<backend>»: `build` es del backend html (project.yaml › assembly.backend o course.yaml › assembly.backend)`` | Ejecutaste `assemble build` en un curso del backend creator. Si quieres este curso en html, pon `assembly.backend: html` en su `course.yaml` (o en `project.yaml` para todos los cursos). El primer `coursekit assemble build` prepara el constructor; `coursekit setup` lo hace por adelantado solo cuando `project.yaml` dice html |
 | `coursekit: assemble <acción> necesita --unit` | `plan`, `diff`, `applied` y `link` (backend creator) trabajan sobre una unidad: añade `--unit N`. Solo `build` puede ejecutarse sin `--unit` (todas las unidades) |
 | `<lección>: <BRICK>: este componente aún no está disponible en el backend html (los juegos llegarán en una entrega posterior)` | La unidad usa un juego (`word-search`, `wordle`, `hangman`, `pasapalabra`, `memory` o `trivial`), por ejemplo `U1-S3: MEMORY: ...`. `assemble build` lo rechaza y `coursekit verify` lo señala como `ensamblado: ...`. Sustitúyelo en el `.md` por otra actividad (una pregunta o una directiva interactiva) o monta ese curso en creator |
 | `el paquete no contiene N palabra(s) del contenido: …` | La construcción comprueba que todas las palabras que debe leer quien aprende en `content.md` y `assessment.md` están en la página, y lista las primeras que faltan. La causa habitual es una línea que el formato no representa: por ejemplo una pregunta sin su clave (`pregunta:`), una línea de una directiva en un sitio que no le corresponde o una clave desconocida. Localiza esas palabras en la unidad, corrige el `.md` como describe [Contenido](06-content.md) y construye de nuevo. Nunca edites el resultado |
@@ -189,6 +189,25 @@ El backend html construye un paquete SCORM por unidad con `coursekit assemble bu
 | `constructor del backend html (@studiolxd/scorm y esbuild)` en `coursekit doctor` | No es un fallo: la línea es `info` mientras no exista el constructor. Ejecuta `coursekit setup` |
 
 Los paquetes deben probarse en el LMS al que se van a entregar (o en SCORM Cloud) antes de entregarlos: la construcción comprueba el contenido, no cómo registra el seguimiento un LMS concreto. La carpeta de vista previa abierta desde el disco, sin LMS, guarda su estado solo en memoria.
+
+### El backend creator: plan, diff y applied
+
+`coursekit assemble plan`, `diff` y `applied` (mira [El flujo de montaje](08-assembly-and-delivery.md#el-flujo-de-montaje)); en `coursekit verify` los mismos errores empiezan por `ensamblado:`. `<KEY>` es la clave de una lección (`U1-S2`, `U1-E1.1`) y `<N>` un número.
+
+| Mensaje | Significado y solución |
+|---|---|
+| `<KEY>: directiva desconocida ':::<nombre>'` | Un `:::nombre` del `.md` no está en el registro de directivas. Corrige el nombre ([Contenido](06-content.md#directivas)); si creator tiene un brick nuevo, ejecuta `/sync-directives` |
+| `<KEY>: :::<nombre> necesita exactamente una opción correcta` | Un `single-choice` no tiene opción correcta, o tiene más de una. Marca exactamente una con `[x]` |
+| `<KEY>: :::<nombre> no tiene paneles: cada uno empieza con una línea '#### Título'` | Una directiva de paneles (`accordion`, `tabs`, `carousel`, `timeline`, `flashcards`...) no tiene líneas `#### Título`. Escribe una por panel |
+| `Apartado <N> no está en el diseño` | `content.md` tiene un apartado que el diseño no tiene. Quítalo, o pide un cambio de diseño (`/design-change`) y ejecuta `coursekit sync` |
+| `<KEY>: lección sin contenido` | Aviso: el apartado no tiene texto. Escríbelo |
+| `labelled-graphic: la imagen '<título>' aún no está producida` | Aviso: la imagen del gráfico con puntos no está producida (o no está subida, con creator). Prodúcela, o acepta la lista simple de puntos |
+| ``falta <fichero>: ejecuta antes `coursekit assemble plan``` | `diff` o `applied` antes del plan. Ejecuta `coursekit assemble plan CODE --unit N` |
+| `la lección <KEY> no está en el plan` | `applied --lesson` con una clave que el plan no tiene. Usa las claves de `assembly/unit-NN.plan.json` |
+| `<N> ids de brick pero el plan tiene <M> bricks en <KEY>` | El número de `--brick-ids` no es el de bricks de la lección: algo no se aplicó, o el plan cambió. Revisa la lección en creator, ejecuta `plan` y `diff` de nuevo y registra los ids en orden |
+| `coursekit: link necesita --content-id, --preview o --review` · `coursekit: applied necesita --lesson y --lesson-id (o --content)` | Falta una opción (código de salida 2) |
+| `coursekit: unidad <N> no encontrada` | La unidad no está en `course.yaml`; mira `coursekit status CODE` |
+| `no existe <ruta>: guarda en ese fichero el resultado de list_brick_types (/sync-directives lo hace)` · `<ruta> no parece un resultado de list_brick_types (falta 'categories')` | `coursekit directives check` necesita el resultado completo de `list_brick_types` guardado como `.cache/list_brick_types.json`. Ejecuta `/sync-directives` |
 
 ### Palabras del contenido del otro idioma, verdadero o falso y rellenar huecos
 
@@ -202,6 +221,30 @@ Los tipos de recurso, las claves de las directivas (`pregunta:`, `respuesta:`…
 | `:::fill-in-the-blank necesita huecos escritos como {respuesta} en 'pregunta:'` | La línea `pregunta:` no tiene ningún hueco. Escribe cada hueco entre llaves dentro de la frase: `pregunta: Una contraseña robusta es {larga}.` (varias respuestas aceptadas: `{larga/extensa}`). La clave es la del idioma del curso |
 | `elementos de :::pasapalabra: '- A (empieza\|contiene): definición :: RESPUESTA'` | Un elemento del rosco no sigue la forma letra, modo entre paréntesis, definición, `::`, respuesta. El modo es `(empieza)` o `(contiene)` en español y `(starts)` o `(contains)` en inglés |
 
+### Locución, subtítulos y registros de multimedia
+
+Estos son los mensajes de `coursekit voice`, `tts`, `subtitles` y `media`; el flujo de la locución está en [Multimedia](07-media.md#proveedores-de-voz). `<programa>` es `ffmpeg`, `piper` o `stable-ts`, y `<host>` el servicio (por ejemplo `api.elevenlabs.io`).
+
+| Mensaje | Significado y solución |
+|---|---|
+| ``hay varios proveedores de voz disponibles (<lista>): elige uno para el curso con `coursekit voice set <CODE> <provider> [--voice …]``` | `tts` encontró varios proveedores configurados y el curso no tiene ninguno elegido. Ejecuta el comando que indica |
+| `este curso usa <etiqueta> pero no está configurado aquí (<CLAVES> en .env)` | La voz del curso está fijada (`course.yaml › media.voice`) pero este equipo no tiene sus claves. Ponlas en `.env` (`coursekit setup --media` las pide), o elige otro proveedor con `coursekit voice set` |
+| `no hay ningún proveedor de voz configurado (claves de ElevenLabs, Azure o Google, o Piper, en .env)` | No hay ningún proveedor disponible. Define una clave en `.env`, o instala la voz de borrador con `coursekit setup --media` |
+| `hacen falta ELEVENLABS_API_KEY y una voz (ELEVENLABS_VOICE_ID o --voice)` | ElevenLabs no tiene voz por defecto: define `ELEVENLABS_VOICE_ID` o pasa `--voice`, o fíjala para el curso con `coursekit voice set CODE elevenlabs --voice ID` |
+| `define PIPER_VOICE en .env (ruta a una voz .onnx) o pasa --voice` | Piper necesita un fichero de voz. `coursekit setup --media` descarga una y define `PIPER_VOICE` |
+| `piper no está instalado (coursekit setup --media)` · `stable-ts no está instalado (coursekit setup --media)` | Ejecuta `coursekit setup --media` (necesita `uv`) |
+| `<programa> no está instalado o no se encuentra en el PATH (coursekit setup --media)` | Falta `ffmpeg` (unir las partes del MP3, pasar Piper a MP3) u otro programa, o está instalado pero no en el `PATH` de esta terminal. Ejecuta `coursekit setup --media` y abre una terminal nueva |
+| `<programa> terminó con error (código <N>)` | El programa se ejecutó y falló. Ejecuta el mismo programa a mano para leer su propio mensaje. `stable-ts` descarga su modelo la primera vez, así que necesita red |
+| `<host> respondió <estado> <motivo>: revisa la clave, la región y la voz configuradas` | El servicio de voz rechazó la petición. `401` o `403`: clave incorrecta o (Azure) una región que no es la del recurso (`AZURE_SPEECH_REGION`); `404`: la voz no existe (`ELEVENLABS_VOICE_ID`, `AZURE_SPEECH_VOICE`, `GOOGLE_TTS_VOICE` o `--voice`); `429`: cuota o créditos agotados. Si falla, no se escribe nada |
+| `no se pudo conectar con <host>: <motivo>` | Sin red, o un proxy que inspecciona TLS: mira [Proxy corporativo y certificados](#proxy-corporativo-y-certificados) |
+| `no existe el fichero <ruta>` | La ruta de `--in`, `--audio` o `--text` es incorrecta (son relativas a donde ejecutas el comando) |
+| `coursekit: voice set necesita CODE y PROVIDER` | `coursekit voice set PWD azure`; con `voice list` el curso es opcional |
+| ``no se encuentra el recurso <ID> (ejecuta antes `coursekit media extract`)`` | El manifiesto no tiene ese id: ejecuta `coursekit media extract CODE` y revisa el id (son posicionales) |
+| `el estado debe ser uno de ['pending', 'scripted', 'produced', 'uploaded']` | `media set --status` acepta uno de esos cuatro; `orphaned` lo pone `extract` |
+| `--download-title y --download-asset-path necesitan --download FILE` | Añade `--download FICHERO` al mismo comando |
+| `coursekit: set necesita el id de un recurso` · `coursekit: esta acción necesita un código de curso` | Falta un argumento (código de salida 2): `coursekit media set CODE ID ...` |
+| `<ID>: sus especificaciones piden un fichero descargable (PDF…): coursekit media set … --download media/files/<file>` | Aviso de `media plan`: registra el fichero con `--download` (mira [Multimedia](07-media.md#el-manifiesto-multimedia)) |
+
 ### Faltan herramientas de multimedia
 
 Ejecuta `coursekit setup --media`. En macOS necesita [Homebrew](https://brew.sh); en Windows necesita `winget`; en Linux solo imprime qué instalar (`sudo apt install ffmpeg nodejs npm asciinema`, más [vhs](https://github.com/charmbracelet/vhs)). Además necesita `uv` para instalar `piper` y `stable-ts`, y `npm` para el espacio de Remotion. Si falla la descarga de la voz, vuelve a ejecutarlo cuando tengas conexión.
@@ -214,7 +257,7 @@ Lo mismo ocurre si `npm install` falla en el almacén. Para tener la copia compa
 
 ### Faltan las dependencias de Remotion
 
-`coursekit doctor` muestra `missing  dependencias de Remotion (tools/remotion/node_modules)` cuando la carpeta no existe o cuando es un enlace a un almacén que ya no está: se quitó el almacén (por ejemplo con `coursekit uninstall`), se movió, o `COURSEKIT_HOME` apunta a otro sitio distinto del que usabas al instalar. Ejecuta `coursekit setup --media`: las instala de nuevo en el almacén si hace falta y repara el enlace, sin tocar las fuentes de `tools/remotion`. Si cambiaste `COURSEKIT_HOME` a propósito, asegúrate de que está definida en la terminal antes de ejecutarlo.
+`coursekit doctor` muestra `falta  dependencias de Remotion (tools/remotion/node_modules)` cuando la carpeta no existe o cuando es un enlace a un almacén que ya no está: se quitó el almacén (por ejemplo con `coursekit uninstall`), se movió, o `COURSEKIT_HOME` apunta a otro sitio distinto del que usabas al instalar. Ejecuta `coursekit setup --media`: las instala de nuevo en el almacén si hace falta y repara el enlace, sin tocar las fuentes de `tools/remotion`. Si cambiaste `COURSEKIT_HOME` a propósito, asegúrate de que está definida en la terminal antes de ejecutarlo.
 
 ### El almacén de coursekit ocupa mucho espacio
 
@@ -265,7 +308,7 @@ La carpeta de Remotion en el almacén se nombra con un hash del `package.json` d
 
 ### El curso está en pausa o la revisión del cliente bloquea la entrega
 
-Un curso en pausa rechaza los comandos que lo modifican (`write`, `review`, `reviewed`, `approve`, `assemble`, `sync` sin `--check`, `media set`, `client` y los comandos de entrega); los comandos de lectura, como `status`, siguen funcionando. La revisión del cliente (cuando el proyecto la exige) rechaza la entrega. Estos son los mensajes y qué hacer; `<CODE>` representa el código del curso (por ejemplo `PWD`).
+Un curso en pausa rechaza los comandos que lo modifican (`write`, `review`, `reviewed`, `approve`, `assemble`, `sync` sin `--check`, `media set`, `client`, los comandos de entrega y `run` de un comando para ese curso); los comandos de lectura, como `status`, siguen funcionando. La revisión del cliente (cuando el proyecto la exige) rechaza la entrega. Estos son los mensajes y qué hacer; `<CODE>` representa el código del curso (por ejemplo `PWD`).
 
 | Mensaje | Significado y solución |
 |---|---|
@@ -281,9 +324,39 @@ Un curso en pausa rechaza los comandos que lo modifican (`write`, `review`, `rev
 | `<CODE> no tiene ninguna ronda abierta con el cliente` | `approve` o `changes` sin ninguna ronda abierta. `coursekit status <CODE>` muestra la última ronda |
 | `coursekit: approve necesita --by con el nombre de quien aprueba` | Añade `--by "Nombre"`: el nombre de la persona que aprueba en nombre del cliente |
 | `coursekit: skip necesita --reason` | Añade `--reason "..."` |
-| `aviso: <CODE> está en «<estado>», no en un estado de entrega (assembly, client_review): el paquete se registra, pero el curso no se marca como entregado` | No es un error: `delivery add` registró el paquete, pero el curso solo pasa a `delivered` desde `assembly` o `client_review`. Normalmente el curso no estaba montado o retrocedió a un estado anterior. Corrige la causa y vuelve a registrar los paquetes con `delivery add` (o comprueba que `coursekit status <CODE>` muestra lo que esperas). Con el backend html, `assemble build` no lleva el curso a `assembly`, así que este aviso aparece en un curso que sigue en `media` |
+| `aviso: <CODE> está en «<estado>», no en un estado de entrega (assembly, client_review): el paquete se registra, pero el curso no se marca como entregado` | No es un error: `delivery add` registró el paquete, pero el curso solo pasa a `delivered` desde `assembly` o `client_review`. Normalmente el curso no estaba montado o retrocedió a un estado anterior. Corrige la causa y vuelve a registrar los paquetes con `delivery add` (o comprueba que `coursekit status <CODE>` muestra lo que esperas). Con el backend html, `assemble build` lleva el curso de `media` a `assembly` solo cuando todas las unidades están construidas, así que este aviso aparece si alguna unidad aún no se construyó |
 
 Si la revisión del cliente no es obligatoria y no la quieres, no hay nada que hacer: con `client_review.required: false` el curso se puede entregar desde `assembly`. Mira [Configuración](04-configuration.md#delivery-exportación-scorm-y-revisión-del-cliente).
+
+### Registrar un paquete de entrega
+
+`coursekit delivery add` comprueba el fichero antes de registrar nada.
+
+| Mensaje | Significado y solución |
+|---|---|
+| `<fichero>.zip: imsmanifest.xml no está en la raíz del zip` | El zip tiene los ficheros dentro de una carpeta (se comprimió desde la carpeta superior). Comprime el contenido para que `imsmanifest.xml` quede en la raíz, o vuelve a tomar el paquete de la exportación |
+| `<fichero>.zip: no es un fichero zip válido` | El fichero no es un zip, está dañado (una descarga interrumpida), o la ruta no existe. Descárgalo o constrúyelo de nuevo |
+| `el paquete debe estar en <…/courses/PWD/delivery>` | `--file` debe apuntar dentro de la carpeta de entrega del curso. Mueve el zip allí, con el nombre de `coursekit delivery name` |
+| `no se encuentra la unidad <N>` | `--unit` no es una unidad del curso |
+| `coursekit: delivery add necesita --file` · `coursekit: delivery <acción> necesita --unit y --version` | Falta una opción (código de salida 2) |
+| `registrado <fichero> · unidades pendientes de la v<versión>: [2, 3]` | No es un error: las unidades indicadas aún no tienen paquete de esa versión. El curso pasa a `delivered` cuando todas lo tienen |
+
+Registrar el mismo paquete dos veces añade una segunda entrada a `course.yaml › deliveries`; no hace daño, pero no hace falta.
+
+### Paradas del handoff
+
+`coursekit handoff` termina con `handoff parado. <motivo>` y `Para seguir donde se quedó, una vez resuelto:  coursekit handoff <CODE>` (código de salida 1). Los motivos que no son una unidad que no verifica (mira [Problemas al firmar](#problemas-al-firmar)):
+
+| Motivo | Significado y solución |
+|---|---|
+| `<CODE>: el proyecto exige la revisión del cliente para entregar (client_review.required) y el handoff no la hace` | El handoff nunca abre una revisión del cliente. En un curso nuevo se niega antes de crear nada. Pon `client_review.required: false` en `config/delivery.yaml` (o en el `course.yaml`), o usa el flujo normal. Un curso cuya revisión ya está aprobada u omitida continúa |
+| ``<CODE>: el curso está en pausa; continúa con `coursekit resume <CODE>` y después `coursekit handoff <CODE>``` | Una persona lo pausó. Reanúdalo primero |
+| ``<CODE>: hay una ronda de revisión del cliente abierta; el handoff no la gestiona (`coursekit client <CODE> ...`)`` | Cierra la ronda con `approve` o `changes` ([Revisión del cliente](08-assembly-and-delivery.md#revisión-del-cliente)) y ejecuta el handoff otra vez |
+| `el curso <CODE> ya existe; para continuarlo: coursekit handoff <CODE>` | Un handoff nuevo con un título cuyo código ya existe. Continúa el curso con su código, o pasa otro `--code` |
+| `<CODE>: quedan recursos multimedia sin producir tras los intentos: <ids>` · `<CODE>: el multimedia necesita el theme y no se pudo definir (/define-theme)` | El agente de multimedia no terminó, o no se pudo derivar ningún theme. Lee el registro de la sesión en `.cache/logs/`, corrige la causa (claves, herramientas: `coursekit doctor`) y continúa |
+| `<CODE>: el curso no queda montado tras los intentos (/assemble)` · `<CODE>: el curso no queda entregado tras los intentos (/deliver)` | Ejecuta `/assemble` o `/deliver` a mano para ver el error, o lee el registro en `.cache/logs/` |
+| `<CODE>: la revisión con IA sigue diciendo «not ready» en la unidad <N> tras corregirla (reviews/unit-NN-ai-review.md)` | Lee el informe de la revisión, corrige la unidad tú y continúa |
+| ``<CODE>: el paso «<estado>» no avanzó nada; míralo con `coursekit status <CODE>``` | El agente terminó sin cambiar el estado. Mira `coursekit status` y el registro |
 
 ## Cambiar el idioma
 
@@ -310,9 +383,9 @@ El idioma de la interfaz no toca el contenido. Las palabras de `content.md` (enc
 
 ## Preguntas frecuentes
 
-**¿Puede firmar un agente por mí?** No. `coursekit approve` está denegado en los ajustes generados de Claude Code y opencode, y las instrucciones del proyecto lo prohíben para cualquier herramienta. Usa `!` en el chat si quieres firmar sin salir de él. Lo mismo vale para `coursekit client` (rondas de revisión del cliente), `coursekit hold` y `coursekit resume`.
+**¿Puede firmar un agente por mí?** No. `coursekit approve` está denegado en los ajustes generados de Claude Code y opencode, y las instrucciones del proyecto lo prohíben para cualquier herramienta. Usa `!` en el chat si quieres firmar sin salir de él. Lo mismo vale para `coursekit client` (rondas de revisión del cliente), `coursekit hold`, `coursekit resume`, `coursekit handoff` y `coursekit reviewed --by`.
 
-**¿Puede ejecutarse todo el proceso sin mí?** Sí: `coursekit handoff "<título>" <horas>`. Firma como Coursekit Handoff y nadie revisa el curso; mira [Flujo de trabajo](02-workflow.md#modo-handoff). Si se para, dice por qué; corrígelo y ejecuta `coursekit handoff <CODE>` para continuar.
+**¿Puede ejecutarse todo el proceso sin mí?** Sí: `coursekit handoff "<título>" <horas>`. Firma como Coursekit Handoff y nadie revisa el curso; mira [Flujo de trabajo](02-workflow.md#modo-handoff). No hace la revisión del cliente: con `client_review.required: true` se niega a empezar, y se para en un curso en pausa o con una ronda abierta. Si se para, dice por qué ([Paradas del handoff](#paradas-del-handoff)); corrígelo y ejecuta `coursekit handoff <CODE>` para continuar.
 
 **¿Es obligatoria la revisión del cliente?** No por defecto. Lo es si el proyecto lo dice (`client_review.required: true` en `config/delivery.yaml`) o el curso (`delivery › client_review › required` en su `course.yaml`). Mira [Flujo de trabajo](02-workflow.md#revisión-del-cliente-opcional).
 

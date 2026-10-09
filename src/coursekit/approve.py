@@ -27,7 +27,7 @@ from coursekit import identity
 from coursekit.fingerprint import changed_since_review
 from coursekit.i18n import t
 from coursekit.lang import format_number
-from coursekit.states import history_entry, now, set_unit_status
+from coursekit.states import WRITING_PHASE, derive_course_status, history_entry, now, set_unit_status
 from coursekit.sync import sync
 from coursekit.util import edit_yaml, save_yaml, sha256_file
 from coursekit.verify import verify_unit
@@ -53,7 +53,14 @@ def _record(course_dir: Path, entry: dict, status: str | None, note: str) -> Non
     if data.get("approvals") is None:
         data["approvals"] = []
     data["approvals"].append(entry)
-    if status:
+    if status == "design_approved":
+        # Signed again with the units already moving: the course keeps the progress they have (derived from them); from assembly
+        # onwards the status is not recalculated, so it stays.
+        if data["status"] == "design":
+            data["status"] = status
+        elif data["status"] in WRITING_PHASE:
+            data["status"] = derive_course_status(data.get("units") or [], status)
+    elif status:
         data["status"] = status
     data.setdefault("history", []).append(history_entry(data["status"], note, entry["by"]))
     save_yaml(ry, data, path)

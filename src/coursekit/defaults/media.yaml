@@ -4,8 +4,7 @@
 #   env: VAR   the variable is set (in .env or the shell); a list [A, B] needs all of them
 #   bin: CMD   the command is installed
 #   mcp: TOOL  the agent has that MCP tool (only the agent can check it)
-#   media: X   X is installed in the media environment (`coursekit setup --media`):
-#              a command in .venv-media/bin or a Python package in .venv-media
+#   media: X   the command X is on the PATH (`coursekit setup --media` installs piper and stable-ts)
 #   path: P    the path exists inside the project (e.g. tools/remotion/node_modules)
 #   none       always available (the agent does it itself)
 # `only:` limits an option to some content (e.g. terminal) — the agent decides from the

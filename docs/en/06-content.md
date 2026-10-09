@@ -115,7 +115,7 @@ The format words below come from `src/coursekit/lang/en.yaml` and `es.yaml`. `ve
 - The number, order and title of each section come from the approved design. The `*(min. …)*` part is optional and informative. The dash can be `—` or `-`.
 - Each section becomes one lesson. Use `###` for subsections; prose, lists, Markdown tables and code blocks are converted as they are.
 - Every section has a `kind`: `intro` (first section, when `design.intro_section` is `true`), `summary` (last section, when `design.summary_section` is `true`), `content` (it develops objectives) or `activities` (no objectives: learning activities).
-- Complete prose, no bare lists, **no emojis** (see the allowed symbols below).
+- Complete prose, no bare lists, **no emojis** (see the allowed symbols below). Only the emoji rule is checked by `verify`; the quality of the prose is an editorial rule.
 
 ### Objective tags
 
@@ -126,7 +126,7 @@ Every `content` section ends with one tag per objective it covers, one per line:
 *[Objective U1.2 — Identify]*
 ```
 
-The tag is editorial metadata: it is not published. `verify` reads the ids (`U1.1`) to check that each objective of the unit is covered at least once.
+The tag is editorial metadata: it is not published. `verify` reads the ids (`U1.1`) to check that each objective of the unit is covered at least once. It only requires one tag per `content` section (tags in other kinds of section are not read) and every unit objective tagged somewhere: it does not compare the tags with the objectives the design gives to that section, nor check that an id exists.
 
 ### Media placeholders
 
@@ -144,7 +144,9 @@ The four fields are mandatory. The `<type>` is one of eight resource types, writ
 
 ### What counts as a word
 
-Only text the learner reads counts: the placeholder box (its `>` lines), objective tags, HTML comments and the `:::` lines of directives are left out. The text *inside* a directive does count. Words are separated by whitespace and counted per section; the unit header is not counted.
+Only text the learner reads counts: the placeholder box (its `>` lines, up to the first line that does not start with `>`), objective tags (each on a line of its own), HTML comments and the `:::` lines of directives are left out. The text *inside* a directive does count, and so does a plain blockquote (`> text`). Words are the whitespace-separated tokens of what is left, so a list marker, a `####` or the pipes of a table count as one each. They are counted per section; the unit header is not counted.
+
+`coursekit outline` shows a different, approximate figure: it counts every word of the section without comments, including placeholder boxes, tags and directive names, so it is higher than the figure of `verify`. The number that counts is the one `verify` prints.
 
 ### Resource types and directive keys by language
 
@@ -161,7 +163,7 @@ Some words of the format are written in the language of the course, but the conf
 | `terminal_demo` | `Demo interactiva en terminal` | `Interactive terminal demo` |
 | `audio` | `Audio` | `Audio` |
 
-- In `content.md` you write the **word** of the course language in the placeholder (`> **[MEDIA ASSET — Infographic]**`). Case and surrounding spaces do not matter.
+- In `content.md` you write the **word** of the course language in the placeholder (`> **[MEDIA ASSET — Infographic]**`). Case and surrounding spaces do not matter, but accents do: in a Spanish course `Video` and `Infografia` are errors, only `Vídeo` and `Infografía` are accepted. The dash of the placeholder heading can be `—` or `-`.
 - Everywhere else the **id** is used: `content.placeholder_types` in `config/rules.yaml`, the keys of `types` and the `uses_theme` list in `config/media.yaml` (see [04-configuration.md](04-configuration.md)), and `type` in `media/manifest.yaml › assets`. `coursekit media extract` converts the word to the id, so the manifest is the same whatever the language of the course.
 - A word of the other language is an error: in an English course, `Infografía` fails with `unknown or not allowed placeholder type 'Infografía' (use: Image, Video, Animated GIF, …)`.
 
@@ -170,7 +172,7 @@ The keys of the `key: value` lines inside directives, and the few words some of 
 | Used for | English content | Spanish content |
 |---|---|---|
 | Question text | `question:` | `pregunta:` |
-| Answer of `true-false`; blank of `fill-in-the-blank` | `answer:` | `respuesta:` |
+| Answer of `true-false` | `answer:` | `respuesta:` |
 | Accepted answers of `short-answer` | `answers:` | `respuestas:` |
 | General, correct and incorrect feedback | `feedback:` · `feedback-correct:` · `feedback-incorrect:` | `feedback:` · `feedback-correcto:` · `feedback-incorrecto:` |
 | Image of `labelled-graphic` | `image:` | `imagen:` |
@@ -181,6 +183,10 @@ The keys of the `key: value` lines inside directives, and the few words some of 
 | Mode of a `pasapalabra` item | `(starts)` · `(contains)` | `(empieza)` · `(contiene)` |
 
 The directive **names** (`:::single-choice`, `:::tabs`…) are the same in both languages. A key that belongs to the other language is not ignored: `coursekit assemble plan` and `coursekit verify` fail with `the key 'pregunta:' belongs to the language 'es'; this course uses: …` and list the valid ones. The format reference that the agents read (`.coursekit/docs/content-format.md`) shows the words of the course language. A new language needs `media_types`, `directive_keys` and `directive_words` in its `lang/<code>.yaml` (see `CONTRIBUTING.md`).
+
+### Doubts and VERIFICAR markers
+
+When the writer cannot confirm a fact (a version, a command, an option, a product name) from the reference material in `brief/`, it does not invent it: it leaves `<!-- VERIFICAR: what to check -->` next to the text. It is an HTML comment, so it is not counted as words and is not published. `coursekit verify` does not look for these markers, and a unit passes with them still in: they are a convention between the writer and the reviewer. The reviewer finds each one, resolves it with the material (a claim that contradicts the material is a blocking finding) and removes it. In [handoff mode](02-workflow.md#handoff-mode), where nobody can be asked, the doubts stay written in the units and in the reports. The improvements that change the approach are not applied by the reviewer: they go under "Proposals awaiting a human decision" in `reviews/unit-NN-ai-review.md`, for the person to resolve before signing.
 
 ## Format of `assessment.md`
 
@@ -207,7 +213,11 @@ The summative activities of the unit, in the order they are done. One `##` headi
 | `Attempts and feedback` | `Intentos y retroalimentación` |
 | `Question bank` | `Banco de preguntas` |
 
-The assembly loads only the text under **Instructions for the learner** and the questions under **Question bank** into the platform's assessment lesson; the other subsections document the activity for the team. Put the question directives (see below) in the bank. Every question carries the objective key and feedback.
+The assembly loads only what is under **Instructions for the learner** and **Question bank** (text and directives) into the platform's assessment lesson; the other subsections document the activity for the team. Put the question directives (see below) in the bank. Every question carries the objective key and feedback.
+
+- `verify` does not check the headings of `assessment.md`, but the assembly matches them exactly, with the words of the course language: a misspelled `### Question bank` loads no questions. One assessment lesson is built per `## ASSESSMENT ACTIVITY` heading.
+- `verify` counts every question directive of the file, wherever it is. One placed in another subsection counts for `verify` but never reaches the learner.
+- The pass mark and the attempts are not read from the Markdown: they come from `course.yaml › design.grading` (`passing_score` and `attempts`; see [04-configuration.md](04-configuration.md)). The subsections `Automatic marking and scoring` and `Attempts and feedback` only document the activity. The weights (`unit_tests_weight`, `final_test_weight`) are not read by the assembly either.
 
 ## Directives
 
@@ -277,16 +287,20 @@ Anything that does not follow these shapes fails when the unit is converted (`ve
 | `accordion`, `tabs`, `carousel` | One `#### Title` per panel, tab or slide, followed by Markdown text |
 | `timeline` | `#### <date> — <title>` per milestone (without ` — `, the whole line is the title) + text |
 | `flashcards`, `flashcard-gallery` | `#### Front` + text of the back |
-| `labelled-graphic` | `image: <exact title of the Image placeholder>`, then `#### Point` + text; optional `position: x,y` (0–100) under each point |
+| `labelled-graphic` | `image: <exact title of the image placeholder>`, then `#### Point` + text; optional `position: x,y` (0–100) under each point |
 | `dialog` | `**Character:** line`, one per line |
 | `carousel-quotes` | One quote per paragraph, with `— author` on its last line |
-| `note` | Optional `title: …` line + text |
+| `note` | Optional `title: …` line (default title: `Note`) + text |
 | `highlight` | Text |
 | `quote` | Quote + `— author` on the last line |
 | `word-search`, `wordle`, `hangman` | `- WORD` per line |
 | `memory` | `- card content` per line |
 | `pasapalabra` | `- A (starts): definition :: ANSWER` (or `(contains)`) per line |
 | `trivial` | `#### Category`, then blocks with `question: …` and `- [x]` / `- [ ]` options, separated by a blank line |
+
+The `image:` of a `labelled-graphic` is matched against the title of a resource in `media/manifest.yaml`, so the placeholder must exist in the manifest (run `coursekit media extract` first) and be produced. Otherwise `assemble` only warns (`labelled-graphic: image 'X' not produced yet`) and the graphic has no image. Only the lines before the first `####` are keys of the graphic itself; a `position:` goes under the point it belongs to.
+
+Inside a directive, a line that starts with a lowercase word and a colon (`tip: …`) is read as a key, not as text. In `note`, `highlight`, `quote` and `carousel-quotes` it is silently removed from the published text; in the other directives a key of the other language raises the error described above. Write `Tip:` with a capital or reword the sentence. Keys go on a line of their own, not after a list marker.
 
 ### Question directives
 
@@ -310,11 +324,13 @@ feedback-incorrect: Review the section on length.
 | `sorting` | A list in the right order |
 | `match` | Lines `- term :: definition` |
 | `sorting-groups` | `#### Category` + list of its items |
-| `fill-in-the-blank` | Blanks written in `question:` as `{answer}` (several accepted answers: `{a/b}`) |
+| `fill-in-the-blank` | Blanks written in `question:` with the correct word in braces, as `{long}` (several accepted answers: `{a/b}`); there is no `answer:` line |
 | `order-words` | One `- full sentence` per sentence |
 | `short-answer` | `answers: a \| b \| c` |
 
 Each key goes on one line. The key names inside directives (`question:`, `answer:`, `answers:`, `feedback-correct:`, `feedback-incorrect:`, `feedback:`, `title:`, `image:`, `position:`) and the objective key (`objective:`) are the ones of the content language shown here; a Spanish course writes `pregunta:`, `respuesta:`, `objetivo:`… (see [Resource types and directive keys by language](#resource-types-and-directive-keys-by-language)). Mixing languages is an error.
+
+`question:` is required, but `verify` only warns when `objective:` is missing. A question without `question:`, a `multi-select` with no `- [x]`, a `match` with no `::` pair or a `short-answer` without `answers:` passes `verify` and is published empty or broken, so check them by hand. `objective:` takes a unit objective id (`U1.1`); its value is not validated. Every question should also carry feedback (`feedback-correct:`, `feedback-incorrect:` or `feedback:`); that is an editorial rule that `verify` does not check.
 
 ### Components that are not directives
 
@@ -338,8 +354,8 @@ If a directive name is not in the registry, `verify` fails and suggests the equi
 
 Reads `design/matrix.json` and rewrites the `units` of `course.yaml`: title, hours, objectives (relabelled `U1.1`, `U1.2`… in order of appearance), sections (`kind`, `title`, `hours`, `min_words`, objectives, subsections) and activities. Then, for each unit that has no `content.md`, it writes the skeleton of `content.md` and `assessment.md` in the content language.
 
-- Existing content is never overwritten. If `content.md` is still the untouched skeleton of a previous design, it is regenerated; if its headings differ from the design, sync warns and you update them by hand.
-- Progress fields (`content_id`, `status`, `written_with`, `reviewed_with`, `reviewed_parts`) are kept, matched by the platform id of the unit.
+- Existing content is never overwritten. `content.md` is regenerated only while it is still the untouched skeleton of a previous design, and `assessment.md` is written only when it is missing or still the blank template. If the headings of `content.md` differ from the design, sync warns and you update them by hand.
+- Progress fields (`content_id`, `status`, `written_with`, `reviewed_with`, `reviewed_parts`, `review`, `links`) are kept, matched by the platform id of the unit.
 - `--check` only reports what would be synced and writes nothing.
 - It warns when a section has no hours, when unit hours do not add up to the section hours, when units do not add up to the course hours, or when the first/last section is not an introduction/summary while `intro_section`/`summary_section` is on (the title must match `^\s*introduction` and `^\s*(summary|wrap-up|conclusion)`; in Spanish `introducci[oó]n` and `resumen|síntesis|conclusión`).
 - Minimum words of a section: `ceil(hours × 10)` pages × 500 words (1 hour = 5,000 words; 0.2 h = 1,000; 0.6 h = 3,000).
@@ -383,24 +399,33 @@ The numbers are the package defaults (`src/coursekit/defaults/rules.yaml`). A pr
 | Placeholder form | Known type (a word of the course language) and the four fields present | 8 types | error |
 | Directives | Known name, closed, not nested | — | error |
 | Question objective | Every question directive has the objective key (`objective:` / `objetivo:`) | — | warning |
-| Question bank | `questions_per_objective` × number of objectives assessed by an activity whose instrument is `cuestionario` | 5 per objective | warning |
+| Question bank | `questions_per_objective` × number of distinct objectives assessed by an activity whose instrument is `cuestionario` (the value of the instrument field of the design, whatever the course language) | 5 per objective | warning |
 | Symbols | No emoji or pictograph outside `allowed_symbols` | `★ ✔ ✘ · — ‹ ›` | error |
 | Assembly | The Markdown converts to bricks (same parse as `assemble plan`). With the html backend it also reports the directives that are not available yet | — | error |
 | Files | `content.md` and `assessment.md` exist | — | error |
 
-Notes: the interactive minimum counts **distinct** directive names, so repeating `tabs` three times counts once; `note`, `highlight`, `quote` and question directives do not count. Only `content` sections need tags and interactive directives; `intro`, `summary` and `activities` sections only need their words. Questions are counted in `content.md` (formative questions) and `assessment.md` (bank); only the bank is compared with the expected number.
+Notes: the interactive minimum counts **distinct** directive names, so repeating `tabs` three times counts once; `note`, `highlight`, `quote` and question directives do not count. Only `content` sections need tags and interactive directives; `intro`, `summary` and `activities` sections only need their words. Questions are counted in `content.md` (formative questions) and `assessment.md` (bank); only the bank is compared with the expected number, and only as a total: `verify` does not check how the questions are spread among the objectives, nor the value of their `objective:`.
+
+The symbols check reads `content.md` and `assessment.md` in full, comments and code blocks included. It rejects emoji and the symbol blocks U+2300–23FF, U+2600–27BF and U+2B00–2BFF, so a check mark such as U+2713 or a warning sign such as U+26A0 fails: use `✔` or `✘`. Arrows are not affected.
 
 ### Reading the messages
 
 ```text
 [FAIL] PWD · U1 — Passwords that protect
   words 0/5,000 · placeholders 0 (0 types) · formative questions 0 · bank questions 0
+  ERROR   content.md › Section 1: 0 words < minimum 1,000
   ERROR   content.md › Section 2: 0 words < minimum 3,000
+  ERROR   content.md › Section 2: missing objective tag *[Objective UN.M — …]*
   ERROR   content.md › Section 2: 0 distinct interactive directives < 3
+  ERROR   content.md › Section 3: 0 words < minimum 1,000
   ERROR   content.md: objective U1.1 is not tagged in any content section
+  ERROR   content.md: objective U1.2 is not tagged in any content section
   ERROR   content.md: 0 placeholders < 3
+  ERROR   content.md: 0 placeholder types < 3
   WARNING assessment.md: 0 questions in the bank, expected 5 (5 per objective assessed by questionnaire)
 ```
+
+This is the output for the untouched skeleton of the worked example below.
 
 The header says `[OK]` or `[FAIL]`. The second line gives words (written/minimum), placeholders (and distinct types), formative questions and bank questions. Then one line per finding: `ERROR` fails the unit, `WARNING` does not. A finding about a section is labelled `content.md › Section N`; syntax findings carry `file:line`.
 
@@ -426,7 +451,19 @@ The header says `[OK]` or `[FAIL]`. The second line gives words (written/minimum
 
 ### What `verify` does to the unit status
 
-Unless you pass `--no-update`, `verify` also moves the unit: a unit with no errors becomes `verified`; a unit that was `verified` or later and now fails goes back to `writing`; editing a `reviewed` or `approved` unit sends it back (to `verified`, `reviewed` or `writing`, depending on what changed and whether it still passes). It prints a line such as `status: unit pending -> verified · course design_approved -> ai_review`. Statuses are explained in [02-workflow.md](02-workflow.md).
+Unless you pass `--no-update`, `verify` also moves the unit. A unit with no errors becomes `verified`; the exception is a project with `review.ai: skip` (see [04-configuration.md](04-configuration.md)), where it becomes `reviewed` straight away (`review.kind: skipped`) and your sign-off is the review. A unit with errors goes back to `writing` if it was `verified` or later, or if it was `pending` and already has words; a `pending` unit with no words stays `pending`. It prints a line such as `status: unit pending -> verified · course design_approved -> ai_review`. Statuses are explained in [02-workflow.md](02-workflow.md).
+
+### What changed since the AI review
+
+When the AI review is required, `coursekit reviewed` stores a fingerprint of every part of the unit in `course.yaml › units[N].reviewed_parts`: each section of `content.md` (`section 2`) and each activity of `assessment.md` (`activity 1.1`), from its `##` heading to the next one, comments included. Text before the first `##` heading (the unit header, the title of `assessment.md`) belongs to no part. A part counts as changed when its text differs in any way, even a space or a `VERIFICAR` comment, or when it is added or removed.
+
+| After an edit, `verify` finds | The unit goes to |
+|---|---|
+| Errors | `writing` |
+| `reviewed` unit, no errors, a part changed | `verified`, with `changed after the AI review: section 2 (coursekit review: partial review)`; the next `coursekit review` covers only those parts |
+| `approved` unit, no errors, a part changed | `verified`; the earlier approval stays in the history and you sign again |
+| `approved` unit, no errors, a file changed but no part (for example the unit header) | `reviewed` |
+| Any passing unit with `review.ai: skip` | `reviewed` |
 
 ## Worked example
 
@@ -439,11 +476,11 @@ coursekit sync PWD
 ```
 
 ```text
-1 units, 3 sections, 5,000 minimum words · synced into course.yaml
+1 unit, 3 sections, 5,000 minimum words · synced into course.yaml
   written: content/unit-01/content.md
 ```
 
-The writer agent fills `content/unit-01/content.md`. Section 2 (0.6 h) needs at least 3,000 words, 3 distinct interactive directives, both objective tags, and the unit needs 3 placeholders of 3 different types and a 5-question bank:
+The writer agent fills `content/unit-01/content.md`. Section 2 (0.6 h) needs at least 3,000 words, 3 distinct interactive directives and both objective tags; the unit needs 3 placeholders of 3 different types and a bank of 5 questions per objective assessed by the unit test (5 here, because the design's test assesses one objective; 10 if it assessed both). The excerpt below shows only part of what `verify` counts:
 
 ```markdown
 ## Section 2 — What makes a password strong *(min. 3,000 words)*

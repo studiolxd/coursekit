@@ -179,7 +179,7 @@ def test_it_does_not_start_when_the_project_needs_the_client_review(project, mon
     fake = Agents(project, monkeypatch)
     assert main(["handoff", "Contraseñas seguras", "1", "--code", "PWD"]) == 1
     assert "requires the client review" in capsys.readouterr().err
-    assert fake.calls == ["new-course"]  # nothing is signed nor written
+    assert fake.calls == []  # nothing is created, signed nor written
 
 
 def test_a_course_on_hold_is_not_touched(project, monkeypatch, capsys):

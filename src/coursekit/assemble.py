@@ -183,8 +183,10 @@ def directive_brick(name: str, body: list[str], ctx: dict) -> dict:
     elif brick_type in ("FLASHCARD_CAROUSEL", "FLASHCARD_GALLERY"):
         data = {"items": [{"front": inline(text), "back": html(c)} for text, c in panels(body)]}
     elif brick_type == "LABELLED_GRAPHIC":
+        first = next((i for i, line in enumerate(body) if line.startswith("#### ")), len(body))
+        values, _ = key_values(body[:first])  # a `position:` under a point belongs to the point, not to the graphic
         image = ctx["media_by_title"].get(values.get(syntax.key("image"), ""))
-        points = panels(rest)
+        points = panels(body)
         items = []
         for i, (title, content) in enumerate(points):
             sub_values, sub_rest = key_values(content.splitlines())

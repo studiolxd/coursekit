@@ -102,7 +102,7 @@ The html backend builds its pages from this same plan. Lesson keys are `U<unit>-
 | Code fences | `CODE` (the language if known, otherwise automatic) |
 | Plain blockquote `> …` | `HIGHLIGHT` |
 | `:::name` directive | The brick of the registry (table in [06-content.md](06-content.md)) |
-| Media placeholder not uploaded | `NOTE` titled `Media asset — <type>: <title>` (the type as written in the content, for example `Infographic`), with description and specifications |
+| Media placeholder not uploaded | `NOTE` titled `Media asset — <type>: <title>` (the first words are those of the course language, and the type is written as in the content, for example `Infographic`), with description and specifications |
 | Media placeholder uploaded | By type id: `image`, `infographic`, `diagram` and `animated_gif` become `IMAGE`; `video` becomes `VIDEO` (with captions and transcript if registered); `audio` becomes `AUDIO`; `simulation` and `terminal_demo` become `EMBED`. Plus an `ATTACHMENT` per uploaded download |
 | Objective tags, `---`, HTML comments | Not published |
 
@@ -425,7 +425,7 @@ The mirror folder is a read-only copy of the courses in a folder synced by your 
 
 | Provider | What to paste in `mirror.url` | Link for `PWD` |
 |---|---|---|
-| `sharepoint`, `onedrive` | The folder address from the address bar of the library (`…/Forms/AllItems.aspx?id=<folder path>`), a "copy link" address (`…/:f:/r/<path>`) or a plain path (`/sites/<site>/<library>/<folder>`) | The same form, with `/courses/PWD` added to the folder path. A sharing link (`/:f:/s/<token>`) has no path, so no links are written (the check warns) |
+| `sharepoint`, `onedrive` | The folder address from the address bar of the library (`…/Forms/AllItems.aspx?id=<folder path>`), a "copy link" address (`…/:f:/r/<path>`) or a plain path (`/sites/<site>/<library>/<folder>`) | From the library address: the same address with `/courses/PWD` added to the `id` path. From a copy link: `https://<host>/<folder path>/courses/PWD` (the `/:f:/r` prefix and the query are dropped). From a plain path: the path with `/courses/PWD` added. A sharing link (`/:f:/s/<token>`) has no path, so no links are written (the check warns) |
 | `nextcloud` | The address of the Files app with `?dir=/Folder` | The same address with `dir=/Folder/courses/PWD` |
 | `google-drive` | The folder address | The same address for every course (folder ids are not in the path) |
 | `folder` | Any base address; `{code}` is replaced by the course code | The address with `{code}` replaced; without `{code}`, the same address |
@@ -440,7 +440,7 @@ coursekit publish PWD        # one course
 
 ### Automatic publication
 
-You rarely run `coursekit publish` yourself. When the project has a mirror folder, these commands publish the course they changed as soon as they finish: `coursekit new`, `sync` (without `--check`), `verify` (without `--no-update`), `reviewed`, `approve`, `assemble link`, `assemble build`, `media set`, `delivery add`, `hold`, `resume` and `client`. That is why the preview and review links, the status and the packages reach the mirror and the catalog without anyone asking.
+You rarely run `coursekit publish` yourself. When the project has a mirror folder, these commands publish the course they changed as soon as they finish: `coursekit new`, `sync` (without `--check`), `verify` (without `--no-update`), `reviewed`, `approve`, `assemble applied`, `assemble link`, `assemble build`, `media set`, `delivery add`, `hold`, `resume`, `client` and `handoff` (after each step). That is why the preview and review links, the status and the packages reach the mirror and the catalog without anyone asking.
 
 - The catalog of the project (`courses/course-catalog.xlsx`) is always refreshed, silently.
 - Without a mirror (`mirror.provider: none`, or no `MIRROR_DIR`) nothing else happens and nothing is printed.
@@ -453,7 +453,7 @@ What `publish` does:
 - Files it published before that no longer exist in the course are removed from the mirror (tracked in `courses/PWD/.published.json`, inside the mirror), together with the folders left empty. Files it never published are not touched.
 - `delivery/` is append-only: a package is copied once and never overwritten or deleted in the mirror, even if it is removed locally. A new version has a new file name.
 - It writes the catalog to `<MIRROR_DIR>/<catalog file>`, with links to the course folders. If the Excel is open, it fails with `cannot replace … (is it open in Excel?)`.
-- It prints one line per course that changed (`published PWD: 5 copied, 0 removed, 0 unchanged`) and one for the catalog. With `mirror.provider: none` it only says there is nothing to publish (exit code 0). With a provider and no `MIRROR_DIR`, it fails with `no mirror folder configured (project.yaml › mirror and MIRROR_DIR in .env)`.
+- It first refreshes the catalog in `courses/` and prints `wrote <path> (N courses, M units)` (not with `--only-if-configured`). Then it prints one line per course that changed (`published PWD: 5 copied, 0 removed, 0 unchanged`) and one for the catalog of the mirror. With `mirror.provider: none` it prints the first line and says there is nothing to publish (exit code 0). With a provider and no `MIRROR_DIR`, it fails with `no mirror folder configured (project.yaml › mirror and MIRROR_DIR in .env)`.
 
 ## The tracking catalog
 
@@ -506,7 +506,7 @@ Sheets, in the language of the catalog (English / Spanish): `Courses` / `Cursos`
 Before exporting:
 
 - [ ] Design signed and unchanged, and every unit `approved` (`coursekit status PWD`).
-- [ ] Every media asset `uploaded` and validated in the preview (`coursekit media plan PWD` shows nothing pending and no warnings). With the html backend: every asset `produced` with its file, which `build` copies into the package.
+- [ ] Every media asset `uploaded` and validated in the preview (no asset of `media/manifest.yaml` is `pending`, `scripted` or `produced`, and `coursekit media plan PWD` shows no warnings: `plan` lists only `pending` and `scripted` assets). With the html backend: every asset `produced` with its file, which `build` copies into the package.
 - [ ] Every unit assembled. Creator: `content_id` set and `coursekit assemble diff` reports `unchanged` for the content and every lesson. Html: `coursekit assemble build PWD` finishes without errors and you have read its warnings. The course status is `assembly` (or `client_review`, if you opened a round).
 - [ ] Creator: preview and review links of every unit recorded (`units[].links`). Html: the preview opened in a browser (`courses/PWD/assembly/html/unit-01/index.html`) and the lessons, one component of each kind and the test checked.
 - [ ] Course not on hold, and `coursekit delivery check PWD` passes.
@@ -579,6 +579,7 @@ coursekit publish --check
 # ok: folder mirror in /path/to/MIRROR_DIR
 # info: no mirror.url in project.yaml; the catalog will have no folder links
 coursekit publish PWD
+# wrote /path/to/project/courses/course-catalog.xlsx (1 courses, 1 units)
 # published PWD: 5 copied, 0 removed, 0 unchanged
 # wrote /path/to/MIRROR_DIR/course-catalog.xlsx (1 courses, 1 units)
 ```

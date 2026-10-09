@@ -115,7 +115,7 @@ Las palabras del formato salen de `src/coursekit/lang/en.yaml` y `es.yaml`. `ver
 - El número, el orden y el título de cada apartado vienen del diseño aprobado. La parte `*(mín. …)*` es opcional e informativa. El guion puede ser `—` o `-`.
 - Cada apartado se convierte en una lección. Usa `###` para los subapartados; la prosa, las listas, las tablas Markdown y los bloques de código se convierten tal cual.
 - Cada apartado tiene un `kind`: `intro` (el primero, si `design.intro_section` es `true`), `summary` (el último, si `design.summary_section` es `true`), `content` (desarrolla objetivos) o `activities` (sin objetivos: actividades de aprendizaje).
-- Prosa completa, sin listas sueltas, **sin emojis** (consulta los símbolos permitidos más abajo).
+- Prosa completa, sin listas sueltas, **sin emojis** (consulta los símbolos permitidos más abajo). `verify` solo comprueba la regla de los emojis; la calidad de la prosa es una norma editorial.
 
 ### Etiquetas de objetivo
 
@@ -126,7 +126,7 @@ Todo apartado `content` termina con una etiqueta por cada objetivo que cubre, un
 *[Objetivo U1.2 — Identificar]*
 ```
 
-La etiqueta es metadato editorial: no se publica. `verify` lee los identificadores (`U1.1`) para comprobar que cada objetivo de la unidad se cubre al menos una vez.
+La etiqueta es metadato editorial: no se publica. `verify` lee los identificadores (`U1.1`) para comprobar que cada objetivo de la unidad se cubre al menos una vez. Solo exige una etiqueta por apartado `content` (las etiquetas en otros tipos de apartado no se leen) y cada objetivo de la unidad etiquetado en algún sitio: no compara las etiquetas con los objetivos que el diseño asigna a ese apartado ni comprueba que el identificador exista.
 
 ### Recursos multimedia
 
@@ -144,7 +144,9 @@ Los cuatro campos son obligatorios. El `<tipo>` es uno de ocho tipos de recurso,
 
 ### Qué cuenta como palabra
 
-Solo cuenta el texto que lee el alumno: se descartan el recuadro del recurso (sus líneas `>`), las etiquetas de objetivo, los comentarios HTML y las líneas `:::` de las directivas. El texto *dentro* de una directiva sí cuenta. Las palabras se separan por espacios en blanco y se cuentan por apartado; la cabecera de la unidad no cuenta.
+Solo cuenta el texto que lee el alumno: se descartan el recuadro del recurso (sus líneas `>`, hasta la primera línea que no empiece por `>`), las etiquetas de objetivo (cada una en su propia línea), los comentarios HTML y las líneas `:::` de las directivas. El texto *dentro* de una directiva sí cuenta, y también una cita Markdown simple (`> texto`). Las palabras son los fragmentos separados por espacios en blanco de lo que queda, así que un marcador de lista, un `####` o las barras de una tabla cuentan como uno cada uno. Se cuentan por apartado; la cabecera de la unidad no cuenta.
+
+`coursekit outline` muestra otra cifra, aproximada: cuenta todas las palabras del apartado sin comentarios, incluidos los recuadros de recurso, las etiquetas y los nombres de directiva, así que sale más alta que la de `verify`. El número que vale es el que imprime `verify`.
 
 ### Tipos de recurso y claves de las directivas por idioma
 
@@ -161,7 +163,7 @@ Algunas palabras del formato se escriben en el idioma del curso, pero la configu
 | `terminal_demo` | `Interactive terminal demo` | `Demo interactiva en terminal` |
 | `audio` | `Audio` | `Audio` |
 
-- En `content.md` escribes en el recurso la **palabra** del idioma del curso (`> **[RECURSO MULTIMEDIA — Infografía]**`). No importan las mayúsculas ni los espacios alrededor.
+- En `content.md` escribes en el recurso la **palabra** del idioma del curso (`> **[RECURSO MULTIMEDIA — Infografía]**`). No importan las mayúsculas ni los espacios alrededor, pero sí las tildes: en un curso en español `Video` e `Infografia` son errores, solo se aceptan `Vídeo` e `Infografía`. El guion del encabezado del recurso puede ser `—` o `-`.
 - En cualquier otro sitio se usa el **id**: `content.placeholder_types` en `config/rules.yaml`, las claves de `types` y la lista `uses_theme` en `config/media.yaml` (consulta [04-configuration.md](04-configuration.md)) y `type` en `media/manifest.yaml › assets`. `coursekit media extract` convierte la palabra en el id, así que el manifiesto es el mismo sea cual sea el idioma del curso.
 - Una palabra del otro idioma es un error: en un curso en español, `Infographic` falla con `tipo de recurso multimedia desconocido o no permitido 'Infographic' (usa: Imagen, Vídeo, GIF animado, …)`.
 
@@ -170,7 +172,7 @@ Las claves de las líneas `clave: valor` dentro de las directivas, y las pocas p
 | Para qué | Contenido en inglés | Contenido en español |
 |---|---|---|
 | Texto de la pregunta | `question:` | `pregunta:` |
-| Respuesta de `true-false`; hueco de `fill-in-the-blank` | `answer:` | `respuesta:` |
+| Respuesta de `true-false` | `answer:` | `respuesta:` |
 | Respuestas aceptadas de `short-answer` | `answers:` | `respuestas:` |
 | Retroalimentación general, correcta e incorrecta | `feedback:` · `feedback-correct:` · `feedback-incorrect:` | `feedback:` · `feedback-correcto:` · `feedback-incorrecto:` |
 | Imagen de `labelled-graphic` | `image:` | `imagen:` |
@@ -181,6 +183,10 @@ Las claves de las líneas `clave: valor` dentro de las directivas, y las pocas p
 | Modo de un elemento de `pasapalabra` | `(starts)` · `(contains)` | `(empieza)` · `(contiene)` |
 
 Los **nombres** de las directivas (`:::single-choice`, `:::tabs`…) son los mismos en los dos idiomas. Una clave que pertenece al otro idioma no se ignora: `coursekit assemble plan` y `coursekit verify` fallan con `la clave 'question:' es del idioma «en»; en este curso se usan: …` y enumeran las válidas. La referencia de formato que leen los agentes (`.coursekit/docs/content-format.md`) muestra las palabras del idioma del curso. Un idioma nuevo necesita `media_types`, `directive_keys` y `directive_words` en su `lang/<código>.yaml` (consulta `CONTRIBUTING.md`).
+
+### Dudas y marcas VERIFICAR
+
+Cuando quien redacta no puede confirmar un dato (una versión, un comando, una opción, el nombre de un producto) con el material de referencia de `brief/`, no se lo inventa: deja `<!-- VERIFICAR: qué comprobar -->` junto al texto. Es un comentario HTML, así que no cuenta como palabras y no se publica. `coursekit verify` no busca estas marcas y una unidad pasa con ellas dentro: son una convención entre quien redacta y quien revisa. Quien revisa localiza cada una, la resuelve con el material (una afirmación que contradice el material es un hallazgo bloqueante) y la elimina. En el [modo handoff](02-workflow.md#modo-handoff), donde no se puede preguntar a nadie, las dudas quedan escritas en las unidades y en los informes. Las mejoras que cambian el enfoque no las aplica quien revisa: van bajo «Propuestas pendientes de decisión humana» en `reviews/unit-NN-ai-review.md`, para que la persona las resuelva antes de firmar.
 
 ## Formato de `assessment.md`
 
@@ -207,7 +213,11 @@ Las actividades sumativas de la unidad, en el orden en que se hacen. Un encabeza
 | `Intentos y retroalimentación` | `Attempts and feedback` |
 | `Banco de preguntas` | `Question bank` |
 
-El montaje carga en la lección de evaluación de la plataforma solo el texto de **Instrucciones para el alumno** y las preguntas de **Banco de preguntas**; los demás subapartados documentan la actividad para el equipo. Pon las directivas de pregunta (consulta más abajo) en el banco. Toda pregunta lleva la clave de objetivo y retroalimentación.
+El montaje carga en la lección de evaluación de la plataforma solo lo que hay bajo **Instrucciones para el alumno** y **Banco de preguntas** (texto y directivas); los demás subapartados documentan la actividad para el equipo. Pon las directivas de pregunta (consulta más abajo) en el banco. Toda pregunta lleva la clave de objetivo y retroalimentación.
+
+- `verify` no comprueba los encabezados de `assessment.md`, pero el montaje los empareja exactamente, con las palabras del idioma del curso: un `### Banco de preguntas` mal escrito no carga ninguna pregunta. Se construye una lección de evaluación por cada encabezado `## ACTIVIDAD DE EVALUACIÓN`.
+- `verify` cuenta todas las directivas de pregunta del fichero, estén donde estén. Una colocada en otro subapartado cuenta para `verify`, pero nunca llega al alumno.
+- La nota de aprobado y los intentos no se leen del Markdown: salen de `course.yaml › design.grading` (`passing_score` y `attempts`; consulta [04-configuration.md](04-configuration.md)). Los subapartados `Corrección automática y puntuación` e `Intentos y retroalimentación` solo documentan la actividad. El montaje tampoco lee los pesos (`unit_tests_weight`, `final_test_weight`).
 
 ## Directivas
 
@@ -277,16 +287,20 @@ Lo que no siga estas formas falla al convertir la unidad (`verify` lo indica).
 | `accordion`, `tabs`, `carousel` | Un `#### Título` por panel, pestaña o diapositiva, seguido de texto Markdown |
 | `timeline` | `#### <fecha> — <título>` por hito (sin ` — `, toda la línea es el título) + texto |
 | `flashcards`, `flashcard-gallery` | `#### Anverso` + texto del reverso |
-| `labelled-graphic` | `imagen: <título exacto del recurso Imagen>`, después `#### Punto` + texto; opcional `posición: x,y` (0–100) bajo cada punto |
+| `labelled-graphic` | `imagen: <título exacto del recurso de imagen>`, después `#### Punto` + texto; opcional `posición: x,y` (0–100) bajo cada punto |
 | `dialog` | `**Personaje:** línea`, una por línea |
 | `carousel-quotes` | Una cita por párrafo, con `— autor` en su última línea |
-| `note` | Línea opcional `título: …` + texto |
+| `note` | Línea opcional `título: …` (título por defecto: `Nota`) + texto |
 | `highlight` | Texto |
 | `quote` | Cita + `— autor` en la última línea |
 | `word-search`, `wordle`, `hangman` | `- PALABRA` por línea |
 | `memory` | `- contenido de la tarjeta` por línea |
 | `pasapalabra` | `- A (empieza): definición :: RESPUESTA` (o `(contiene)`) por línea |
 | `trivial` | `#### Categoría`, después bloques con `pregunta: …` y opciones `- [x]` / `- [ ]`, separados por una línea en blanco |
+
+La `imagen:` de un `labelled-graphic` se empareja con el título de un recurso de `media/manifest.yaml`, así que el recurso debe existir en el manifiesto (ejecuta antes `coursekit media extract`) y estar producido. Si no, `assemble` solo avisa (`labelled-graphic: la imagen 'X' aún no está producida`) y el gráfico se queda sin imagen. Solo las líneas anteriores al primer `####` son claves del propio gráfico; una `posición:` va bajo el punto al que pertenece.
+
+Dentro de una directiva, una línea que empieza por una palabra en minúsculas y dos puntos (`consejo: …`) se lee como una clave, no como texto. En `note`, `highlight`, `quote` y `carousel-quotes` se elimina en silencio del texto publicado; en las demás directivas, una clave del otro idioma provoca el error descrito más arriba. Escribe `Consejo:` con mayúscula o reformula la frase. Las claves van en una línea propia, no detrás de un marcador de lista.
 
 ### Directivas de pregunta
 
@@ -310,11 +324,13 @@ feedback-incorrecto: Repasa el apartado sobre la longitud.
 | `sorting` | Una lista en el orden correcto |
 | `match` | Líneas `- término :: definición` |
 | `sorting-groups` | `#### Categoría` + lista de sus elementos |
-| `fill-in-the-blank` | Huecos escritos en `pregunta:` como `{respuesta}` (varias aceptadas: `{a/b}`) |
+| `fill-in-the-blank` | Huecos escritos en `pregunta:` con la palabra correcta entre llaves, como `{larga}` (varias respuestas aceptadas: `{a/b}`); no hay línea `respuesta:` |
 | `order-words` | Una `- frase completa` por frase |
 | `short-answer` | `respuestas: a \| b \| c` |
 
 Cada clave va en una sola línea. Los nombres de clave dentro de las directivas (`pregunta:`, `respuesta:`, `respuestas:`, `feedback-correcto:`, `feedback-incorrecto:`, `feedback:`, `título:`, `imagen:`, `posición:`) y la clave de objetivo (`objetivo:`) son los del idioma del contenido que se muestra aquí; un curso en inglés escribe `question:`, `answer:`, `objective:`… (consulta [Tipos de recurso y claves de las directivas por idioma](#tipos-de-recurso-y-claves-de-las-directivas-por-idioma)). Mezclar idiomas es un error.
+
+`pregunta:` es obligatoria, pero `verify` solo avisa cuando falta `objetivo:`. Una pregunta sin `pregunta:`, un `multi-select` sin ningún `- [x]`, un `match` sin ningún par `::` o un `short-answer` sin `respuestas:` pasa `verify` y se publica vacía o rota, así que revísalas a mano. `objetivo:` lleva el identificador de un objetivo de la unidad (`U1.1`); su valor no se valida. Toda pregunta debería llevar además retroalimentación (`feedback-correcto:`, `feedback-incorrecto:` o `feedback:`); es una norma editorial que `verify` no comprueba.
 
 ### Componentes que no son directivas
 
@@ -338,8 +354,8 @@ Si el nombre de una directiva no está en el registro, `verify` falla y sugiere 
 
 Lee `design/matrix.json` y reescribe las `units` de `course.yaml`: título, horas, objetivos (renombrados `U1.1`, `U1.2`… por orden de aparición), apartados (`kind`, `title`, `hours`, `min_words`, objetivos, subapartados) y actividades. Después, por cada unidad que no tenga `content.md`, escribe el esqueleto de `content.md` y de `assessment.md` en el idioma del contenido.
 
-- El contenido existente nunca se sobrescribe. Si `content.md` sigue siendo el esqueleto intacto de un diseño anterior, se regenera; si sus encabezados difieren del diseño, `sync` avisa y los actualizas a mano.
-- Los campos de progreso (`content_id`, `status`, `written_with`, `reviewed_with`, `reviewed_parts`) se conservan, emparejados por el identificador de la unidad en la plataforma.
+- El contenido existente nunca se sobrescribe. `content.md` se regenera solo mientras siga siendo el esqueleto intacto de un diseño anterior, y `assessment.md` se escribe solo cuando falta o sigue siendo la plantilla en blanco. Si los encabezados de `content.md` difieren del diseño, `sync` avisa y los actualizas a mano.
+- Los campos de progreso (`content_id`, `status`, `written_with`, `reviewed_with`, `reviewed_parts`, `review`, `links`) se conservan, emparejados por el identificador de la unidad en la plataforma.
 - `--check` solo informa de lo que se sincronizaría y no escribe nada.
 - Avisa cuando un apartado no tiene horas, cuando las horas de la unidad no coinciden con las de sus apartados, cuando las unidades no suman las horas del curso, o cuando el primer o el último apartado no es una introducción o un resumen estando activados `intro_section` o `summary_section` (el título debe cumplir `introducci[oó]n` y `resumen|s[ií]ntesis|conclusi[oó]n`; en inglés `introduction` y `summary|wrap-up|conclusion`).
 - Palabras mínimas de un apartado: `ceil(horas × 10)` páginas × 500 palabras (1 hora = 5.000 palabras; 0,2 h = 1.000; 0,6 h = 3.000).
@@ -383,24 +399,33 @@ Las cifras son los valores por defecto del paquete (`src/coursekit/defaults/rule
 | Forma del recurso | Tipo conocido (una palabra del idioma del curso) y los cuatro campos presentes | 8 tipos | error |
 | Directivas | Nombre conocido, cerrada y sin anidar | — | error |
 | Objetivo de la pregunta | Toda directiva de pregunta lleva la clave de objetivo (`objetivo:` / `objective:`) | — | aviso |
-| Banco de preguntas | `questions_per_objective` × número de objetivos evaluados por una actividad cuyo instrumento es `cuestionario` | 5 por objetivo | aviso |
+| Banco de preguntas | `questions_per_objective` × número de objetivos distintos evaluados por una actividad cuyo instrumento es `cuestionario` (el valor del campo de instrumento del diseño, sea cual sea el idioma del curso) | 5 por objetivo | aviso |
 | Símbolos | Ningún emoji ni pictograma fuera de `allowed_symbols` | `★ ✔ ✘ · — ‹ ›` | error |
 | Montaje | El Markdown se convierte en bricks (mismo análisis que `assemble plan`). Con el backend html informa además de las directivas que aún no están disponibles | — | error |
 | Ficheros | Existen `content.md` y `assessment.md` | — | error |
 
-Notas: el mínimo de interactivas cuenta nombres de directiva **distintos**, así que repetir `tabs` tres veces cuenta una; `note`, `highlight`, `quote` y las directivas de pregunta no cuentan. Solo los apartados `content` necesitan etiquetas y directivas interactivas; los apartados `intro`, `summary` y `activities` solo necesitan sus palabras. Las preguntas se cuentan en `content.md` (formativas) y en `assessment.md` (banco); solo el banco se compara con el número esperado.
+Notas: el mínimo de interactivas cuenta nombres de directiva **distintos**, así que repetir `tabs` tres veces cuenta una; `note`, `highlight`, `quote` y las directivas de pregunta no cuentan. Solo los apartados `content` necesitan etiquetas y directivas interactivas; los apartados `intro`, `summary` y `activities` solo necesitan sus palabras. Las preguntas se cuentan en `content.md` (formativas) y en `assessment.md` (banco); solo el banco se compara con el número esperado, y solo como total: `verify` no comprueba cómo se reparten las preguntas entre los objetivos ni el valor de su `objetivo:`.
+
+La comprobación de símbolos lee `content.md` y `assessment.md` enteros, con comentarios y bloques de código incluidos. Rechaza los emojis y los bloques de símbolos U+2300–23FF, U+2600–27BF y U+2B00–2BFF, así que una marca de verificación como U+2713 o un signo de advertencia como U+26A0 falla: usa `✔` o `✘`. Las flechas no se ven afectadas.
 
 ### Cómo leer los mensajes
 
 ```text
 [FALLO] PWD · U1 — Contraseñas que protegen
   palabras 0/5.000 · recursos multimedia 0 (0 tipos) · preguntas formativas 0 · preguntas del banco 0
+  ERROR   content.md › Apartado 1: 0 palabras < mínimo 1.000
   ERROR   content.md › Apartado 2: 0 palabras < mínimo 3.000
+  ERROR   content.md › Apartado 2: falta la etiqueta de objetivo *[Objetivo UN.M — …]*
   ERROR   content.md › Apartado 2: 0 directivas interactivas distintas < 3
+  ERROR   content.md › Apartado 3: 0 palabras < mínimo 1.000
   ERROR   content.md: el objetivo U1.1 no está etiquetado en ningún apartado de contenido
+  ERROR   content.md: el objetivo U1.2 no está etiquetado en ningún apartado de contenido
   ERROR   content.md: 0 recursos multimedia < 3
+  ERROR   content.md: 0 tipos de recurso multimedia < 3
   AVISO   assessment.md: 0 preguntas en el banco, se esperaban 5 (5 por objetivo evaluado con cuestionario)
 ```
+
+Esta es la salida para el esqueleto intacto del ejemplo completo de más abajo.
 
 La cabecera dice `[OK]` o `[FALLO]`. La segunda línea da las palabras (escritas/mínimo), los recursos multimedia (y sus tipos distintos), las preguntas formativas y las del banco. Después va una línea por hallazgo: `ERROR` hace fallar la unidad, `AVISO` no. Un hallazgo sobre un apartado lleva la etiqueta `content.md › Apartado N`; los de sintaxis llevan `fichero:línea`.
 
@@ -426,7 +451,19 @@ La cabecera dice `[OK]` o `[FALLO]`. La segunda línea da las palabras (escritas
 
 ### Qué hace `verify` con el estado de la unidad
 
-Si no pasas `--no-update`, `verify` también mueve la unidad: una unidad sin errores pasa a `verified`; una que estaba en `verified` o más allá y ahora falla vuelve a `writing`; editar una unidad `reviewed` o `approved` la devuelve atrás (a `verified`, `reviewed` o `writing`, según lo que cambió y si sigue pasando). Imprime una línea como `estado: unidad pending -> verified · curso design_approved -> ai_review`. Los estados se explican en [02-workflow.md](02-workflow.md).
+Si no pasas `--no-update`, `verify` también mueve la unidad. Una unidad sin errores pasa a `verified`; la excepción es un proyecto con `review.ai: skip` (consulta [04-configuration.md](04-configuration.md)), donde pasa directamente a `reviewed` (`review.kind: skipped`) y tu firma es la revisión. Una unidad con errores vuelve a `writing` si estaba en `verified` o más allá, o si estaba en `pending` y ya tiene palabras; una unidad `pending` sin palabras sigue en `pending`. Imprime una línea como `estado: unidad pending -> verified · curso design_approved -> ai_review`. Los estados se explican en [02-workflow.md](02-workflow.md).
+
+### Qué cambió desde la revisión con IA
+
+Cuando la revisión con IA es obligatoria, `coursekit reviewed` guarda una huella de cada parte de la unidad en `course.yaml › units[N].reviewed_parts`: cada apartado de `content.md` (`section 2`) y cada actividad de `assessment.md` (`activity 1.1`), desde su encabezado `##` hasta el siguiente, comentarios incluidos. El texto anterior al primer encabezado `##` (la cabecera de la unidad, el título de `assessment.md`) no pertenece a ninguna parte. Una parte cuenta como cambiada cuando su texto difiere de cualquier modo, aunque sea un espacio o un comentario `VERIFICAR`, o cuando se añade o se elimina.
+
+| Tras una edición, `verify` encuentra | La unidad pasa a |
+|---|---|
+| Errores | `writing` |
+| Unidad `reviewed`, sin errores, una parte cambiada | `verified`, con `cambió tras la revisión con IA: section 2 (coursekit review: revisión parcial)`; el siguiente `coursekit review` cubre solo esas partes |
+| Unidad `approved`, sin errores, una parte cambiada | `verified`; la aprobación anterior queda en el historial y firmas de nuevo |
+| Unidad `approved`, sin errores, un fichero cambiado pero ninguna parte (por ejemplo la cabecera de la unidad) | `reviewed` |
+| Cualquier unidad que pasa con `review.ai: skip` | `reviewed` |
 
 ## Ejemplo completo
 
@@ -439,11 +476,11 @@ coursekit sync PWD
 ```
 
 ```text
-1 unidades, 3 apartados, 5.000 palabras mínimas · sincronizado en course.yaml
+1 unidad, 3 apartados, 5.000 palabras mínimas · sincronizado en course.yaml
   escrito: content/unit-01/content.md
 ```
 
-El agente redactor rellena `content/unit-01/content.md`. El apartado 2 (0,6 h) necesita al menos 3.000 palabras, 3 directivas interactivas distintas y las dos etiquetas de objetivo; la unidad necesita 3 recursos multimedia de 3 tipos distintos y un banco de 5 preguntas:
+El agente redactor rellena `content/unit-01/content.md`. El apartado 2 (0,6 h) necesita al menos 3.000 palabras, 3 directivas interactivas distintas y las dos etiquetas de objetivo; la unidad necesita 3 recursos multimedia de 3 tipos distintos y un banco de 5 preguntas por cada objetivo evaluado por el test de la unidad (5 aquí, porque el test del diseño evalúa un objetivo; 10 si evaluara los dos). El fragmento siguiente muestra solo una parte de lo que cuenta `verify`:
 
 ```markdown
 ## Apartado 2 — Qué hace fuerte a una contraseña *(mín. 3.000 palabras)*

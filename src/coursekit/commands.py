@@ -405,11 +405,13 @@ def cmd_assemble(args: argparse.Namespace) -> int:
         return 0
     if args.content:
         print(assemblemod.record_content_title(course, unit))
+        _mirror(course["_project"], course["code"])
         return 0
     if not (args.lesson and args.lesson_id):
         print(t("commands", "applied_needs_lesson"), file=sys.stderr)
         return 2
     print(assemblemod.record_lesson(course, unit, args.lesson, args.lesson_id, [b for b in args.brick_ids.split(",") if b]))
+    _mirror(course["_project"], course["code"])
     return 0
 
 

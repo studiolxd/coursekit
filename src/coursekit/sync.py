@@ -234,7 +234,7 @@ def sync(course: dict, check_only: bool = False) -> SyncResult:
         if old:
             unit["content_id"] = old.get("content_id")
             unit["status"] = old.get("status", "pending")
-            for key in ("written_with", "reviewed_with", "reviewed_parts", "links"):
+            for key in ("written_with", "reviewed_with", "reviewed_parts", "review", "links"):
                 if old.get(key):
                     unit[key] = old[key]
     data["units"] = units
@@ -255,8 +255,9 @@ def sync(course: dict, check_only: bool = False) -> SyncResult:
             continue
         folder.mkdir(parents=True, exist_ok=True)
         content.write_text(skeleton(unit, cfg, tokens, language), encoding="utf-8", newline="\n")
-        (folder / "assessment.md").write_text(
-            render(_unit_template(language, "assessment.md"), n=unit["n"]), encoding="utf-8", newline="\n"
-        )
+        template = _unit_template(language, "assessment.md")
+        assessment = folder / "assessment.md"
+        if not assessment.exists() or assessment.read_text(encoding="utf-8") == render(template, n=(old or unit)["n"]):
+            assessment.write_text(render(template, n=unit["n"]), encoding="utf-8", newline="\n")  # never overwrite what was written
         result.written.append(str(content.relative_to(course_dir)))
     return result

@@ -56,7 +56,7 @@ Internal structure (anything else fails at assembly):
 | `accordion`, `tabs`, `carousel` | one `#### Title` per panel, tab or slide + Markdown text |
 | `timeline` | `#### <date> — <title>` per milestone (without " — ", all of it is the title) + text |
 | `flashcards`, `flashcard-gallery` | `#### Front` + text of the back |
-| `labelled-graphic` | `{{k_image}}: <exact title of the placeholder>` + `#### Point` + text; optional `{{k_position}}: x,y` (0–100) under each point |
+| `labelled-graphic` | `{{k_image}}: <exact title of the placeholder, as in `media/manifest.yaml`>` + `#### Point` + text; optional `{{k_position}}: x,y` (0–100) under each point |
 | `dialog` | `**Character:** line`, one per line |
 | `carousel-quotes` | one quote per paragraph, with `— author` on its last line |
 | `note` | optional `{{k_title}}: …` + text |

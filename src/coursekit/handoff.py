@@ -24,7 +24,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-from coursekit import approve, clientreview, identity, launch
+from coursekit import approve, clientreview, config, identity, launch
 from coursekit import course as coursemod
 from coursekit import media as mediamod
 from coursekit import theme as thememod
@@ -279,6 +279,8 @@ def start(project: Project, title: str, hours: float, code: str | None, flags: l
     code = course_code(title, code)
     if (project.course_dir(code) / "course.yaml").exists():
         raise HandoffError(t("handoff", "course_exists", code=code))
+    if (config.effective("delivery", project).value.get("client_review") or {}).get("required"):
+        raise HandoffError(t("handoff", "client_review_required", code=code))
     log(t("handoff", "start_line", code=code, who=HANDOFF.name))
     hours_text = int(hours) if float(hours).is_integer() else hours
     arguments = " ".join([f'"{title}"', str(hours_text), "--code", code, "--no-material", *flags] + ([notes] if notes else []))

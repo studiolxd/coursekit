@@ -33,7 +33,7 @@ Commands load `.env` (at the project root) into the process environment before r
 |---|---|
 | `0` | Done (also for warnings that do not stop the work). |
 | `1` | The command failed or a check did not pass: error message on stderr as `coursekit: <message>`, `verify` with errors, `theme check` with a failing pair, `directives check` with differences, `brief` with a failed conversion, a launched AI tool that ended with an error, a command refused because the course is on hold. |
-| `2` | Wrong usage: invalid argument (argparse) or a required companion argument is missing (for example `approve content` without `--unit`, `delivery add` without `--file`, `client approve` without `--by`, `client skip` without `--reason`, `assemble plan`, `diff`, `applied` or `link` without `--unit`). |
+| `2` | Wrong usage: invalid argument (argparse) or a required companion argument is missing (for example `approve content` without `--unit`, `delivery add` without `--file`, `client approve` without `--by`, `client skip` without `--reason`, `reviewed --note` or `--report` without `--by`, `assemble plan`, `diff`, `applied` or `link` without `--unit`). |
 
 `coursekit write`, `coursekit review` and `coursekit run` return the exit code of the AI tool they launched.
 
@@ -45,6 +45,8 @@ Commands load `.env` (at the project root) into the process environment before r
 | Agents | The agent of a role runs it as part of a skill or slash command. People can run it too. |
 | Both | Everyday commands for people and agents alike. |
 
+Each command below gives its own `Who:` in its first paragraph. Only the commands of the first row are blocked for the agents by the generated configuration; "Who: people" on any other command (`coursekit init`, `setup`, `uninstall`, `write`, `review`, `run`) says who is meant to run it, not that the agents are denied.
+
 ### Statuses at a glance
 
 Units move `pending` -> `writing` -> `verified` -> `reviewed` -> `approved`, and move back when their content changes. A course moves through `design`, `design_approved`, `writing`, `ai_review`, `editorial_review`, `media`, `assembly`, `client_review`, `delivered` (and `on_hold`). Every course status change is appended to `course.yaml › history`.
@@ -53,7 +55,8 @@ Units move `pending` -> `writing` -> `verified` -> `reviewed` -> `approved`, and
 |---|---|
 | `coursekit new` | creates the course in `design`. |
 | `coursekit approve design` | course `design` -> `design_approved`. |
-| `coursekit verify` | unit up to `verified` when it passes; back to `writing` when verified content no longer passes; back to `verified` when content changed after the AI review; with `rules › review › ai: skip`, up to `reviewed` straight away; course status is derived from its units. |
+| `coursekit handoff` | takes the course through every transition of this table up to `delivered`, signing as Coursekit Handoff; it stops, without changing the status, at `on_hold` and `client_review`, and refuses to start when the client's review is required. |
+| `coursekit verify` | unit up to `verified` when it passes; `pending` -> `writing` when it has content but errors; back to `writing` when verified content no longer passes; back to `verified` when content changed after the AI review; an `approved` unit whose files changed after the approval goes back to `reviewed` (to `verified` if parts changed since the AI review, to `writing` if it has errors); with `rules › review › ai: skip`, up to `reviewed` straight away; course status is derived from its units. |
 | `coursekit reviewed` | unit -> `reviewed` (AI review, or a person's with `--by`). |
 | `coursekit approve content` | unit -> `approved`. When every unit is approved the course becomes `media`. |
 | `coursekit assemble applied` | course `media` -> `assembly` when every unit in creator matches its plan (creator backend). |
@@ -123,10 +126,10 @@ coursekit init [folder] [--update] [--name NAME] [--client CLIENT]
 
 What it does:
 
-- With a terminal and without `--yes` it asks for every value above (the slxd MCP URL with either backend), then offers to create the first course with the design agent, only when the URL was given (it first asks whether you have reference material and waits while you drop it in `brief/`).
+- With a terminal and without `--yes` it asks for every value above (the slxd MCP URL with either backend), then offers to create the first course with the design agent, only when the URL was given and the design tool is installed (it first asks whether you have reference material and waits while you drop it in `brief/`, then the title and the hours, then whether to run the whole process in handoff mode with [`coursekit handoff`](#coursekit-handoff); otherwise it launches `/new-course`).
 - Creates the folders `courses/`, `brief/sources/`, `config/`, `theme/`, `.agents/`; seeds `project.yaml`, `brief/notes.md` and `brief/links.md`; writes the managed files `AGENTS.md`, `CLAUDE.md`, `.env.example`, `.gitignore`, `config/<name>.example.yaml` (rules, directives, media, delivery) and `.githooks/post-merge`, `.githooks/post-checkout`; runs `git init` unless `--no-git`.
 - Then runs the same steps as [`coursekit setup`](#coursekit-setup) (`.env`, `COURSEKIT_LANG` in `.env`, signing identity, git hooks, roles, agents, the html builder with the html backend, diagnosis) and prints the next steps. When the MCP URL is empty, with either backend, the next steps warn that the design cannot connect to creator until `project.yaml › platform.slxd.mcp_url` is set and `coursekit agents` is run.
-- `--update` writes nothing outside the managed files and prints `created`, `updated`, `unchanged` or `kept` for each.
+- `--update` writes nothing outside the managed files (it only recreates the project folders if they are missing) and prints `created`, `updated`, `unchanged` or `kept` for each.
 - Exit code 1 when the folder already is a project (without `--update`) or is not one (with `--update`).
 
 ```
@@ -181,7 +184,7 @@ Generates the skills, slash commands and agent settings for Claude Code, opencod
 coursekit agents
 ```
 
-No arguments. Writes the rendered files to `.claude/`, `.opencode/`, `.coursekit/agents/` and `.coursekit/docs/`, and merges (never replaces) the tool configuration into `.mcp.json`, `opencode.json`, `.claude/settings.json` and `.codex/config.toml`, including the denial of `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff` and `git push` to the agents. Only files coursekit generated (they carry a marker) are overwritten or removed. Prints `agents: N written, M unchanged, K removed` and lists the configuration files it updated and the files it kept because you edited them. Details in [05-agents.md](05-agents.md).
+No arguments. Writes the rendered files to `.claude/`, `.opencode/`, `.coursekit/agents/` and `.coursekit/docs/`, and updates the tool configuration. It merges (never replaces) into `.claude/settings.json` and `opencode.json` the denial to the agents of `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff`, `coursekit reviewed --by` and `git push`. When `project.yaml › platform.slxd.mcp_url` is set, it also adds the slxd MCP server to `.mcp.json` and `opencode.json` (merged) and writes `.codex/config.toml`, which holds only that server (Codex gets no denial list); that file is rewritten as a whole while it carries the coursekit marker line, and left alone once you remove the line. Only files coursekit generated (they carry a marker) are overwritten or removed. Prints `agents: N written, M unchanged, K removed` and lists the configuration files it updated and the files it kept because you edited them. Details in [05-agents.md](05-agents.md).
 
 ```
 coursekit agents
@@ -206,7 +209,7 @@ coursekit setup [--identity] [--media] [--roles] [--name NAME] [--email EMAIL] [
 
 Steps, in order: create `.env` from `.env.example` if missing; set the signing identity (`COURSEKIT_USER_NAME`, `COURSEKIT_USER_EMAIL` in `.env`, suggesting the git identity); configure the CA certificate listed in `project.yaml › network` for TLS-inspecting proxies; point git to `.githooks`; write the default tool and model of each role in `.env` (`<ROLE>_AGENT`, `<ROLE>_MODEL`); run `coursekit agents`; with the html backend, prepare the builder of the packages (below); print the diagnosis of [`coursekit doctor`](#coursekit-doctor).
 
-`--media` (or answering yes when asked) additionally installs `ffmpeg`, `node`, `vhs` and `asciinema` (Homebrew on macOS, winget on Windows; on Linux it prints the commands to run), installs `piper` and `stable-ts` as `uv` tools, downloads a default Piper voice, prepares the Remotion workspace in `tools/remotion/`, and asks (Enter skips) for the optional keys of ElevenLabs, Azure Speech, Google TTS and Magnific.
+`--media` (or answering yes when asked) additionally installs `ffmpeg`, `node`, `vhs` and `asciinema` (Homebrew on macOS; on Windows winget installs `ffmpeg`, `node` and `vhs`, because asciinema has no Windows version and VHS is used instead; on Linux it prints the commands to run), installs `piper` and `stable-ts` as `uv` tools, downloads a default Piper voice, prepares the Remotion workspace in `tools/remotion/`, and asks (Enter skips) for the optional keys of ElevenLabs, Azure Speech, Google TTS and Magnific.
 
 With the html backend (`project.yaml › assembly.backend: html`), `setup` also prepares the builder of the packages, with or without `--media`: it installs `@studiolxd/scorm` (the SCORM runtime of the player) and `esbuild` (which bundles the player) with `npm install`, once per machine, in the [per-machine store](04-configuration.md#the-per-machine-store) (`workspaces/html-builder-<hash>/`; `<hash>` comes from the `package.json` of the builder, so every project of the same coursekit version reuses the install). Without `npm` it prints a warning and goes on. If the install fails it prints `warning: the html backend builder could not be prepared (npm install); coursekit assemble build will try again`: `coursekit assemble build` retries it when the builder is missing. Nothing is installed inside the project.
 
@@ -319,11 +322,11 @@ coursekit handoff [--code CODE] [--no-intro] [--no-summary] [--notes NOTES] [--r
 |---|---|---|
 | `target` | text | With `hours`: the title of the new course (quote it). Without them: the code of a course to carry on from where it stopped. |
 | `hours` | number; optional | Total duration. It makes `handoff` create a new course. |
-| `--code CODE` | default: the title as an upper-case slug | Course code. Only when creating. |
-| `--no-intro`, `--no-summary`, `--notes NOTES` | as in [`coursekit new`](#coursekit-new) | Only when creating; with a code to carry on they are refused (exit code 2). |
+| `--code CODE` | default: the title as an upper-case slug | Course code. Only when creating; refused with a code to carry on (exit code 2). |
+| `--no-intro`, `--no-summary`, `--notes NOTES` | as in [`coursekit new`](#coursekit-new) | Only when creating; with a code to carry on they are refused (exit code 2), like `--code`. |
 | `--rounds ROUNDS` | whole number; default `rules › handoff › rounds` (`2`) | Attempts per step before it stops. |
 
-It runs, headless and in order, the agent of each role, and decides each step from the status of the course. The signatures of the design and of every unit are given by coursekit itself as **Coursekit Handoff** (never as a person), and each approval records `via: handoff`. It does not do the client's review and it does not start if the project requires it (`client_review.required`). When a step still fails after its attempts it stops with exit code 1, says why and how to go on (`coursekit handoff <CODE>`). It can take a long time and spend credits of the configured media providers.
+It runs, headless and in order, the agent of each role, and decides each step from the status of the course. The signatures of the design and of every unit are given by coursekit itself as **Coursekit Handoff** (never as a person), and each approval records `via: handoff`. It does not do the client's review and it does not start if the project requires it (`client_review.required`): it refuses before creating the course. When a step still fails after its attempts it stops with exit code 1, says why and how to go on (`coursekit handoff <CODE>`). It can take a long time and spend credits of the configured media providers.
 
 ```
 coursekit handoff "Strong passwords" 2 --code PWD
@@ -359,7 +362,7 @@ coursekit sync [--check] code
 | `code` | course code or folder | Course to sync. |
 | `--check` | flag | Only report what would be synced; write nothing. |
 
-Without `--check` it writes `course.yaml › units` (title, hours, objectives, sections with minimum words, activities), keeping the progress fields coursekit already set (`status`, `content_id`, `written_with`, `reviewed_with`, `reviewed_parts`), and creates `content/unit-NN/content.md` and `assessment.md` skeletons for units that have none. Existing content is never overwritten; a content file that is still the untouched skeleton of a previous design is regenerated. Prints the warnings (section headings that differ from the design, hours that do not add up, a missing hours value) and a summary `N units, M sections, W minimum words`, then each skeleton written. Warnings do not change the exit code. Without `design/matrix.json` (or with a file that is not a `design_matrix_get` result) it stops with a message and exit code 1.
+Without `--check` it writes `course.yaml › units` (title, hours, objectives, sections with minimum words, activities), keeping the fields coursekit already set on each unit (`status`, `content_id`, `written_with`, `reviewed_with`, `reviewed_parts`, `review`, `links`), and creates `content/unit-NN/content.md` and `assessment.md` skeletons for units that have none. Existing content is never overwritten: `content.md` is regenerated only while it is still the untouched skeleton of a previous design, and `assessment.md` is rewritten only when it is missing or still the blank template. Prints the warnings (section headings that differ from the design, hours that do not add up, a missing hours value) and a summary `N units, M sections, W minimum words`, then each skeleton written. Warnings do not change the exit code. Without `design/matrix.json` (or with a file that is not a `design_matrix_get` result) it stops with a message and exit code 1.
 
 ```
 coursekit sync PWD --check
@@ -395,7 +398,7 @@ coursekit brief [--refresh] [code]
 | `code` | course code or folder; default: the project `brief/` | Brief to convert. With a code, the project brief is converted too and the course index links to it. |
 | `--refresh` | flag | Download the URLs of `links.md` again (by default each URL is downloaded once). |
 
-Converts files of `brief/sources/` to `brief/text/files/` (MarkItDown) and the URLs of `links.md` to `brief/text/web/` (needs Node), only when new or changed, and writes `brief/index.md`, which the agents read, in the content language of the project (or of the course). Images are listed for the agents to open; audio and video need a transcript. With a code it works in `courses/<CODE>/brief/` and creates `sources/`, `links.md` and `notes.md` if missing. Prints a `brief:` summary line (documents, webs, images/audio/video and the index path) and one warning per problem. Exit code 1 if any conversion or download failed.
+Converts files of `brief/sources/` to `brief/text/files/` (MarkItDown) and the URLs of `links.md` to `brief/text/web/` (needs Node), only when new or changed, and writes `brief/index.md`, which the agents read, in the content language of the project (or of the course). Images are listed for the agents to open; audio and video need a transcript. With a code it works in `courses/<CODE>/brief/` and creates `sources/`, `links.md` and `notes.md` if missing. Prints a `brief:` summary line (documents, webs, images/audio/video and the index path) and one warning per problem. Exit code 1 if a file could not be converted or if the URLs cannot be downloaded because Node is missing; a download that fails while it runs is reported as a warning and the exit code stays 0.
 
 ```
 coursekit brief PWD --refresh
@@ -436,8 +439,8 @@ coursekit reviewed code unit [--by NAME] [--note NOTE] [--report FILE]
 | `code` | course code or folder | Course. |
 | `unit` | unit number | Unit reviewed. |
 | `--by` | name | The review is a person's: records `review: {kind: human, by, at}` in the unit and the history, and the AI report is not needed. Agents are denied the option. |
-| `--note` | text | Note of the person's review (needs `--by`). |
-| `--report` | file | Report of the person's review (needs `--by`); it must be inside the course folder, usually in `reviews/`, and is committed with the signature. |
+| `--note` | text | Note of the person's review (needs `--by`; exit code 2 without it). |
+| `--report` | file | Report of the person's review (needs `--by`; exit code 2 without it); it must be inside the course folder, usually in `reviews/`, and is committed with the signature. |
 
 Without `--by` it requires the report `courses/<CODE>/reviews/unit-NN-ai-review.md` (and records `review: {kind: ai}`); with `--by` it does not. In both cases the unit must still verify without errors. Moves the unit to `reviewed` (the course derives its status), and stores the fingerprint of each section and activity in `course.yaml › units[N].reviewed_parts`, so later reviews can be partial. Prints `unit N: reviewed`, adding the course change when there is one. Exit code 1 if the report is missing, the unit does not exist or it does not verify.
 
@@ -492,7 +495,7 @@ coursekit hold --reason REASON code
 
 Records in `course.yaml › hold` the previous status (`previous`), the reason (`reason`), who paused it (`by`, the signing identity) and when (`at`), sets the course to `on_hold` and appends the change to `course.yaml › history`. Prints `<CODE> on hold (it was in '<status>')`. Exit code 1 if the course already is on hold.
 
-While the course is on hold these commands are refused (exit code 1, with a message that gives the date, the reason, the previous status and the way out): `coursekit write`, `coursekit review`, `coursekit approve`, `coursekit reviewed`, every action of `coursekit assemble`, `coursekit sync` (without `--check`), `coursekit media set`, every action of `coursekit client`, and `coursekit delivery check`, `name` and `add`. The commands that only read still work: `coursekit status`, `coursekit verify`, `coursekit config`, `coursekit brief`, `coursekit publish`, `coursekit catalog`, `coursekit outline` and `coursekit sync --check`.
+While the course is on hold these commands are refused (exit code 1, with a message that gives the date, the reason, the previous status and the way out): `coursekit write`, `coursekit review`, `coursekit approve`, `coursekit reviewed`, every action of `coursekit assemble`, `coursekit sync` (without `--check`), `coursekit media set`, every action of `coursekit client`, and `coursekit delivery check`, `name` and `add`. `coursekit handoff` stops with a message that says how to resume, and `coursekit run` refuses the commands that work on the course (see [`coursekit run`](#coursekit-run)). The commands that only read still work: `coursekit status`, `coursekit verify`, `coursekit config`, `coursekit brief`, `coursekit publish`, `coursekit catalog`, `coursekit outline` and `coursekit sync --check`.
 
 ```
 coursekit hold PWD --reason "Client paused the project until the next quarter"
@@ -566,7 +569,7 @@ coursekit write [--headless] [--agent {claude,opencode,codex}] [--model MODEL] c
 | `--agent {claude,opencode,codex}` | default: `WRITER_AGENT` | Tool for this launch. Alone, it uses that tool's default model. |
 | `--model MODEL` | default: `WRITER_MODEL` | Model for this launch. |
 
-It records the tool and model in `course.yaml › units[N].written_with` and launches `/write-unit <CODE> <N>` with the writer agent. Prints `write <CODE> · unit N with <tool> · <model>` and, afterwards, the unit status and the session log path. Interactive: exit code of the tool. Headless: 0 when the unit ends `verified`, `reviewed` or `approved`, otherwise the tool's code or 1. With several units it prints `stopped at unit N` on failure. When nothing is pending it prints `nothing to write in <CODE>` and exits with 0.
+It records the tool and model in `course.yaml › units[N].written_with` and launches `/write-unit <CODE> <N>` with the writer agent. Prints `write <CODE> · unit N with <tool> · <model>` and, with `--headless`, afterwards the final summary, the unit status and the session log path (an interactive session prints nothing more). Interactive: exit code of the tool. Headless: 0 when the unit ends `verified`, `reviewed` or `approved`, otherwise the tool's code or 1. With several units it prints `stopped at unit N` on failure. When nothing is pending it prints `nothing to write in <CODE>` and exits with 0.
 
 ```
 coursekit write PWD 1 --agent opencode --model anthropic/claude-sonnet-5-5
@@ -613,7 +616,7 @@ coursekit run [--role {design,writer,reviewer,media,assembly}] [--headless] [--a
 | `--agent {claude,opencode,codex}` | default: `<ROLE>_AGENT` | Tool for this launch. |
 | `--model MODEL` | default: `<ROLE>_MODEL` | Model for this launch. |
 
-`--headless`, `--agent`, `--model` and `--role` may also come after the command name. Prints `/<name> <arguments> with the <role> agent (<tool> · <model>)` and returns the tool's exit code. Codex has no project slash commands, so it is told to follow `.coursekit/agents/commands/<name>.md`. When the command works on a course (its first argument is a course code) and the course is on hold, it is refused with exit code 1 before the tool starts; `new-course` and `course-status` are not affected.
+`--headless`, `--agent`, `--model` and `--role` may also come after the command name. Prints `/<name> <arguments> with the <role> agent (<tool> · <model>)` and returns the tool's exit code. Codex, and opencode with `--headless`, cannot take a project slash command, so they are told to follow `.coursekit/agents/commands/<name>.md`. When the command works on a course (its first argument is a course code) and the course is on hold, it is refused with exit code 1 before the tool starts; `new-course` and `course-status` are not affected.
 
 ```
 coursekit run new-course "Strong passwords" 2 --code PWD
@@ -708,7 +711,7 @@ coursekit tts [--course COURSE] [--engine {elevenlabs,azure,google,piper}] --in 
 | `--voice VOICE` | text | Voice, overriding the course's. |
 | `--speaker SPEAKER` | integer | Speaker of multi-speaker Piper voices. |
 
-Fails with a message (exit code 1) when the provider is not configured, when several providers are available and none is chosen (use `coursekit voice set`), or when none is, and when the `--in` file does not exist. ElevenLabs also writes `<out>.vtt` (captions) from the character timestamps the API returns; for the other providers use [`coursekit subtitles`](#coursekit-subtitles).
+Fails with a message (exit code 1) when the provider is not configured, when several providers are available and none is chosen (use `coursekit voice set`), or when none is, when the `--in` file does not exist, when a program it needs (`ffmpeg`, `piper`) is not installed or fails (`<program> is not installed or not on the PATH (coursekit setup --media)`, `<program> failed (exit code N)`), and when the voice API answers with an error or cannot be reached (`<host> answered <status> <reason>: check the key, the region and the voice configured`, `could not reach <host>: <reason>`). ElevenLabs also writes a `.vtt` file (captions) next to the audio, with the name of `--out` and the extension `.vtt` (`u1.mp3` gives `u1.vtt`), from the character timestamps the API returns; for the other providers use [`coursekit subtitles`](#coursekit-subtitles).
 
 ```
 coursekit tts --course PWD --in media/scripts/u1-s2-m1.txt --out media/files/u1-s2-m1.mp3
@@ -731,7 +734,7 @@ coursekit subtitles --audio AUDIO --text TEXT --out OUT [--course COURSE] [--lan
 | `--language LANGUAGE` | default `es` | Language of the audio. |
 | `--model MODEL` | default `base` | Whisper model size used for the alignment. |
 
-Prints `wrote <OUT>`. Exit code 1, with a message, if `stable-ts` is not installed or the audio or the text file does not exist.
+Prints `wrote <OUT>`. Exit code 1, with a message, if `stable-ts` is not installed or fails (`<program> failed (exit code N)`), or if the audio or the text file does not exist.
 
 ```
 coursekit subtitles --audio media/files/u1-s2-m1.mp3 --text media/scripts/u1-s2-m1.txt --out media/files/u1-s2-m1.vtt --course PWD
@@ -751,7 +754,7 @@ coursekit theme [--course COURSE] {tokens,check,import,show} [file]
 | `file` | path; required by `import` | Creator backend: the file with the saved result of the platform tool `get_theme` (the agent saves it to `.cache/theme/get_theme.json`). Html backend: the `.css` stylesheet of the project (for example `theme/maqueta.css`). The extension decides: a file ending in `.css` is read as a stylesheet, any other as a `get_theme` result. |
 | `--course COURSE` | course code or folder | Work on the own theme of that course (`courses/<CODE>/theme/`) instead of the project's (`theme/`). |
 
-Where the tokens are: a course uses its own tokens when `courses/<CODE>/theme/tokens.json` exists, otherwise the project's `theme/tokens.json`. `tokens`, `check` and `show` apply that rule when given `--course`; `import --course` creates the course's own tokens.
+Where the tokens are: a course uses its own tokens when `courses/<CODE>/theme/tokens.json` exists, otherwise the project's `theme/tokens.json`. `tokens`, `check` and `show` apply that rule when given `--course`; `import --course` creates the course's own tokens. `coursekit theme show PWD` is accepted as a shortcut of `coursekit theme show --course PWD`.
 
 Actions:
 
@@ -818,7 +821,7 @@ Actions of the creator backend:
 
 Action of the html backend:
 
-- `build`: builds each unit (the one in `--unit`, or every unit in order) into `courses/<CODE>/assembly/html/unit-NN/`, a folder that opens from the disk in a browser (`index.html`, `assets/styles.css`, the bundled player `assets/player.js`, the produced media in `media/` and `imsmanifest.xml`). The folder is rebuilt from scratch every time and the project `.gitignore` ignores it (`courses/*/assembly/html/`). The content is the same `content.md` and `assessment.md` the creator backend reads, converted to the same plan, with the media that are `produced` (or `uploaded`) copied into the package. The styles are the base layout of the package, the tokens of the course, `theme/maqueta.css`, `courses/<CODE>/theme/maqueta.css` and `components/*.css`; the player bundles `components/*.js` of the project ([04-configuration.md](04-configuration.md#files-of-the-html-backend)). The SCORM standard comes from `delivery.yaml › export.standard` and the quiz settings (passing score, attempts) from the course. With `--version X.Y` it also writes the zip `courses/<CODE>/delivery/<name from delivery.yaml › file_name>` (for example `PWD-U01-v1.0-scorm12.zip`, the name `coursekit delivery name` prints), with `imsmanifest.xml` first at its root, ready for `coursekit delivery add`. The first build prepares the builder (`npm install` of `@studiolxd/scorm` and `esbuild` in the store) if `coursekit setup` has not done it yet. It does not change the status of the course.
+- `build`: builds each unit (the one in `--unit`, or every unit in order) into `courses/<CODE>/assembly/html/unit-NN/`, a folder that opens from the disk in a browser (`index.html`, `assets/styles.css`, the bundled player `assets/player.js`, the produced media in `media/` and `imsmanifest.xml`). The folder is rebuilt from scratch every time and the project `.gitignore` ignores it (`courses/*/assembly/html/`). The content is the same `content.md` and `assessment.md` the creator backend reads, converted to the same plan, with the media that are `produced` (or `uploaded`) copied into the package. The styles are the base layout of the package, the tokens of the course, `theme/maqueta.css`, `courses/<CODE>/theme/maqueta.css` and `components/*.css`; the player bundles `components/*.js` of the project ([04-configuration.md](04-configuration.md#files-of-the-html-backend)). The SCORM standard comes from `delivery.yaml › export.standard` and the quiz settings (passing score, attempts) from the course. With `--version X.Y` it also writes the zip `courses/<CODE>/delivery/<name from delivery.yaml › file_name>` (for example `PWD-U01-v1.0-scorm12.zip`, the name `coursekit delivery name` prints), with `imsmanifest.xml` first at its root, ready for `coursekit delivery add`. The first build prepares the builder (`npm install` of `@studiolxd/scorm` and `esbuild` in the store) if `coursekit setup` has not done it yet. When every unit of the course has been built and the course is in `media`, it moves to `assembly` and prints `every unit is built: the course moves to assembly`.
 
 Output of `build`, per unit: the warnings (`WARNING …`: for example a produced asset whose file does not exist, or the image of a labelled graphic that is not produced yet; a placeholder without a produced file stays in the page as a visible note), then `unit N: F files in courses/<CODE>/assembly/html/unit-NN` and either `package <name> (<size>)` with `--version` or `preview: open courses/<CODE>/assembly/html/unit-NN/index.html in the browser` without it. Without an LMS the preview keeps the learner's state only in memory.
 
@@ -871,13 +874,13 @@ coursekit delivery [--file FILE] [--job JOB] [--snapshot SNAPSHOT] [--unit UNIT]
 | `code` | course code or folder | Course. |
 | `--unit UNIT` | unit number (required by `add` and `name`) | Unit of the package. |
 | `--version VERSION` | text (required by `add` and `name`), for example `1.0` | Delivery version. |
-| `--file FILE` | path (`add`) | The downloaded `.zip`. Must be inside `courses/<CODE>/delivery/`. Exit code 2 without it. |
+| `--file FILE` | path (`add`) | The downloaded `.zip`; a relative path is taken from the current folder. It must be directly inside `courses/<CODE>/delivery/`. Exit code 2 without it. |
 | `--job JOB` | text (`add`) | Id of the creator export job. Not used with the html backend. |
 | `--snapshot SNAPSHOT` | text (`add`) | Id of the creator snapshot the package was exported from. Not used with the html backend. |
 
 With the html backend the package is not exported from a platform: `coursekit assemble build CODE --unit N --version X.Y` writes it in `courses/<CODE>/delivery/` with the name that `name` prints, and `add` records it without `--job` or `--snapshot`.
 
-`check` prints that the course can be delivered, or refuses with the reason (exit code 1). `name` and `add` refuse in the same cases, before doing anything: the course is on hold, or the client's review is required and not approved. `add` and `name` without `--unit` or `--version` exit with code 2.
+`check` prints that the course can be delivered, or refuses with the reason (exit code 1); when the course is in a status where delivery does not normally start (for example `media`) it prints a warning instead and exits with 0. `name` and `add` refuse in the same cases, before doing anything: the course is on hold, or the client's review is required and not approved. `add` and `name` without `--unit` or `--version` exit with code 2.
 
 The client's review is required when `delivery.yaml › client_review.required` is `true` (default `false`; it can be overridden for the whole project in `config/delivery.yaml` and per course in `course.yaml › delivery`). Then the course needs at least one round in `course.yaml › client_review` and the last one must be `approved` or `skipped`; the message says whether no round was opened, the client asked for changes, or the client has not answered yet. See [`coursekit client`](#coursekit-client).
 
@@ -899,12 +902,12 @@ coursekit publish [--check] [--only-if-configured] [code]
 | Argument | Values / default | Meaning |
 |---|---|---|
 | `code` | course code; default: every course | Publish only that course. Exit code 1 if it does not exist. |
-| `--check` | flag | Only report the mirror configuration: provider, folder, whether links can be built. Copies nothing. |
-| `--only-if-configured` | flag | Do nothing, silently and with exit code 0, when there is no mirror folder (for git hooks). |
+| `--check` | flag | Only report the mirror configuration: provider, folder, whether links can be built. Copies nothing; exit code 0. |
+| `--only-if-configured` | flag | Do nothing, silently and with exit code 0, when there is no mirror (provider `none` or `MIRROR_DIR` not set), for git hooks. A `MIRROR_DIR` that points to a folder that does not exist still fails with exit code 1. |
 
-The mirror is `project.yaml › mirror` (provider and web address) plus `MIRROR_DIR` in `.env` (local path). Per course it copies `course.yaml`, `design/`, `content/`, `reviews/` and `delivery/` to `<MIRROR_DIR>/courses/<CODE>/`, only when the content changed, removes files that no longer exist in git (tracked in `.published.json`), and never deletes `delivery/` packages. Then writes the catalog Excel in the root of the mirror. Prints one line per course that changed and the catalog line. With `mirror.provider: none` it prints `no mirror folder (project.yaml › mirror.provider: none): nothing to publish` and exits with 0, because the commands of the agents call it in every project. With a provider but no `MIRROR_DIR`, or with a folder that does not exist, it exits with code 1.
+The mirror is `project.yaml › mirror` (provider and web address) plus `MIRROR_DIR` in `.env` (local path). Per course it copies `course.yaml`, `design/`, `content/`, `reviews/` and `delivery/` to `<MIRROR_DIR>/courses/<CODE>/`, only when the content changed, removes files that no longer exist in git (tracked in `.published.json`), and never deletes `delivery/` packages. Then writes the catalog Excel in the root of the mirror. Prints one line per course that changed and the line of the catalog written in the mirror. With `mirror.provider: none` it prints `no mirror folder (project.yaml › mirror.provider: none): nothing to publish` and exits with 0, because the commands of the agents call it in every project. With a provider but no `MIRROR_DIR`, or with a folder that does not exist, it exits with code 1.
 
-Before touching the mirror it also refreshes the catalog of the project in `courses/` (the same as `coursekit catalog`; silently with `--only-if-configured`), so it works in projects without a mirror too.
+Before touching the mirror it also refreshes the catalog of the project in `courses/` (the same as `coursekit catalog`; it prints its `wrote courses/... (N courses, M units)` line first, except with `--only-if-configured`), so it works in projects without a mirror too.
 
 You rarely need to run it yourself: when the project has a mirror folder, the commands that change a course publish it when they finish (see [Automatic publication](08-assembly-and-delivery.md#automatic-publication)).
 
@@ -922,7 +925,7 @@ coursekit catalog [--output OUTPUT]
 
 | Argument | Values / default | Meaning |
 |---|---|---|
-| `--output OUTPUT` | path; default `courses/course-catalog.xlsx` (`catalogo-cursos.xlsx` when `ui_language` is `es`) | File to write. |
+| `--output OUTPUT` | path; default `courses/course-catalog.xlsx` in an English project and `courses/catalogo-cursos.xlsx` otherwise (the language is `ui_language`, else `content_language`) | File to write. |
 
 Prints `wrote <path> (N courses, M units)`. `coursekit publish` writes the same catalog in the mirror folder.
 
@@ -940,7 +943,7 @@ The slash commands live in `src/coursekit/agentkit/commands/` and are generated 
 | `/design-change <CODE> <changes>` | `coursekit brief`, `coursekit publish` | `design` | People. The design is applied in slxd; a signed design must be signed again. |
 | `/approve-design <CODE>` | `coursekit sync --check`, `coursekit publish`; the person then runs `coursekit approve design <CODE> --yes` | `design` | The agent prepares it; only a person signs. |
 | `/define-theme [CODE]` | `coursekit theme show`, `coursekit theme import` | `design` | People, or the design agent. With the creator backend it chooses or adapts the theme in the platform, saves `get_theme` to `.cache/theme/get_theme.json` and derives the tokens. With the html backend there is no platform theme: it writes or adapts `theme/maqueta.css` and runs `coursekit theme import theme/maqueta.css`. Without a code it defines the project theme; with one, the own theme of that course. Never edits `tokens.json` by hand. |
-| `/write-unit <CODE> [N]` | `coursekit status`, `coursekit verify`; launched by `coursekit write` | `writer` | People (`coursekit write`) or the agent of that role. Never `coursekit approve`. |
+| `/write-unit <CODE> [N]` | `coursekit status`, `coursekit verify`, `coursekit outline`; launched by `coursekit write` | `writer` | People (`coursekit write`) or the agent of that role. Never `coursekit approve`. |
 | `/review-unit <CODE> <N>` | `coursekit verify`, `coursekit brief`, `coursekit outline`, `coursekit reviewed`; launched by `coursekit review` | `reviewer` | People (`coursekit review`) or the agent of that role. |
 | `/approve-unit <CODE> <N>` | `coursekit verify`; the person then runs `coursekit approve content <CODE> --unit <N> --yes` | `reviewer` | The agent prepares it; only a person signs. |
 | `/produce-media <CODE> [asset id]` | `coursekit media extract`, `coursekit media plan`, `coursekit media set`, `coursekit voice`, `coursekit tts`, `coursekit subtitles`, `coursekit theme show` | `media` | People, or the media agent. It tells the person what it will produce before spending paid-API credits. If the tokens are missing or were not derived from the platform theme, it stops and tells the person to run `/define-theme`. |

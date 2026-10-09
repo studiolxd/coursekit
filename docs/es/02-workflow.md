@@ -14,6 +14,8 @@ Todo el proceso de producción de un curso, del brief a la entrega: quién hace 
 
 En cualquier momento una persona puede pausar el curso (`on_hold`) y reanudarlo después. Mira [Pausar un curso](#pausar-un-curso).
 
+Hay un camino alternativo para los cursos que nadie tiene que revisar: el [modo handoff](#modo-handoff) recorre solo las fases 2 a 9 (sin la revisión del cliente), y coursekit firma en lugar de una persona, con marca, como Coursekit Handoff.
+
 | # | Fase | Quién | Comandos principales | Resultado |
 |---|---|---|---|---|
 | 1 | Brief | persona | `coursekit brief [CODE]` | material de referencia convertido en `brief/` |
@@ -43,11 +45,12 @@ El Markdown de cada unidad es la fuente de verdad. Lo que esté mal en Creator (
 | Multimedia, montaje, entrega | decide, comprueba el resultado | produce, carga, exporta |
 | Revisión del cliente | abre y cierra cada ronda y anota lo que decidió el cliente | lee los comentarios del cliente, aplica al Markdown los acordados y los responde (`/client-feedback`) |
 | Pausar y reanudar | decide (`coursekit hold`, `coursekit resume`) | no puede hacerlo |
+| Handoff (camino alternativo) | lo lanza y acepta el resultado sin revisarlo | ejecuta cada paso; coursekit firma como Coursekit Handoff |
 | Commits y pushes | los hace | no los hace, salvo que se lo pidas |
 
 Cada agente trabaja con uno de cinco **roles**: `design`, `writer`, `reviewer`, `media` y `assembly`. Cada rol tiene una herramienta (`claude`, `opencode`, `codex`) y un modelo, que se guardan en `.env` (`DESIGN_AGENT`, `DESIGN_MODEL`, etc.). `coursekit roles` los muestra. Conviene que revise un modelo distinto del que redactó: coursekit avisa cuando son el mismo. Mira [Agentes](05-agents.md).
 
-**Solo firma una persona.** `coursekit approve` registra tu nombre, la hora y una huella de lo que apruebas, y lo confirma (commit) contigo como autor. Los ajustes de agente prohíben a los agentes ejecutarlo, y también `coursekit client`, `coursekit hold` y `coursekit resume`, que anotan decisiones de personas. La única excepción es el [modo handoff](#modo-handoff), donde coursekit mismo firma, con marca, como Coursekit Handoff. Desde el chat de un agente puedes ejecutarlo tú poniendo `!` delante de la línea:
+**Solo firma una persona.** `coursekit approve` registra tu nombre, la hora y una huella de lo que apruebas, y lo confirma (commit) contigo como autor. Los ajustes de agente de Claude Code y opencode prohíben a los agentes ejecutarlo, y también `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff` y `coursekit reviewed --by`, que anotan decisiones de personas o firman en su lugar; Codex no tiene esa denegación en su configuración y se apoya en las instrucciones de `AGENTS.md` (mira [Agentes](05-agents.md#permisos-qué-no-pueden-hacer-los-agentes)). La única excepción es el [modo handoff](#modo-handoff), donde coursekit mismo firma, con marca, como Coursekit Handoff. Desde el chat de un agente puedes ejecutarlo tú poniendo `!` delante de la línea:
 
 ```text
 ! coursekit approve design PWD --yes
@@ -59,19 +62,28 @@ En tu propia terminal, sin `--yes`, antes te pide confirmación. Sin terminal y 
 
 `coursekit handoff "<título>" <horas>` lleva un curso desde su título hasta su entrega **por sí solo**: nadie revisa el diseño, las unidades ni el multimedia por el camino, y no hay revisión del cliente. Sirve para cursos cuya calidad aceptas sin la lectura de una persona; usa el flujo normal cuando alguien tenga que revisar.
 
+```bash
+coursekit handoff "Contraseñas seguras" 2 --code PWD   # un curso nuevo, desde su título y sus horas
+coursekit handoff PWD                                  # continúa un curso que se paró
+```
+
+`--rounds` fija los intentos. `--code`, `--no-intro`, `--no-summary` y `--notes` se pasan a `/new-course` (handoff añade siempre `--no-material`); solo tienen sentido al crear el curso, y al continuar coursekit los rechaza (código de salida 2).
+
 | Estado del curso | Qué hace handoff |
 |---|---|
 | (nuevo) | El agente de diseño propone el diseño (`/new-course`, sin pedir material de partida). |
-| `design` | El agente de diseño actualiza y valida la exportación (`/approve-design`); coursekit firma el diseño como **Coursekit Handoff**. Si no se puede firmar, el agente de diseño lo corrige y se intenta de nuevo. |
+| `design` | Si todavía no existe `design/matrix.json`, el agente de diseño exporta la propuesta (`/design-change`). Después actualiza y valida la exportación (`/approve-design`); coursekit firma el diseño como **Coursekit Handoff**. Si no se puede firmar, el agente de diseño lo corrige y se intenta de nuevo. |
 | `design_approved`, `writing` | El agente redactor escribe cada unidad hasta que verifica. |
-| `ai_review` | El agente revisor revisa cada unidad. Si su informe termina con `<!-- result: not_ready -->`, el redactor corrige la unidad y se revisa de nuevo. |
+| `ai_review` | El agente revisor revisa cada unidad. Si la línea `<!-- result: ... -->` de su informe dice `not_ready` (mira [Revisión con IA](#4-revisión-con-ia)), el redactor corrige la unidad y se revisa de nuevo. Con `review.ai: skip` esta fase no ocurre: las unidades ya están `reviewed`. |
 | `editorial_review` | coursekit firma cada unidad como Coursekit Handoff. |
-| `media` | Si el multimedia necesita el theme y el proyecto no lo tiene, el agente de diseño lo define (`/define-theme`); el agente de multimedia produce los recursos; el de montaje monta. |
+| `media` | coursekit extrae el manifiesto de multimedia. Si un recurso pendiente es de un tipo que usa el theme (`uses_theme`) y los tokens de diseño no están derivados (faltan o están escritos a mano), el agente de diseño define el theme (`/define-theme`); el agente de multimedia produce los recursos (`/produce-media`); el de montaje monta (`/assemble`). |
 | `assembly` | El agente de montaje entrega (`/deliver`). |
 
 - **Firmas.** Toda aprobación que da es de `Coursekit Handoff <handoff@coursekit.local>` y lleva `via: handoff` en `course.yaml › approvals`, y el commit tiene ese autor, así que nunca se confunde con la de una persona. Los agentes siguen sin poder firmar ni ejecutar `coursekit handoff`: la firma la pone coursekit, no ellos.
-- **Intentos.** Cada paso se intenta `rules › handoff › rounds` veces (`--rounds`). Si sigue fallando (una unidad que no verifica, una revisión con IA que sigue en `not_ready`, recursos multimedia sin producir, un curso que no se monta o no se entrega) se para, con código de salida 1, y el mensaje dice qué falló y dónde queda el registro de la sesión del agente (`.cache/logs/`).
-- **Continuar.** `coursekit handoff <CODE>` sigue desde el estado actual, sin repetir lo ya firmado. Si el curso está `on_hold` o en `client_review` se para: handoff no gestiona ninguno.
+- **Intentos.** Cada paso se intenta `rules › handoff › rounds` veces (`--rounds`). Si sigue fallando (una unidad que no verifica, una revisión con IA que sigue en `not_ready`, recursos multimedia sin producir, un curso que no se monta o no se entrega) se para, con código de salida 1, y el mensaje dice qué falló y dónde queda el registro de la sesión del agente (`.cache/logs/`). También se para, con una indicación de `coursekit status`, cuando un paso no cambia nada (ni el estado del curso, ni las unidades, ni las aprobaciones).
+- **Continuar.** `coursekit handoff <CODE>` sigue desde el estado actual, sin repetir lo ya firmado. Si el curso está `on_hold` (el mensaje dice que antes ejecutes `coursekit resume <CODE>`) o en `client_review` se para: handoff no gestiona ninguno. `coursekit handoff "<título>" <horas>` rechaza un código de curso que ya existe y señala `coursekit handoff <CODE>`.
+- **Qué rechaza.** Si el proyecto exige la revisión del cliente (`delivery › client_review › required`), se niega a empezar, antes de crear el curso, y a continuar mientras esa revisión no esté aprobada u omitida: handoff no la hace. Ambos casos terminan con código de salida 1.
+- **Cómo se ejecuta.** Todos los agentes se ejecutan en modo headless, con los límites de [Agentes](05-agents.md#headless---headless). Las sesiones quedan en `.cache/logs/` (`<CODE>-<paso>-handoff-<fecha>-<hora>.log`, y `<CODE>-uNN-write-…` o `-review-…` para las unidades). Tras cada paso se refrescan la carpeta espejo y el catálogo, si el proyecto los tiene. Al final imprime `handoff terminado`, con el estado del curso.
 - **Qué necesita.** Los roles del `.env` y la URL del MCP de slxd, como el flujo normal, y los proveedores del multimedia que quieras producir. No puede preguntar: las dudas quedan escritas en las unidades (`<!-- VERIFICAR -->`) y en los informes.
 
 ## Estados
@@ -93,7 +105,7 @@ Un curso tiene un único estado en `course.yaml › status`:
 | `delivered` | todas las unidades tienen un paquete de la misma versión | `coursekit delivery add`, automáticamente, solo desde `assembly` o `client_review` |
 | `on_hold` | en pausa por una persona | [`coursekit hold`](03-commands.md#coursekit-hold) `CODE --reason "..."`; [`coursekit resume`](03-commands.md#coursekit-resume) `CODE` lo devuelve a su estado |
 
-Desde `design_approved` hasta `media`, el estado se **deriva** de la unidad menos avanzada y se recalcula cada vez que una unidad cambia de estado. Por eso también puede retroceder cuando retrocede una unidad. Desde `assembly` en adelante no se recalcula.
+Desde `design_approved` hasta `media`, el estado se **deriva** de la unidad menos avanzada y se recalcula cada vez que una unidad cambia de estado. Por eso también puede retroceder cuando retrocede una unidad. Firmar de nuevo un diseño cambiado conserva el progreso de las unidades, y el estado se vuelve a derivar de ellas. Desde `assembly` en adelante no se recalcula.
 
 `client_review` y `on_hold` no se derivan de las unidades: los fijan los comandos que siguen.
 
@@ -112,14 +124,14 @@ El cliente revisa el curso montado antes de la entrega. Está **desactivada por 
 | `coursekit client CODE send [--to QUIÉN] [--where URL]` | Abre la ronda N. El curso pasa de `assembly` a `client_review` y los enlaces de revisión de las unidades se anotan en la ronda |
 | `coursekit client CODE changes [--note TEXTO]` | El cliente pidió cambios: la ronda se cierra con resultado `changes` y el curso vuelve a `assembly` |
 | `coursekit client CODE approve --by "Nombre" [--note TEXTO]` | El cliente aprobó: la ronda se cierra con resultado `approved`, con el nombre del cliente y la fecha. El curso se queda en `client_review` y se puede entregar |
-| `coursekit client CODE skip --reason TEXTO` | Entrega sin la aprobación del cliente. Anota una ronda con resultado `skipped` y el motivo |
+| `coursekit client CODE skip --reason TEXTO` | Decides entregar sin la aprobación del cliente. Anota una ronda con resultado `skipped` y el motivo, lo que desbloquea la entrega (después `/deliver`); no entrega ni cambia el estado. Se permite desde `assembly` o `client_review`, y se rechaza mientras haya una ronda abierta |
 
 Una ronda en un flujo normal:
 
 1. El agente de montaje ha anotado un enlace de vista previa y uno de revisión por unidad (`coursekit assemble link`). Con el backend html no hay enlaces de plataforma: alojas tú el zip o la vista previa y envías un solo enlace con `--where URL`.
 2. Envías los enlaces al cliente y abres la ronda: `coursekit client PWD send --to "equipo de formación de ACME"`.
 3. El cliente comenta en los enlaces de revisión, sin necesidad de cuenta.
-4. `/client-feedback PWD` (agente de montaje): lee los comentarios, aplica en el `.md` los acordados, recarga los cambios, publica una versión nueva de la revisión para el cliente y responde a cada comentario. Los comentarios que cambian objetivos, horas, actividades o estructura son un cambio de diseño y se te dejan a ti (`/design-change`).
+4. `/client-feedback PWD` (agente de montaje, solo con el backend creator: lee los comentarios de los enlaces de revisión): lee los comentarios, aplica en el `.md` los acordados, recarga los cambios, publica una versión nueva de la revisión para el cliente y responde a cada comentario. Los comentarios que cambian objetivos, horas, actividades o estructura son un cambio de diseño y se te dejan a ti (`/design-change`).
 5. Cierras la ronda: `coursekit client PWD changes --note "..."` si el cliente quiere más cambios; después aplica, vuelve a montar y haz `send` otra vez (ronda 2). Si el cliente está conforme, `coursekit client PWD approve --by "..."`.
 6. Entrega con `/deliver`.
 
@@ -129,7 +141,7 @@ Una unidad editada después de su firma vuelve a `verified`: necesita nueva revi
 
 `coursekit hold CODE --reason "..."` deja el curso en `on_hold`; `coursekit resume CODE` lo devuelve a su estado. Solo los ejecuta una persona. Al pausar se guardan en `course.yaml › hold` el estado anterior, el motivo, quién y cuándo, y se añade una entrada a `history`.
 
-Mientras un curso está en pausa se niegan los comandos que lo modifican: `write`, `review`, `reviewed`, `approve`, `assemble`, `sync` (sin `--check`), `media set`, `client` y los comandos de entrega (`delivery check`, `name` y `add`). Los comandos que solo leen o comprueban siguen funcionando (`status`, `verify`, `outline`, `config`, `sync --check`, `catalog`...). `coursekit status CODE` muestra quién lo pausó, cuándo, por qué y en qué estado estaba. El mensaje de un comando rechazado termina con el camino de vuelta: `coursekit resume CODE`.
+Mientras un curso está en pausa se niegan los comandos que lo modifican: `write`, `review`, `reviewed`, `approve`, `assemble` (todas sus acciones, incluidas `plan` y `diff`), `sync` (sin `--check`), `media set`, `run` (con el código de un curso, salvo `new-course` y `course-status`), `client` y los comandos de entrega (`delivery check`, `name` y `add`). Los comandos que solo leen o comprueban siguen funcionando (`status`, `verify`, `outline`, `config`, `sync --check`, `catalog`...). `coursekit status CODE` muestra quién lo pausó, cuándo, por qué y en qué estado estaba. El mensaje de un comando rechazado termina con el camino de vuelta: `coursekit resume CODE`.
 
 `resume` restaura el estado anterior y elimina el bloque `hold`. Si el curso se estaba redactando (de `design_approved` a `media`), el estado se vuelve a calcular a partir de sus unidades.
 
@@ -161,6 +173,7 @@ coursekit status PWD       # detalle y siguiente paso
 ```text
 PWD — Contraseñas seguras (2 h)
 Estado: design_approved
+Montaje: backend creator
 Diseño: firmado por Ana Ruiz <ana@acme.example> el 2026-10-09T01:18:52+02:00
   U1 Contraseñas seguras · 2 h · 3 apartados · 2 objetivos · mín. 10.000 palabras · pending
 Siguiente paso: escribe las unidades con `coursekit write PWD <N>`
@@ -225,7 +238,7 @@ El agente refresca la exportación si editaste en Creator, valida el diseño, ej
 coursekit approve design PWD
 ```
 
-La firma exige `design/matrix.json` y que `design/validation.json` no tenga errores de validación. Escribe las unidades y sus apartados en `course.yaml` (el progreso ya anotado se conserva), crea un esqueleto de `content.md` y `assessment.md` por unidad en `content/unit-NN/`, registra la aprobación, deja el curso en `design_approved` y hace commit.
+La firma exige `design/matrix.json` y que `design/validation.json` no tenga errores de validación. Escribe las unidades y sus apartados en `course.yaml` (el progreso ya anotado se conserva: estado, registro de revisión y enlaces), crea un esqueleto de `content.md` y `assessment.md` por unidad en `content/unit-NN/`, registra la aprobación, deja el curso en `design_approved` y hace commit.
 
 ### 3. Redacción
 
@@ -250,11 +263,13 @@ coursekit review PWD 1
 
 O `/review-unit PWD 1`. El agente revisor escribe `reviews/unit-01-ai-review.md` (hallazgos, cambios aplicados, propuestas pendientes de tu decisión) y ejecuta `coursekit reviewed PWD 1`, que comprueba otra vez que la unidad verifica y la marca como `reviewed`. Revisar una unidad ya revisada es una revisión parcial: solo los apartados y actividades que han cambiado desde la última revisión. Usa `--full` para revisarlo todo, o `--parts "apartado 4, actividad 1.2"` para elegir.
 
+El informe empieza con su **resultado** (listo, listo con cambios o no listo), repetido en un comentario que leen las herramientas: `<!-- result: ready | ready_with_changes | not_ready -->` (un solo valor, con guiones bajos). El resto es un resumen, una tabla de hallazgos (cada uno bloqueante, mejora o menor), los cambios aplicados y las propuestas pendientes de tu decisión. Una revisión parcial añade su propia sección al mismo informe y actualiza el resultado si cambia. En el [modo handoff](#modo-handoff), un resultado `not_ready` devuelve la unidad al redactor.
+
 #### Sin revisión con IA
 
 Hay dos formas, y en ambas firma una persona:
 
-- **Una unidad, revisada por una persona.** Tras leerla, ejecuta `coursekit reviewed PWD 1 --by "Ana Pérez" [--note "..."] [--report reviews/notas.md]`. La unidad pasa a `reviewed` sin el informe de IA, y `course.yaml › units[].review` y el historial registran quién la revisó. El contenido editado después vuelve a `verified`, igual que con la revisión con IA. Los agentes tienen `--by` denegado.
+- **Una unidad, revisada por una persona.** Tras leerla, ejecuta `coursekit reviewed PWD 1 --by "Ana Pérez" [--note "..."] [--report reviews/notas.md]`. La unidad pasa a `reviewed` sin el informe de IA, y `course.yaml › units[].review` y el historial registran quién la revisó. El contenido editado después vuelve a `verified`, igual que con la revisión con IA. `--note` y `--report` necesitan `--by`, y el informe debe ser un fichero dentro de la carpeta del curso. El registro `units[].review` se elimina si la unidad retrocede por debajo de `reviewed`. Los agentes tienen `--by` denegado.
 - **Todo el proyecto (o un curso), sin revisión con IA.** Pon `review.ai: skip` en `rules` (`config/rules.yaml`, `project.yaml › rules` o `course.yaml › rules`). Una unidad que pasa `coursekit verify` queda `reviewed` de inmediato (`review.kind: skipped`), el curso pasa de `writing` a `editorial_review` sin la fase `ai_review`, y tu firma es la revisión. `coursekit review` sigue funcionando si quieres igualmente una revisión con IA de una unidad.
 
 ### 5. Revisión editorial y firma
@@ -297,7 +312,7 @@ Mira [Montaje y entrega](08-assembly-and-delivery.md).
 
 ### 8. Revisión del cliente
 
-Opcional. Una persona abre y cierra cada ronda con [`coursekit client`](03-commands.md#coursekit-client) (mira [Revisión del cliente (opcional)](#revisión-del-cliente-opcional) más arriba); el agente solo trata los comentarios con `/client-feedback PWD`. Con el backend html no hay enlace de revisión de ninguna plataforma: alojas tú el zip o la carpeta de vista previa y das el enlace con `coursekit client PWD send --where URL`. Si una unidad retrocede al editarla, ejecuta `coursekit verify`, revisa y firma de nuevo donde haga falta, y `/assemble PWD` carga solo lo que cambió.
+Opcional. Una persona abre y cierra cada ronda con [`coursekit client`](03-commands.md#coursekit-client) (mira [Revisión del cliente (opcional)](#revisión-del-cliente-opcional) más arriba); el agente solo trata los comentarios con `/client-feedback PWD`. Con el backend html no hay enlace de revisión de ninguna plataforma: alojas tú el zip o la carpeta de vista previa y das el enlace con `coursekit client PWD send --where URL`. `/client-feedback` funciona solo con el backend creator; con html los comentarios te llegan por tu propio medio, los aplicas editando el `.md` y `/assemble PWD` vuelve a construir. Si una unidad retrocede al editarla, ejecuta `coursekit verify`, revisa y firma de nuevo donde haga falta, y `/assemble PWD` carga solo lo que cambió.
 
 ### 9. Entrega
 
@@ -308,6 +323,13 @@ Opcional. Una persona abre y cierra cada ronda con [`coursekit client`](03-comma
 El agente empieza con `coursekit delivery check PWD`: se niega mientras el curso está en pausa y, si el proyecto exige la revisión del cliente, hasta que la última ronda esté aprobada u omitida. Después exporta un paquete SCORM por unidad, lo descarga en `courses/PWD/delivery/` y lo registra con `coursekit delivery add`. Cuando todas las unidades tienen un paquete de la misma versión, el curso pasa a `delivered` (solo desde `assembly` o `client_review`; en otro estado el paquete se registra con un aviso). Cada `coursekit delivery add` copia además el curso a la carpeta espejo y refresca el catálogo (cuando el proyecto tiene una). Mira [Montaje y entrega](08-assembly-and-delivery.md).
 
 Con el backend html no se exporta nada de ninguna plataforma: para cada unidad el agente ejecuta `coursekit assemble build PWD --unit N --version 1.0` (escribe el zip en `courses/PWD/delivery/`) y después `coursekit delivery add` sin `--job` ni `--snapshot`. La comprobación inicial, el registro y la publicación son los mismos.
+
+### En cualquier momento
+
+Dos comandos no pertenecen a ninguna fase:
+
+- `/course-status [CODE]` (rol de diseño) ejecuta `coursekit status` y explica el resultado y el siguiente paso en dos o tres líneas.
+- `/sync-directives` (rol de montaje) mantiene el registro de directivas al día con el catálogo de bricks de creator. Ejecútalo cuando cambie el catálogo, no una vez por curso. Guarda `list_brick_types` en `.cache/list_brick_types.json`, lo comprueba con `coursekit directives check` y, por cada tipo de brick nuevo, decide si pasa a ser una directiva en `config/directives.yaml` (o va a `not_directives` con el motivo). Quita los tipos que desaparecieron, listando el contenido que los usaba sin modificarlo, y actualiza `synced_with_creator`.
 
 ## Montaje y entrega según el backend
 
@@ -373,7 +395,7 @@ coursekit compara lo que hay en disco con las huellas tomadas en cada paso, así
 
 | Qué cambia | Qué ocurre |
 |---|---|
-| El diseño se exporta de nuevo con contenido distinto después de firmarse | `status` muestra "hay que aprobar el diseño de nuevo". `verify`, `approve content` y la skill de redacción se detienen hasta que firmes otra vez con `coursekit approve design`. Las unidades conservan su progreso (se emparejan por su id de SLXD); las unidades nuevas empiezan en `pending` |
+| El diseño se exporta de nuevo con contenido distinto después de firmarse | `status` muestra "hay que aprobar el diseño de nuevo". `verify`, `approve content` y la skill de redacción se detienen hasta que firmes otra vez con `coursekit approve design`. Las unidades conservan su progreso (estado, quién las redactó y revisó, registro de revisión y enlaces; se emparejan por su id de SLXD) y las unidades nuevas empiezan en `pending`. Hasta el montaje el estado del curso se vuelve a derivar de las unidades (no retrocede a `design_approved` si ellas van más adelantadas); desde `assembly` en adelante se queda como está |
 | Se edita una unidad revisada | el siguiente `verify` la devuelve a `verified` y lista las partes cambiadas; `coursekit review` revisa entonces solo esas partes |
 | Se edita una unidad aprobada | el siguiente `verify` la devuelve a `verified` (o a `writing` si ya no pasa, o a `reviewed` si no cambió ninguna parte revisada). La aprobación anterior queda en `approvals` como historial; firmas de nuevo |
 | Una unidad deja de pasar `verify` | vuelve a `writing` |

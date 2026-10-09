@@ -102,7 +102,7 @@ El backend html construye sus páginas a partir de este mismo plan. Las claves d
 | Bloques de código | `CODE` (el lenguaje si se conoce y, si no, automático) |
 | Cita simple `> …` | `HIGHLIGHT` |
 | Directiva `:::nombre` | El brick del registro (tabla en [06-content.md](06-content.md)) |
-| Recurso multimedia sin subir | `NOTE` titulada `Recurso multimedia — <tipo>: <título>` (el tipo tal como está escrito en el contenido, por ejemplo `Infografía`), con descripción y especificaciones |
+| Recurso multimedia sin subir | `NOTE` titulada `Recurso multimedia — <tipo>: <título>` (las primeras palabras son las del idioma del curso, y el tipo se escribe como en el contenido, por ejemplo `Infografía`), con descripción y especificaciones |
 | Recurso multimedia subido | Según el id del tipo: `image`, `infographic`, `diagram` y `animated_gif` pasan a `IMAGE`; `video` pasa a `VIDEO` (con subtítulos y transcripción si están registrados); `audio` pasa a `AUDIO`; `simulation` y `terminal_demo` pasan a `EMBED`. Más un `ATTACHMENT` por cada descarga subida |
 | Etiquetas de objetivo, `---`, comentarios HTML | No se publican |
 
@@ -425,7 +425,7 @@ La carpeta espejo es una copia de solo lectura de los cursos en una carpeta sinc
 
 | Proveedor | Qué pegar en `mirror.url` | Enlace para `PWD` |
 |---|---|---|
-| `sharepoint`, `onedrive` | La dirección de la carpeta en la barra del navegador de la biblioteca (`…/Forms/AllItems.aspx?id=<ruta de la carpeta>`), una dirección de «copiar vínculo» (`…/:f:/r/<ruta>`) o una ruta simple (`/sites/<sitio>/<biblioteca>/<carpeta>`) | La misma forma, con `/courses/PWD` añadido a la ruta de la carpeta. Un enlace para compartir (`/:f:/s/<token>`) no lleva ruta, así que no se escriben enlaces (la comprobación avisa) |
+| `sharepoint`, `onedrive` | La dirección de la carpeta en la barra del navegador de la biblioteca (`…/Forms/AllItems.aspx?id=<ruta de la carpeta>`), una dirección de «copiar vínculo» (`…/:f:/r/<ruta>`) o una ruta simple (`/sites/<sitio>/<biblioteca>/<carpeta>`) | Desde la dirección de la biblioteca: la misma dirección con `/courses/PWD` añadido a la ruta de `id`. Desde un «copiar vínculo»: `https://<host>/<ruta de la carpeta>/courses/PWD` (se descartan el prefijo `/:f:/r` y la consulta). Desde una ruta simple: la ruta con `/courses/PWD` añadido. Un enlace para compartir (`/:f:/s/<token>`) no lleva ruta, así que no se escriben enlaces (la comprobación avisa) |
 | `nextcloud` | La dirección de la aplicación Archivos con `?dir=/Carpeta` | La misma dirección con `dir=/Carpeta/courses/PWD` |
 | `google-drive` | La dirección de la carpeta | La misma dirección para todos los cursos (los ids de carpeta no van en la ruta) |
 | `folder` | Cualquier dirección base; `{code}` se sustituye por el código del curso | La dirección con `{code}` sustituido; sin `{code}`, la misma dirección |
@@ -440,7 +440,7 @@ coursekit publish PWD        # un curso
 
 ### Publicación automática
 
-Rara vez ejecutas `coursekit publish` tú. Cuando el proyecto tiene carpeta espejo, estos comandos publican el curso que han cambiado en cuanto terminan: `coursekit new`, `sync` (sin `--check`), `verify` (sin `--no-update`), `reviewed`, `approve`, `assemble link`, `assemble build`, `media set`, `delivery add`, `hold`, `resume` y `client`. Por eso los enlaces de preview y review, el estado y los paquetes llegan al espejo y al catálogo sin que nadie lo pida.
+Rara vez ejecutas `coursekit publish` tú. Cuando el proyecto tiene carpeta espejo, estos comandos publican el curso que han cambiado en cuanto terminan: `coursekit new`, `sync` (sin `--check`), `verify` (sin `--no-update`), `reviewed`, `approve`, `assemble applied`, `assemble link`, `assemble build`, `media set`, `delivery add`, `hold`, `resume`, `client` y `handoff` (tras cada paso). Por eso los enlaces de preview y review, el estado y los paquetes llegan al espejo y al catálogo sin que nadie lo pida.
 
 - El catálogo del proyecto (`courses/catalogo-cursos.xlsx`) se actualiza siempre, en silencio.
 - Sin espejo (`mirror.provider: none`, o sin `MIRROR_DIR`) no ocurre nada más y no se imprime nada.
@@ -453,7 +453,7 @@ Qué hace `publish`:
 - Los ficheros que publicó antes y que ya no existen en el curso se eliminan de la carpeta espejo (se registran en `courses/PWD/.published.json`, dentro de la carpeta espejo), junto con las carpetas que queden vacías. Los ficheros que nunca publicó no se tocan.
 - `delivery/` solo añade: un paquete se copia una vez y nunca se sobrescribe ni se borra en la carpeta espejo, aunque se elimine en local. Una versión nueva tiene un nombre de fichero nuevo.
 - Escribe el catálogo en `<MIRROR_DIR>/<fichero del catálogo>`, con enlaces a las carpetas de curso. Si el Excel está abierto, falla con `no se puede reemplazar … (¿está abierto en Excel?)`.
-- Imprime una línea por cada curso que cambió (`publicado PWD: 5 copiados, 0 eliminados, 0 sin cambios`) y una para el catálogo. Con `mirror.provider: none` solo dice que no hay nada que publicar (código 0). Con un proveedor y sin `MIRROR_DIR`, falla con `no hay carpeta espejo configurada (project.yaml › mirror y MIRROR_DIR en .env)`.
+- Primero actualiza el catálogo de `courses/` e imprime `escrito <ruta> (N cursos, M unidades)` (no con `--only-if-configured`). Después imprime una línea por cada curso que cambió (`publicado PWD: 5 copiados, 0 eliminados, 0 sin cambios`) y una para el catálogo del espejo. Con `mirror.provider: none` imprime la primera línea y dice que no hay nada que publicar (código 0). Con un proveedor y sin `MIRROR_DIR`, falla con `no hay carpeta espejo configurada (project.yaml › mirror y MIRROR_DIR en .env)`.
 
 ## El catálogo de seguimiento
 
@@ -506,7 +506,7 @@ Hojas, en el idioma del catálogo (español / inglés): `Cursos` / `Courses`, `U
 Antes de exportar:
 
 - [ ] Diseño firmado y sin cambios, y todas las unidades `approved` (`coursekit status PWD`).
-- [ ] Todos los recursos multimedia `uploaded` y validados en la vista previa (`coursekit media plan PWD` no muestra nada pendiente ni avisos). Con el backend html: todos los recursos `produced` con su fichero, que `build` copia en el paquete.
+- [ ] Todos los recursos multimedia `uploaded` y validados en la vista previa (ningún recurso de `media/manifest.yaml` está `pending`, `scripted` ni `produced`, y `coursekit media plan PWD` no muestra avisos: `plan` solo lista los recursos `pending` y `scripted`). Con el backend html: todos los recursos `produced` con su fichero, que `build` copia en el paquete.
 - [ ] Todas las unidades montadas. Creator: `content_id` definido y `coursekit assemble diff` informa `unchanged` para el contenido y todas las lecciones. Html: `coursekit assemble build PWD` termina sin errores y has leído sus avisos. El estado del curso es `assembly` (o `client_review`, si abriste una ronda).
 - [ ] Creator: enlaces de vista previa y de revisión de todas las unidades anotados (`units[].links`). Html: la vista previa abierta en un navegador (`courses/PWD/assembly/html/unit-01/index.html`) y comprobadas las lecciones, un componente de cada tipo y el test.
 - [ ] Curso fuera de pausa, y `coursekit delivery check PWD` pasa.
@@ -579,6 +579,7 @@ coursekit publish --check
 # ok: carpeta espejo de folder en /ruta/a/MIRROR_DIR
 # info: no hay mirror.url en project.yaml; el catálogo no tendrá enlaces a las carpetas
 coursekit publish PWD
+# escrito /ruta/al/proyecto/courses/catalogo-cursos.xlsx (1 cursos, 1 unidades)
 # publicado PWD: 5 copiados, 0 eliminados, 0 sin cambios
 # escrito /ruta/a/MIRROR_DIR/catalogo-cursos.xlsx (1 cursos, 1 unidades)
 ```

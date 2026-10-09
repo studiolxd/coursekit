@@ -9,7 +9,7 @@ Los ejemplos usan un proyecto genérico: cliente «ACME», un curso sobre contra
 | Lugar | Se versiona | Quién lo edita | Qué contiene |
 |---|---|---|---|
 | Valores por defecto del paquete (dentro de coursekit) | no (viene con la herramienta) | nadie | Las reglas de producción, directivas, opciones de multimedia y ajustes de entrega por defecto, y la herramienta y el modelo por defecto de cada rol. |
-| `config/<name>.yaml` | sí | el equipo | Cambios sobre una de las cuatro configuraciones: `rules`, `directives`, `media`, `delivery`. |
+| `config/<nombre>.yaml` | sí | el equipo | Cambios sobre una de las cuatro configuraciones: `rules`, `directives`, `media`, `delivery`. |
 | `project.yaml` | sí | el equipo | Identidad del proyecto, idiomas, backend de montaje, servidor slxd, carpeta espejo, red. También puede llevar secciones `rules:`, `directives:`, `media:` y `delivery:`. |
 | `course.yaml` | sí | los comandos y las personas | El registro de un curso. Puede llevar secciones `rules:`, `directives:`, `media:` y `delivery:` que se aplican solo a ese curso. |
 | `theme/` y `courses/<CODE>/theme/` | sí | `coursekit theme import` (tokens); el equipo (`maqueta.css`) | Tokens de diseño del tema, derivados del tema de la plataforma de montaje o, con el backend html, de la hoja de estilos (mira [Tokens del tema y carpetas de caché](#tokens-del-tema-y-carpetas-de-caché)). No es una capa de configuración: nadie edita los tokens a mano. Con el backend html, `maqueta.css` es la hoja de estilos que da otro aspecto al paquete y se edita a mano (mira [Ficheros del backend html](#ficheros-del-backend-html)). |
@@ -200,14 +200,14 @@ La estructura (unidades, apartados, objetivos, horas) no se fija aquí: sale del
 | `defaults.intro_section` | `true` | Los cursos nuevos empiezan cada unidad con un apartado de introducción y objetivos. |
 | `defaults.summary_section` | `true` | Los cursos nuevos cierran cada unidad con un apartado de resumen. |
 | `defaults.structure` | `sin_modulos` | Estructura de los cursos nuevos: `sin_modulos` o `con_modulos` (patrón estructural de slxd). |
-| `defaults.grading.unit_tests_weight` | `60` | % total de la nota que suman todos los tests de unidad, repartido a partes iguales. |
-| `defaults.grading.final_test_weight` | `40` | % de la nota del test final. |
+| `defaults.grading.unit_tests_weight` | `60` | % total de la nota que suman todos los tests de unidad, repartido a partes iguales. Se copia en `course.yaml › design.grading` como guía de calificación del diseño; el montaje no lo aplica (solo `passing_score` y `attempts` llegan a los tests). |
+| `defaults.grading.final_test_weight` | `40` | % de la nota del test final. Se registra igual que el anterior; el montaje no lo aplica. |
 | `defaults.grading.passing_score` | `50` | Nota para aprobar. |
 | `defaults.grading.attempts` | `2` | Intentos permitidos por test. |
 | `design.competencies_per_course` | `"2–4"` | Orientación para el agente de diseño: competencias por curso. |
 | `design.objectives_per_unit` | `"2–4"` | Orientación: objetivos por unidad. |
 | `design.intro_summary_hours` | `"0.2–0.3"` | Orientación: horas de la introducción y del resumen. |
-| `review.ai` | `required` | `required`, `skip` | `required`: una revisión con IA precede a la firma de cada unidad. `skip`: una unidad que pasa `coursekit verify` cuenta como revisada y la revisión es la firma de la persona. En ambos casos una persona puede registrar su propia revisión de una unidad con `coursekit reviewed --by`. |
+| `review.ai` | `required` | `required` o `skip`. `required`: una revisión con IA precede a la firma de cada unidad. `skip`: una unidad que pasa `coursekit verify` cuenta como revisada y la revisión es la firma de la persona. En ambos casos una persona puede registrar su propia revisión de una unidad con `coursekit reviewed --by`. |
 | `handoff.rounds` | `2` | Intentos por paso de `coursekit handoff` (redactar una unidad, su revisión con sus correcciones, la firma del diseño, el multimedia, el montaje, la entrega) antes de parar. `--rounds` lo cambia en una ejecución. |
 | `content.word_margin` | `0.05` | Margen recomendado sobre las palabras mínimas (`0.05` = 5 %). Por debajo, `coursekit verify` avisa; por debajo del propio mínimo, da error. |
 | `content.placeholders_per_hour` | `2.5` | Marcadores de recurso multimedia exigidos por hora de unidad (redondeado hacia arriba). |
@@ -258,10 +258,10 @@ Cada opción tiene `id`, `how` (descripción), `needs` (requisitos) y, opcionalm
 
 | Requisito | Se cumple cuando |
 |---|---|
-| `env: VAR` | la variable está definida (`.env` o terminal) |
+| `env: VAR` | la variable está definida (`.env` o terminal); una lista `[A, B]` necesita todas |
 | `bin: CMD` | el comando está instalado |
 | `mcp: TOOL` | el agente tiene esa herramienta MCP (solo el agente puede comprobarlo) |
-| `media: X` | `X` está instalada como herramienta de multimedia (`coursekit setup --media`) |
+| `media: X` | el comando `X` está en el `PATH` (`coursekit setup --media` instala `piper` y `stable-ts`) |
 | `path: P` | la ruta existe dentro del proyecto (por ejemplo `tools/remotion/node_modules`) |
 | `none` | siempre |
 
@@ -360,7 +360,7 @@ Con el backend html (`project.yaml › assembly.backend: html`, o `assembly.back
 | `courses/<CODE>/theme/maqueta.css` | sí | Lo mismo para un curso: se añade después de la del proyecto, solo en los paquetes de ese curso. `coursekit theme import courses/<CODE>/theme/maqueta.css --course CODE` deriva los tokens propios de ese curso. |
 | `components/*.css` | sí | Estilos adicionales, añadidos al paquete después de las hojas anteriores, por orden alfabético. |
 | `components/*.js` | sí | Comportamiento adicional, empaquetado con esbuild en el reproductor (`assets/player.js`) de cada paquete, antes del código del reproductor. |
-| `courses/<CODE>/assembly/html/unit-NN/` | no (`.gitignore`) | El paquete de una unidad, que rehace `coursekit assemble build` y se puede abrir desde el disco. Los proyectos creados antes del backend html reciben la línea del `.gitignore` con `coursekit init --update`. |
+| `courses/<CODE>/assembly/html/unit-NN/` | no (`.gitignore`) | El paquete de una unidad, que rehace `coursekit assemble build` y se puede abrir desde el disco. |
 | `courses/<CODE>/delivery/<nombre>.zip` | no (`.gitignore`) | El zip de una unidad, que escribe `coursekit assemble build --version X.Y`. |
 
 Los estilos de un paquete (`assets/styles.css`) se juntan en este orden, de modo que cada capa gana a las anteriores: la maqueta base del paquete; el `tokens.css` que corresponde al curso (si el curso tiene tokens); `theme/maqueta.css`; `courses/<CODE>/theme/maqueta.css`; `components/*.css`.
@@ -413,7 +413,7 @@ No lo edites a mano. Es solo un registro: si se pierde, `coursekit uninstall` si
 | Los paquetes del sistema (`ffmpeg`, `node`, `vhs`, `asciinema`). | |
 | `workspaces/html-builder-<hash>/`: el constructor del backend html (`@studiolxd/scorm`, `esbuild`). | Nada: el proyecto no guarda copia ni enlace; `coursekit assemble build` usa el del almacén. |
 
-El `.gitignore` que escribe `coursekit init` ignora `node_modules/` (un proyecto creado antes de que existiera esa línea la recibe con `coursekit init --update`), así que el enlace nunca se sube. Si no se puede crear el enlace, o `tools/remotion/` ya tiene una carpeta `node_modules` de verdad, se usa esa carpeta tal cual.
+El `.gitignore` que escribe `coursekit init` ignora `node_modules/` (`coursekit init --update` refresca el `.gitignore` salvo que lo hayas editado a mano), así que el enlace nunca se sube. Si no se puede crear el enlace, o `tools/remotion/` ya tiene una carpeta `node_modules` de verdad, se usa esa carpeta tal cual.
 
 `coursekit doctor` muestra la ruta y el tamaño del almacén y si las dependencias de Remotion están al alcance; `coursekit uninstall` desmonta el almacén. Mira [`coursekit setup`](03-commands.md#coursekit-setup), [`coursekit doctor`](03-commands.md#coursekit-doctor) y [`coursekit uninstall`](03-commands.md#coursekit-uninstall).
 

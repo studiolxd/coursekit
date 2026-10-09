@@ -89,7 +89,7 @@ How coursekit treats files:
 | `media-production` | Producing and uploading the media assets, using the design tokens of the theme (`/produce-media`). |
 | `creator-assembly` | Loading and reloading content into slxd creator, and the preview and review links of each unit (`/assemble`, creator backend). |
 | `html-assembly` | Building the SCORM package of each unit with `coursekit assemble build`, looking at the preview and packaging a version (`/assemble`, html backend). It reads the same `.md` and the same produced media; the output is never edited by hand. |
-| `client-review` | Reading the client's comments on the review links, applying the agreed ones to the `.md`, publishing a new review version and answering each comment (`/client-feedback`). |
+| `client-review` | Reading the client's comments on the review links, applying the agreed ones to the `.md`, publishing a new review version and answering each comment (`/client-feedback`, creator backend only: the html backend has no review links). |
 | `delivery` | Exporting (creator) or building (html), recording and publishing the SCORM packages (`/deliver`). |
 
 Which of the two assembly skills applies depends on the backend of the course (`assembly.backend` in `project.yaml`, or in `course.yaml`; `coursekit status CODE` shows it). The `theme-definition` skill also covers both backends.
@@ -104,15 +104,15 @@ Skills and commands read the production numbers from your configuration: words p
 | `/design-change` | `<CODE> <changes>` | Applies in slxd the changes you ask for on the design proposal. |
 | `/approve-design` | `<CODE>` | Prepares the sign-off of the design and tells you how to sign it. |
 | `/define-theme` | `[CODE]` | Defines the theme in slxd creator and derives the design tokens of the media from it. With the html backend there is no platform theme: it writes or adapts the stylesheet `theme/maqueta.css` with the brand in its CSS variables and runs `coursekit theme import theme/maqueta.css`. Without a code it works on the theme of the project, which every course inherits; with a code, on the own theme of that course (`courses/<CODE>/theme/`, recorded in `slxd.theme_id`), which wins for it. It lists the platform's themes, you choose or create one (from nothing, from a preset or as a copy), it adapts it with the brand colours and fonts, saves the `get_theme` result to `.cache/theme/get_theme.json` and runs `coursekit theme import`. It never writes `tokens.json` by hand. You validate the theme as you validate the design. See [Theme and design tokens](02-workflow.md#theme-and-design-tokens). |
-| `/course-status` | `[CODE]` | Shows the state of the courses and the next step. |
+| `/course-status` | `[CODE]` | Runs `coursekit status` and explains the state of the courses (or of one) and the next step in two or three lines. Not tied to a phase: use it at any point. |
 | `/write-unit` | `<CODE> [N]` | Writes a unit of a course whose design is signed. Without `N`, it writes every unit still to write, in order, in the same session (it stops at the first one that does not verify). `coursekit write` launches it with a number: one session per unit. |
-| `/review-unit` | `<CODE> <N>` | AI review of a written unit, with a report in `reviews/`. |
+| `/review-unit` | `<CODE> <N>` | AI review of a written unit, with a report in `reviews/` whose Result is repeated in a `<!-- result: ... -->` comment (`ready`, `ready_with_changes` or `not_ready`); it finishes with `coursekit reviewed`. See [AI review](02-workflow.md#4-ai-review). |
 | `/approve-unit` | `<CODE> <N>` | Checks that a unit is ready for editorial sign-off and tells you how to sign it. |
 | `/produce-media` | `<CODE> [asset id]` | Produces the pending media assets and uploads them. |
 | `/assemble` | `<CODE> [N]` | Loads the skill of the backend of the course. Creator: loads the content of a course or unit into creator (only what changed) and applies the theme of the course to each content (`set_content_theme`, with the id from `coursekit theme show --course CODE`); without tokens derived from the platform it leaves the default theme and tells you about `/define-theme`. Html: builds the package of each unit with `coursekit assemble build CODE --unit N` and tells you what to check in the preview. Without a unit number it processes every unit in order. |
-| `/client-feedback` | `<CODE> [N]` | Reads the client's comments on the review links of a course (or of one unit), applies the agreed ones to the `.md`, reloads, publishes a new review version and answers each comment. It never opens or closes a round: you do that with `coursekit client`. |
+| `/client-feedback` | `<CODE> [N]` | Creator backend only (it needs the review links, which the html backend does not have). Reads the client's comments on the review links of a course (or of one unit), applies the agreed ones to the `.md`, reloads, publishes a new review version and answers each comment. It never opens or closes a round: you do that with `coursekit client`. |
 | `/deliver` | `<CODE> [version]` | Starts with `coursekit delivery check`, then exports the SCORM packages, records them and publishes them in the mirror folder. With the html backend there is no export from a platform: for each unit it runs `coursekit assemble build CODE --unit N --version X.Y` and records the zip with `coursekit delivery add` without `--job` or `--snapshot`. |
-| `/sync-directives` | none | Syncs the directive registry with the creator brick catalog. |
+| `/sync-directives` | none | Syncs the directive registry (`config/directives.yaml`) with the creator brick catalog. Not tied to a course or a phase: run it when the catalog changes. See [At any point](02-workflow.md#at-any-point). |
 
 When you type a slash command in an already open session, that session's tool and model apply. The roles in `.env` apply when coursekit launches the tool for you. In opencode, `/write-unit` and `/review-unit` select the `writer` and `reviewer` agents.
 
@@ -141,15 +141,15 @@ Each person authenticates with their slxd account (OAuth) the first time a tool 
 
 ## Permissions: what agents may not do
 
-Agents must never sign anything. Approvals are recorded only by `coursekit approve`, which only a person runs; agents tell you what to type. The same goes for the decisions of people that other commands record: `coursekit client` (rounds of client review and what the client decided) and `coursekit hold` / `coursekit resume` (pausing a course). `coursekit handoff` is denied too: it signs by itself, so an agent that could start it would be signing. The project's `AGENTS.md` also tells every tool not to commit or push unless you ask, not to write credentials in versioned files and not to install software (they ask you to run `coursekit setup` instead).
+Agents must never sign anything. Approvals are recorded only by `coursekit approve`, which only a person runs; agents tell you what to type. The same goes for the decisions of people that other commands record: `coursekit client` (rounds of client review and what the client decided) and `coursekit hold` / `coursekit resume` (pausing a course) and `coursekit reviewed --by` (the review of a person). `coursekit handoff` is denied too: it signs by itself, so an agent that could start it would be signing. The project's `AGENTS.md` also tells every tool not to commit or push unless you ask, not to write credentials in versioned files and not to install software (they ask you to run `coursekit setup` instead).
 
 coursekit enforces the essentials in each tool:
 
 | Tool | Denied by configuration | Where |
 |---|---|---|
 | Claude Code | `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff`, `coursekit reviewed ... --by`, `git push` | `permissions.deny` in `.claude/settings.json` |
-| opencode | `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff`, `git push` | `permission.bash` in `opencode.json` |
-| opencode `writer` and `reviewer` agents | the same four `coursekit` commands, also `git commit`; any other shell command asks first; `coursekit verify`, `status`, `brief`, `outline`, `config`, `git status` and `git diff` are allowed (the reviewer may also run `coursekit reviewed`) | `.opencode/agent/*.md` |
+| opencode | `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff`, `coursekit reviewed ... --by`, `git push` | `permission.bash` in `opencode.json` |
+| opencode `writer` and `reviewer` agents | the `writer`: `coursekit approve`, `client`, `hold` and `resume`, also `git commit` and `git push`; the `reviewer`: those plus `coursekit handoff` and `coursekit reviewed ... --by` (the `opencode.json` rules above apply to both); any other shell command asks first; `coursekit verify`, `status`, `brief`, `outline`, `config`, `git status` and `git diff` are allowed (the reviewer may also run `coursekit reviewed`) | `.opencode/agent/*.md` |
 | Codex | nothing in configuration: it relies on the `AGENTS.md` instructions | |
 
 Headless launches add their own limits (see below). The rules you have to apply yourself: review `git diff` before committing, and run `coursekit approve` only in your own terminal.
@@ -218,7 +218,7 @@ How each tool is called, and its limits:
 
 | Tool | Command (simplified) | Limits |
 |---|---|---|
-| Claude Code | `claude -p ... --permission-mode acceptEdits --allowedTools ... --disallowedTools ...` | Allowed: read, edit and write files, skills, and only these shell commands: `coursekit verify`, `brief`, `status`, `outline`, `config`, `git status`, `git diff` (the reviewer also `coursekit reviewed`). The `design`, `media` and `assembly` roles also get the slxd MCP server, any `coursekit` command and web fetch. Always denied: `git commit`, `git push`, `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff`. |
+| Claude Code | `claude -p ... --permission-mode acceptEdits --allowedTools ... --disallowedTools ...` | Allowed: read, edit and write files, skills, and only these shell commands: `coursekit verify`, `brief`, `status`, `outline`, `config`, `git status`, `git diff` (the reviewer also `coursekit reviewed`). The `design`, `media` and `assembly` roles also get the slxd MCP server, any `coursekit` command and web fetch. Always denied: `git commit`, `git push`, `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff`, `coursekit reviewed ... --by`. |
 | opencode | `opencode run [--agent writer\|reviewer] --auto --format json ...` | Writer and reviewer run as the generated agents with their permissions; the instruction points at the command file because `run` has no slash commands. |
 | Codex | `codex exec --sandbox workspace-write --json -o <log>.last.txt ...` | Workspace-write sandbox. |
 

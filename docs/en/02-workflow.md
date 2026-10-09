@@ -14,6 +14,8 @@ The whole production process of a course, from the brief to the delivery: who do
 
 At any point a person can pause the course (`on_hold`) and resume it later. See [Pause a course](#pause-a-course).
 
+There is an alternative path for courses that nobody has to review: [handoff mode](#handoff-mode) runs phases 2 to 9 by itself (without the client review), and coursekit signs in place of a person, marked as Coursekit Handoff.
+
 | # | Phase | Who | Main commands | Result |
 |---|---|---|---|---|
 | 1 | Brief | person | `coursekit brief [CODE]` | reference material converted in `brief/` |
@@ -43,11 +45,12 @@ The Markdown of each unit is the source of truth. Anything wrong in Creator (or 
 | Media, assembly, delivery | decides, checks the result | produces, loads, exports |
 | Client review | opens and closes each round and records what the client decided | reads the client's comments, applies the agreed ones to the Markdown and answers them (`/client-feedback`) |
 | Pause and resume | decides (`coursekit hold`, `coursekit resume`) | cannot do it |
+| Handoff (alternative path) | starts it and accepts the result without reviewing it | runs every step; coursekit signs as Coursekit Handoff |
 | Commits and pushes | does them | does not, unless asked |
 
 Each agent runs on one of five **roles**: `design`, `writer`, `reviewer`, `media` and `assembly`. Each role has a tool (`claude`, `opencode`, `codex`) and a model, kept in `.env` (`DESIGN_AGENT`, `DESIGN_MODEL`, and so on). `coursekit roles` shows them. A review is best done by a different model than the writer: coursekit warns when both are the same. See [Agents](05-agents.md).
 
-**Only a person signs.** `coursekit approve` records your name, the time and a fingerprint of what you approved, and commits it with you as author. The agent settings deny agents to run it, and also `coursekit client`, `coursekit hold` and `coursekit resume`, which record decisions of people. The one exception is [handoff mode](#handoff-mode), where coursekit itself signs, marked, as Coursekit Handoff. From an agent chat you can run it yourself by prefixing the line with `!`:
+**Only a person signs.** `coursekit approve` records your name, the time and a fingerprint of what you approved, and commits it with you as author. The agent settings of Claude Code and opencode deny agents to run it, and also `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff` and `coursekit reviewed --by`, which record decisions of people or sign in their place; Codex has no such denial in its configuration and relies on the `AGENTS.md` instructions (see [Agents](05-agents.md#permissions-what-agents-may-not-do)). The one exception is [handoff mode](#handoff-mode), where coursekit itself signs, marked, as Coursekit Handoff. From an agent chat you can run it yourself by prefixing the line with `!`:
 
 ```text
 ! coursekit approve design PWD --yes
@@ -59,19 +62,28 @@ In your own terminal, without `--yes`, it asks for confirmation first. Without a
 
 `coursekit handoff "<title>" <hours>` takes a course from its title to its delivery **by itself**: nobody reviews the design, the units or the media on the way, and there is no client review. It is meant for courses whose quality you accept without a person's reading; use the normal flow when someone has to review.
 
+```bash
+coursekit handoff "Strong passwords" 2 --code PWD   # a new course, from its title and hours
+coursekit handoff PWD                               # carry on a course that stopped
+```
+
+`--rounds` sets the attempts. `--code`, `--no-intro`, `--no-summary` and `--notes` are passed to `/new-course` (handoff always adds `--no-material`); they only make sense when creating the course, and when carrying on coursekit refuses them (exit code 2).
+
 | Status of the course | What handoff does |
 |---|---|
 | (new) | The design agent proposes the design (`/new-course`, without asking for reference material). |
-| `design` | The design agent refreshes and validates the export (`/approve-design`); coursekit signs the design as **Coursekit Handoff**. If it cannot be signed, the design agent fixes it and it tries again. |
+| `design` | If `design/matrix.json` does not exist yet, the design agent exports the proposal (`/design-change`). Then it refreshes and validates the export (`/approve-design`); coursekit signs the design as **Coursekit Handoff**. If it cannot be signed, the design agent fixes it and it tries again. |
 | `design_approved`, `writing` | The writer agent writes each unit until it verifies. |
-| `ai_review` | The reviewer agent reviews each unit. If its report ends with `<!-- result: not_ready -->`, the writer fixes the unit and it is reviewed again. |
+| `ai_review` | The reviewer agent reviews each unit. If the `<!-- result: ... -->` line of its report says `not_ready` (see [AI review](#4-ai-review)), the writer fixes the unit and it is reviewed again. With `review.ai: skip` this stage does not happen: the units are already `reviewed`. |
 | `editorial_review` | coursekit signs each unit as Coursekit Handoff. |
-| `media` | If the media needs the theme and the project has none, the design agent defines it (`/define-theme`); the media agent produces the assets; the assembly agent assembles. |
+| `media` | coursekit extracts the media manifest. If a pending asset is of a type that uses the theme (`uses_theme`) and the design tokens are not derived (missing or written by hand), the design agent defines the theme (`/define-theme`); the media agent produces the assets (`/produce-media`); the assembly agent assembles (`/assemble`). |
 | `assembly` | The assembly agent delivers (`/deliver`). |
 
 - **Signatures.** Every approval it gives is by `Coursekit Handoff <handoff@coursekit.local>` and carries `via: handoff` in `course.yaml › approvals`, and the commit has that author, so it is never mistaken for a person's. The agents still cannot sign nor run `coursekit handoff`: the signature is given by coursekit, not by them.
-- **Attempts.** Each step is tried `rules › handoff › rounds` times (`--rounds`). If it still fails (a unit that does not verify, an AI review that stays `not_ready`, media assets left to produce, a course that does not assemble or deliver) it stops, with exit code 1, and the message says what failed and where the agent session is logged (`.cache/logs/`).
-- **Carry on.** `coursekit handoff <CODE>` continues from the current status, without repeating what is signed. If the course is `on_hold` or in `client_review` it stops: handoff does not handle either.
+- **Attempts.** Each step is tried `rules › handoff › rounds` times (`--rounds`). If it still fails (a unit that does not verify, an AI review that stays `not_ready`, media assets left to produce, a course that does not assemble or deliver) it stops, with exit code 1, and the message says what failed and where the agent session is logged (`.cache/logs/`). It also stops, with a pointer to `coursekit status`, when a step changes nothing (neither the course status, nor the units, nor the approvals).
+- **Carry on.** `coursekit handoff <CODE>` continues from the current status, without repeating what is signed. If the course is `on_hold` (the message says to run `coursekit resume <CODE>` first) or in `client_review` it stops: handoff does not handle either. `coursekit handoff "<title>" <hours>` refuses a course code that already exists and points to `coursekit handoff <CODE>`.
+- **What it refuses.** If the project requires the client review (`delivery › client_review › required`) it refuses to start, before creating the course, and to carry on while that review is not approved or skipped: handoff does not do it. Both end with exit code 1.
+- **How it runs.** Every agent runs headless, with the limits in [Agents](05-agents.md#headless---headless). The sessions are logged in `.cache/logs/` (`<CODE>-<step>-handoff-<date>-<time>.log`, and `<CODE>-uNN-write-…` or `-review-…` for the units). After each step the mirror folder and the catalog are refreshed, if the project has them. At the end it prints `handoff finished`, with the status of the course.
 - **What it needs.** The roles of the `.env` and the slxd MCP URL, like the normal flow, and the providers of the media you want produced. It cannot ask: doubts are left written in the units (`<!-- VERIFICAR -->`) and in the reports.
 
 ## Statuses
@@ -93,7 +105,7 @@ A course has one status in `course.yaml › status`:
 | `delivered` | every unit has a package of the same version | `coursekit delivery add`, automatically, only from `assembly` or `client_review` |
 | `on_hold` | paused by a person | [`coursekit hold`](03-commands.md#coursekit-hold) `CODE --reason "..."`; [`coursekit resume`](03-commands.md#coursekit-resume) `CODE` brings it back |
 
-From `design_approved` to `media`, the status is **derived** from the least advanced unit and recalculated every time a unit changes status. So it can also go back when a unit does. From `assembly` onwards it is not recalculated.
+From `design_approved` to `media`, the status is **derived** from the least advanced unit and recalculated every time a unit changes status. So it can also go back when a unit does. Signing a changed design again keeps the progress of the units, and the status is derived from them again. From `assembly` onwards it is not recalculated.
 
 `client_review` and `on_hold` are not derived from the units: they are set by the commands below.
 
@@ -112,14 +124,14 @@ The client reviews the assembled course before delivery. It is **off by default*
 | `coursekit client CODE send [--to WHO] [--where URL]` | Opens round N. The course moves from `assembly` to `client_review` and the review links of the units are recorded in the round |
 | `coursekit client CODE changes [--note TEXT]` | The client asked for changes: the round closes with outcome `changes` and the course goes back to `assembly` |
 | `coursekit client CODE approve --by "Name" [--note TEXT]` | The client approved: the round closes with outcome `approved`, with the client's name and the date. The course stays in `client_review` and can be delivered |
-| `coursekit client CODE skip --reason TEXT` | Delivers without the client's approval. Records a round with outcome `skipped` and the reason |
+| `coursekit client CODE skip --reason TEXT` | You decide to deliver without the client's approval. It records a round with outcome `skipped` and the reason, which unlocks the delivery (then `/deliver`); it does not deliver nor change the status. Allowed from `assembly` or `client_review`, and refused while a round is open |
 
 A round in a normal flow:
 
 1. The assembly agent has recorded a preview link and a review link per unit (`coursekit assemble link`). With the html backend there are no platform links: you host the zip or the preview folder yourself and send one link with `--where URL`.
 2. You send the links to the client and open the round: `coursekit client PWD send --to "ACME training team"`.
 3. The client comments on the review links, without an account.
-4. `/client-feedback PWD` (assembly agent): reads the comments, applies the agreed ones in the `.md`, reloads the changes, publishes a new review version for the client and answers each comment. Comments that change objectives, hours, activities or structure are a design change and are left to you (`/design-change`).
+4. `/client-feedback PWD` (assembly agent, creator backend only: it reads the comments of the review links): reads the comments, applies the agreed ones in the `.md`, reloads the changes, publishes a new review version for the client and answers each comment. Comments that change objectives, hours, activities or structure are a design change and are left to you (`/design-change`).
 5. You close the round: `coursekit client PWD changes --note "..."` if the client wants more; then apply, reassemble and `send` again (round 2). If the client agrees, `coursekit client PWD approve --by "..."`.
 6. Deliver with `/deliver`.
 
@@ -129,7 +141,7 @@ A unit edited after its signature goes back to `verified`: it needs a new AI rev
 
 `coursekit hold CODE --reason "..."` puts the course in `on_hold`; `coursekit resume CODE` brings it back. Only a person runs them. Pausing stores the previous status, the reason, who and when in `course.yaml › hold` and adds an entry to `history`.
 
-While a course is on hold, the commands that change it are refused: `write`, `review`, `reviewed`, `approve`, `assemble`, `sync` (without `--check`), `media set`, `client` and the delivery commands (`delivery check`, `name` and `add`). The commands that read or check still work (`status`, `verify`, `outline`, `config`, `sync --check`, `catalog`...). `coursekit status CODE` shows who paused it, when, why and where it was. The message of a refused command ends with the way back: `coursekit resume CODE`.
+While a course is on hold, the commands that change it are refused: `write`, `review`, `reviewed`, `approve`, `assemble` (every action, including `plan` and `diff`), `sync` (without `--check`), `media set`, `run` (with the code of a course, except `new-course` and `course-status`), `client` and the delivery commands (`delivery check`, `name` and `add`). The commands that read or check still work (`status`, `verify`, `outline`, `config`, `sync --check`, `catalog`...). `coursekit status CODE` shows who paused it, when, why and where it was. The message of a refused command ends with the way back: `coursekit resume CODE`.
 
 `resume` restores the previous status and removes the `hold` block. If the course was being written (`design_approved` to `media`), the status is calculated again from its units.
 
@@ -161,6 +173,7 @@ coursekit status PWD       # detail and next step
 ```text
 PWD — Strong passwords (2 h)
 Status: design_approved
+Assembly: creator backend
 Design: signed by Ana Ruiz <ana@acme.example> on 2026-10-09T01:18:52+02:00
   U1 Strong passwords · 2 h · 3 sections · 2 objectives · min. 10,000 words · pending
 Next step: write the units with `coursekit write PWD <N>`
@@ -225,7 +238,7 @@ The agent refreshes the export if you edited in Creator, validates the design, r
 coursekit approve design PWD
 ```
 
-The sign-off requires `design/matrix.json` and no validation errors in `design/validation.json`. It writes the units and their sections into `course.yaml` (progress already recorded is kept), creates a skeleton `content.md` and `assessment.md` per unit in `content/unit-NN/`, records the approval, sets the course to `design_approved` and commits.
+The sign-off requires `design/matrix.json` and no validation errors in `design/validation.json`. It writes the units and their sections into `course.yaml` (progress already recorded is kept: status, review record and links), creates a skeleton `content.md` and `assessment.md` per unit in `content/unit-NN/`, records the approval, sets the course to `design_approved` and commits.
 
 ### 3. Writing
 
@@ -250,11 +263,13 @@ coursekit review PWD 1
 
 Or `/review-unit PWD 1`. The reviewer agent writes `reviews/unit-01-ai-review.md` (findings, changes applied, proposals awaiting your decision) and runs `coursekit reviewed PWD 1`, which checks again that the unit verifies and marks it `reviewed`. Reviewing a unit that was already reviewed is partial: only the sections and activities changed since the last review. Use `--full` to review everything, or `--parts "section 4, activity 1.2"` to choose.
 
+The report opens with its **Result** (ready, ready with changes or not ready), repeated in a comment that tools read: `<!-- result: ready | ready_with_changes | not_ready -->` (one value, with underscores). The rest is a summary, a table of findings (each one blocking, improvement or minor), the changes applied and the proposals awaiting your decision. A partial review appends its own section to the same report and updates the Result if it changes. In [handoff mode](#handoff-mode) a `not_ready` result sends the unit back to the writer.
+
 #### Without AI review
 
 Two ways, and a person signs in both:
 
-- **One unit, reviewed by a person.** After reading it, run `coursekit reviewed PWD 1 --by "Ana Pérez" [--note "..."] [--report reviews/notes.md]`. The unit becomes `reviewed` without the AI report, and `course.yaml › units[].review` and the history record who reviewed it. Content edited after that goes back to `verified`, as with the AI review. Agents are denied `--by`.
+- **One unit, reviewed by a person.** After reading it, run `coursekit reviewed PWD 1 --by "Ana Pérez" [--note "..."] [--report reviews/notes.md]`. The unit becomes `reviewed` without the AI report, and `course.yaml › units[].review` and the history record who reviewed it. Content edited after that goes back to `verified`, as with the AI review. `--note` and `--report` need `--by`, and the report must be a file inside the course folder. The record `units[].review` is removed if the unit goes back below `reviewed`. Agents are denied `--by`.
 - **The whole project (or one course), no AI review at all.** Set `review.ai: skip` in `rules` (`config/rules.yaml`, `project.yaml › rules` or `course.yaml › rules`). A unit that passes `coursekit verify` is `reviewed` straight away (`review.kind: skipped`), the course goes from `writing` to `editorial_review` without the `ai_review` phase, and your sign-off is the review. `coursekit review` still works if you want an AI review of a unit anyway.
 
 ### 5. Editorial review and sign-off
@@ -297,7 +312,7 @@ See [Assembly and delivery](08-assembly-and-delivery.md).
 
 ### 8. Client review
 
-Optional. A round is opened and closed by a person with [`coursekit client`](03-commands.md#coursekit-client) (see [Client review (optional)](#client-review-optional) above); the agent only handles the comments with `/client-feedback PWD`. With the html backend there is no review link from a platform: you host the zip or the preview folder and give the link yourself, with `coursekit client PWD send --where URL`. If a unit goes back after editing, run `coursekit verify`, review and sign again where needed, and `/assemble PWD` loads only what changed.
+Optional. A round is opened and closed by a person with [`coursekit client`](03-commands.md#coursekit-client) (see [Client review (optional)](#client-review-optional) above); the agent only handles the comments with `/client-feedback PWD`. With the html backend there is no review link from a platform: you host the zip or the preview folder and give the link yourself, with `coursekit client PWD send --where URL`. `/client-feedback` works with the creator backend only; with html the comments reach you your own way, you apply them by editing the `.md` and `/assemble PWD` builds again. If a unit goes back after editing, run `coursekit verify`, review and sign again where needed, and `/assemble PWD` loads only what changed.
 
 ### 9. Delivery
 
@@ -308,6 +323,13 @@ Optional. A round is opened and closed by a person with [`coursekit client`](03-
 The agent starts with `coursekit delivery check PWD`: it refuses while the course is on hold and, if the project requires the client's review, until the last round is approved or skipped. Then it exports one SCORM package per unit, downloads it to `courses/PWD/delivery/` and records it with `coursekit delivery add`. When every unit has a package of the same version, the course becomes `delivered` (only from `assembly` or `client_review`; in another status the package is recorded with a warning). Each `coursekit delivery add` also copies the course to the mirror folder and refreshes the catalog (when the project has one). See [Assembly and delivery](08-assembly-and-delivery.md).
 
 With the html backend nothing is exported from a platform: for each unit the agent runs `coursekit assemble build PWD --unit N --version 1.0` (it writes the zip in `courses/PWD/delivery/`) and then `coursekit delivery add` without `--job` or `--snapshot`. The check at the start, the record and the publication are the same.
+
+### At any point
+
+Two commands do not belong to a phase:
+
+- `/course-status [CODE]` (design role) runs `coursekit status` and explains the result and the next step in two or three lines.
+- `/sync-directives` (assembly role) keeps the directive registry in step with the creator brick catalog. Run it when the catalog changes, not once per course. It saves `list_brick_types` in `.cache/list_brick_types.json`, checks it with `coursekit directives check` and, for each new brick type, decides whether it becomes a directive in `config/directives.yaml` (or goes to `not_directives` with the reason). It removes the types that disappeared, listing the content that used them without changing it, and updates `synced_with_creator`.
 
 ## Assembly and delivery by backend
 
@@ -373,7 +395,7 @@ coursekit compares what is on disk with the fingerprints taken at each step, so 
 
 | What changes | What happens |
 |---|---|
-| The design is exported again with different content after being signed | `status` shows "the design must be approved again". `verify`, `approve content` and the writing skill stop until you sign again with `coursekit approve design`. Units keep their progress (they are matched by their SLXD id); new units start `pending` |
+| The design is exported again with different content after being signed | `status` shows "the design must be approved again". `verify`, `approve content` and the writing skill stop until you sign again with `coursekit approve design`. Units keep their progress (status, who wrote and reviewed them, review record and links; they are matched by their SLXD id) and new units start `pending`. Until assembly the course status is derived from the units again (it does not go back to `design_approved` if they are further ahead); from `assembly` onwards it stays as it is |
 | A reviewed unit is edited | the next `verify` sends it back to `verified` and lists the changed parts; `coursekit review` then reviews only those parts |
 | An approved unit is edited | the next `verify` sends it back to `verified` (or `writing` if it no longer passes, or `reviewed` if no reviewed part changed). The old approval stays in `approvals` as history; you sign again |
 | A unit no longer passes `verify` | it goes back to `writing` |

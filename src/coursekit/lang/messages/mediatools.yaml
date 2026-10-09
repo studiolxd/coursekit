@@ -17,3 +17,15 @@ stable_ts_missing:
 default_voice: {es: voz por defecto, en: default voice}
 wrote: {es: "escrito {out} ({provider} · {voice})", en: "wrote {out} ({provider} · {voice})"}
 wrote_vtt: {es: "escrito {out} y {vtt} ({provider} · {voice})", en: "wrote {out} and {vtt} ({provider} · {voice})"}
+program_missing:
+  es: "{program} no está instalado o no se encuentra en el PATH (coursekit setup --media)"
+  en: "{program} is not installed or not on the PATH (coursekit setup --media)"
+program_failed:
+  es: "{program} terminó con error (código {code})"
+  en: "{program} failed (exit code {code})"
+http_failed:
+  es: "{host} respondió {status} {reason}: revisa la clave, la región y la voz configuradas"
+  en: "{host} answered {status} {reason}: check the key, the region and the voice configured"
+network_failed:
+  es: "no se pudo conectar con {host}: {reason}"
+  en: "could not reach {host}: {reason}"

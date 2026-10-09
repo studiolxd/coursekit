@@ -15,6 +15,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -27,6 +28,27 @@ class ToolError(Exception):
     pass
 
 
+def run(command: list[str], **kwargs) -> None:
+    """subprocess.run that reports a missing program or a failed run as a ToolError (a message, not a traceback)."""
+    try:
+        subprocess.run(command, check=True, **kwargs)
+    except FileNotFoundError:
+        raise ToolError(t("mediatools", "program_missing", program=Path(command[0]).name)) from None
+    except subprocess.CalledProcessError as exc:
+        raise ToolError(t("mediatools", "program_failed", program=Path(command[0]).name, code=exc.returncode)) from None
+
+
+def fetch(req: urllib.request.Request, timeout: int = 300) -> bytes:
+    """The body of an API response; an HTTP or network failure is a ToolError that names the service and the status."""
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return resp.read()
+    except urllib.error.HTTPError as exc:
+        raise ToolError(t("mediatools", "http_failed", host=req.host, status=exc.code, reason=exc.reason)) from None
+    except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        raise ToolError(t("mediatools", "network_failed", host=req.host, reason=getattr(exc, "reason", exc))) from None
+
+
 def require_file(path: Path) -> None:
     if not path.is_file():
         raise ToolError(t("mediatools", "input_missing", path=path.as_posix()))
@@ -36,7 +58,7 @@ def to_mp3(wav: Path, out: Path) -> None:
     if out.suffix.lower() == ".wav":
         wav.replace(out)
         return
-    subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", str(wav), "-codec:a", "libmp3lame", "-qscale:a", "3", str(out)], check=True)
+    run(["ffmpeg", "-loglevel", "error", "-y", "-i", str(wav), "-codec:a", "libmp3lame", "-qscale:a", "3", str(out)])
 
 
 def vtt_time(seconds: float) -> str:
@@ -76,7 +98,7 @@ def tts_piper(text: str, out: Path, voice: str | None, speaker: str | None = Non
         speaker = speaker if speaker is not None else os.environ.get("PIPER_SPEAKER", "").strip()
         if speaker:
             cmd += ["-s", speaker]
-        subprocess.run(cmd, input=text.encode(), check=True)
+        run(cmd, input=text.encode())
         to_mp3(wav, out)
 
 
@@ -89,8 +111,7 @@ def tts_elevenlabs(text: str, out: Path, voice: str | None, speaker: str | None 
     req = urllib.request.Request(
         f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/with-timestamps?output_format=mp3_44100_128",
         data=body, headers={"xi-api-key": key, "Content-Type": "application/json"}, method="POST")
-    with urllib.request.urlopen(req, timeout=300) as resp:
-        data = json.load(resp)
+    data = json.loads(fetch(req))
     out.write_bytes(base64.b64decode(data["audio_base64"]))
     al = data.get("alignment") or data.get("normalized_alignment")
     if al:
@@ -127,14 +148,13 @@ def concat_mp3(parts: list[bytes], out: Path) -> None:
         listing = Path(tmp) / "list.txt"
         # Forward slashes: the concat list treats backslashes (Windows paths) as escapes.
         listing.write_text("".join(f"file '{n.as_posix()}'\n" for n in names), encoding="utf-8")
-        subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-f", "concat", "-safe", "0", "-i", str(listing),
-                        "-codec:a", "libmp3lame", "-qscale:a", "3", str(out)], check=True)
+        run(["ffmpeg", "-loglevel", "error", "-y", "-f", "concat", "-safe", "0", "-i", str(listing),
+             "-codec:a", "libmp3lame", "-qscale:a", "3", str(out)])
 
 
 def post(url: str, body: bytes, headers: dict) -> bytes:
     req = urllib.request.Request(url, data=body, headers=headers, method="POST")
-    with urllib.request.urlopen(req, timeout=300) as resp:
-        return resp.read()
+    return fetch(req)
 
 
 def tts_azure(text: str, out: Path, voice: str | None, speaker: str | None = None, language: str = "es") -> None:
@@ -170,8 +190,8 @@ def subtitles(audio: Path, text_path: Path, out: Path, model_name: str = "base",
     exe = shutil.which("stable-ts")
     if not exe:
         raise ToolError(t("mediatools", "stable_ts_missing"))
-    subprocess.run([exe, str(audio), "--align", str(text_path), "--language", language, "--model", model_name,
-                    "--regroup", "sp=./?/!_sl=84", "--word_level", "false", "-o", str(out)], check=True)
+    run([exe, str(audio), "--align", str(text_path), "--language", language, "--model", model_name,
+         "--regroup", "sp=./?/!_sl=84", "--word_level", "false", "-o", str(out)])
 
 
 ENGINES = {"elevenlabs": tts_elevenlabs, "azure": tts_azure, "google": tts_google, "piper": tts_piper}

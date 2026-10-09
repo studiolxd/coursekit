@@ -11,11 +11,11 @@ coursekit is a command-line tool (`coursekit`) that drives the production of e-l
 3. **Writing**: an agent writes each unit in a fixed Markdown format, and `coursekit verify` checks it against the production rules.
 4. **AI review**: a second agent (another tool or model) reviews each unit.
 5. **Editorial review and sign-off**: **you read each unit and sign it off**.
-6. **Media**: images, graphics, video, audio and demos are planned and produced.
-7. **Assembly**: the approved Markdown is loaded into the authoring platform (SLXD Creator), never the other way round.
-8. **Client review** and **delivery**: SCORM packages are exported, recorded and published to a shared folder with a tracking spreadsheet.
+6. **Media**: images, graphics, video, audio and demos are planned and produced. Graphics, simulations and videos use the project theme, which `/define-theme` defines once.
+7. **Assembly**: the approved Markdown is assembled, never the other way round: loaded into the authoring platform (SLXD Creator) or, with the html backend, built by coursekit itself into one SCORM package per unit.
+8. **Client review** and **delivery**: SCORM packages (exported from the platform or built by coursekit) are recorded and published to a shared folder with a tracking spreadsheet.
 
-The agents do the drafting; the decisions stay with people. Only a person can sign (`coursekit approve`): the generated agent settings forbid agents to run it.
+The agents do the drafting; the decisions stay with people. Only a person can sign (`coursekit approve`): the agent settings generated for Claude Code and opencode forbid agents to run it (and the other decisions of people: `client`, `hold`, `resume`, `handoff`).
 
 coursekit works with [Claude Code](https://claude.com/claude-code), opencode and Codex, interchangeably, and runs on macOS, Windows and Linux.
 
@@ -51,6 +51,6 @@ coursekit doctor
 coursekit run new-course "Strong passwords" 2 --code PWD
 ```
 
-The same last step works inside your AI tool: open it in the project folder and type `/new-course "Strong passwords" 2 --code PWD`. Then `coursekit status` always tells you where each course is and what the next step is.
+The same last step works inside your AI tool: open it in the project folder and type `/new-course "Strong passwords" 2 --code PWD`. Run `/define-theme` once per project before producing media. Then `coursekit status` always tells you where each course is and what the next step is.
 
 Next: [Getting started](01-getting-started.md)

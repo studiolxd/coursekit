@@ -30,9 +30,25 @@ Un recurso multimedia se escribe en `content.md` (formato en [06-content.md](06-
 | `coursekit media providers` | Lista todas las opciones de todos los tipos, de voz y de subtítulos con su disponibilidad (`disponible`, `falta`, `MCP del agente`) |
 | `coursekit media set CODE ID …` | Actualiza un recurso (lo usa el agente de multimedia mientras produce) |
 
-Reglas de `extract`: un recurso nuevo se añade como `pending`; uno existente conserva su avance, salvo que haya cambiado su tipo, título, descripción o especificaciones, en cuyo caso vuelve a `pending` con una nota; un recurso cuyo recurso reservado ha desaparecido del contenido se conserva con el estado `orphaned`.
+Reglas de `extract`: un recurso nuevo se añade como `pending`; uno existente conserva su avance, salvo que haya cambiado su tipo, título, descripción o especificaciones, en cuyo caso vuelve a `pending` con una nota; un recurso cuyo recurso reservado ha desaparecido del contenido se conserva con el estado `orphaned`, y sigue `orphaned` (también si el recurso reservado vuelve igual) hasta que cambien su tipo, título, descripción o especificaciones, lo que lo devuelve a `pending`.
 
-`media set` acepta `--status`, `--recipe` (la opción usada), `--file`, `--asset-path` (ruta en la plataforma), `--alt`, `--transcript`, `--subtitles-path` y `--made-with`, y `--force` (consulta [El control de los recursos](#el-control-de-los-recursos)). Para un fichero descargable de acompañamiento (por ejemplo un PDF) usa `--download FICHERO`, junto con `--download-title` y `--download-asset-path`. Si las especificaciones de un recurso producido mencionan una descarga (`pdf`, `descargable`, `descarga`, `docx`, `xlsx`, `pptx`…) y no hay ninguna registrada, `media plan` avisa.
+`media set` acepta `--status`, `--recipe` (la opción usada), `--file`, `--asset-path` (ruta en la plataforma), `--alt`, `--transcript`, `--subtitles-path` y `--made-with`, y `--force` (consulta [El control de los recursos](#el-control-de-los-recursos)). Para un fichero descargable de acompañamiento (por ejemplo un PDF) usa `--download FICHERO`, junto con `--download-title` y `--download-asset-path`. Si las especificaciones de un recurso producido mencionan una descarga (`pdf`, `descargable`, `descarga`, `docx`, `xlsx`, `pptx`…) y no hay ninguna registrada, `media plan` avisa. Con el backend creator avisa también cuando el recurso está `uploaded` y una descarga registrada aún no tiene `--download-asset-path` (súbela con `request_asset_upload`, de tipo `attachment`).
+
+### Campos de una entrada
+
+Los ficheros de la multimedia de un curso están en `courses/PWD/media/`: `manifest.yaml`, `scripts/` (los guiones), `files/` (los ficheros producidos) y `src/` (las fuentes: los guiones `.tape` y los paquetes de simulaciones y demos). Cada entrada de `manifest.yaml` tiene estos campos:
+
+| Campo | Contenido |
+|---|---|
+| `id`, `unit`, `section`, `type` | El id del recurso, los números de su unidad y su apartado, y el id de su tipo |
+| `title`, `description`, `how`, `specs` | Los campos del recurso reservado tal como están escritos en el contenido: título, descripción, cómo se elabora y especificaciones |
+| `status` | Uno de los estados de abajo, o `orphaned` |
+| `note` | Por qué `extract` devolvió el recurso a `pending` |
+| `recipe`, `made_with` | La opción usada y la herramienta o el modelo que produjo el recurso (`--recipe`, `--made-with`) |
+| `file`, `alt`, `transcript`, `subtitles_path` | El fichero producido y su texto alternativo, transcripción y subtítulos (`--file`, `--alt`, `--transcript`, `--subtitles-path`) |
+| `asset_path` | La ruta del recurso en la plataforma una vez subido (`--asset-path`) |
+| `downloads` | Los ficheros descargables: `file`, `title`, `asset_path` y `size` de cada uno |
+| `theme` | La huella de los tokens del tema con los que se hizo el recurso ([El control de los recursos](#el-control-de-los-recursos)) |
 
 ### Estados
 
@@ -66,7 +82,7 @@ U1-S1-M1 [image] Nota adhesiva en un monitor
   - creator-stock (si el agente tiene la herramienta MCP): Licensed stock from creator (Pexels, Pixabay, Unsplash, Freepik) + import_stock_image
 U1-S2-M1 [video] Construir una frase de paso
   - vhs (sí, solo para contenido terminal): Terminal video
-    voz: ninguna disponible
+    voz: elevenlabs-mcp
     subtítulos: stable-ts
 ```
 
@@ -104,7 +120,7 @@ Un curso usa **una** voz para toda su locución, así que un curso nunca mezcla 
 | `google` | `GOOGLE_TTS_API_KEY` | `es-ES-Chirp3-HD-Aoede` / `en-GB-Chirp3-HD-Aoede`; `GOOGLE_TTS_VOICE` la sustituye | Voces Chirp 3 HD |
 | `piper` | `PIPER_VOICE` (ruta a una voz `.onnx`) y el comando `piper`; `PIPER_SPEAKER` para voces con varios locutores | el fichero de `PIPER_VOICE` | Voz local de borrador |
 
-La voz por defecto depende del idioma del curso (`es` o `en`). En `media plan` aparece además `elevenlabs-mcp`, el agente usando directamente el conector de ElevenLabs (sin `coursekit tts`).
+La voz por defecto depende del idioma del curso (`es` o `en`). En `media plan` y `media providers` las opciones de voz se llaman `elevenlabs-api`, `azure-api`, `google-api` y `piper` (los proveedores de arriba), además de `elevenlabs-mcp`, el agente usando directamente el conector de ElevenLabs (sin `coursekit tts`); esta siempre aparece, porque solo el agente puede saber si tiene el conector. Las opciones de subtítulos son `elevenlabs-timestamps` y `stable-ts`.
 
 ```bash
 coursekit voice list PWD                   # proveedores, disponibilidad y la voz del curso
@@ -135,7 +151,7 @@ El proveedor es `--engine`; si no, el `media.voice.provider` del curso; si no, e
 
 ## `coursekit subtitles`
 
-Alinea un guion conocido con su audio y escribe un fichero WebVTT, palabra a palabra, con `stable-ts`:
+Alinea un guion conocido con su audio, palabra a palabra, con `stable-ts` y escribe un fichero WebVTT cuyos subtítulos terminan al final de cada frase o tras unos 84 caracteres:
 
 ```bash
 coursekit subtitles --course PWD --audio courses/PWD/media/files/U1-S2-M1.mp3 \
@@ -371,7 +387,7 @@ tools/remotion/
 | `audio` | Un proveedor de voz (`ffmpeg` para unir MP3 y para Piper) |
 | `simulation` | Ninguna (HTML/JS del agente con `tokens.css`) |
 
-Los tipos `infographic`, `diagram`, `animated_gif`, `simulation` y `video` necesitan además los tokens del tema derivados de la plataforma ([Tokens del tema](#tokens-del-tema)).
+Los tipos `infographic`, `diagram`, `animated_gif`, `simulation` y `video` necesitan además los tokens del tema derivados del tema de la plataforma, o de la hoja de estilos con el backend html ([Tokens del tema](#tokens-del-tema)).
 
 ## Ejemplo completo
 

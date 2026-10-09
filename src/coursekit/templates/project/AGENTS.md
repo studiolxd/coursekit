@@ -25,6 +25,9 @@ and follow it. Content format: `.coursekit/docs/content-format.md`.
 | `content-review` | reviewing a unit written by another model |
 | `media-production` | producing and uploading the media assets |
 | `creator-assembly` | loading and reloading the content into creator |
+| `html-assembly` | building the SCORM packages with the html backend |
+| `theme-definition` | defining the theme and deriving the design tokens |
+| `client-review` | reading and applying the client's comments on the review link |
 | `delivery` | exporting, recording and publishing the SCORM packages |
 
 ## Rules

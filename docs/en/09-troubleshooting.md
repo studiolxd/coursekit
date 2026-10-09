@@ -26,7 +26,7 @@ It prints what is installed and configured on this machine for the current proje
 | `git hooks` / `not a git repository` | `info` when the folder is not a git repository. Otherwise the hooks (`.githooks`) are not active. Fix: `coursekit setup` |
 | `MarkItDown (coursekit brief)` | the library that converts the brief documents. Fix: reinstall coursekit |
 | `Node (web links of brief/links.md)` | needed only to download the URLs of the brief. Fix: `coursekit setup --media` |
-| `html backend builder (@studiolxd/scorm and esbuild)` | shown only when the project assembles with the html backend. `ok` when the builder is installed in the coursekit store; `info`, with the fix after the arrow, when it is not. Fix: `coursekit setup` (it needs Node and npm). See [The html backend](#the-html-backend) |
+| `html backend builder (@studiolxd/scorm and esbuild)` | shown only when `project.yaml › assembly.backend` is html (a course that uses html through its own `course.yaml` does not make it appear). `ok` when the builder is installed in the coursekit store; `info`, with the fix after the arrow, when it is not. Fix: `coursekit setup` (it needs Node and npm). See [The html backend](#the-html-backend) |
 
 ### Agent tools
 
@@ -57,7 +57,7 @@ It prints what is installed and configured on this machine for the current proje
 
 | Check | Meaning and fix |
 |---|---|
-| `tokens derived from the theme of the platform` | `ok`: `theme/tokens.json` exists and carries the `origin` of a platform theme (imported with `coursekit theme import`) |
+| `tokens derived from the theme of the platform` | `ok`: `theme/tokens.json` exists and carries the `origin` of a platform theme or, with the html backend, of a stylesheet (imported with `coursekit theme import`) |
 | `no design tokens (theme/tokens.json)` | `info`: the project has no tokens yet. Fix: `/define-theme` before producing media |
 | `tokens written by hand, not derived from the platform` | `info`: `theme/tokens.json` exists but has no platform origin. Fix: `/define-theme` before producing media |
 
@@ -65,7 +65,7 @@ The check looks at the project's tokens (`theme/`); a course with its own theme 
 
 ### Media
 
-Optional. Install what is missing with `coursekit setup --media`: `ffmpeg`, `vhs`, `asciinema` (not available on Windows; terminal demos use VHS), `piper`, `stable-ts`, and `PIPER_VOICE` (path to the draft voice). The four API keys (`ELEVENLABS_API_KEY`, `AZURE_SPEECH_KEY`, `GOOGLE_TTS_API_KEY`, `MAGNIFIC_API_KEY`) show `ok` when set and `info` when not. It also shows two lines about what is installed once per machine ([Where the tools live](07-media.md#where-the-tools-live)):
+Optional. Install what is missing with `coursekit setup --media`: `ffmpeg`, `vhs`, `asciinema` (not available on Windows; terminal demos use VHS), `piper`, `stable-ts`, and `PIPER_VOICE` (path to the draft voice). The four API keys (`ELEVENLABS_API_KEY`, `AZURE_SPEECH_KEY`, `GOOGLE_TTS_API_KEY`, `MAGNIFIC_API_KEY`) show `ok` when set and `info` when not; with `AZURE_SPEECH_KEY` set and no `AZURE_SPEECH_REGION`, a `missing` line `AZURE_SPEECH_REGION` asks for the region of your Azure Speech resource. It also shows two lines about what is installed once per machine ([Where the tools live](07-media.md#where-the-tools-live)):
 
 | Check | Meaning and fix |
 |---|---|
@@ -179,7 +179,7 @@ The html backend builds one SCORM package per unit with `coursekit assemble buil
 | Message | Meaning and fix |
 |---|---|
 | ``<CODE> is assembled with the html backend: `<action>` is for the creator backend; use `coursekit assemble build` `` | You ran `assemble plan`, `diff`, `applied` or `link` on a course of the html backend. They are for creator. Build with `coursekit assemble build <CODE> --unit N` |
-| ``<CODE> is assembled with the '<backend>' backend: `build` is for the html backend (project.yaml › assembly.backend or course.yaml › assembly.backend)`` | You ran `assemble build` on a course of the creator backend. If you want this course in html, set `assembly.backend: html` in its `course.yaml` (or in `project.yaml` for every course) and run `coursekit setup` to prepare the builder |
+| ``<CODE> is assembled with the '<backend>' backend: `build` is for the html backend (project.yaml › assembly.backend or course.yaml › assembly.backend)`` | You ran `assemble build` on a course of the creator backend. If you want this course in html, set `assembly.backend: html` in its `course.yaml` (or in `project.yaml` for every course). The first `coursekit assemble build` prepares the builder; `coursekit setup` does it ahead of time only when `project.yaml` says html |
 | `coursekit: assemble <action> needs --unit` | `plan`, `diff`, `applied` and `link` (creator backend) work on one unit: add `--unit N`. Only `build` can run without `--unit` (every unit) |
 | `<lesson>: <BRICK>: this component is not available in the html backend yet (the games come in a later delivery)` | The unit uses a game (`word-search`, `wordle`, `hangman`, `pasapalabra`, `memory` or `trivial`), for example `U1-S3: MEMORY: ...`. `assemble build` refuses it, and `coursekit verify` reports it as `assembly: ...`. Replace it in the `.md` with another activity (a question or an interactive directive) or assemble that course in creator |
 | `the package does not contain N word(s) of the content: …` | The build checks that every word the learner should read in `content.md` and `assessment.md` is in the page, and lists the first ones missing. The usual cause is a line the format does not render: for example a question without its key (`question:`), a line of a directive in the wrong place or an unknown key. Find those words in the unit, correct the `.md` as [Content](06-content.md) describes and build again. Never edit the output |
@@ -189,6 +189,25 @@ The html backend builds one SCORM package per unit with `coursekit assemble buil
 | `html backend builder (@studiolxd/scorm and esbuild)` in `coursekit doctor` | Not a failure: the line is `info` until the builder exists. Run `coursekit setup` |
 
 The packages must be tried in the LMS they will be delivered to (or in SCORM Cloud) before delivering: the build checks the content, not how a particular LMS records the tracking. The preview folder opened from the disk, without an LMS, keeps its state only in memory.
+
+### The creator backend: plan, diff and applied
+
+`coursekit assemble plan`, `diff` and `applied` (see [The assembly flow](08-assembly-and-delivery.md#the-assembly-flow)); in `coursekit verify` the same errors start with `assembly:`. `<KEY>` is the key of a lesson (`U1-S2`, `U1-E1.1`) and `<N>` a number.
+
+| Message | Meaning and fix |
+|---|---|
+| `<KEY>: unknown directive ':::<name>'` | A `:::name` of the `.md` is not in the directive registry. Correct the name ([Content](06-content.md#directives)); if creator has a new brick, run `/sync-directives` |
+| `<KEY>: :::<name> needs exactly one correct option` | A `single-choice` has no correct option, or more than one. Mark exactly one with `[x]` |
+| `<KEY>: :::<name> has no panels: each one starts with a '#### Title' line` | A panel directive (`accordion`, `tabs`, `carousel`, `timeline`, `flashcards`...) has no `#### Title` lines. Write one per panel |
+| `Section <N> is not in the design` | `content.md` has a section the design does not have. Remove it, or ask for a design change (`/design-change`) and `coursekit sync` |
+| `<KEY>: lesson without content` | Warning: the section has no text. Write it |
+| `labelled-graphic: image '<title>' not produced yet` | Warning: the image of the labelled graphic is not produced (or not uploaded, with creator). Produce it, or accept the plain list of points |
+| ``missing <file>: run `coursekit assemble plan` first`` | `diff` or `applied` before the plan. Run `coursekit assemble plan CODE --unit N` |
+| `lesson <KEY> not in the plan` | `applied --lesson` with a key the plan does not have. Use the keys of `assembly/unit-NN.plan.json` |
+| `<N> brick ids but the plan has <M> bricks in <KEY>` | The number of `--brick-ids` is not the number of bricks of the lesson: something was not applied, or the plan changed. Check the lesson in creator, run `plan` and `diff` again and record the ids in order |
+| `coursekit: link needs --content-id, --preview or --review` · `coursekit: applied needs --lesson and --lesson-id (or --content)` | Missing option (exit code 2) |
+| `coursekit: unit <N> not found` | The unit is not in `course.yaml`; check `coursekit status CODE` |
+| `<path> does not exist: save the result of list_brick_types in that file (/sync-directives does it)` · `<path> does not look like a list_brick_types result (no 'categories')` | `coursekit directives check` needs the whole result of `list_brick_types` saved as `.cache/list_brick_types.json`. Run `/sync-directives` |
 
 ### Content words of the other language, true-false and fill-in-the-blank
 
@@ -201,6 +220,30 @@ The resource types, the keys of the directives (`question:`, `answer:`…) and a
 | `:::true-false needs 'answer: true\|false'` | The question has no `answer:` line, or its value is not one of the two words of the course language (`true` / `false` in English; `verdadero` / `falso` in Spanish). Write `answer: true` or `answer: false` |
 | `:::fill-in-the-blank needs blanks written as {answer} in 'question:'` | The `question:` line has no blank. Write each blank between braces inside the sentence: `question: A strong password is {long}.` (several accepted answers: `{long/lengthy}`). The key is the one of the course language |
 | `:::pasapalabra items: '- A (starts\|contains): definition :: ANSWER'` | An item of the letter wheel does not follow the form letter, mode in parentheses, definition, `::`, answer. The mode is `(starts)` or `(contains)` in English and `(empieza)` or `(contiene)` in Spanish |
+
+### Voice-over, captions and the media records
+
+These are the messages of `coursekit voice`, `tts`, `subtitles` and `media`; the voice-over flow is in [Media](07-media.md#voice-providers). `<program>` is `ffmpeg`, `piper` or `stable-ts`, and `<host>` the service (for example `api.elevenlabs.io`).
+
+| Message | Meaning and fix |
+|---|---|
+| ``several voice providers are available (<list>): choose one for the course with `coursekit voice set <CODE> <provider> [--voice …]``` | `tts` found several configured providers and the course has none chosen. Run the command it shows |
+| `this course uses <label> but it is not configured here (<KEYS> in .env)` | The course voice is set (`course.yaml › media.voice`) but this machine lacks its keys. Put them in `.env` (`coursekit setup --media` asks for them), or choose another provider with `coursekit voice set` |
+| `no voice provider configured (ElevenLabs, Azure or Google keys, or Piper, in .env)` | No provider is available. Set a key in `.env`, or install the draft voice with `coursekit setup --media` |
+| `ELEVENLABS_API_KEY and a voice (ELEVENLABS_VOICE_ID or --voice) are needed` | ElevenLabs has no default voice: set `ELEVENLABS_VOICE_ID` or pass `--voice`, or fix it for the course with `coursekit voice set CODE elevenlabs --voice ID` |
+| `set PIPER_VOICE in .env (path to a .onnx voice) or pass --voice` | Piper needs a voice file. `coursekit setup --media` downloads one and sets `PIPER_VOICE` |
+| `piper is not installed (coursekit setup --media)` · `stable-ts is not installed (coursekit setup --media)` | Run `coursekit setup --media` (it needs `uv`) |
+| `<program> is not installed or not on the PATH (coursekit setup --media)` | `ffmpeg` (joining MP3 parts, Piper to MP3) or another program is missing, or installed but not on the `PATH` of this terminal. Run `coursekit setup --media`, then open a new terminal |
+| `<program> failed (exit code <N>)` | The program ran and failed. Run the same program by hand to read its own message. `stable-ts` downloads its model the first time, so it needs the network |
+| `<host> answered <status> <reason>: check the key, the region and the voice configured` | The voice service rejected the request. `401` or `403`: wrong key, or (Azure) a region that is not the one of the resource (`AZURE_SPEECH_REGION`); `404`: the voice does not exist (`ELEVENLABS_VOICE_ID`, `AZURE_SPEECH_VOICE`, `GOOGLE_TTS_VOICE` or `--voice`); `429`: quota or credits used up. Nothing is written when it fails |
+| `could not reach <host>: <reason>` | No network, or a proxy that inspects TLS: see [Corporate proxy and certificates](#corporate-proxy-and-certificates) |
+| `the file <path> does not exist` | The path of `--in`, `--audio` or `--text` is wrong (they are relative to where you run the command) |
+| `coursekit: voice set needs CODE and PROVIDER` | `coursekit voice set PWD azure`; with only `voice list` the course is optional |
+| ``asset <ID> not found (run `coursekit media extract` first)`` | The manifest has no such id: run `coursekit media extract CODE`, and check the id (they are positional) |
+| `status must be one of ['pending', 'scripted', 'produced', 'uploaded']` | `media set --status` takes one of those four; `orphaned` is set by `extract` |
+| `--download-title and --download-asset-path need --download FILE` | Add `--download FILE` to the same command |
+| `coursekit: set needs an asset id` · `coursekit: this action needs a course code` | Missing argument (exit code 2): `coursekit media set CODE ID ...` |
+| `<ID>: its specs ask for a downloadable file (PDF…): coursekit media set … --download media/files/<file>` | Warning of `media plan`: register the file with `--download` (see [Media](07-media.md#the-media-manifest)) |
 
 ### Missing media tools
 
@@ -265,7 +308,7 @@ The store folder of Remotion is named after a hash of the `package.json` of the 
 
 ### The course is on hold or the client's review blocks the delivery
 
-A course on hold refuses the commands that change it (`write`, `review`, `reviewed`, `approve`, `assemble`, `sync` without `--check`, `media set`, `client` and the delivery commands); reading commands such as `status` still work. The client review (when the project requires it) refuses the delivery. These are the messages and what to do; `<CODE>` stands for the course code (for example `PWD`).
+A course on hold refuses the commands that change it (`write`, `review`, `reviewed`, `approve`, `assemble`, `sync` without `--check`, `media set`, `client`, the delivery commands and `run` of a command for that course); reading commands such as `status` still work. The client review (when the project requires it) refuses the delivery. These are the messages and what to do; `<CODE>` stands for the course code (for example `PWD`).
 
 | Message | Meaning and fix |
 |---|---|
@@ -281,9 +324,39 @@ A course on hold refuses the commands that change it (`write`, `review`, `review
 | `<CODE> has no round open with the client` | `approve` or `changes` with no open round. `coursekit status <CODE>` shows the last round |
 | `coursekit: approve needs --by with the name of who approves` | Add `--by "Name"`: the name of the person who approves on behalf of the client |
 | `coursekit: skip needs --reason` | Add `--reason "..."` |
-| `warning: <CODE> is in '<status>', not in a delivery status (assembly, client_review): the package is recorded, but the course is not marked as delivered` | Not an error: `delivery add` recorded the package, but the course only becomes `delivered` from `assembly` or `client_review`. Usually the course was not assembled or went back to an earlier status. Fix the cause, then record the packages again with `delivery add` (or check that `coursekit status <CODE>` shows what you expect). With the html backend, `assemble build` does not move the course to `assembly`, so this warning appears for a course still in `media` |
+| `warning: <CODE> is in '<status>', not in a delivery status (assembly, client_review): the package is recorded, but the course is not marked as delivered` | Not an error: `delivery add` recorded the package, but the course only becomes `delivered` from `assembly` or `client_review`. Usually the course was not assembled or went back to an earlier status. Fix the cause, then record the packages again with `delivery add` (or check that `coursekit status <CODE>` shows what you expect). With the html backend, `assemble build` moves the course from `media` to `assembly` only when every unit has been built, so this warning appears if some unit was not built yet |
 
 If the client review is not mandatory and you do not want it, there is nothing to do: with `client_review.required: false` the course can be delivered from `assembly`. See [Configuration](04-configuration.md#delivery-scorm-export-and-client-review).
+
+### Recording a delivery package
+
+`coursekit delivery add` checks the file before it records anything.
+
+| Message | Meaning and fix |
+|---|---|
+| `<file>.zip: imsmanifest.xml is not at the root of the zip` | The zip has the files inside a folder (it was zipped from the parent folder). Zip the contents so that `imsmanifest.xml` is at the root, or take the package from the export again |
+| `<file>.zip: not a valid zip file` | The file is not a zip, is damaged (an interrupted download), or the path does not exist. Download or build it again |
+| `the package must be in <…/courses/PWD/delivery>` | `--file` must point inside the delivery folder of the course. Move the zip there, with the name from `coursekit delivery name` |
+| `unit <N> not found` | `--unit` is not a unit of the course |
+| `coursekit: delivery add needs --file` · `coursekit: delivery <action> needs --unit and --version` | Missing option (exit code 2) |
+| `recorded <file> · pending units for v<version>: [2, 3]` | Not an error: the units listed have no package of that version yet. The course is `delivered` when all have it |
+
+Recording the same package twice adds a second entry to `course.yaml › deliveries`; it does no harm, but it is not needed.
+
+### Handoff stops
+
+`coursekit handoff` ends with `handoff stopped. <reason>` and `To carry on where it stopped, once solved:  coursekit handoff <CODE>` (exit code 1). The reasons that are not about a unit failing to verify (see [Signing problems](#signing-problems)):
+
+| Reason | Meaning and fix |
+|---|---|
+| `<CODE>: the project requires the client review to deliver (client_review.required) and handoff does not do it` | Handoff never opens a client review. For a new course it refuses before it creates anything. Set `client_review.required: false` in `config/delivery.yaml` (or in the `course.yaml`), or use the normal flow. A course whose review is already approved or skipped goes on |
+| ``<CODE>: the course is on hold; bring it back with `coursekit resume <CODE>` and then `coursekit handoff <CODE>``` | A person paused it. Resume it first |
+| ``<CODE>: a client review round is open; handoff does not handle it (`coursekit client <CODE> ...`)`` | Close the round with `approve` or `changes` ([Client review](08-assembly-and-delivery.md#client-review)), then run handoff again |
+| `course <CODE> already exists; to carry it on: coursekit handoff <CODE>` | A new handoff with a title whose code exists. Carry the course on with its code, or pass another `--code` |
+| `<CODE>: media assets are still not produced after the attempts: <ids>` · `<CODE>: the media needs the theme and it could not be defined (/define-theme)` | The media agent did not finish, or no theme could be derived. Read the session log in `.cache/logs/`, fix the cause (keys, tools: `coursekit doctor`) and carry on |
+| `<CODE>: the course is not assembled after the attempts (/assemble)` · `<CODE>: the course is not delivered after the attempts (/deliver)` | Run `/assemble` or `/deliver` by hand to see the error, or read the log in `.cache/logs/` |
+| `<CODE>: the AI review still says "not ready" for unit <N> after fixing it (reviews/unit-NN-ai-review.md)` | Read the review report, fix the unit yourself and carry on |
+| ``<CODE>: the "<status>" step moved nothing; look at it with `coursekit status <CODE>``` | The agent finished without changing the status. Check `coursekit status` and the log |
 
 ## Change the language
 
@@ -310,9 +383,9 @@ The interface language does not touch the content. The words of `content.md` (he
 
 ## FAQ
 
-**Can an agent sign for me?** No. `coursekit approve` is denied in the generated settings of Claude Code and opencode, and the project instructions forbid it for every tool. Use `!` in the chat if you want to sign without leaving it. The same applies to `coursekit client` (rounds of client review), `coursekit hold` and `coursekit resume`.
+**Can an agent sign for me?** No. `coursekit approve` is denied in the generated settings of Claude Code and opencode, and the project instructions forbid it for every tool. Use `!` in the chat if you want to sign without leaving it. The same applies to `coursekit client` (rounds of client review), `coursekit hold`, `coursekit resume`, `coursekit handoff` and `coursekit reviewed --by`.
 
-**Can the whole process run without me?** Yes: `coursekit handoff "<title>" <hours>`. It signs as Coursekit Handoff and nobody reviews the course; see [Workflow](02-workflow.md#handoff-mode). If it stops, it says why; fix it and run `coursekit handoff <CODE>` to carry on.
+**Can the whole process run without me?** Yes: `coursekit handoff "<title>" <hours>`. It signs as Coursekit Handoff and nobody reviews the course; see [Workflow](02-workflow.md#handoff-mode). It does not do the client review: with `client_review.required: true` it refuses to start, and it stops at a course on hold or with an open round. If it stops, it says why ([Handoff stops](#handoff-stops)); fix it and run `coursekit handoff <CODE>` to carry on.
 
 **Is the client review mandatory?** Not by default. It is if the project says so (`client_review.required: true` in `config/delivery.yaml`) or the course does (`delivery › client_review › required` in its `course.yaml`). See [Workflow](02-workflow.md#client-review-optional).
 

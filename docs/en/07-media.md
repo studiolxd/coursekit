@@ -30,9 +30,25 @@ A media placeholder is written in `content.md` (format in [06-content.md](06-con
 | `coursekit media providers` | Lists every option of every type, voice and subtitles with its availability (`available`, `missing`, `agent MCP`) |
 | `coursekit media set CODE ID …` | Updates an asset (used by the media agent while producing) |
 
-`extract` rules: a new placeholder is added as `pending`; an existing one keeps its progress, unless its type, title, description or specifications changed, in which case it goes back to `pending` with a note; an asset whose placeholder disappeared is kept with status `orphaned`.
+`extract` rules: a new placeholder is added as `pending`; an existing one keeps its progress, unless its type, title, description or specifications changed, in which case it goes back to `pending` with a note; an asset whose placeholder disappeared is kept with status `orphaned`, and it stays `orphaned` (also if the placeholder comes back unchanged) until its type, title, description or specifications change, which sends it back to `pending`.
 
-`media set` takes `--status`, `--recipe` (option used), `--file`, `--asset-path` (path in the platform), `--alt`, `--transcript`, `--subtitles-path` and `--made-with`, and `--force` (see [The media guard](#the-media-guard)). For a downloadable companion file (for example a PDF) use `--download FILE`, plus `--download-title` and `--download-asset-path`. When the specifications of a produced asset mention a download (`pdf`, `download`, `docx`, `xlsx`, `pptx`…) and none is registered, `media plan` warns.
+`media set` takes `--status`, `--recipe` (option used), `--file`, `--asset-path` (path in the platform), `--alt`, `--transcript`, `--subtitles-path` and `--made-with`, and `--force` (see [The media guard](#the-media-guard)). For a downloadable companion file (for example a PDF) use `--download FILE`, plus `--download-title` and `--download-asset-path`. When the specifications of a produced asset mention a download (`pdf`, `download`, `docx`, `xlsx`, `pptx`…) and none is registered, `media plan` warns. With the creator backend it also warns when the asset is `uploaded` and a registered download has no `--download-asset-path` yet (upload it with `request_asset_upload`, kind `attachment`).
+
+### Fields of an entry
+
+The files of the media of a course are in `courses/PWD/media/`: `manifest.yaml`, `scripts/` (the scripts), `files/` (the produced files) and `src/` (the sources: `.tape` scripts and the packages of simulations and demos). Each entry of `manifest.yaml` has these fields:
+
+| Field | Content |
+|---|---|
+| `id`, `unit`, `section`, `type` | The id of the asset, its unit and section numbers, and the id of its type |
+| `title`, `description`, `how`, `specs` | The fields of the placeholder as written in the content: title, description, how it is made and specifications |
+| `status` | One of the statuses below, or `orphaned` |
+| `note` | Why `extract` sent the asset back to `pending` |
+| `recipe`, `made_with` | The option used and the tool or model that produced the asset (`--recipe`, `--made-with`) |
+| `file`, `alt`, `transcript`, `subtitles_path` | The produced file and its alternative text, transcript and captions (`--file`, `--alt`, `--transcript`, `--subtitles-path`) |
+| `asset_path` | The path of the asset in the platform once uploaded (`--asset-path`) |
+| `downloads` | The downloadable files: `file`, `title`, `asset_path` and `size` of each one |
+| `theme` | The fingerprint of the theme tokens the asset was made with ([The media guard](#the-media-guard)) |
 
 ### Statuses
 
@@ -66,7 +82,7 @@ U1-S1-M1 [image] Sticky note on a monitor
   - creator-stock (if the agent has the MCP tool): Licensed stock from creator (Pexels, Pixabay, Unsplash, Freepik) + import_stock_image
 U1-S2-M1 [video] Building a passphrase
   - vhs (yes, only for terminal content): Terminal video
-    voice: none available
+    voice: elevenlabs-mcp
     subtitles: stable-ts
 ```
 
@@ -104,7 +120,7 @@ A course uses **one** voice for all its narration, so a course never mixes voice
 | `google` | `GOOGLE_TTS_API_KEY` | `es-ES-Chirp3-HD-Aoede` / `en-GB-Chirp3-HD-Aoede`; `GOOGLE_TTS_VOICE` overrides | Chirp 3 HD voices |
 | `piper` | `PIPER_VOICE` (path to a `.onnx` voice) and the `piper` command; `PIPER_SPEAKER` for multi-speaker voices | the file in `PIPER_VOICE` | Local draft voice |
 
-The default voice depends on the course language (`es` or `en`). In `media plan` there is also `elevenlabs-mcp`, the agent using the ElevenLabs connector directly (without `coursekit tts`).
+The default voice depends on the course language (`es` or `en`). In `media plan` and `media providers` the voice options are named `elevenlabs-api`, `azure-api`, `google-api` and `piper` (the providers above), plus `elevenlabs-mcp`, the agent using the ElevenLabs connector directly (without `coursekit tts`); that one is always listed, because only the agent can tell whether it has the connector. The subtitle options are `elevenlabs-timestamps` and `stable-ts`.
 
 ```bash
 coursekit voice list PWD                   # providers, availability and the voice of the course
@@ -135,7 +151,7 @@ The provider is `--engine`, else the course's `media.voice.provider`, else the o
 
 ## `coursekit subtitles`
 
-Aligns a known script with its audio and writes a WebVTT file, word by word, with `stable-ts`:
+Aligns a known script with its audio, word by word, with `stable-ts` and writes a WebVTT file whose cues end at sentence ends or after about 84 characters:
 
 ```bash
 coursekit subtitles --course PWD --audio courses/PWD/media/files/U1-S2-M1.mp3 \
@@ -371,7 +387,7 @@ tools/remotion/
 | `audio` | A voice provider (`ffmpeg` for MP3 joining and Piper) |
 | `simulation` | None (HTML/JS by the agent with `tokens.css`) |
 
-The types `infographic`, `diagram`, `animated_gif`, `simulation` and `video` also need the theme tokens derived from the platform ([Theme tokens](#theme-tokens)).
+The types `infographic`, `diagram`, `animated_gif`, `simulation` and `video` also need the theme tokens derived from the platform theme, or from the stylesheet with the html backend ([Theme tokens](#theme-tokens)).
 
 ## Worked example
 

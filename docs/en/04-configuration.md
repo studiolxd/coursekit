@@ -200,14 +200,14 @@ Structure (units, sections, objectives, hours) is not set here: it comes from ea
 | `defaults.intro_section` | `true` | New courses start with an introduction-and-objectives section in every unit. |
 | `defaults.summary_section` | `true` | New courses end every unit with a summary section. |
 | `defaults.structure` | `sin_modulos` | Structure of new courses: `sin_modulos` or `con_modulos` (slxd structural pattern). |
-| `defaults.grading.unit_tests_weight` | `60` | Total % of the grade for all unit tests, split evenly. |
-| `defaults.grading.final_test_weight` | `40` | % of the grade for the final test. |
+| `defaults.grading.unit_tests_weight` | `60` | Total % of the grade for all unit tests, split evenly. Copied into `course.yaml › design.grading` as the grading guide of the design; the assembly does not apply it (only `passing_score` and `attempts` reach the quizzes). |
+| `defaults.grading.final_test_weight` | `40` | % of the grade for the final test. Recorded like the previous one; the assembly does not apply it. |
 | `defaults.grading.passing_score` | `50` | Passing score. |
 | `defaults.grading.attempts` | `2` | Attempts allowed per test. |
 | `design.competencies_per_course` | `"2–4"` | Guidance given to the design agent: competencies per course. |
 | `design.objectives_per_unit` | `"2–4"` | Guidance: objectives per unit. |
 | `design.intro_summary_hours` | `"0.2–0.3"` | Guidance: hours for the introduction and the summary. |
-| `review.ai` | `required` | `required`, `skip` | `required`: an AI review comes before each unit's sign-off. `skip`: a unit that passes `coursekit verify` counts as reviewed and the person's sign-off is the review. Either way a person can record their own review of a unit with `coursekit reviewed --by`. |
+| `review.ai` | `required` | `required` or `skip`. `required`: an AI review comes before each unit's sign-off. `skip`: a unit that passes `coursekit verify` counts as reviewed and the person's sign-off is the review. Either way a person can record their own review of a unit with `coursekit reviewed --by`. |
 | `handoff.rounds` | `2` | Attempts per step of `coursekit handoff` (writing a unit, its review with its fixes, the design sign-off, media, assembly, delivery) before it stops. `--rounds` changes it for one run. |
 | `content.word_margin` | `0.05` | Recommended margin over the minimum words (`0.05` = 5 %). Below it, `coursekit verify` warns; below the minimum itself it is an error. |
 | `content.placeholders_per_hour` | `2.5` | Media placeholders required per unit hour (rounded up). |
@@ -258,10 +258,10 @@ Each option has `id`, `how` (description), `needs` (requirements) and optionally
 
 | Requirement | Met when |
 |---|---|
-| `env: VAR` | the variable is set (`.env` or shell) |
+| `env: VAR` | the variable is set (`.env` or shell); a list `[A, B]` needs all of them |
 | `bin: CMD` | the command is installed |
 | `mcp: TOOL` | the agent has that MCP tool (only the agent can check it) |
-| `media: X` | `X` is installed as a media tool (`coursekit setup --media`) |
+| `media: X` | the command `X` is on the `PATH` (`coursekit setup --media` installs `piper` and `stable-ts`) |
 | `path: P` | the path exists inside the project (for example `tools/remotion/node_modules`) |
 | `none` | always |
 
@@ -360,7 +360,7 @@ With the html backend (`project.yaml › assembly.backend: html`, or `assembly.b
 | `courses/<CODE>/theme/maqueta.css` | yes | The same for one course: it is added after the project's, only in the packages of that course. `coursekit theme import courses/<CODE>/theme/maqueta.css --course CODE` derives that course's own tokens. |
 | `components/*.css` | yes | Extra styles, added to the package after the stylesheets above, in alphabetical order. |
 | `components/*.js` | yes | Extra behaviour, bundled with esbuild into the player (`assets/player.js`) of every package, before the code of the player. |
-| `courses/<CODE>/assembly/html/unit-NN/` | no (`.gitignore`) | The package of a unit, rebuilt by `coursekit assemble build` and openable from the disk. Projects created before the html backend get the `.gitignore` line with `coursekit init --update`. |
+| `courses/<CODE>/assembly/html/unit-NN/` | no (`.gitignore`) | The package of a unit, rebuilt by `coursekit assemble build` and openable from the disk. |
 | `courses/<CODE>/delivery/<name>.zip` | no (`.gitignore`) | The zip of a unit, written by `coursekit assemble build --version X.Y`. |
 
 The styles of a package (`assets/styles.css`) are put together in this order, so each layer wins over the previous ones: the base layout of the package; the `tokens.css` that applies to the course (if the course has tokens); `theme/maqueta.css`; `courses/<CODE>/theme/maqueta.css`; `components/*.css`.
@@ -413,7 +413,7 @@ Do not edit it by hand. It is only a record: if it is lost, the shell-file lines
 | The system packages (`ffmpeg`, `node`, `vhs`, `asciinema`). | |
 | `workspaces/html-builder-<hash>/`: the builder of the html backend (`@studiolxd/scorm`, `esbuild`). | Nothing: the project keeps no copy or link; `coursekit assemble build` uses the one in the store. |
 
-The `.gitignore` that `coursekit init` writes ignores `node_modules/` (a project created before this entry existed gets it with `coursekit init --update`), so the link is never committed. If the link cannot be made, or `tools/remotion/` already has a real `node_modules` folder, that folder is used as it is.
+The `.gitignore` that `coursekit init` writes ignores `node_modules/` (`coursekit init --update` refreshes the `.gitignore` unless you edited it by hand), so the link is never committed. If the link cannot be made, or `tools/remotion/` already has a real `node_modules` folder, that folder is used as it is.
 
 `coursekit doctor` shows the path and size of the store and whether the Remotion dependencies are reachable; `coursekit uninstall` takes the store apart. See [`coursekit setup`](03-commands.md#coursekit-setup), [`coursekit doctor`](03-commands.md#coursekit-doctor) and [`coursekit uninstall`](03-commands.md#coursekit-uninstall).
 
