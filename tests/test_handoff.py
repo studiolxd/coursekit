@@ -241,3 +241,25 @@ def test_no_pause_and_a_resume_never_wait(project, monkeypatch):
     assert main(["handoff", "PWD"]) == 0  # already delivered: nothing to wait for
     assert main(["handoff", "PWD", "--no-pause"]) == 2  # the option only makes sense when creating
     assert fake.calls.count("new-course") == 1
+
+
+def test_a_step_refused_a_program_is_not_repeated(project, monkeypatch, capsys):
+    fake = Agents(project, monkeypatch)
+    log = project / "deliver.log"
+    log.write_text("\n".join(json.dumps(e) for e in [
+        {"type": "assistant", "message": {"content": [
+            {"type": "tool_use", "id": "1", "name": "Bash", "input": {"command": "curl -fL x"}}]}},
+        {"type": "user", "message": {"content": [{"type": "tool_result", "tool_use_id": "1", "is_error": True,
+                                                  "content": "This command requires approval"}]}},
+    ]), encoding="utf-8")
+    run = fake.execute
+
+    def execute(project_, agent, text, headless, log_name):
+        code, _, summary = run(project_, agent, text, headless, log_name)
+        return (1, log, "needs curl") if text.startswith("/deliver") else (code, None, summary)
+
+    monkeypatch.setattr(launch, "execute", execute)
+    fake.skip["deliver"] = 2
+    assert main(["handoff", "Contraseñas seguras", "1", "--code", "PWD"]) == 1
+    assert fake.calls.count("deliver") == 1  # the second round would be refused the same
+    assert "tried to run curl" in capsys.readouterr().err

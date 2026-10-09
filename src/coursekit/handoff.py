@@ -152,6 +152,12 @@ def _why(ctx: Context, log: Path | None, summary: str, role: str = "") -> str:
     return "\n" + t("handoff", "agent_said_line", text=text) if text else ""
 
 
+def _cannot(ctx: Context, log: Path | None, role: str) -> bool:
+    """The session was refused something (a server, a program) that another attempt would be refused again: do not repeat the step
+    (repeating the delivery asks creator for another export each time)."""
+    return bool(log and (launch.mcp_blocker(ctx.project, log) or launch.permission_blocker(ctx.project, log, role)))
+
+
 def _stuck(ctx: Context, key: str, log: Path | None = None, why: str = "", **values) -> HandoffError:
     return HandoffError(t("handoff", key, code=ctx.code, **values) + _where(log, ctx.project) + why)
 
@@ -260,7 +266,7 @@ def _media(ctx: Context, course: dict) -> None:
         for _ in range(ctx.rounds):
             _, log, summary = _agent(ctx, "media", "produce-media", ctx.code, "media")
             pending = _pending_media(ctx.course())
-            if not pending:
+            if not pending or _cannot(ctx, log, "media"):
                 break
         if pending:
             raise _stuck(ctx, "media_pending", log, why=_why(ctx, log, summary, "media"), assets=", ".join(a["id"] for a in pending))
@@ -270,7 +276,9 @@ def _media(ctx: Context, course: dict) -> None:
         _, log, summary = _agent(ctx, "assembly", "assemble", ctx.code, "assemble")
         if ctx.course()["status"] != "media":
             return
-    raise _stuck(ctx, "not_assembled", log, why=_why(ctx, log, summary))
+        if _cannot(ctx, log, "assembly"):
+            break
+    raise _stuck(ctx, "not_assembled", log, why=_why(ctx, log, summary, "assembly"))
 
 
 def _deliver(ctx: Context, course: dict) -> None:
@@ -279,7 +287,9 @@ def _deliver(ctx: Context, course: dict) -> None:
         _, log, summary = _agent(ctx, "assembly", "deliver", ctx.code, "deliver")
         if ctx.course()["status"] == "delivered":
             return
-    raise _stuck(ctx, "not_delivered", log, why=_why(ctx, log, summary))
+        if _cannot(ctx, log, "assembly"):
+            break
+    raise _stuck(ctx, "not_delivered", log, why=_why(ctx, log, summary, "assembly"))
 
 
 STAGES = {

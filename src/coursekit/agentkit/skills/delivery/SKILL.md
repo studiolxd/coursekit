@@ -33,8 +33,9 @@ same; `coursekit status <CODE>` says which backend the course uses.
    `standard`, `reporting`, `scoreSource`). Keep `jobId` and `downloadUrl`.
 3. `get_export_status` until `COMPLETE` (wait between calls; if `FAILED`, stop and show
    `errorMessage`).
-4. File name: `coursekit delivery name <CODE> --unit N --version X.Y`. Download the
-   `downloadUrl` to `courses/<CODE>/delivery/<that name>` (e.g. with `curl -fL -o`).
+4. Download the package: `coursekit delivery download <CODE> --unit N --version X.Y --url "<downloadUrl>"`. It saves it as
+   `courses/<CODE>/delivery/<name>` (the name `coursekit delivery name` prints), checks it and prints the path. Do not use `curl`:
+   a session without an interface cannot run it. The address expires: if it fails, ask for another export.
 5. `coursekit delivery add <CODE> --unit N --version X.Y --file courses/<CODE>/delivery/<name> --job <jobId> --snapshot <id>`.
    It checks the zip has `imsmanifest.xml` at its root and records it; with a mirror folder configured it
    also copies the package there (never deleted) and updates the catalog.

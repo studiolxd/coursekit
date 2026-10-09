@@ -515,6 +515,12 @@ def cmd_delivery(args: argparse.Namespace) -> int:
         deliverymod.check_ready(course)
         print(deliverymod.expected_name(course, args.unit, args.version))
         return 0
+    if args.action == "download":
+        if not args.url:
+            print(t("commands", "delivery_download_needs_url"), file=sys.stderr)
+            return 2
+        print(deliverymod.download(course, args.unit, args.version, args.url))
+        return 0
     if not args.file:
         print(t("commands", "delivery_add_needs_file"), file=sys.stderr)
         return 2
@@ -772,9 +778,10 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.set_defaults(func=cmd_subtitles)
 
     p = sub.add_parser("delivery", help=t("commands", "help_delivery"))
-    p.add_argument("action", choices=("add", "name", "check"))
+    p.add_argument("action", choices=("add", "name", "check", "download"))
     p.add_argument("code")
     p.add_argument("--unit", type=int)
+    p.add_argument("--url", help=t("commands", "help_delivery_url"))
     p.add_argument("--version")
     p.add_argument("--file")
     p.add_argument("--job")

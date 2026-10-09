@@ -868,18 +868,19 @@ coursekit directives check .cache/list_brick_types.json
 Comprueba que un curso puede entregarse, registra un paquete SCORM entregado en `course.yaml › deliveries`, o imprime el nombre de fichero que debe tener un paquete. Quién: agentes (el agente de montaje) y personas.
 
 ```
-coursekit delivery [--file FILE] [--job JOB] [--snapshot SNAPSHOT] [--unit UNIT] [--version VERSION] {add,name,check} code
+coursekit delivery [--file FILE] [--job JOB] [--snapshot SNAPSHOT] [--unit UNIT] [--version VERSION] [--url URL] {add,name,check,download} code
 ```
 
 | Argumento | Valores / por defecto | Significado |
 |---|---|---|
-| `action` | `add`, `name`, `check` | Registrar un paquete, imprimir el nombre de fichero esperado o comprobar que el curso puede entregarse. |
+| `action` | `add`, `name`, `check`, `download` | Registrar un paquete, imprimir el nombre de fichero esperado, comprobar que el curso puede entregarse o descargar un paquete exportado. |
 | `code` | código o carpeta del curso | Curso. |
 | `--unit UNIT` | número de unidad (obligatorio en `add` y `name`) | Unidad del paquete. |
 | `--version VERSION` | texto (obligatorio en `add` y `name`), por ejemplo `1.0` | Versión de la entrega. |
 | `--file FILE` | ruta (`add`) | El `.zip` descargado; una ruta relativa se toma desde la carpeta actual. Debe estar directamente dentro de `courses/<CODE>/delivery/`. Código de salida 2 si falta. |
 | `--job JOB` | texto (`add`) | Id del trabajo de exportación de creator. No se usa con el backend html. |
 | `--snapshot SNAPSHOT` | texto (`add`) | Id de la instantánea de creator desde la que se exportó el paquete. No se usa con el backend html. |
+| `--url URL` | dirección `https://` (`download`) | El `downloadUrl` del trabajo de exportación. Código de salida 2 sin ella. |
 
 Con el backend html el paquete no se exporta desde una plataforma: `coursekit assemble build CODE --unit N --version X.Y` lo escribe en `courses/<CODE>/delivery/` con el nombre que imprime `name`, y `add` lo registra sin `--job` ni `--snapshot`.
 
@@ -887,10 +888,13 @@ Con el backend html el paquete no se exporta desde una plataforma: `coursekit as
 
 La revisión del cliente es obligatoria cuando `delivery.yaml › client_review.required` es `true` (por defecto `false`; se puede sustituir para todo el proyecto en `config/delivery.yaml` y por curso en `course.yaml › delivery`). Entonces el curso necesita al menos una ronda en `course.yaml › client_review` y la última debe estar `approved` u `omitida` (`skipped`); el mensaje dice si no se abrió ninguna ronda, si el cliente pidió cambios o si aún no ha respondido. Consulta [`coursekit client`](#coursekit-client).
 
+`download` guarda el paquete de un trabajo de exportación (su `downloadUrl`, una dirección `https://` que caduca) como `courses/<CODE>/delivery/<nombre>`, con el nombre que imprime `name`, comprueba que es un zip válido con `imsmanifest.xml` en su raíz e imprime su ruta, lista para `add`; una descarga fallida o inválida no deja fichero. Existe para que el agente de montaje no necesite `curl`, que una sesión sin interfaz no puede ejecutar. Se niega en los mismos casos que `name` y `add`.
+
 `name` construye el nombre a partir de `delivery › file_name` (por defecto `{code}-U{unit:02d}-v{version}-{standard}.zip`, por ejemplo `PWD-U01-v1.0-scorm12.zip`). `add` comprueba que el fichero es un zip válido con `imsmanifest.xml` en su raíz y que está en la carpeta de entrega, y registra versión, unidad, fecha, firmante, estándar, nombre de fichero, SHA-256, trabajo e instantánea. Un paquete válido siempre se registra. Cuando todas las unidades tienen un paquete de la misma versión y el curso estaba en `assembly` o `client_review`, el curso pasa a `delivered`; si faltan unidades imprime las que quedan. En cualquier otro estado (por ejemplo `media`) el paquete se registra y un aviso dice que el curso no se marca como entregado. Código de salida 1 ante un paquete no válido, una carpeta incorrecta, una unidad desconocida, un curso en pausa o una revisión del cliente obligatoria que falta.
 
 ```
 coursekit delivery check PWD
+coursekit delivery download PWD --unit 1 --version 1.0 --url "https://…/download?t=…"
 coursekit delivery add PWD --unit 1 --version 1.0 --file courses/PWD/delivery/PWD-U01-v1.0-scorm12.zip --job job-123 --snapshot snap-9
 ```
 
@@ -952,7 +956,7 @@ Los comandos de barra viven en `src/coursekit/agentkit/commands/` y `coursekit a
 | `/produce-media <CODE> [id de recurso]` | `coursekit media extract`, `coursekit media plan`, `coursekit media set`, `coursekit voice`, `coursekit tts`, `coursekit subtitles`, `coursekit theme show` | `media` | Personas, o el agente multimedia. Avisa a la persona de lo que va a producir antes de gastar créditos de APIs de pago. Si los tokens faltan o no están derivados del tema de la plataforma, se detiene e indica a la persona que ejecute `/define-theme`. |
 | `/assemble <CODE> [N]` | creator: `coursekit assemble plan`, `diff`, `applied`, `link`, `coursekit theme show`; html: `coursekit assemble build`, `coursekit theme show` | `assembly` | Personas, o el agente de montaje. Necesita el diseño firmado y las unidades `approved`. Carga la skill `creator-assembly` o la `html-assembly` según el backend del curso. Con creator aplica el tema a los contenidos con `set_content_theme`, con el id que da `coursekit theme show --course <CODE>`; con html construye la vista previa de cada unidad (`assembly/html/unit-NN/`) y dice a la persona qué revisar en ella. |
 | `/client-feedback <CODE> [N]` | `coursekit outline`, `coursekit verify`, `coursekit assemble plan`, `diff`, `applied` | `assembly` | Personas, o el agente de montaje. Lee los comentarios del cliente en creator, aplica en el `.md` los cambios acordados, recarga, publica una nueva versión de revisión y responde a cada comentario. Nunca ejecuta `coursekit client`: la ronda la registra la persona. |
-| `/deliver <CODE> [versión]` | `coursekit delivery check`, `coursekit config delivery`, `coursekit delivery name`, `coursekit delivery add`; html: `coursekit assemble build` | `assembly` | Personas, o el agente de montaje. Se rechaza mientras el curso está en pausa o falta la revisión del cliente exigida. Con el backend html no hay exportación en una plataforma: para cada unidad ejecuta `coursekit assemble build <CODE> --unit N --version X.Y` y después `coursekit delivery add` sin `--job` ni `--snapshot`. |
+| `/deliver <CODE> [versión]` | `coursekit delivery check`, `coursekit config delivery`, `coursekit delivery name`, `coursekit delivery download`, `coursekit delivery add`; html: `coursekit assemble build` | `assembly` | Personas, o el agente de montaje. Se rechaza mientras el curso está en pausa o falta la revisión del cliente exigida. Con el backend html no hay exportación en una plataforma: para cada unidad ejecuta `coursekit assemble build <CODE> --unit N --version X.Y` y después `coursekit delivery add` sin `--job` ni `--snapshot`. |
 | `/course-status [CODE]` | `coursekit status` | `design` | Cualquiera. |
 | `/sync-directives` | `coursekit directives check`, `coursekit config directives` | `assembly` | Personas, o el agente de montaje. |
 

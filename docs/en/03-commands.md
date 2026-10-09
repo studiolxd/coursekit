@@ -868,18 +868,19 @@ coursekit directives check .cache/list_brick_types.json
 Checks that a course can be delivered, records a delivered SCORM package in `course.yaml › deliveries`, or prints the file name a package must have. Who: agents (the assembly agent) and people.
 
 ```
-coursekit delivery [--file FILE] [--job JOB] [--snapshot SNAPSHOT] [--unit UNIT] [--version VERSION] {add,name,check} code
+coursekit delivery [--file FILE] [--job JOB] [--snapshot SNAPSHOT] [--unit UNIT] [--version VERSION] [--url URL] {add,name,check,download} code
 ```
 
 | Argument | Values / default | Meaning |
 |---|---|---|
-| `action` | `add`, `name`, `check` | Record a package, print the expected file name, or check that the course can be delivered. |
+| `action` | `add`, `name`, `check`, `download` | Record a package, print the expected file name, check that the course can be delivered, or download an exported package. |
 | `code` | course code or folder | Course. |
 | `--unit UNIT` | unit number (required by `add` and `name`) | Unit of the package. |
 | `--version VERSION` | text (required by `add` and `name`), for example `1.0` | Delivery version. |
 | `--file FILE` | path (`add`) | The downloaded `.zip`; a relative path is taken from the current folder. It must be directly inside `courses/<CODE>/delivery/`. Exit code 2 without it. |
 | `--job JOB` | text (`add`) | Id of the creator export job. Not used with the html backend. |
 | `--snapshot SNAPSHOT` | text (`add`) | Id of the creator snapshot the package was exported from. Not used with the html backend. |
+| `--url URL` | `https://` address (`download`) | The `downloadUrl` of the export job. Exit code 2 without it. |
 
 With the html backend the package is not exported from a platform: `coursekit assemble build CODE --unit N --version X.Y` writes it in `courses/<CODE>/delivery/` with the name that `name` prints, and `add` records it without `--job` or `--snapshot`.
 
@@ -887,10 +888,13 @@ With the html backend the package is not exported from a platform: `coursekit as
 
 The client's review is required when `delivery.yaml › client_review.required` is `true` (default `false`; it can be overridden for the whole project in `config/delivery.yaml` and per course in `course.yaml › delivery`). Then the course needs at least one round in `course.yaml › client_review` and the last one must be `approved` or `skipped`; the message says whether no round was opened, the client asked for changes, or the client has not answered yet. See [`coursekit client`](#coursekit-client).
 
+`download` saves the package of an export job (its `downloadUrl`, an `https://` address that expires) as `courses/<CODE>/delivery/<name>`, with the name `name` prints, checks that it is a valid zip with `imsmanifest.xml` at its root and prints its path, ready for `add`; a failed or invalid download leaves no file. It exists so that the assembly agent does not need `curl`, which a session without an interface cannot run. It refuses in the same cases as `name` and `add`.
+
 `name` builds the name from `delivery › file_name` (default `{code}-U{unit:02d}-v{version}-{standard}.zip`, for example `PWD-U01-v1.0-scorm12.zip`). `add` checks that the file is a valid zip with `imsmanifest.xml` at its root and lives in the delivery folder, then records version, unit, date, signer, standard, file name, SHA-256, job and snapshot. A valid package is always recorded. When every unit has a package of the same version and the course was in `assembly` or `client_review`, the course becomes `delivered`; if units are missing it prints the ones still pending. In any other status (for example `media`) the package is recorded and a warning says the course is not marked as delivered. Exit code 1 on an invalid package, a wrong folder, an unknown unit, a course on hold or a client's review still required.
 
 ```
 coursekit delivery check PWD
+coursekit delivery download PWD --unit 1 --version 1.0 --url "https://…/download?t=…"
 coursekit delivery add PWD --unit 1 --version 1.0 --file courses/PWD/delivery/PWD-U01-v1.0-scorm12.zip --job job-123 --snapshot snap-9
 ```
 
@@ -952,7 +956,7 @@ The slash commands live in `src/coursekit/agentkit/commands/` and are generated 
 | `/produce-media <CODE> [asset id]` | `coursekit media extract`, `coursekit media plan`, `coursekit media set`, `coursekit voice`, `coursekit tts`, `coursekit subtitles`, `coursekit theme show` | `media` | People, or the media agent. It tells the person what it will produce before spending paid-API credits. If the tokens are missing or were not derived from the platform theme, it stops and tells the person to run `/define-theme`. |
 | `/assemble <CODE> [N]` | creator: `coursekit assemble plan`, `diff`, `applied`, `link`, `coursekit theme show`; html: `coursekit assemble build`, `coursekit theme show` | `assembly` | People, or the assembly agent. Needs the design signed and the units `approved`. It loads the `creator-assembly` or the `html-assembly` skill according to the backend of the course. With creator it applies the theme to the contents with `set_content_theme`, using the id that `coursekit theme show --course <CODE>` gives; with html it builds the preview of each unit (`assembly/html/unit-NN/`) and tells the person what to check in it. |
 | `/client-feedback <CODE> [N]` | `coursekit outline`, `coursekit verify`, `coursekit assemble plan`, `diff`, `applied` | `assembly` | People, or the assembly agent. Reads the client's comments from creator, applies the agreed changes in the `.md`, reloads, publishes a new review version and answers each comment. Never runs `coursekit client`: the person records the round. |
-| `/deliver <CODE> [version]` | `coursekit delivery check`, `coursekit config delivery`, `coursekit delivery name`, `coursekit delivery add`; html: `coursekit assemble build` | `assembly` | People, or the assembly agent. Refused while the course is on hold or the required client's review is missing. With the html backend there is no export in a platform: for each unit it runs `coursekit assemble build <CODE> --unit N --version X.Y` and then `coursekit delivery add` without `--job` or `--snapshot`. |
+| `/deliver <CODE> [version]` | `coursekit delivery check`, `coursekit config delivery`, `coursekit delivery name`, `coursekit delivery download`, `coursekit delivery add`; html: `coursekit assemble build` | `assembly` | People, or the assembly agent. Refused while the course is on hold or the required client's review is missing. With the html backend there is no export in a platform: for each unit it runs `coursekit assemble build <CODE> --unit N --version X.Y` and then `coursekit delivery add` without `--job` or `--snapshot`. |
 | `/course-status [CODE]` | `coursekit status` | `design` | Anyone. |
 | `/sync-directives` | `coursekit directives check`, `coursekit config directives` | `assembly` | People, or the assembly agent. |
 

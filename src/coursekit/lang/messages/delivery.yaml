@@ -10,3 +10,9 @@ status_warning:
   es: "aviso: {code} está en «{status}», no en un estado de entrega (assembly, client_review): el paquete se registra, pero el curso no se marca como entregado"
   en: "warning: {code} is in '{status}', not in a delivery status (assembly, client_review): the package is recorded, but the course is not marked as delivered"
 recorded_done: {es: "registrado {name} · curso entregado", en: "recorded {name} · course delivered"}
+download_not_https:
+  es: "la dirección de descarga debe empezar por https://"
+  en: "the download address must start with https://"
+download_failed:
+  es: "no se pudo descargar el paquete ({status}: {reason}); la dirección de descarga caduca, pide otra exportación y vuelve a intentarlo"
+  en: "the package could not be downloaded ({status}: {reason}); the download address expires, ask for another export and try again"

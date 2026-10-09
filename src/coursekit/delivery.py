@@ -8,6 +8,8 @@ the course moves to `delivered`.
 from __future__ import annotations
 
 import datetime as dt
+import urllib.error
+import urllib.request
 import zipfile
 from pathlib import Path
 
@@ -55,6 +57,34 @@ def check_package(path: Path) -> str | None:
     except (zipfile.BadZipFile, FileNotFoundError):
         return t("delivery", "not_a_zip")
     return None
+
+
+def download(course: dict, unit: int, version: str, url: str) -> str:
+    """Saves the package of an export job (its `downloadUrl`) in the delivery folder with the name `expected_name` gives, and checks
+    it. Returns the path, ready for `add`."""
+    check_ready(course)
+    if not url.startswith("https://"):
+        raise DeliveryError(t("delivery", "download_not_https"))
+    folder = course["_dir"] / "delivery"
+    folder.mkdir(exist_ok=True)
+    path = folder / expected_name(course, unit, version)
+    partial = path.with_name(path.name + ".part")
+    try:
+        with urllib.request.urlopen(url, timeout=300) as response, partial.open("wb") as out:
+            while chunk := response.read(1 << 20):
+                out.write(chunk)
+    except urllib.error.HTTPError as exc:
+        partial.unlink(missing_ok=True)
+        raise DeliveryError(t("delivery", "download_failed", status=exc.code, reason=exc.reason)) from None
+    except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        partial.unlink(missing_ok=True)
+        raise DeliveryError(t("delivery", "download_failed", status="-", reason=getattr(exc, "reason", exc))) from None
+    problem = check_package(partial)
+    if problem:
+        partial.unlink(missing_ok=True)
+        raise DeliveryError(f"{path.name}: {problem}")
+    partial.replace(path)
+    return path.as_posix()
 
 
 def add(course: dict, unit: int, version: str, file: str, job: str | None = None, snapshot: str | None = None) -> str:

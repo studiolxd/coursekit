@@ -130,3 +130,38 @@ def test_theme_tokens_and_check(tmp_path, monkeypatch, capsys):
     tokens["color"]["accent"] = "#CC0000"
     (root / "theme" / "tokens.json").write_text(json.dumps(tokens), encoding="utf-8")
     assert main(["theme", "check"]) == 0
+
+
+class Response:
+    def __init__(self, body: bytes):
+        self.body = body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def read(self, size=-1):
+        chunk, self.body = self.body[:size], self.body[size:]
+        return chunk
+
+
+def test_delivery_download_saves_and_checks_the_package(course, tmp_path, monkeypatch, capsys):  # noqa: F811
+    good, bad = tmp_path / "good.zip", tmp_path / "bad.zip"
+    scorm(good)
+    scorm(bad, manifest=False)
+    served = {"body": good.read_bytes()}
+    monkeypatch.setattr("urllib.request.urlopen", lambda url, timeout=0: Response(served["body"]))
+    set_status(course, "assembly")
+    args = ["delivery", "download", "PWD", "--unit", "1", "--version", "1.0"]
+    assert main(args) == 2 and "needs --url" in capsys.readouterr().err
+    assert main([*args, "--url", "http://creator.example/x"]) == 1 and "https://" in capsys.readouterr().err
+    served["body"] = bad.read_bytes()
+    assert main([*args, "--url", "https://creator.example/x"]) == 1
+    assert not list((course / "delivery").iterdir())  # an invalid package leaves nothing behind
+    served["body"] = good.read_bytes()
+    assert main([*args, "--url", "https://creator.example/x"]) == 0
+    path = capsys.readouterr().out.strip().splitlines()[-1]
+    assert path.endswith("delivery/PWD-U01-v1.0-scorm12.zip")
+    assert main(["delivery", "add", "PWD", "--unit", "1", "--version", "1.0", "--file", path]) == 0

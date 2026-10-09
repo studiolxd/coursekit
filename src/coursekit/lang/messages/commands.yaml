@@ -209,6 +209,10 @@ help_subtitles_course: {es: "el idioma del curso", en: "the course language"}
 help_delivery:
   es: "registra un paquete SCORM entregado, imprime el nombre esperado o comprueba que se puede entregar (check)"
   en: "record a delivered SCORM package, print its expected file name or check that it can be delivered (check)"
+delivery_download_needs_url: {es: "coursekit: delivery download necesita --url", en: "coursekit: delivery download needs --url"}
+help_delivery_url:
+  es: "dirección de descarga (downloadUrl) del paquete exportado, para `download`"
+  en: "download address (downloadUrl) of the exported package, for `download`"
 delivery_ready: {es: "{code}: se puede entregar", en: "{code}: it can be delivered"}
 delivery_needs_unit_version: {es: "coursekit: delivery {action} necesita --unit y --version", en: "coursekit: delivery {action} needs --unit and --version"}
 help_hold: {es: "pone un curso en pausa (solo personas)", en: "put a course on hold (people only)"}
