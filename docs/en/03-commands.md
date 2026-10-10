@@ -794,7 +794,7 @@ Assembles a unit with the backend of its course (`project.yaml › assembly.back
 
 ```
 coursekit assemble [--unit UNIT] [--version VERSION] [--lesson LESSON] [--lesson-id LESSON_ID]
-                   [--brick-ids BRICK_IDS] [--content] [--content-id CONTENT_ID]
+                   [--brick-ids BRICK_IDS] [--brick-ids-file BRICK_IDS_FILE] [--content] [--content-id CONTENT_ID]
                    [--preview PREVIEW] [--review REVIEW]
                    {plan,diff,applied,link,build} code
 ```
@@ -808,6 +808,7 @@ coursekit assemble [--unit UNIT] [--version VERSION] [--lesson LESSON] [--lesson
 | `--lesson LESSON` | lesson key from the plan (`applied`) | Lesson to record. |
 | `--lesson-id LESSON_ID` | creator lesson id (`applied`) | Id of that lesson in creator. |
 | `--brick-ids BRICK_IDS` | comma-separated ids; default empty (`applied`) | Brick ids in plan order; their number must equal the bricks of the lesson. |
+| `--brick-ids-file BRICK_IDS_FILE` | path (`applied`) | A file with the brick ids (separated by commas, spaces or lines) instead of `--brick-ids`, when the list is too long for the command line. |
 | `--content` | flag (`applied`) | Record the content title as applied (after renaming the content in creator) instead of a lesson. |
 | `--content-id CONTENT_ID` | creator content id (`link`) | Id of the unit's content in creator. |
 | `--preview PREVIEW` | URL (`link`) | Live preview link of the unit, without comments. |
@@ -828,7 +829,7 @@ Actions of the creator backend:
 
 - `plan`: converts `content.md` and `assessment.md` into the plan of lessons and bricks and writes `courses/<CODE>/assembly/unit-NN.plan.json`. The same Markdown always gives the same plan. Prints warnings and errors and `plan assembly/unit-NN.plan.json: N lessons, M bricks (types)`. With errors it writes nothing and exits with code 1. The keys and words of the directives are those of the course language (`question:` in an English course, `pregunta:` in a Spanish one); a key of the other language is an error that names its language and lists the valid keys ([08-assembly-and-delivery.md](08-assembly-and-delivery.md#what-the-plan-contains)).
 - `diff`: prints, as JSON, the operations that bring creator in line with the plan: per lesson `create`, `update`, `unchanged` or `delete`, with the `add`, `update`, `delete`, `rename_lesson` and `update_quiz` operations. Needs the plan.
-- `applied`: records what is now in creator (`unit-NN.applied.json`): a lesson with `--lesson`, `--lesson-id` and `--brick-ids`, or the content title with `--content`. Exit code 2 when `--lesson` and `--lesson-id` are missing and `--content` is not given. When every unit is in sync with its plan and the course is in `media`, the course moves to `assembly`.
+- `applied`: records what is now in creator (`unit-NN.applied.json`): a lesson with `--lesson`, `--lesson-id` and `--brick-ids`, or the content title with `--content`. Exit code 2 when `--lesson` and `--lesson-id` are missing and `--content` is not given. When every unit is in sync with its plan and the course is in `media`, the course moves to `assembly`. `assembly/*.json` (`unit-NN.plan.json`, `unit-NN.applied.json`) are written by `coursekit assemble` and are never edited by hand: the generated permissions for Claude Code deny editing them.
 - `link`: stores the creator content id in `course.yaml › units[N].content_id`, and the preview and review links in `course.yaml › units[N].links` (`preview`, `review`). The links survive [`coursekit sync`](#coursekit-sync) and feed the client's review (`coursekit client send`) and the catalog. Each option given replaces the previous value; the ones not given are kept.
 
 Action of the html backend:

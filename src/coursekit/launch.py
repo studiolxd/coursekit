@@ -38,6 +38,7 @@ from coursekit.project import Project
 from coursekit.util import edit_yaml, save_yaml
 
 TOOLS = ("claude", "opencode", "codex")
+SESSION_ENV: dict[str, str] = {}  # extra environment of the sessions started (the handoff sets the identity its agents record)
 COMMAND_ROLE = {
     "new-course": "design",
     "design-change": "design",
@@ -64,7 +65,8 @@ _BASE_TOOLS = ["Read", "Edit", "Write", "Glob", "Grep", "Skill", "TodoWrite",
                "Bash(coursekit verify:*)", "Bash(coursekit brief:*)", "Bash(coursekit status:*)",
                "Bash(coursekit outline:*)", "Bash(coursekit config:*)", "Bash(git status:*)", "Bash(git diff:*)"]
 CLAUDE_DENY = ["Bash(git commit:*)", "Bash(git push:*)", "Bash(coursekit approve:*)", "Bash(coursekit client:*)", "Bash(coursekit hold:*)",
-               "Bash(coursekit resume:*)", "Bash(coursekit handoff:*)", "Bash(coursekit reviewed*--by*)"]
+               "Bash(coursekit resume:*)", "Bash(coursekit handoff:*)", "Bash(coursekit reviewed*--by*)",
+               "Edit(courses/*/assembly/*.json)"]
 
 
 class LaunchError(Exception):
@@ -299,7 +301,7 @@ def execute(project: Project, agent: Agent, text: str, headless: bool, log_name:
     args = headless_args(agent, text, last_message, mcp_name, agentsmod.connector_server(project), media_programs(project),
                          [store.workspaces_dir().as_posix()])
     # A clean session even when launched from inside another agent (e.g. Claude Code).
-    env = {k: v for k, v in os.environ.items() if not k.startswith("CLAUDE")}
+    env = {k: v for k, v in os.environ.items() if not k.startswith("CLAUDE")} | SESSION_ENV
     with log.open("w", encoding="utf-8") as fh:
         code = subprocess.call(args, cwd=project.root, stdout=fh, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, env=env)
     return code, log, final_message(agent.tool, log, last_message)

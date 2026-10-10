@@ -147,7 +147,7 @@ coursekit aplica lo esencial en cada herramienta:
 
 | Herramienta | Denegado por configuración | Dónde |
 |---|---|---|
-| Claude Code | `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff`, `coursekit reviewed ... --by`, `git push` | `permissions.deny` en `.claude/settings.json` |
+| Claude Code | `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff`, `coursekit reviewed ... --by`, `git push`, y editar `courses/*/assembly/*.json` | `permissions.deny` en `.claude/settings.json` |
 | opencode | `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff`, `coursekit reviewed ... --by`, `git push` | `permission.bash` en `opencode.json` |
 | Agentes `writer` y `reviewer` de opencode | el `writer`: `coursekit approve`, `client`, `hold` y `resume`, además `git commit` y `git push`; el `reviewer`: esos más `coursekit handoff` y `coursekit reviewed ... --by` (las reglas de `opencode.json` de arriba se aplican a ambos); cualquier otro comando de shell pregunta antes; `coursekit verify`, `status`, `brief`, `outline`, `config`, `git status` y `git diff` están permitidos (el revisor también puede ejecutar `coursekit reviewed`) | `.opencode/agent/*.md` |
 | Codex | nada en la configuración: se apoya en las instrucciones de `AGENTS.md` | |

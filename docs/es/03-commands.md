@@ -794,7 +794,7 @@ Monta una unidad con el backend de su curso (`project.yaml › assembly.backend`
 
 ```
 coursekit assemble [--unit UNIT] [--version VERSION] [--lesson LESSON] [--lesson-id LESSON_ID]
-                   [--brick-ids BRICK_IDS] [--content] [--content-id CONTENT_ID]
+                   [--brick-ids BRICK_IDS] [--brick-ids-file BRICK_IDS_FILE] [--content] [--content-id CONTENT_ID]
                    [--preview PREVIEW] [--review REVIEW]
                    {plan,diff,applied,link,build} code
 ```
@@ -808,6 +808,7 @@ coursekit assemble [--unit UNIT] [--version VERSION] [--lesson LESSON] [--lesson
 | `--lesson LESSON` | clave de lección del plan (`applied`) | Lección que registrar. |
 | `--lesson-id LESSON_ID` | id de la lección en creator (`applied`) | Id de esa lección en creator. |
 | `--brick-ids BRICK_IDS` | ids separados por comas; por defecto vacío (`applied`) | Ids de los bricks en el orden del plan; su número debe coincidir con los bricks de la lección. |
+| `--brick-ids-file BRICK_IDS_FILE` | ruta (`applied`) | Un fichero con los ids de los bricks (separados por comas, espacios o líneas) en lugar de `--brick-ids`, cuando la lista es demasiado larga para la línea de órdenes. |
 | `--content` | indicador (`applied`) | Registra el título del contenido como aplicado (tras renombrar el contenido en creator) en lugar de una lección. |
 | `--content-id CONTENT_ID` | id del contenido en creator (`link`) | Id del contenido de la unidad en creator. |
 | `--preview PREVIEW` | URL (`link`) | Enlace de vista previa en vivo de la unidad, sin comentarios. |
@@ -828,7 +829,7 @@ Acciones del backend creator:
 
 - `plan`: convierte `content.md` y `assessment.md` en el plan de lecciones y bricks y escribe `courses/<CODE>/assembly/unit-NN.plan.json`. El mismo Markdown da siempre el mismo plan. Imprime avisos y errores y `plan assembly/unit-NN.plan.json: N lecciones, M bricks (tipos)`. Con errores no escribe nada y termina con código 1. Las claves y palabras de las directivas son las del idioma del curso (`pregunta:` en un curso en español, `question:` en uno en inglés); una clave del otro idioma es un error que nombra su idioma y enumera las claves válidas ([08-assembly-and-delivery.md](08-assembly-and-delivery.md#qué-contiene-el-plan)).
 - `diff`: imprime, como JSON, las operaciones que ponen creator al día con el plan: por lección `create`, `update`, `unchanged` o `delete`, con las operaciones `add`, `update`, `delete`, `rename_lesson` y `update_quiz`. Necesita el plan.
-- `applied`: registra lo que ahora hay en creator (`unit-NN.applied.json`): una lección con `--lesson`, `--lesson-id` y `--brick-ids`, o el título del contenido con `--content`. Código de salida 2 cuando faltan `--lesson` y `--lesson-id` y no se da `--content`. Cuando todas las unidades coinciden con su plan y el curso está en `media`, el curso pasa a `assembly`.
+- `applied`: registra lo que ahora hay en creator (`unit-NN.applied.json`): una lección con `--lesson`, `--lesson-id` y `--brick-ids`, o el título del contenido con `--content`. Código de salida 2 cuando faltan `--lesson` y `--lesson-id` y no se da `--content`. Cuando todas las unidades coinciden con su plan y el curso está en `media`, el curso pasa a `assembly`. `assembly/*.json` (`unit-NN.plan.json`, `unit-NN.applied.json`) los escribe `coursekit assemble` y nunca se editan a mano: los permisos que se generan para Claude Code deniegan editarlos.
 - `link`: guarda el id del contenido de creator en `course.yaml › units[N].content_id`, y los enlaces de vista previa y de revisión en `course.yaml › units[N].links` (`preview`, `review`). Los enlaces sobreviven a [`coursekit sync`](#coursekit-sync) y alimentan la revisión del cliente (`coursekit client send`) y el catálogo. Cada opción dada sustituye al valor anterior; las que no se dan se conservan.
 
 Acción del backend html:

@@ -1,5 +1,6 @@
 """Fixes found auditing the documentation against the code."""
 
+import json
 import urllib.error
 import urllib.request
 
@@ -212,3 +213,19 @@ def test_an_svg_asset_becomes_an_embed_block_and_gets_its_package(course, capsys
     page = (course / "media" / "src" / first / "index.html").read_text(encoding="utf-8")
     assert "<svg" in page and "<?xml" not in page and "prefers-reduced-motion" in page
     assert main(["media", "embed", "PWD", "NOPE"]) == 1
+
+
+def test_assembly_state_is_never_edited_by_hand_and_ids_can_come_from_a_file(course, tmp_path, capsys):  # noqa: F811
+    from coursekit import agents, launch
+
+    assert "Edit(courses/*/assembly/*.json)" in agents.DENY_CLAUDE and "Edit(courses/*/assembly/*.json)" in launch.CLAUDE_DENY
+    assert main(["assemble", "plan", "PWD", "--unit", "1"]) == 0
+    plan = json.loads((course / "assembly" / "unit-01.plan.json").read_text(encoding="utf-8"))
+    lesson = plan["lessons"][0]
+    ids = tmp_path / "ids.txt"
+    ids.write_text("\n".join(f"b{i}" for i in range(len(lesson["bricks"]))), encoding="utf-8")
+    capsys.readouterr()
+    assert main(["assemble", "applied", "PWD", "--unit", "1", "--lesson", lesson["key"], "--lesson-id", "L1",
+                 "--brick-ids-file", str(ids)]) == 0
+    applied = json.loads((course / "assembly" / "unit-01.applied.json").read_text(encoding="utf-8"))
+    assert [b["brickId"] for b in applied["lessons"][lesson["key"]]["bricks"]] == [f"b{i}" for i in range(len(lesson["bricks"]))]

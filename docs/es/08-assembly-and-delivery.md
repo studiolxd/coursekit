@@ -40,7 +40,7 @@ Esta sección y las siguientes tratan del backend creator. No edites nunca el co
 | 4. Aplicar | agente de montaje | Aplica las operaciones con las herramientas de creator (`create_lesson`, `add_brick`, `update_brick`, `delete_brick`, `update_quiz_settings`…) |
 | 5. Registrar | agente de montaje | `coursekit assemble applied PWD --unit 1 --lesson U1-S1 --lesson-id <id> --brick-ids id1,id2,…` tras cada lección; `--content` tras renombrar el contenido |
 | 6. Repetir | | `diff` hasta que el contenido y todas las lecciones estén `unchanged` |
-| 7. Comprobaciones | agente de montaje | Auditoría de accesibilidad, comparación del texto con el `.md`, una instantánea llamada `assembly-AAAA-MM-DD` y los dos enlaces de cada unidad (vista previa en vivo y revisión del cliente) guardados con `coursekit assemble link --preview URL --review URL` |
+| 7. Comprobaciones | agente de montaje | Auditoría de accesibilidad, comparación del texto con el `.md`, una instantánea llamada `assembly-AAAA-MM-DD` y los dos enlaces de cada unidad (vista previa en vivo y revisión del cliente) guardados con `coursekit assemble link --preview URL --review URL`. Los enlaces (y una versión nueva de la revisión) se crean solo cuando no queda ningún recurso sin subir: con creator el primer montaje aún muestra recuadros, así que los enlaces esperan al montaje que sigue a la subida |
 
 Lanzas al agente con `/assemble PWD 1` en Claude Code u opencode, o con `coursekit run assemble PWD 1` desde un terminal; sin número de unidad procesa todas las unidades en orden. Ejecuta `plan` de nuevo después de `link`, para que el plan lleve el `content_id`.
 

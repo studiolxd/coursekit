@@ -40,7 +40,7 @@ This and the next sections are about the creator backend. Never edit content dir
 | 4. Apply | assembly agent | Applies the operations with the creator tools (`create_lesson`, `add_brick`, `update_brick`, `delete_brick`, `update_quiz_settings`…) |
 | 5. Record | assembly agent | `coursekit assemble applied PWD --unit 1 --lesson U1-S1 --lesson-id <id> --brick-ids id1,id2,…` after each lesson; `--content` after renaming the content |
 | 6. Repeat | | `diff` until the content and every lesson are `unchanged` |
-| 7. Checks | assembly agent | Accessibility audit, text comparison with the `.md`, a snapshot named `assembly-YYYY-MM-DD`, and the two links of each unit (live preview and client review) saved with `coursekit assemble link --preview URL --review URL` |
+| 7. Checks | assembly agent | Accessibility audit, text comparison with the `.md`, a snapshot named `assembly-YYYY-MM-DD`, and the two links of each unit (live preview and client review) saved with `coursekit assemble link --preview URL --review URL`. The links (and a new review version) are created only when no asset is left that is not `uploaded`: with creator the first assembly still shows placeholders, so the links wait for the assembly that follows the upload |
 
 You launch the agent with `/assemble PWD 1` in Claude Code or opencode, or with `coursekit run assemble PWD 1` from a terminal; without a unit number it processes every unit in order. Run `plan` again after `link`, so the plan carries the `content_id`.
 

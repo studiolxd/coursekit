@@ -11,6 +11,7 @@ import yaml
 from coursekit import agents, launch
 from coursekit import assemble as assemblemod
 from coursekit.cli import main
+from coursekit.project import find_project
 from tests.test_course_flow import ASSESSMENT, CONTENT, FIXTURES, write_course_rules
 
 HANDOFF = "Coursekit Handoff <handoff@coursekit.local>"
@@ -334,3 +335,26 @@ def test_only_a_delivered_course_can_be_reopened(project, monkeypatch, capsys):
     assert main(["handoff", "PWD", "--new-version"]) == 1
     assert "not delivered" in capsys.readouterr().err
     assert main(["handoff", "Otro curso", "1", "--new-version"]) == 2
+
+
+def test_what_the_agents_record_is_signed_by_the_handoff(project, monkeypatch):
+    fake = Agents(project, monkeypatch)
+    seen = []
+    run = fake.execute
+
+    def execute(project_, agent, text, headless, log_name):
+        seen.append(dict(launch.SESSION_ENV))
+        return run(project_, agent, text, headless, log_name)
+
+    monkeypatch.setattr(launch, "execute", execute)
+    assert main(["handoff", "Contraseñas seguras", "1", "--code", "PWD"]) == 0
+    assert seen and all(e == {"COURSEKIT_USER_NAME": "Coursekit Handoff", "COURSEKIT_USER_EMAIL": "handoff@coursekit.local"} for e in seen)
+    assert launch.SESSION_ENV == {}  # it does not leak to the next command
+
+
+def test_the_session_environment_reaches_the_agent(project, monkeypatch):
+    got = {}
+    monkeypatch.setattr("subprocess.call", lambda args, **kw: got.update(env=kw["env"]) or 0)
+    monkeypatch.setitem(launch.SESSION_ENV, "COURSEKIT_USER_NAME", "Someone")
+    launch.execute(find_project(project), launch.Agent("writer", "claude", ""), "x", True, "t")
+    assert got["env"]["COURSEKIT_USER_NAME"] == "Someone"

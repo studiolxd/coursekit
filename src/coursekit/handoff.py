@@ -361,6 +361,15 @@ def proceed(ctx: Context) -> dict:
     problem = clientreview.gate(ctx.course())
     if problem:
         raise _stuck(ctx, "client_review_required")
+    # what the agents record by themselves (the history, the delivery) is signed by the handoff, not by whoever launched it
+    launch.SESSION_ENV.update(COURSEKIT_USER_NAME=HANDOFF.name, COURSEKIT_USER_EMAIL=HANDOFF.email)
+    try:
+        return _run_stages(ctx)
+    finally:
+        launch.SESSION_ENV.clear()
+
+
+def _run_stages(ctx: Context) -> dict:
     while True:
         course = ctx.course()
         status = course["status"]

@@ -64,6 +64,9 @@ the contents follow a theme that was changed and imported again.
   `coursekit assemble applied <CODE> --unit N --lesson <key> --lesson-id <id> --brick-ids id1,id2,…`.
   If the count does not match the plan, something was not applied: check before going on.
 - Repeat `diff` until the content and every lesson are `unchanged`.
+- **Never edit `assembly/*.json` by hand**: they are written by `coursekit assemble applied` (the permissions deny editing them). If
+  the list of brick ids is too long for the command line, write the ids in a file (one per line or separated by commas) and
+  use `--brick-ids-file <file>`; to record one replaced brick, record the whole lesson again with the ids that `get_lesson` gives.
 
 ## 4. Checks
 
@@ -71,13 +74,17 @@ the contents follow a theme that was changed and imported again.
    links) and use `apply_accessibility_autofix` only for technical ones.
 2. `get_content_text` and compare with the `.md`: no text may be missing.
 3. `create_snapshot` named `assembly-YYYY-MM-DD`.
-4. Links of each unit (each unit is its own content, so each has its own links); the first time:
+4. Links of each unit, **only when the media is in place**: run `coursekit media extract <CODE>` and, if it counts assets that are
+   not `uploaded` (`pending`, `scripted` or `produced`), the course still shows their placeholders: do not enable the review nor
+   publish a review version yet, say that they will be created in the last assembly (the one after the media is uploaded) and skip
+   this step. Otherwise (each unit is its own content, so each has its own links); the first time:
    - `share_content` (`enabled: true`, `liveUpdates: true`): the live preview, without comments.
    - `enable_review` (no password unless the person asks for one): the review link where the client
      comments; it publishes the first review version. Use `get_review` to read it again.
    - Record both: `coursekit assemble link <CODE> --unit N --preview <url> --review <url>`.
-   When a unit is reloaded after the client's comments, its review needs a new version so the client
-   sees the changes: `publish_review_version` (see the `client-review` skill).
+   When a unit is reloaded and its review is already enabled (after the client's comments, or because the media was uploaded
+   after the first assembly), its review needs a new version so the client sees the changes: `publish_review_version` (see the
+   `client-review` skill).
 5. Summarise for the person: lessons and bricks created or updated, warnings (unproduced
    placeholders, pending labelled-graphic images), and the preview and review link of each unit.
    Tell them that, to open a round with the client, they run `coursekit client <CODE> send`.

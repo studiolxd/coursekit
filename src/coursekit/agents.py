@@ -38,7 +38,8 @@ KINDS = ("skills", "commands", "agents", "docs")
 TOOLS = ("claude", "opencode", "codex")
 ROLES = ("design", "writer", "reviewer", "media", "assembly")
 DENY_CLAUDE = ["Bash(coursekit approve:*)", "Bash(coursekit client:*)", "Bash(coursekit hold:*)", "Bash(coursekit resume:*)",
-               "Bash(coursekit handoff:*)", "Bash(coursekit reviewed*--by*)", "Bash(git push:*)"]
+               "Bash(coursekit handoff:*)", "Bash(coursekit reviewed*--by*)", "Bash(git push:*)",
+               "Edit(courses/*/assembly/*.json)"]  # the state of the assembly is written by `coursekit assemble`, never by hand
 DENY_OPENCODE = {"*coursekit approve*": "deny", "*coursekit client*": "deny", "*coursekit hold*": "deny", "*coursekit resume*": "deny",
                  "*coursekit handoff*": "deny", "*coursekit reviewed*--by*": "deny", "git push*": "deny"}
 

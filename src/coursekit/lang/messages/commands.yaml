@@ -275,6 +275,9 @@ media_redo_none:
   en: "no asset was made with other theme tokens; with --all every one that uses the theme is redone"
 help_media_more: {es: "redo: más recursos a rehacer", en: "redo: more assets to redo"}
 help_media_all: {es: "redo: rehace todos los recursos que usan el tema, no solo los hechos con otros tokens", en: "redo: redo every asset that uses the theme, not only those made with other tokens"}
+help_assemble_brick_ids_file:
+  es: "applied: fichero con los ids de los bloques (separados por comas, espacios o líneas), si la lista es larga para la línea de órdenes"
+  en: "applied: file with the brick ids (separated by commas, spaces or lines), when the list is too long for the command line"
 help_media_force: {es: "set: marca el recurso aunque los tokens del tema no vengan de la plataforma", en: "set: mark the asset even if the theme tokens do not come from the platform"}
 theme_import_needs_file: {es: "coursekit: theme import necesita el fichero con el resultado de get_theme", en: "coursekit: theme import needs the file with the get_theme result"}
 theme_imported:

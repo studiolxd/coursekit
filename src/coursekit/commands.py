@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 
@@ -427,7 +428,10 @@ def cmd_assemble(args: argparse.Namespace) -> int:
     if not (args.lesson and args.lesson_id):
         print(t("commands", "applied_needs_lesson"), file=sys.stderr)
         return 2
-    print(assemblemod.record_lesson(course, unit, args.lesson, args.lesson_id, [b for b in args.brick_ids.split(",") if b]))
+    ids = args.brick_ids
+    if args.brick_ids_file:
+        ids = Path(args.brick_ids_file).read_text(encoding="utf-8")
+    print(assemblemod.record_lesson(course, unit, args.lesson, args.lesson_id, [b for b in re.split(r"[,\s]+", ids) if b]))
     _mirror(course["_project"], course["code"])
     return 0
 
@@ -757,6 +761,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--lesson")
     p.add_argument("--lesson-id")
     p.add_argument("--brick-ids", default="")
+    p.add_argument("--brick-ids-file", help=t("commands", "help_assemble_brick_ids_file"))
     p.add_argument("--content", action="store_true", help=t("commands", "help_assemble_content"))
     p.add_argument("--content-id")
     p.add_argument("--preview", help=t("commands", "help_assemble_preview"))
