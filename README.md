@@ -8,7 +8,7 @@ media, assembly and SCORM delivery, with human sign-offs at the control points. 
 
 Package `slxd-coursekit`, command `coursekit`. By Studio LXD.
 
-> Early development (`0.1.0.dev0`). It is not on PyPI yet.
+> Early development (`0.1.0`). Published on PyPI as `slxd-coursekit`.
 
 ## What it does
 

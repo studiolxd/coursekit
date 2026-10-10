@@ -1,6 +1,6 @@
 [project]
 name = "slxd-coursekit"
-version = "0.1.0.dev0"
+version = "0.1.0"
 description = "AI-assisted e-learning course production: brief, instructional design, writing, review, media, assembly and SCORM delivery."
 readme = "README.md"
 license = "MIT"
