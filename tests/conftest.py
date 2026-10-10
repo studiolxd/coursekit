@@ -18,6 +18,7 @@ def isolated_environment(tmp_path_factory):
     """coursekit loads .env files into os.environ: restore it after every test. Messages in English unless a test says otherwise."""
     saved = dict(os.environ)
     os.environ["COURSEKIT_LANG"] = "en"
+    os.environ["COURSEKIT_NO_UPDATE_CHECK"] = "1"  # the suite never asks PyPI
     os.environ["COURSEKIT_NO_REFRESH"] = "1"  # a test that wants the refresh removes it
     os.environ["COURSEKIT_HOME"] = str(tmp_path_factory.mktemp("coursekit-home"))  # never the real store of the machine
     i18n.use(None)

@@ -10,7 +10,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from coursekit import __version__, config, identity, store
+from coursekit import __version__, config, identity, store, updatecheck
 from coursekit import agents as agentsmod
 from coursekit import theme as thememod
 from coursekit.i18n import t
@@ -81,6 +81,10 @@ def collect(project: Project) -> list[Section]:
     base = Section(t("doctor", "section_base"))
     python = f"{sys.version_info[0]}.{sys.version_info[1]}"
     base.add(sys.version_info >= (3, 12), t("doctor", "coursekit_line", version=__version__, python=python))
+    found = None if updatecheck.off() else updatecheck.latest()
+    if found:
+        hint = f"uv tool upgrade {updatecheck.PACKAGE}"
+        base.add(None if updatecheck.newer(found) else True, t("doctor", "update_line", latest=found), hint)
     base.add(project.env_file.exists(), t("doctor", "env_file"), "coursekit setup")
     who = identity.current()
     label = t("doctor", "identity_with", who=who) if who else t("doctor", "identity_without")

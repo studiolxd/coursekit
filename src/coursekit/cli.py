@@ -11,7 +11,7 @@ from pathlib import Path
 
 import yaml
 
-from coursekit import __version__, commands, config, envfile, i18n, refresh
+from coursekit import __version__, commands, config, envfile, i18n, refresh, updatecheck
 from coursekit import agents as agentsmod
 from coursekit import init as initmod
 from coursekit import setup as setupmod
@@ -302,6 +302,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.command in (None, "help"):
         parser.print_help()
         return 0
+    line = updatecheck.notice(args.command)
+    if line:
+        print(line, file=sys.stderr)
     try:
         if args.command not in refresh.SKIP:
             try:

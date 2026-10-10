@@ -1,0 +1,4 @@
+# A newer coursekit is published (updatecheck.py).
+available:
+  es: "coursekit {latest} disponible (tienes {current}): uv tool upgrade {package}"
+  en: "coursekit {latest} is available (you have {current}): uv tool upgrade {package}"

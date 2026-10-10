@@ -30,6 +30,7 @@ role_hint:
 same_model:
   es: "redactor y revisor usan la misma herramienta y modelo (otro modelo detecta más)"
   en: "writer and reviewer use the same tool and model (another model catches more)"
+update_line: {es: "última versión publicada: {latest}", en: "latest published version: {latest}"}
 coursekit_line: {es: "coursekit {version} (Python {python})", en: "coursekit {version} (Python {python})"}
 env_file: {es: ".env", en: ".env"}
 identity_with: {es: "identidad de firma: {who}", en: "signing identity: {who}"}
