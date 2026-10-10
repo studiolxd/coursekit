@@ -352,7 +352,7 @@ def test_what_the_agents_record_is_signed_by_the_handoff(project, monkeypatch):
     assert launch.SESSION_ENV == {}  # it does not leak to the next command
 
 
-def test_the_session_environment_reaches_the_agent(project, monkeypatch):
+def test_the_session_environment_reaches_the_agent(project, monkeypatch, agent_tool):
     got = {}
     monkeypatch.setattr("subprocess.call", lambda args, **kw: got.update(env=kw["env"]) or 0)
     monkeypatch.setitem(launch.SESSION_ENV, "COURSEKIT_USER_NAME", "Someone")

@@ -23,7 +23,7 @@ def set_connector(root, name):
     path.write_text(path.read_text(encoding="utf-8").replace('connector: ""', f'connector: "{name}"'), encoding="utf-8")
 
 
-def test_the_connector_is_allowed_in_sessions_without_an_interface(project):  # noqa: F811
+def test_the_connector_is_allowed_in_sessions_without_an_interface(project, agent_tool):  # noqa: F811
     assert agents.connector_server(find_project(project)) is None
     set_connector(project, "SLXD Creator Studio LXD")
     key = agents.connector_server(find_project(project))
@@ -154,7 +154,7 @@ def test_the_stop_names_the_programs_to_add_to_the_rule(project, tmp_path):  # n
     assert "media_tools" not in launch.permission_blocker(find_project(project), log, "writer")
 
 
-def test_the_media_agent_may_run_what_its_recipes_declare(project):  # noqa: F811
+def test_the_media_agent_may_run_what_its_recipes_declare(project, agent_tool):  # noqa: F811
     programs = launch.media_programs(find_project(project))
     assert {"npx", "python3", "vhs"} <= set(programs)
     assert not {"node", "bash", "sh"} & set(programs)

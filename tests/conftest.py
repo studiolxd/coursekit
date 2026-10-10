@@ -25,3 +25,12 @@ def isolated_environment(tmp_path_factory):
     i18n.use(None)
     os.environ.clear()
     os.environ.update(saved)
+
+
+@pytest.fixture
+def agent_tool(monkeypatch):
+    """The AI tools are found on the machine (CI has none): for the tests that build the command line of a session."""
+    from coursekit import launch
+
+    real = launch.shutil.which
+    monkeypatch.setattr(launch.shutil, "which", lambda name, *args, **kwargs: real(name, *args, **kwargs) or f"/fake/{name}")
