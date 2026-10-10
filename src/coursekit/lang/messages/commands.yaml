@@ -191,8 +191,8 @@ help_assemble:
   es: "monta una unidad: planifica, compara y registra en creator, o construye su paquete con el backend html"
   en: "assemble a unit: plan, diff and record in creator, or build its package with the html backend"
 help_assemble_action:
-  es: "plan, diff, applied y link son del backend creator; build construye el paquete del backend html"
-  en: "plan, diff, applied and link are for the creator backend; build builds the package of the html backend"
+  es: "plan, diff, applied, checked y link son del backend creator; build construye el paquete del backend html"
+  en: "plan, diff, applied, checked and link are for the creator backend; build builds the package of the html backend"
 help_assemble_unit: {es: "número de unidad (build sin él: todas)", en: "unit number (build without it: every unit)"}
 help_assemble_version: {es: "build: versión del paquete; con ella también se crea el zip en delivery/", en: "build: version of the package; with it the zip is also created in delivery/"}
 assemble_build_needs_html:
@@ -278,6 +278,12 @@ help_media_all: {es: "redo: rehace todos los recursos que usan el tema, no solo 
 help_assemble_brick_ids_file:
   es: "applied: fichero con los ids de los bloques (separados por comas, espacios o líneas), si la lista es larga para la línea de órdenes"
   en: "applied: file with the brick ids (separated by commas, spaces or lines), when the list is too long for the command line"
+help_assemble_keep_ids:
+  es: "applied: conserva los ids de bloque ya registrados de la lección (para cuando solo se actualizaron bloques con update_brick)"
+  en: "applied: keep the brick ids already recorded for the lesson (for when bricks were only updated with update_brick)"
+help_assemble_replace_id:
+  es: "applied: con --keep-ids, cambia el id de un bloque borrado y añadido de nuevo: ID_VIEJO=ID_NUEVO, separados por comas"
+  en: "applied: with --keep-ids, swaps the id of a brick that was deleted and added again: OLD_ID=NEW_ID, separated by commas"
 help_media_force: {es: "set: marca el recurso aunque los tokens del tema no vengan de la plataforma", en: "set: mark the asset even if the theme tokens do not come from the platform"}
 theme_import_needs_file: {es: "coursekit: theme import necesita el fichero con el resultado de get_theme", en: "coursekit: theme import needs the file with the get_theme result"}
 theme_imported:

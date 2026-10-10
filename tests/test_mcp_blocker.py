@@ -182,3 +182,11 @@ def test_a_command_is_split_only_outside_quotes():
 def test_a_quoted_bar_is_not_taken_for_a_program(tmp_path):
     log = write_events(tmp_path / "a.log", [bash("1", 'cd /x && grep -i -E "course|slxd"; blender -b'), refused("1")])
     assert launch.blocked_programs(log) == ["blender"]
+
+
+def test_the_body_of_a_script_is_not_a_list_of_programs(tmp_path):
+    script = "coursekit assemble diff X > d.json; python3 -I - <<'E'\nimport json\nprint(json.load(open('d.json')))\nE\nawk '{print}' f"
+    log = write_events(tmp_path / "a.log", [bash("1", script), refused("1")])
+    assert launch.blocked_programs(log) == ["python3", "awk"]
+    parts = launch._command_parts("python3 -c \"import os\nprint(os.name)\"; ls")
+    assert [p.split()[0] for p in parts] == ["python3", "ls"]

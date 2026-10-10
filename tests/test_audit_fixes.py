@@ -257,3 +257,29 @@ def test_every_character_of_a_dialogue_gets_a_portrait_that_reaches_the_dialogue
     people = {c["name"]: c for c in brick["data"]["characters"]}
     assert people["Ana"]["imagePath"] == "c/ana.png" and people["Ana"]["imageAlt"] == "Portrait of Ana"
     assert "imagePath" not in people["Luis"]
+
+
+def test_updated_bricks_keep_their_ids_when_the_lesson_is_recorded_again(course, capsys):  # noqa: F811
+    assert main(["assemble", "plan", "PWD", "--unit", "1"]) == 0
+    plan = json.loads((course / "assembly" / "unit-01.plan.json").read_text(encoding="utf-8"))
+    lesson = plan["lessons"][0]
+    key, count = lesson["key"], len(lesson["bricks"])
+    ids = ",".join(f"b{i}" for i in range(count))
+    base = ["assemble", "applied", "PWD", "--unit", "1", "--lesson", key]
+    assert main([*base, "--lesson-id", "L1", "--brick-ids", ids]) == 0
+    applied_file = course / "assembly" / "unit-01.applied.json"
+    # the content of one brick changes in the plan and creator updates it in place: only the hash moves
+    plan["lessons"][0]["bricks"][0]["hash"] = "new-hash"
+    (course / "assembly" / "unit-01.plan.json").write_text(json.dumps(plan), encoding="utf-8")
+    assert main([*base, "--keep-ids"]) == 0
+    recorded = json.loads(applied_file.read_text(encoding="utf-8"))["lessons"][key]
+    assert [b["brickId"] for b in recorded["bricks"]] == [f"b{i}" for i in range(count)] and recorded["lessonId"] == "L1"
+    assert recorded["bricks"][0]["hash"] == "new-hash"
+    # a brick deleted and added again has a new id
+    assert main([*base, "--keep-ids", "--replace-id", "b0=zz"]) == 0
+    assert json.loads(applied_file.read_text(encoding="utf-8"))["lessons"][key]["bricks"][0]["brickId"] == "zz"
+    # added or deleted bricks need the whole list
+    plan["lessons"][0]["bricks"].append(dict(plan["lessons"][0]["bricks"][0]))
+    (course / "assembly" / "unit-01.plan.json").write_text(json.dumps(plan), encoding="utf-8")
+    assert main([*base, "--keep-ids"]) == 1
+    assert main(["assemble", "applied", "PWD", "--unit", "1", "--lesson", "NO-SUCH", "--keep-ids"]) == 1

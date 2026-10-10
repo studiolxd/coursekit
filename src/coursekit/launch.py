@@ -150,8 +150,13 @@ _SHELL_WORDS = {"cd", "echo", "for", "do", "done", "then", "fi", "if", "source",
 _NEEDS_APPROVAL = re.compile(r"requires? approval|was blocked", re.I)
 
 
+HEREDOC = re.compile(r"<<-?\s*(['\"]?)(\w+)\1[^\n]*\n.*?\n\s*\2[ \t]*(?:\n|$)", re.S)
+
+
 def _command_parts(command: str) -> list[str]:
-    """The parts of a shell command line split at `&&`, `||`, `;`, `|` and new lines that are not inside quotes."""
+    """The parts of a shell command line split at `&&`, `||`, `;`, `|` and new lines that are not inside quotes; the body of a
+    here-document is not a command."""
+    command = HEREDOC.sub("\n", command)
     parts, current, quote, i = [], "", "", 0
     while i < len(command):
         ch = command[i]
@@ -195,7 +200,7 @@ def blocked_programs(log: Path) -> list[str]:
                     for part in _command_parts(commands[item["tool_use_id"]]):
                         words = [w for w in part.split() if not re.match(r"\w+=", w)]
                         name = words[0] if words else ""
-                        if name and "/" not in name and name not in _SHELL_WORDS and name != "coursekit":
+                        if re.fullmatch(r"[A-Za-z][\w.+-]*", name) and name not in _SHELL_WORDS and name != "coursekit":
                             found.append(name)
     return list(dict.fromkeys(found))
 

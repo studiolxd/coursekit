@@ -414,6 +414,10 @@ def cmd_assemble(args: argparse.Namespace) -> int:
     if args.action == "diff":
         print(json.dumps(assemblemod.diff(course, unit), indent=1, ensure_ascii=False))
         return 0
+    if args.action == "checked":
+        print(assemblemod.record_checked(course, unit))
+        _mirror(course["_project"], course["code"])
+        return 0
     if args.action == "link":
         if not (args.content_id or args.preview or args.review):
             print(t("commands", "link_needs_content_id"), file=sys.stderr)
@@ -425,13 +429,15 @@ def cmd_assemble(args: argparse.Namespace) -> int:
         print(assemblemod.record_content_title(course, unit))
         _mirror(course["_project"], course["code"])
         return 0
-    if not (args.lesson and args.lesson_id):
+    if not (args.lesson and (args.lesson_id or args.keep_ids)):
         print(t("commands", "applied_needs_lesson"), file=sys.stderr)
         return 2
     ids = args.brick_ids
     if args.brick_ids_file:
         ids = Path(args.brick_ids_file).read_text(encoding="utf-8")
-    print(assemblemod.record_lesson(course, unit, args.lesson, args.lesson_id, [b for b in re.split(r"[,\s]+", ids) if b]))
+    replace = dict(pair.split("=", 1) for pair in re.split(r"[,\s]+", args.replace_id or "") if "=" in pair)
+    print(assemblemod.record_lesson(course, unit, args.lesson, args.lesson_id, [b for b in re.split(r"[,\s]+", ids) if b],
+                                    args.keep_ids, replace))
     _mirror(course["_project"], course["code"])
     return 0
 
@@ -754,7 +760,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.set_defaults(func=cmd_run)
 
     p = sub.add_parser("assemble", help=t("commands", "help_assemble"))
-    p.add_argument("action", choices=("plan", "diff", "applied", "link", "build"), help=t("commands", "help_assemble_action"))
+    p.add_argument("action", choices=("plan", "diff", "applied", "checked", "link", "build"), help=t("commands", "help_assemble_action"))
     p.add_argument("code")
     p.add_argument("--unit", type=int, help=t("commands", "help_assemble_unit"))
     p.add_argument("--version", help=t("commands", "help_assemble_version"))
@@ -762,6 +768,8 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--lesson-id")
     p.add_argument("--brick-ids", default="")
     p.add_argument("--brick-ids-file", help=t("commands", "help_assemble_brick_ids_file"))
+    p.add_argument("--keep-ids", action="store_true", help=t("commands", "help_assemble_keep_ids"))
+    p.add_argument("--replace-id", help=t("commands", "help_assemble_replace_id"))
     p.add_argument("--content", action="store_true", help=t("commands", "help_assemble_content"))
     p.add_argument("--content-id")
     p.add_argument("--preview", help=t("commands", "help_assemble_preview"))

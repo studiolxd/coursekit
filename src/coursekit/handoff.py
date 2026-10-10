@@ -267,7 +267,8 @@ def _not_uploaded(course: dict) -> list[dict]:
 
 
 def _refresh_media(ctx: Context, course: dict) -> None:
-    """Media that is not in the course yet. The assets marked to be produced again (`coursekit media redo`, after the theme changed)
+    """Media that is not in the course yet, or an assembly that did not finish recording. The assets marked to be produced again
+    (`coursekit media redo`, after the theme changed)
     are produced. With the creator backend the produced ones are uploaded, which can only be done to the content of their unit that
     the assembly creates; then the course is assembled again so that they replace their placeholders."""
     again = bool(_pending_media(course))
@@ -283,7 +284,7 @@ def _refresh_media(ctx: Context, course: dict) -> None:
         left = _not_uploaded(ctx.course())
         if left:
             raise _stuck(ctx, "media_not_uploaded", log, why=_why(ctx, log, summary, "media"), assets=", ".join(a["id"] for a in left))
-    elif not again:
+    elif not again and not (creator and _out_of_sync(ctx)):
         return
     ctx.mirror()
     for _ in range(ctx.rounds):
@@ -292,6 +293,34 @@ def _refresh_media(ctx: Context, course: dict) -> None:
             break
     if creator and not _in_sync(ctx):
         raise _stuck(ctx, "not_assembled", log, why=_why(ctx, log, summary, "assembly"))
+
+
+CHECKS_NOTE = (
+    "\n\nThe course is already assembled and recorded, so there is nothing to apply: `coursekit assemble diff` says `unchanged`. "
+    "Do only the closing checks of the assembly skill (accessibility, text against the `.md`, snapshot, links and, when the review is "
+    "already enabled, a new review version) for each unit, and then record each one with `coursekit assemble checked <CODE> --unit N`."
+)
+
+
+def _unchecked(ctx: Context) -> bool:
+    """A unit assembled and recorded whose closing checks were not done on what is in creator now (an assembly that stopped before
+    them, or one recorded by hand)."""
+    course = ctx.course()
+    for unit in course["units"]:
+        plan, applied = assemblemod.paths(course["_dir"], unit["n"])
+        if plan.exists() and applied.exists() and not assemblemod.unit_checked(course["_dir"], unit["n"]):
+            return True
+    return False
+
+
+def _out_of_sync(ctx: Context) -> bool:
+    """A unit whose last assembly recorded something different from its plan (an assembly that stopped before recording it)."""
+    course = ctx.course()
+    for unit in course["units"]:
+        plan, applied = assemblemod.paths(course["_dir"], unit["n"])
+        if plan.exists() and applied.exists() and not assemblemod.unit_in_sync(course["_dir"], unit["n"]):
+            return True
+    return False
 
 
 def _in_sync(ctx: Context) -> bool:
@@ -336,6 +365,13 @@ def _media(ctx: Context, course: dict) -> None:
 def _deliver(ctx: Context, course: dict) -> None:
     _refresh_media(ctx, course)
     log = None
+    if coursemod.backend(course) == "creator" and _unchecked(ctx):
+        for _ in range(ctx.rounds):
+            _, log, summary = _agent(ctx, "assembly", "assemble", ctx.code, "checks", CHECKS_NOTE)
+            if not _unchecked(ctx) or _cannot(ctx, log, "assembly"):
+                break
+        if _unchecked(ctx):
+            raise _stuck(ctx, "not_checked", log, why=_why(ctx, log, summary, "assembly"))
     for _ in range(ctx.rounds):
         _, log, summary = _agent(ctx, "assembly", "deliver", ctx.code, "deliver")
         if ctx.course()["status"] == "delivered":

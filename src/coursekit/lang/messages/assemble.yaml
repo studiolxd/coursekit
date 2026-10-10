@@ -47,6 +47,12 @@ recorded_lesson:
 recorded_title:
   es: "registrado el título del contenido: {title}"
   en: "recorded content title: {title}"
+recorded_checked:
+  es: "unidad {n}: registrado el cierre del montaje (comprobaciones hechas sobre lo que hay ahora en creator)"
+  en: "unit {n}: assembly closing recorded (checks done on what is in creator now)"
+checked_not_in_sync:
+  es: "unidad {n}: lo registrado de creator no coincide con el plan; registra primero el montaje (`assemble applied`) y haz las comprobaciones después"
+  en: "unit {n}: what is recorded of creator does not match the plan; record the assembly first (`assemble applied`) and do the checks after"
 course_assembled:
   es: " · curso: media -> assembly"
   en: " · course: media -> assembly"
@@ -59,3 +65,9 @@ linked_review: {es: "enlace de revisión {value}", en: "review link {value}"}
 character_not_produced:
   es: "dialog: el retrato de '{name}' aún no está subido (coursekit media extract y /produce-media)"
   en: "dialog: the portrait of '{name}' is not uploaded yet (coursekit media extract and /produce-media)"
+keep_ids_nothing_recorded:
+  es: "la lección {key} no tiene ids registrados: pasa la lista con --brick-ids o --brick-ids-file"
+  en: "lesson {key} has no recorded ids: give the list with --brick-ids or --brick-ids-file"
+keep_ids_count:
+  es: "la lección {key} tenía {ids} bloques registrados y el plan tiene {bricks}: se añadieron o borraron bloques, pasa la lista completa con --brick-ids o --brick-ids-file"
+  en: "lesson {key} had {ids} recorded bricks and the plan has {bricks}: bricks were added or deleted, give the whole list with --brick-ids or --brick-ids-file"

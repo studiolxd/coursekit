@@ -51,6 +51,9 @@ media_pending:
 not_assembled:
   es: "{code}: el curso no queda montado tras los intentos (/assemble)"
   en: "{code}: the course is not assembled after the attempts (/assemble)"
+not_checked:
+  es: "{code}: el montaje no cierra sus comprobaciones tras los intentos (/assemble)"
+  en: "{code}: the assembly does not finish its closing checks after the attempts (/assemble)"
 not_delivered:
   es: "{code}: el curso no queda entregado tras los intentos (/deliver)"
   en: "{code}: the course is not delivered after the attempts (/deliver)"

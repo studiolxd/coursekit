@@ -670,12 +670,24 @@ def diff(course: dict, unit: dict) -> dict:
     return result
 
 
-def record_lesson(course: dict, unit: dict, lesson_key: str, lesson_id: str, brick_ids: list[str]) -> str:
+def record_lesson(course: dict, unit: dict, lesson_key: str, lesson_id: str | None, brick_ids: list[str], keep: bool = False,
+                  replace: dict[str, str] | None = None) -> str:
+    """Records what is now in creator for a lesson. With `keep` the brick ids already recorded are kept, in their positions (what
+    `update_brick` leaves: the same bricks with new content), `replace` swapping those of the bricks that were deleted and added again."""
     plan_path, applied_path = paths(course["_dir"], unit["n"])
     plan = _read(plan_path)
     lesson = next((lesson for lesson in plan["lessons"] if lesson["key"] == lesson_key), None)
     if lesson is None:
         raise AssembleError(t("assemble", "lesson_not_in_plan", key=lesson_key))
+    if keep:
+        before = (_read(applied_path, {"lessons": {}})["lessons"]).get(lesson_key)
+        if before is None:
+            raise AssembleError(t("assemble", "keep_ids_nothing_recorded", key=lesson_key))
+        replace = replace or {}
+        brick_ids = [replace.get(b["brickId"], b["brickId"]) for b in before["bricks"]]
+        lesson_id = lesson_id or before["lessonId"]
+        if len(brick_ids) != len(lesson["bricks"]):
+            raise AssembleError(t("assemble", "keep_ids_count", key=lesson_key, ids=len(brick_ids), bricks=len(lesson["bricks"])))
     if len(brick_ids) != len(lesson["bricks"]):
         raise AssembleError(t("assemble", "brick_count_mismatch", ids=len(brick_ids), bricks=len(lesson["bricks"]), key=lesson_key))
     applied = _read(applied_path, {"lessons": {}})
@@ -714,6 +726,33 @@ def unit_in_sync(course_dir: Path, n: int) -> bool:
         and (not lesson.get("quiz") or applied[lesson["key"]].get("quiz") == lesson["quiz"])
         for lesson in plan["lessons"]
     )
+
+
+def _fingerprint(applied: dict) -> str:
+    """What the closing checks vouch for: the content title and the bricks (types and hashes) of every lesson as recorded."""
+    state = [applied.get("content_title"), {key: [(b["type"], b["hash"]) for b in lesson["bricks"]]
+                                            for key, lesson in sorted((applied.get("lessons") or {}).items())}]
+    return hashlib.sha1(json.dumps(state, ensure_ascii=False).encode("utf-8")).hexdigest()
+
+
+def record_checked(course: dict, unit: dict) -> str:
+    """Records that the closing checks of the assembly (accessibility, text against the `.md`, snapshot, links and review version)
+    were done on what is in creator now. Any later change to the recorded bricks makes them pending again."""
+    if not unit_in_sync(course["_dir"], unit["n"]):
+        raise AssembleError(t("assemble", "checked_not_in_sync", n=unit["n"]))
+    _, applied_path = paths(course["_dir"], unit["n"])
+    applied = _read(applied_path)
+    applied["checked"] = _fingerprint(applied)
+    write_json(applied_path, applied)
+    return t("assemble", "recorded_checked", n=unit["n"]) + mark_assembled(course)
+
+
+def unit_checked(course_dir: Path, n: int) -> bool:
+    _, applied_path = paths(course_dir, n)
+    if not applied_path.exists():
+        return False
+    applied = json.loads(applied_path.read_text(encoding="utf-8"))
+    return applied.get("checked") == _fingerprint(applied)
 
 
 def mark_assembled(course: dict) -> str:

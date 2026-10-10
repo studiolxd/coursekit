@@ -358,3 +358,89 @@ def test_the_session_environment_reaches_the_agent(project, monkeypatch):
     monkeypatch.setitem(launch.SESSION_ENV, "COURSEKIT_USER_NAME", "Someone")
     launch.execute(find_project(project), launch.Agent("writer", "claude", ""), "x", True, "t")
     assert got["env"]["COURSEKIT_USER_NAME"] == "Someone"
+
+
+def test_an_assembly_that_stopped_before_recording_is_done_again_when_it_carries_on(project, monkeypatch):
+    fake = Agents(project, monkeypatch)
+    assert main(["handoff", "Contraseñas seguras", "1", "--code", "PWD"]) == 0
+    assembly = fake.course / "assembly"
+    assembly.mkdir(exist_ok=True)
+    (assembly / "unit-01.plan.json").write_text("{}", encoding="utf-8")
+    (assembly / "unit-01.applied.json").write_text("{}", encoding="utf-8")
+    state = {"synced": False}
+    monkeypatch.setattr(assemblemod, "unit_in_sync", lambda course_dir, n: state["synced"] or fake.calls.count("assemble") >= 1)
+    monkeypatch.setattr(assemblemod, "unit_checked", lambda course_dir, n: fake.calls.count("assemble") >= 1)
+    set_status(project, "assembly")
+    fake.calls.clear()
+    assert main(["handoff", "PWD"]) == 0
+    assert fake.calls == ["assemble", "deliver"]
+
+
+def _recorded_unit(fake):
+    """A unit whose plan is recorded as applied, as the assembly agent leaves it."""
+    assert main(["assemble", "plan", "PWD", "--unit", "1"]) == 0
+    plan = json.loads((fake.course / "assembly" / "unit-01.plan.json").read_text(encoding="utf-8"))
+    for lesson in plan["lessons"]:
+        ids = ",".join(f"b{i}" for i in range(len(lesson["bricks"])))
+        assert main(["assemble", "applied", "PWD", "--unit", "1", "--lesson", lesson["key"], "--lesson-id", "L1", "--brick-ids", ids]) == 0
+    assert main(["assemble", "applied", "PWD", "--unit", "1", "--content"]) == 0
+
+
+def test_a_recorded_assembly_without_its_closing_checks_runs_them_before_delivering(project, monkeypatch, capsys):
+    fake = Agents(project, monkeypatch)
+    assert main(["handoff", "Contraseñas seguras", "1", "--code", "PWD"]) == 0
+    _recorded_unit(fake)
+    capsys.readouterr()
+    assert main(["assemble", "checked", "PWD", "--unit", "1"]) == 0
+    assert "closing recorded" in capsys.readouterr().out
+    # a change in the recorded bricks makes the checks pending again
+    applied = fake.course / "assembly" / "unit-01.applied.json"
+    state = json.loads(applied.read_text(encoding="utf-8"))
+    first = next(iter(state["lessons"].values()))["bricks"][0]
+    first["hash"] = "changed"
+    applied.write_text(json.dumps(state), encoding="utf-8")
+    assert not assemblemod.unit_checked(fake.course, 1)
+
+    def assemble(arguments):
+        fake.assembled = getattr(fake, "assembled", 0) + 1
+        _recorded_unit(fake)
+        assert main(["assemble", "checked", "PWD", "--unit", "1"]) == 0
+
+    fake.assemble = assemble
+    set_status(project, "assembly")
+    fake.calls.clear()
+    assert main(["handoff", "PWD"]) == 0
+    assert fake.calls == ["assemble", "deliver"]
+
+
+def test_it_stops_when_the_closing_checks_cannot_be_done(project, monkeypatch, capsys):
+    fake = Agents(project, monkeypatch)
+    assert main(["handoff", "Contraseñas seguras", "1", "--code", "PWD"]) == 0
+    _recorded_unit(fake)
+    set_status(project, "assembly")
+    fake.calls.clear()
+    assert main(["handoff", "PWD"]) == 1
+    assert "closing checks" in capsys.readouterr().err
+    assert "deliver" not in fake.calls
+
+
+def test_checked_refuses_what_is_not_in_sync_with_the_plan(project, monkeypatch, capsys):
+    fake = Agents(project, monkeypatch)
+    assert main(["handoff", "Contraseñas seguras", "1", "--code", "PWD"]) == 0
+    _recorded_unit(fake)
+    applied = fake.course / "assembly" / "unit-01.applied.json"
+    state = json.loads(applied.read_text(encoding="utf-8"))
+    next(iter(state["lessons"].values()))["bricks"][0]["hash"] = "changed"
+    applied.write_text(json.dumps(state), encoding="utf-8")
+    capsys.readouterr()
+    assert main(["assemble", "checked", "PWD", "--unit", "1"]) == 1
+    assert "does not match the plan" in capsys.readouterr().err
+
+
+def test_checking_an_unchanged_assembly_moves_a_reopened_course_to_assembly(project, monkeypatch):
+    fake = Agents(project, monkeypatch)
+    assert main(["handoff", "Contraseñas seguras", "1", "--code", "PWD"]) == 0
+    _recorded_unit(fake)
+    set_status(project, "media")  # reopened: nothing to apply, so nothing is recorded but the closing
+    assert main(["assemble", "checked", "PWD", "--unit", "1"]) == 0
+    assert data(project)["status"] == "assembly"

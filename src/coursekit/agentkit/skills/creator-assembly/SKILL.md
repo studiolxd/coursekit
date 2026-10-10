@@ -65,8 +65,12 @@ the contents follow a theme that was changed and imported again.
   If the count does not match the plan, something was not applied: check before going on.
 - Repeat `diff` until the content and every lesson are `unchanged`.
 - **Never edit `assembly/*.json` by hand**: they are written by `coursekit assemble applied` (the permissions deny editing them). If
-  the list of brick ids is too long for the command line, write the ids in a file (one per line or separated by commas) and
-  use `--brick-ids-file <file>`; to record one replaced brick, record the whole lesson again with the ids that `get_lesson` gives.
+  when you only updated bricks in place (`update_brick` keeps their ids), record the lesson with
+  `coursekit assemble applied <CODE> --unit N --lesson <key> --keep-ids`: it keeps the ids already recorded and takes the new
+  hashes from the plan; a brick you deleted and added again has a new id: `--replace-id OLD=NEW[,OLD=NEW]`. Only when bricks were
+  added or deleted (their number changes) give the whole list in plan order, with `--brick-ids` or, if it is too long for the command
+  line, in a file with `--brick-ids-file <file>` (one id per line or separated by commas) that you write with the ids of `get_lesson`.
+  You never need a script for this.
 
 ## 4. Checks
 
@@ -85,7 +89,11 @@ the contents follow a theme that was changed and imported again.
    When a unit is reloaded and its review is already enabled (after the client's comments, or because the media was uploaded
    after the first assembly), its review needs a new version so the client sees the changes: `publish_review_version` (see the
    `client-review` skill).
-5. Summarise for the person: lessons and bricks created or updated, warnings (unproduced
+5. Record the closing, once per unit and only after steps 1 to 4: `coursekit assemble checked <CODE> --unit N`. It refuses while what
+   is recorded does not match the plan, and any later change to the recorded bricks makes the checks pending again. Delivery does not
+   start without it; when the assembly is already applied and only this is missing, do just steps 1 to 5 (`coursekit assemble diff`
+   says `unchanged`, so there is nothing to apply).
+6. Summarise for the person: lessons and bricks created or updated, warnings (unproduced
    placeholders, pending labelled-graphic images), and the preview and review link of each unit.
    Tell them that, to open a round with the client, they run `coursekit client <CODE> send`.
 
