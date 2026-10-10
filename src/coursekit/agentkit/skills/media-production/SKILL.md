@@ -13,6 +13,14 @@ write or edit tokens yourself. Infographics, diagrams, GIFs, simulations and vid
 set … --status produced` refuses without them. The Remotion template reads `theme/tokens.json`; for a course with
 its own tokens, point the composition at `courses/<CODE>/theme/tokens.json`.
 
+**House style.** If `theme/branding/media-style.md` exists (the course's own `courses/<CODE>/theme/branding/media-style.md` wins
+over the project's), read it before producing anything: it is the person's written style for the media of every course, with
+measures and positions for each element. What it says about the look and composition (covers, colours, typography, what must **not**
+appear) overrides the defaults of this skill for the types it covers; the rest of this skill still applies. If an instruction
+cannot be followed (a font that is not available, a type the file does not cover), say so and do the closest thing: never invent
+extra elements to fill the gap. It only needs what is in the project: anything it mentions from outside (logos, fonts) is read from
+`theme/branding/`, because this session cannot read other folders.
+
 {{> _slxd-tools}}
 
 ## 1. Inventory and plan

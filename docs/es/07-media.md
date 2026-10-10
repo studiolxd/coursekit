@@ -349,6 +349,10 @@ Los tipos de recurso que usan los tokens figuran en `uses_theme` de la configura
 
 El agente multimedia se detiene y pide a la persona que ejecute `/define-theme` cuando faltan los tokens, en lugar de inventar colores.
 
+### Estilo de la casa para los recursos
+
+`theme/branding/media-style.md` (o, para un curso, `courses/<CODE>/theme/branding/media-style.md`, que gana) es un fichero opcional en el que escribes, en Markdown sencillo, cómo deben verse los recursos de tus cursos: la composición exacta de la portada de un vídeo, los colores por nombre de token, la tipografía y, sobre todo, lo que **no** debe aparecer. El agente de recursos lo lee antes de producir nada y manda sobre los valores por defecto de coursekit en los tipos que cubre; puede ser tan estrecho (solo la portada de los vídeos) o tan amplio como quieras, y añades una sección por tipo según lo necesites. Sé exacto: tamaños en píxeles y la posición de cada elemento hacen que todas las portadas salgan iguales. Los colores se nombran mejor por su token (`--palette-<id>` y `--color-<rol>` de `theme/tokens.css`), que ya están en el proyecto; lo que el fichero mencione de fuera del proyecto (un logotipo, un fichero de fuente) debe copiarse en `theme/branding/`, porque la sesión sin interfaz del agente solo lee el proyecto. No hace falta `coursekit agents` tras editarlo: se lee tal cual. Si una instrucción no se puede cumplir, el agente lo dice y hace lo más parecido sin añadir elementos.
+
 ### Cambiar el theme después de producir el multimedia
 
 Si el theme era incorrecto (por ejemplo el theme por defecto del tenant), el multimedia hecho con él lleva el aspecto equivocado. Para rehacerlo:

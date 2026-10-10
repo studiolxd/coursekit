@@ -9,7 +9,7 @@ indistinta.
 
 Paquete `slxd-coursekit`, comando `coursekit`. De Studio LXD.
 
-> En desarrollo inicial (`0.1.3`). Publicado en PyPI como `slxd-coursekit`.
+> En desarrollo inicial (`0.1.4`). Publicado en PyPI como `slxd-coursekit`.
 
 ## Qué hace
 
@@ -43,7 +43,7 @@ Para probarlo desde un clon, con los cambios aplicándose al instante:
 uv tool install --editable /ruta/a/coursekit
 ```
 
-Para actualizar una copia instalada: `uv tool upgrade slxd-coursekit`. Nada más: el primer comando en cada proyecto regenera sus ficheros gestionados y los de los agentes. Una versión concreta: `uv tool install slxd-coursekit==0.1.3`.
+Para actualizar una copia instalada: `uv tool upgrade slxd-coursekit`. Nada más: el primer comando en cada proyecto regenera sus ficheros gestionados y los de los agentes. Una versión concreta: `uv tool install slxd-coursekit==0.1.4`.
 
 ## Inicio rápido
 

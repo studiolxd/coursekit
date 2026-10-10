@@ -39,7 +39,7 @@ El paquete se llama `slxd-coursekit`; el comando es `coursekit`. Para actualizar
 uv tool upgrade slxd-coursekit
 ```
 
-Para instalar una versión exacta: `uv tool install slxd-coursekit==0.1.3` (desde el repositorio, indica su etiqueta: `uv tool install git+https://github.com/studiolxd/coursekit@v0.1.3`).
+Para instalar una versión exacta: `uv tool install slxd-coursekit==0.1.4` (desde el repositorio, indica su etiqueta: `uv tool install git+https://github.com/studiolxd/coursekit@v0.1.4`).
 
 Tras actualizar no tienes que hacer nada en tus proyectos: el primer comando de coursekit que ejecutes en cada proyecto detecta que el coursekit instalado cambió y regenera los ficheros gestionados y los de los agentes antes de ejecutarse (mira [Refrescar los ficheros generados](#refrescar-los-ficheros-generados)). Una instalación editable no necesita actualizarse.
 
@@ -170,7 +170,7 @@ coursekit init --update      # AGENTS.md, CLAUDE.md, .env.example, .gitignore, e
 coursekit agents             # skills, comandos, agentes y ajustes de las herramientas
 ```
 
-Esto ocurre solo: el primer comando tras actualizar (o tras traer cambios a una instalación editable) ejecuta ambos, imprime una línea (`coursekit 0.1.3: proyecto al día (...)`) y sigue. La huella de la última actualización se guarda por máquina en `.coursekit/refreshed.json` (ignorado por git). Si la actualización falla, el comando se ejecuta igualmente y dice cómo hacerlo a mano. `COURSEKIT_NO_REFRESH=1` la desactiva. `coursekit init`, `coursekit agents` y `coursekit help` no la disparan. Ejecutar a mano los dos comandos de arriba sigue siendo válido.
+Esto ocurre solo: el primer comando tras actualizar (o tras traer cambios a una instalación editable) ejecuta ambos, imprime una línea (`coursekit 0.1.4: proyecto al día (...)`) y sigue. La huella de la última actualización se guarda por máquina en `.coursekit/refreshed.json` (ignorado por git). Si la actualización falla, el comando se ejecuta igualmente y dice cómo hacerlo a mano. `COURSEKIT_NO_REFRESH=1` la desactiva. `coursekit init`, `coursekit agents` y `coursekit help` no la disparan. Ejecutar a mano los dos comandos de arriba sigue siendo válido.
 
 `init --update` nunca toca `project.yaml` ni las notas de `brief/`; recrea cualquier carpeta del proyecto que falte (`courses/`, `brief/sources/`, `config/`, `theme/`, `.agents/`). Un fichero generado que hayas editado a mano se conserva y se informa como `conservado (editado a mano, no se actualiza)`.
 

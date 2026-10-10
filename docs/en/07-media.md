@@ -349,6 +349,10 @@ The asset types that use the tokens are listed in `uses_theme` of the media conf
 
 The media agent stops and asks the person to run `/define-theme` when the tokens are missing, instead of inventing colours.
 
+### House style for media
+
+`theme/branding/media-style.md` (or, for one course, `courses/<CODE>/theme/branding/media-style.md`, which wins) is an optional file in which you write, in plain Markdown, how the media of your courses must look: the exact composition of a video cover, colours by token name, typography, and above all what must **not** appear. The media agent reads it before producing anything and it overrides coursekit's defaults for the types it covers; it can be as narrow (only the cover of videos) or as wide as you want, and you add a section per type as you need it. Be exact: sizes in pixels and the position of each element make every cover come out the same. Colours are best named by their token (`--palette-<id>` and `--color-<role>` of `theme/tokens.css`), which are already in the project; what the file mentions from outside the project (a logo, a font file) must be copied into `theme/branding/`, because the headless session of the agent only reads the project. `coursekit agents` is not needed after editing it: it is read as it is. If an instruction cannot be followed the agent says so and does the closest thing without adding elements.
+
 ### Change the theme after producing the media
 
 If the theme was wrong (for example the default theme of the tenant) the media made with it carries the wrong look. To redo it:

@@ -8,7 +8,7 @@ media, assembly and SCORM delivery, with human sign-offs at the control points. 
 
 Package `slxd-coursekit`, command `coursekit`. By Studio LXD.
 
-> Early development (`0.1.3`). Published on PyPI as `slxd-coursekit`.
+> Early development (`0.1.4`). Published on PyPI as `slxd-coursekit`.
 
 ## What it does
 
@@ -42,7 +42,7 @@ To try it from a clone, with changes taking effect immediately:
 uv tool install --editable /path/to/coursekit
 ```
 
-To update an installed copy: `uv tool upgrade slxd-coursekit`. Nothing else: the first command in each project regenerates its managed files and agent files. A specific version: `uv tool install slxd-coursekit==0.1.3`.
+To update an installed copy: `uv tool upgrade slxd-coursekit`. Nothing else: the first command in each project regenerates its managed files and agent files. A specific version: `uv tool install slxd-coursekit==0.1.4`.
 
 ## Quick start
 

@@ -160,7 +160,7 @@ User documentation lives in `docs/en/` and `docs/es/`, with the same file names 
 
 ## Releases
 
-A tag `vX.Y.Z` that matches the version of `pyproject.toml` runs `.github/workflows/release.yml`: it checks, builds, attaches the wheel and the source distribution to a GitHub release and uploads to PyPI (trusted publishing: the `pypi` environment of the repository is the publisher registered on PyPI). To release: bump `version`, commit, `git tag vX.Y.Z`, `git push --tags`. Projects follow the installed version by themselves (the first command after an update regenerates their managed and agent files). The version is the `version` field in `pyproject.toml` (currently `0.1.3`); `coursekit --version` reads it from the installed package metadata and prints `0.0.0` when run from a checkout that is not installed. The package builds with hatchling:
+A tag `vX.Y.Z` that matches the version of `pyproject.toml` runs `.github/workflows/release.yml`: it checks, builds, attaches the wheel and the source distribution to a GitHub release and uploads to PyPI (trusted publishing: the `pypi` environment of the repository is the publisher registered on PyPI). To release: bump `version`, commit, `git tag vX.Y.Z`, `git push --tags`. Projects follow the installed version by themselves (the first command after an update regenerates their managed and agent files). The version is the `version` field in `pyproject.toml` (currently `0.1.4`); `coursekit --version` reads it from the installed package metadata and prints `0.0.0` when run from a checkout that is not installed. The package builds with hatchling:
 
 ```bash
 uv build
