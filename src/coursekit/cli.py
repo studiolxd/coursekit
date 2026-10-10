@@ -11,7 +11,7 @@ from pathlib import Path
 
 import yaml
 
-from coursekit import __version__, commands, config, envfile, i18n
+from coursekit import __version__, commands, config, envfile, i18n, refresh
 from coursekit import agents as agentsmod
 from coursekit import init as initmod
 from coursekit import setup as setupmod
@@ -111,6 +111,7 @@ def cmd_init(args: argparse.Namespace) -> int:
             print(t("cli", "not_a_project", root=root, file=PROJECT_FILE), file=sys.stderr)
             return 1
         _print_report(initmod.update(root))
+        refresh.write_stamp(root)
         return 0
     if (root / PROJECT_FILE).exists():
         print(t("cli", "already_a_project", root=root), file=sys.stderr)
@@ -162,6 +163,7 @@ def cmd_init(args: argparse.Namespace) -> int:
     report = initmod.create(root, answers, git=not args.no_git)
     print(t("cli", "project_created", root=root))
     _print_report(report)
+    refresh.write_stamp(root)
     project = find_project(root)
     setupmod.env_file(project, print)
     setupmod.set_env_value(project.env_file, "COURSEKIT_LANG", answers.ui_language, environ=False)
@@ -183,6 +185,8 @@ def cmd_agents(args: argparse.Namespace) -> int:
     project = find_project()
     envfile.load(project.env_file)
     report = agentsmod.generate(project)
+    initmod.update(project.root)  # the managed files go with the agent files: one refresh, one stamp
+    refresh.write_stamp(project.root)
     print(t("cli", "agents_summary", written=len(report.written), unchanged=report.unchanged, removed=len(report.removed)))
     for path in report.kept:
         print(t("cli", "agents_kept", path=path))
@@ -299,6 +303,11 @@ def main(argv: list[str] | None = None) -> int:
         parser.print_help()
         return 0
     try:
+        if args.command not in refresh.SKIP:
+            try:
+                refresh.ensure(find_project().root)
+            except ProjectNotFound:
+                pass  # outside a project there is nothing to refresh
         return args.func(args)
     except (ProjectNotFound, DesignError, agentsmod.RenderError, *commands.ERRORS) as exc:
         print(f"coursekit: {exc}", file=sys.stderr)

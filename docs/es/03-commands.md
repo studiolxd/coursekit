@@ -11,6 +11,7 @@ Todos los comandos, salvo `coursekit init`, `coursekit help` y `coursekit uninst
 | Variable | Significado |
 |---|---|
 | `COURSEKIT_PROJECT` | Ruta de la raíz del proyecto. Si está definida, sustituye a la búsqueda: la carpeta debe contener `project.yaml` o el comando falla. Útil en scripts y tareas programadas. |
+| `COURSEKIT_NO_REFRESH` | Con cualquier valor, desactiva la actualización automática del proyecto tras actualizar coursekit (mira [Refrescar los ficheros generados](01-getting-started.md#refrescar-los-ficheros-generados)). |
 | `COURSEKIT_HOME` | Carpeta del almacén de la máquina (las dependencias de Node compartidas y el registro de lo que instaló `coursekit setup`). Si no está definida, coursekit usa la carpeta de datos del usuario. Mira [El almacén de la máquina](04-configuration.md#el-almacén-de-la-máquina). |
 | `COURSEKIT_LANG` | Idioma de los mensajes de coursekit (`es` o `en`; se aceptan valores como `es_ES`). Orden de preferencia: idioma forzado por el asistente de `init`, `COURSEKIT_LANG`, `ui_language` de `project.yaml` (o `content_language` si no hay), idioma del sistema (`LC_ALL`, `LC_MESSAGES`, `LANG`) e inglés. |
 

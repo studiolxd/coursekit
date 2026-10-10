@@ -15,4 +15,5 @@ courses/*/assembly/html/
 .opencode/command/
 .opencode/agent/
 .coursekit/agents/
+.coursekit/refreshed.json
 .coursekit/docs/

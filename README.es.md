@@ -41,7 +41,7 @@ Para probarlo desde un clon, con los cambios aplicándose al instante:
 uv tool install --editable /ruta/a/coursekit
 ```
 
-Para actualizar una copia instalada: `uv tool upgrade slxd-coursekit` y, en cada proyecto, `coursekit init --update` y `coursekit agents`.
+Para actualizar una copia instalada: `uv tool upgrade slxd-coursekit`. Nada más: el primer comando en cada proyecto regenera sus ficheros gestionados y los de los agentes. Una versión publicada se instala con su etiqueta: `uv tool install git+https://github.com/studiolxd/coursekit@v0.1.0`.
 
 ## Inicio rápido
 

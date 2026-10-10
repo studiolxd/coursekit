@@ -37,7 +37,9 @@ The package is called `slxd-coursekit`; the command is `coursekit`. To update it
 uv tool upgrade slxd-coursekit
 ```
 
-After upgrading, run `coursekit init --update` and `coursekit agents` in each project (see [Refreshing generated files](#refreshing-generated-files)). An editable install needs no upgrade.
+To install an exact released version, name its tag: `uv tool install git+https://github.com/studiolxd/coursekit@v0.1.0`.
+
+After upgrading you need to do nothing in your projects: the first coursekit command you run in each project notices that the installed coursekit changed and regenerates the managed files and the agent files before it runs (see [Refreshing generated files](#refreshing-generated-files)). An editable install is refreshed the same way whenever the shipped skills, templates or rules change.
 
 If the shell does not find `coursekit` after installing, run `uv tool update-shell` and open a new terminal.
 
@@ -163,6 +165,8 @@ Generated folders (`.claude/skills`, `.claude/commands`, `.opencode/skill`, `.op
 coursekit init --update      # AGENTS.md, CLAUDE.md, .env.example, .gitignore, config examples, hooks
 coursekit agents             # skills, commands, agents and tool settings
 ```
+
+This happens by itself: the first command after upgrading (or after pulling changes to an editable install) runs both, prints one line (`coursekit 0.1.0: project brought up to date (...)`) and goes on. The fingerprint of the last refresh is kept per machine in `.coursekit/refreshed.json` (git-ignored). If the refresh fails, the command still runs and says how to do it by hand. `COURSEKIT_NO_REFRESH=1` turns it off. `coursekit init`, `coursekit agents` and `coursekit help` do not trigger it. Running the two commands above by hand is still fine.
 
 `init --update` never touches `project.yaml` or the `brief/` notes; it recreates any missing project folder (`courses/`, `brief/sources/`, `config/`, `theme/`, `.agents/`). A generated file you edited by hand is kept and reported as `kept (edited by hand, not updated)`.
 

@@ -11,6 +11,7 @@ Every command except `coursekit init`, `coursekit help` and `coursekit uninstall
 | Variable | Meaning |
 |---|---|
 | `COURSEKIT_PROJECT` | Path of the project root. When set, it overrides the search: the folder must contain `project.yaml`, otherwise the command fails. Useful for scripts and scheduled tasks. |
+| `COURSEKIT_NO_REFRESH` | Set to any value to turn off the automatic refresh of the project after coursekit was updated (see [Refreshing generated files](01-getting-started.md#refreshing-generated-files)). |
 | `COURSEKIT_HOME` | Folder of the per-machine store (shared Node dependencies and the record of what `coursekit setup` installed). When it is not set, coursekit uses the user's data folder. See [The per-machine store](04-configuration.md#the-per-machine-store). |
 | `COURSEKIT_LANG` | Language of coursekit's own messages (`es` or `en`; values such as `es_ES` are accepted). Order of precedence: language forced by the `init` wizard, `COURSEKIT_LANG`, `ui_language` of `project.yaml` (or `content_language` when there is none), the system language (`LC_ALL`, `LC_MESSAGES`, `LANG`), English. |
 

@@ -1,0 +1,10 @@
+# The project follows the installed coursekit (refresh.py).
+done:
+  es: "coursekit {version}: proyecto al día ({files} archivos gestionados, {agents} archivos de agentes)"
+  en: "coursekit {version}: project brought up to date ({files} managed files, {agents} agent files)"
+kept:
+  es: "  conservado (editado a mano, no se actualiza): {path}"
+  en: "  kept (edited by hand, not updated): {path}"
+failed:
+  es: "coursekit: no se pudo actualizar el proyecto ({error}); sigue con lo que hay y ejecuta `coursekit init --update` y `coursekit agents`"
+  en: "coursekit: the project could not be brought up to date ({error}); carrying on with what is there; run `coursekit init --update` and `coursekit agents`"

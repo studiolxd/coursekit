@@ -160,7 +160,7 @@ La documentación de usuario vive en `docs/en/` y `docs/es/`, con los mismos nom
 
 ## Versiones
 
-No hay automatización de versiones: no existe ningún workflow de release en `.github/workflows/` (solo `ci.yml`) y coursekit todavía no está publicado en PyPI. La versión es el campo `version` de `pyproject.toml` (ahora `0.1.0.dev0`); `coursekit --version` la lee de los metadatos del paquete instalado y muestra `0.0.0` si se ejecuta desde un checkout sin instalar. El paquete se construye con hatchling:
+Una etiqueta `vX.Y.Z` que coincida con la versión de `pyproject.toml` ejecuta `.github/workflows/release.yml`: comprueba, construye, adjunta el wheel y la distribución de código fuente a una release de GitHub y, si la variable del repositorio `PUBLISH_PYPI` es `true` y está configurada la publicación de confianza en PyPI, sube a PyPI. Para publicar: sube `version`, commit, `git tag vX.Y.Z`, `git push --tags`. Los proyectos siguen la versión instalada por sí solos (el primer comando tras actualizar regenera sus ficheros gestionados y los de los agentes). La versión es el campo `version` de `pyproject.toml` (ahora `0.1.0.dev0`); `coursekit --version` la lee de los metadatos del paquete instalado y muestra `0.0.0` si se ejecuta desde un checkout sin instalar. El paquete se construye con hatchling:
 
 ```bash
 uv build
