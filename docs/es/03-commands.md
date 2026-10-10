@@ -317,7 +317,7 @@ coursekit new "Contraseñas seguras" 2 --code PWD --notes "Centrado en personal 
 Lleva un curso desde su título y sus horas hasta su entrega por sí solo, sin que nadie revise nada por el camino: el diseño, la redacción, la revisión con IA, las firmas, el multimedia, el montaje y la entrega. Quién: solo personas (los agentes no pueden ejecutarlo). Detalles y límites en [Modo handoff](02-workflow.md#modo-handoff).
 
 ```
-coursekit handoff [--code CODE] [--no-intro] [--no-summary] [--notes NOTES] [--rounds ROUNDS] [--no-pause] target [hours]
+coursekit handoff [--code CODE] [--no-intro] [--no-summary] [--notes NOTES] [--rounds ROUNDS] [--no-pause] [--new-version] target [hours]
 ```
 
 | Argumento | Valores / por defecto | Significado |
@@ -328,6 +328,7 @@ coursekit handoff [--code CODE] [--no-intro] [--no-summary] [--notes NOTES] [--r
 | `--no-intro`, `--no-summary`, `--notes NOTES` | como en [`coursekit new`](#coursekit-new) | Solo al crear; con un código para continuar se rechazan (código de salida 2), igual que `--code`. |
 | `--rounds ROUNDS` | número entero; por defecto `rules › handoff › rounds` (`2`) | Intentos por paso antes de parar. |
 | `--no-pause` | flag | No esperar al material de partida tras crear las carpetas del curso. Sin terminal nunca espera. Solo al crear (se rechaza con un código para continuar, código de salida 2). |
+| `--new-version` | indicador | Con el código de un curso `delivered` cuyo contenido has editado: lo reabre y lo lleva a la versión siguiente ([Modo handoff](02-workflow.md#modo-handoff)). Se rechaza (código de salida 1) si el curso no está `delivered`; con título y horas, código 2. |
 
 Al crear, primero hace las carpetas del curso (como [`coursekit new`](#coursekit-new), con `--notes` como indicaciones del diseño) y, en una terminal, **espera a que dejes el material de partida** en `courses/<CODE>/brief/` (`sources/`, `links.md`, `notes.md`; también se lee el material del proyecto en `brief/`) y pulses Enter. A partir de ahí ejecuta, sin interfaz y en orden, el agente de cada rol, y decide cada paso según el estado del curso. Las firmas del diseño y de cada unidad las pone coursekit mismo como **Coursekit Handoff** (nunca como una persona), y cada aprobación anota `via: handoff`. No hace la revisión del cliente y no empieza si el proyecto la exige (`client_review.required`): se niega antes de crear el curso. Cuando un paso sigue fallando tras sus intentos, se para con código de salida 1, dice por qué y cómo seguir (`coursekit handoff <CODE>`). Puede tardar mucho y gastar créditos de los proveedores de multimedia configurados.
 

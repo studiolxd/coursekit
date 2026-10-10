@@ -132,6 +132,12 @@ handoff_pause_branding_html:
   en: "  · brand for the stylesheet (logos, fonts, guidelines, colours): {branding}/, or your own stylesheet in theme/maqueta.css (without them, the base look)"
 handoff_pause_wait: {es: "Pulsa Enter para continuar (con o sin material)", en: "Press Enter to go on (with or without material)"}
 help_handoff_rounds: {es: "intentos por paso antes de parar (por defecto: rules › handoff › rounds)", en: "attempts per step before it stops (default: rules › handoff › rounds)"}
+help_handoff_new_version:
+  es: "reabre un curso entregado cuyo contenido se editó y lo lleva a la versión siguiente"
+  en: "reopen a delivered course whose content was edited and take it to the next version"
+handoff_new_version_options:
+  es: "--new-version se usa con el código de un curso entregado, no al crear uno"
+  en: "--new-version is used with the code of a delivered course, not when creating one"
 handoff_resume_options:
   es: "--code, --no-intro, --no-summary y --notes solo valen al crear un curso: para continuar uno, `coursekit handoff CODIGO`"
   en: "--code, --no-intro, --no-summary and --notes only apply when creating a course: to carry on one, `coursekit handoff CODE`"

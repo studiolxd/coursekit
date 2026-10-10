@@ -81,3 +81,9 @@ agent_said_line:
 media_not_uploaded:
   es: "{code}: quedan recursos multimedia sin subir a creator tras los intentos: {assets}"
   en: "{code}: media assets are still not uploaded to creator after the attempts: {assets}"
+not_delivered_to_reopen:
+  es: "{code}: el curso está en «{status}», no entregado; para continuarlo, `coursekit handoff {code}` (sin --new-version)"
+  en: "{code}: the course is in '{status}', not delivered; to carry it on, `coursekit handoff {code}` (without --new-version)"
+reopen_line:
+  es: "handoff {code}: reabierto para una versión nueva; continúa desde «{status}». Las firmas las pone {who}; ninguna persona revisa el curso."
+  en: "handoff {code}: reopened for a new version; carries on from '{status}'. {who} signs; no person reviews the course."

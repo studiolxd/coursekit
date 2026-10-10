@@ -317,7 +317,7 @@ coursekit new "Strong passwords" 2 --code PWD --notes "Focus on office staff"
 Takes a course from its title and hours to its delivery by itself, with nobody reviewing anything on the way: the design, the writing, the AI review, the sign-offs, the media, the assembly and the delivery. Who: people only (the agents cannot run it). Details and limits in [Handoff mode](02-workflow.md#handoff-mode).
 
 ```
-coursekit handoff [--code CODE] [--no-intro] [--no-summary] [--notes NOTES] [--rounds ROUNDS] [--no-pause] target [hours]
+coursekit handoff [--code CODE] [--no-intro] [--no-summary] [--notes NOTES] [--rounds ROUNDS] [--no-pause] [--new-version] target [hours]
 ```
 
 | Argument | Values / default | Meaning |
@@ -328,6 +328,7 @@ coursekit handoff [--code CODE] [--no-intro] [--no-summary] [--notes NOTES] [--r
 | `--no-intro`, `--no-summary`, `--notes NOTES` | as in [`coursekit new`](#coursekit-new) | Only when creating; with a code to carry on they are refused (exit code 2), like `--code`. |
 | `--rounds ROUNDS` | whole number; default `rules › handoff › rounds` (`2`) | Attempts per step before it stops. |
 | `--no-pause` | flag | Do not wait for the reference material after creating the course folders. Without a terminal it never waits. Only when creating (refused with a code to carry on, exit code 2). |
+| `--new-version` | flag | With the code of a `delivered` course whose content you edited: reopens it and takes it to the next version ([Handoff mode](02-workflow.md#handoff-mode)). Refused (exit code 1) if the course is not `delivered`; with a title and hours it is exit code 2. |
 
 When creating, it first makes the course folders (as [`coursekit new`](#coursekit-new) does, with `--notes` as the indications of the design) and, in a terminal, **waits for you to drop the reference material** in `courses/<CODE>/brief/` (`sources/`, `links.md`, `notes.md`; the material of the project in `brief/` is read too) and press Enter. From there it runs, headless and in order, the agent of each role, and decides each step from the status of the course. The signatures of the design and of every unit are given by coursekit itself as **Coursekit Handoff** (never as a person), and each approval records `via: handoff`. It does not do the client's review and it does not start if the project requires it (`client_review.required`): it refuses before creating the course. When a step still fails after its attempts it stops with exit code 1, says why and how to go on (`coursekit handoff <CODE>`). It can take a long time and spend credits of the configured media providers.
 

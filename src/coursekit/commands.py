@@ -84,6 +84,9 @@ def cmd_handoff(args: argparse.Namespace) -> int:
     log = lambda message: print(message, flush=True)  # noqa: E731
     mirror = lambda code: _mirror(project, code)  # noqa: E731
     starting = args.hours is not None
+    if starting and args.new_version:
+        print(t("commands", "handoff_new_version_options"), file=sys.stderr)
+        return 2
     code = handoffmod.course_code(args.target, args.code) if starting else args.target.upper()
     pause = None if args.no_pause or not sys.stdin.isatty() else lambda folder: _pause_for_material(project, folder)
     try:
@@ -94,7 +97,7 @@ def cmd_handoff(args: argparse.Namespace) -> int:
             if args.no_intro or args.no_summary or args.notes or args.code or args.no_pause:
                 print(t("commands", "handoff_resume_options"), file=sys.stderr)
                 return 2
-            course = handoffmod.resume(project, args.target, rounds, log, mirror)
+            course = (handoffmod.reopen if args.new_version else handoffmod.resume)(project, args.target, rounds, log, mirror)
     except handoffmod.HandoffError as exc:
         print(t("handoff", "stopped", code=code, reason=exc), file=sys.stderr)
         return 1
@@ -685,6 +688,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--notes", default="", help=t("commands", "help_new_notes"))
     p.add_argument("--rounds", type=int, help=t("commands", "help_handoff_rounds"))
     p.add_argument("--no-pause", action="store_true", help=t("commands", "help_handoff_no_pause"))
+    p.add_argument("--new-version", action="store_true", help=t("commands", "help_handoff_new_version"))
     p.set_defaults(func=cmd_handoff)
 
     p = sub.add_parser("status", help=t("commands", "help_status"))

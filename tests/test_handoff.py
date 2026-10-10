@@ -307,3 +307,30 @@ def test_media_marked_to_be_produced_again_is_produced_uploaded_and_assembled_ag
     monkeypatch.setattr(assemblemod, "unit_in_sync", lambda course_dir, n: "assemble" in fake.calls)
     assert main(["handoff", "PWD"]) == 0
     assert fake.calls == ["produce-media", "produce-media", "assemble", "deliver"]
+
+
+def test_a_delivered_course_is_reopened_after_its_content_was_edited(project, monkeypatch, capsys):
+    fake = Agents(project, monkeypatch)
+    assert main(["handoff", "Contraseñas seguras", "1", "--code", "PWD"]) == 0
+    assert main(["handoff", "PWD", "--new-version"]) == 0  # nothing edited: every unit stays approved, so it goes on from the media
+    assert fake.calls[-1] == "deliver"
+    content = fake.course / "content" / "unit-01" / "content.md"
+    content.write_text(content.read_text(encoding="utf-8").replace("40 palabras)*\n", "40 palabras)*\n\nextra\n", 1), encoding="utf-8")
+    fake.calls.clear()
+    capsys.readouterr()
+    assert main(["handoff", "PWD", "--new-version"]) == 0
+    out = capsys.readouterr().out
+    assert "reopened for a new version" in out and "carries on from 'ai_review'" in out
+    assert fake.calls[0] == "review-unit" and fake.calls[-1] == "deliver"
+    info = data(project)
+    assert info["status"] == "delivered" and [u["status"] for u in info["units"]] == ["approved"]
+    assert any(h.get("note") == "Reopened for a new version" and h["by"] == "Coursekit Handoff" for h in info["history"])
+
+
+def test_only_a_delivered_course_can_be_reopened(project, monkeypatch, capsys):
+    Agents(project, monkeypatch)
+    assert main(["handoff", "Contraseñas seguras", "1", "--code", "PWD"]) == 0
+    set_status(project, "media")
+    assert main(["handoff", "PWD", "--new-version"]) == 1
+    assert "not delivered" in capsys.readouterr().err
+    assert main(["handoff", "Otro curso", "1", "--new-version"]) == 2

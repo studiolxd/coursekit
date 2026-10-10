@@ -24,14 +24,15 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-from coursekit import approve, clientreview, config, identity, launch, new
+from coursekit import approve, clientreview, config, identity, launch, new, verify
 from coursekit import assemble as assemblemod
 from coursekit import course as coursemod
 from coursekit import media as mediamod
 from coursekit import theme as thememod
 from coursekit.i18n import t
 from coursekit.project import Project
-from coursekit.util import slugify
+from coursekit.states import derive_course_status, history_entry
+from coursekit.util import edit_yaml, save_yaml, slugify
 
 HANDOFF = identity.Identity("Coursekit Handoff", "handoff@coursekit.local")
 VIA = "handoff"
@@ -395,6 +396,29 @@ def start(project: Project, title: str, hours: float, code: str | None, intro: b
     if pause:
         pause(folder)
     return proceed(Context(project, code, rounds, log, lambda: mirror(code)))  # the design agent proposes the course first
+
+
+def reopen(project: Project, code: str, rounds: int, log: Log, mirror: Callable[[str], None]) -> dict:
+    """A delivered course goes back to the status its units imply after the content was edited (every unit is verified again:
+    those that changed fall back and are reviewed, signed and assembled again) and carries on to the next version."""
+    course = coursemod.load(project, code)
+    if course["status"] != "delivered":
+        raise HandoffError(t("handoff", "not_delivered_to_reopen", code=course["code"], status=course["status"]))
+    problem = coursemod.approval_problem(course)
+    if problem:
+        raise HandoffError(f"{course['code']}: {problem}")
+    for unit in course.get("units") or []:
+        verify.update_status(course, unit, verify.verify_unit(course, unit))
+    course = coursemod.load(project, code)
+    status = derive_course_status(course.get("units") or [], "media")
+    path = course["_dir"] / "course.yaml"
+    ry, data = edit_yaml(path)
+    data["status"] = status
+    data.setdefault("history", []).append(history_entry(status, "Reopened for a new version", HANDOFF.name))
+    save_yaml(ry, data, path)
+    log(t("handoff", "reopen_line", code=course["code"], status=status, who=HANDOFF.name))
+    mirror(course["code"])
+    return proceed(Context(project, course["code"], rounds, log, lambda: mirror(course["code"])))
 
 
 def resume(project: Project, code: str, rounds: int, log: Log, mirror: Callable[[str], None]) -> dict:
