@@ -172,3 +172,15 @@ def test_the_languages_creator_adds_are_used_once_they_are_listed():
     # not listed yet: creator would reject them
     assert code_language("diff", ["+a"]) == "auto" and code_language("http", ["GET /"]) == "auto"
     assert code_language("console", ["x"]) == "bash" and code_language("text", ["Estado: x"]) == "auto"
+
+
+def test_a_terminal_session_is_shell_and_an_output_is_plain_text():
+    from coursekit.assemble import code_language
+
+    new = ["plaintext", "shell", "powershell", "diff", "dockerfile", "http"]
+    assert code_language("text", ["daniel@mac ~ % pwd", "/Users/daniel"], new) == "shell"
+    assert code_language("text", ["ana@portatil-ana ~ %"], new) == "shell"
+    assert code_language("text", [r"PS C:\Users\ana> coursekit", "coursekit : error"], new) == "shell"
+    assert code_language("text", ["$ pwd", "/home/ana"], new) == "shell"
+    assert code_language("text", ["daniel@mac ~ % pwd"]) == "bash"  # creator without `shell`
+    assert code_language("text", ["Estado: delivered", "Montaje: backend creator"], new) == "plaintext"

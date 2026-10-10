@@ -53,12 +53,14 @@ LANGUAGE_UPGRADES = {"shell": ("bash", ("shell", "console", "terminal", "shell-s
 # only if it lists `plaintext`; otherwise it guesses (`auto`), which is bad with short code.
 TEXT_FENCES = {"", "text", "txt", "plain", "plaintext", "output"}
 COMMAND_PROGRAMS = "coursekit|git|uv|cd|ls|pwd|mkdir|claude|opencode|codex|npm|npx|curl|irm|brew|echo|export|source"
+PROMPT_LINE = re.compile(r"^(\S+@\S+\s.*[%$#]|PS [A-Za-z]:\\.*>|\$)(\s|$)")  # `ana@mac ~ % pwd`, `PS C:\Users\ana>`, `$ pwd`
 COMMAND_LINE = re.compile(rf"(\$ |/[a-z][\w-]*(\s|$)|({COMMAND_PROGRAMS})\b)")
 
 
 def code_language(fence: str, code: list[str], extra: list[str] | tuple[str, ...] = ()) -> str:
     """The `codeLanguage` of a code block. `extra` are the languages creator has added to its list. The language of the fence if
-    creator knows it; a `text` block made only of commands is `shell` (`bash` without it); other text is `plaintext` (`auto`)."""
+    creator knows it; a `text` block that is a terminal session (it has prompts) or only commands is `shell` (`bash` without it);
+    other text is `plaintext` (`auto` without it)."""
     known = CODE_LANGUAGES | set(extra)
     for language, (fallback, names) in LANGUAGE_UPGRADES.items():
         if fence in names:
@@ -67,8 +69,10 @@ def code_language(fence: str, code: list[str], extra: list[str] | tuple[str, ...
     if lang in known:
         return lang
     lines = [line.strip() for line in code if line.strip()]
-    if lang in TEXT_FENCES and lines and all(COMMAND_LINE.match(line) for line in lines):
-        return "shell" if "shell" in known else "bash"
+    terminal = "shell" if "shell" in known else "bash"
+    session = any(PROMPT_LINE.match(line) for line in lines) or all(COMMAND_LINE.match(line) for line in lines)
+    if lang in TEXT_FENCES and lines and session:
+        return terminal
     return "plaintext" if "plaintext" in known else "auto"
 
 DIRECTIVE_OPEN_RE = re.compile(r"^:::([a-z][a-z-]*)\s*$")
