@@ -50,6 +50,11 @@ Los ficheros de la multimedia de un curso están en `courses/PWD/media/`: `manif
 | `downloads` | Los ficheros descargables: `file`, `title`, `asset_path` y `size` de cada uno |
 | `theme` | La huella de los tokens del tema con los que se hizo el recurso ([El control de los recursos](#el-control-de-los-recursos)) |
 
+### Retratos de los personajes de un diálogo
+
+`extract` añade además un recurso `image`, con id `CHAR-<NOMBRE>` (`CHAR-DANIEL`), por cada personaje que habla en una directiva `:::dialog`: un personaje tiene un solo retrato en todo el curso, hable donde hable. El agente de multimedia lo produce como cualquier otra imagen (una ilustración plana dibujada como SVG y exportada a PNG, una imagen generada con un proveedor o una fotografía con licencia de una persona), cuadrada, como un busto sobre un fondo liso de un color de la paleta del theme, y nunca deja a un personaje con una inicial. Una vez subido, el montaje lo pone en el diálogo como avatar de ese personaje, con el texto alternativo del recurso; hasta entonces avisa `dialog: el retrato de 'Daniel' aún no está subido`.
+
+
 ### Estados
 
 | Estado | Significado |
@@ -312,6 +317,7 @@ Un proyecto tiene un tema, en `theme/`, que heredan todos los cursos. Un curso q
 |---|---|
 | `background`, `text`, `headings`, `accent`, `on-accent` (el rol `accentText`), `link`, `correct`, `on-correct`, `wrong`, `on-wrong` | Los roles semánticos de color del tema de la plataforma, con las referencias a la paleta resueltas. Un rol de texto que el tema no define hereda el color del texto. |
 | `text-soft`, `surface`, `highlight`, `line`, `accent-strong` | Los deriva coursekit a partir de los colores anteriores (mezclas de texto, fondo y acento); el texto suave se mantiene al menos a 4,5:1 sobre el fondo. `accent-strong` es igual a `accent`. Constan en `origin.derived`. |
+| `palette.<id>` | Los colores con nombre del theme de la plataforma (`emerald`, `cayenne`, `prussian`…), importados con su id, para dibujar con ellos: retratos, ilustraciones. No son roles y no cambian la huella de los tokens. En `tokens.css` son `--palette-<id>`. |
 | `font.family`, `font.headings`, `font.ui` | Las asignaciones de fuentes del tema: la pila de fuentes del sistema, una fuente subida por su nombre (seguida de la pila del sistema como alternativa) o una fuente incluida en la plataforma por su id, con una nota porque el nombre puede no coincidir con su familia CSS. |
 | `font.size-base`, `font.line-height` | El tamaño base de fuente y el interlineado del tema. |
 | `radius`, `space`, `shadow` | Valores por defecto del paquete: la plataforma no tiene esos valores. Constan en `origin.defaults`. |

@@ -225,7 +225,7 @@ The page is built with progressive enhancement. The lessons (one per section of 
 
 | Directive or Markdown | Brick | In the package |
 |---|---|---|
-| Paragraphs, `###`–`######`, lists, tables, code fences | `TEXT`, `HEADING`, `LIST`, `TABLE`, `CODE` | Text, headings (level 3 to 6; the lesson title is the level 2), lists, tables in a scrollable box, code blocks |
+| Paragraphs, `###`–`######`, lists, tables, code fences | `TEXT`, `HEADING`, `LIST`, `TABLE`, `CODE` | Text, headings (level 3 to 6; the lesson title is the level 2), lists, tables in a scrollable box, code blocks. The language of the fence is used if creator knows it (`bash`, `python`, `yaml`…; `powershell`, `pwsh`, `cmd` and `terminal` become `bash`); a `text` or unlabelled block made only of commands becomes `bash`, and any other uses creator's automatic detection, because creator has no plain-text language (when it adds `plaintext`, `shell`, `powershell`, `diff`, `dockerfile` and `http`, list them in `rules › assembly › code_languages`: [Configuration](04-configuration.md)) |
 | `note`, `highlight`, plain blockquote, `quote` | `NOTE`, `HIGHLIGHT`, `QUOTE` | A note with a title, a highlighted block, a quote with its attribution |
 | `accordion` | `ACCORDION` | Native `details` elements (they work without JavaScript) |
 | `tabs` | `TABS` | Tab list with arrow, Home and End keys; every panel is in the markup |

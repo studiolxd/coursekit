@@ -45,3 +45,10 @@ embed_needs_svg:
 embed_written:
   es: "escrito {path}: sube ese fichero con request_embed_upload (folderId {asset}, relativePath index.html) y `coursekit media upload`, y registra el embedFolderPrefix con `coursekit media set … --status uploaded --asset-path`"
   en: "wrote {path}: upload that file with request_embed_upload (folderId {asset}, relativePath index.html) and `coursekit media upload`, then record the embedFolderPrefix with `coursekit media set … --status uploaded --asset-path`"
+character_title: {es: "Retrato de {name}", en: "Portrait of {name}"}
+character_description:
+  es: "Retrato de {name}, personaje de un diálogo del curso: su cara en el avatar de la conversación."
+  en: "Portrait of {name}, a character of a dialogue of the course: the face in the avatar of the conversation."
+character_specs:
+  es: "512x512 px, cuadrada, busto centrado con fondo liso de un color de la paleta del theme; el mismo estilo para todos los personajes del curso (ilustración o fotografía de una persona, nunca iniciales); texto alternativo obligatorio."
+  en: "512x512 px, square, a centred bust on a plain background in a colour of the theme palette; the same style for every character of the course (an illustration or a photograph of a person, never initials); alt text is mandatory."

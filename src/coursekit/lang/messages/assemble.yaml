@@ -56,3 +56,6 @@ linked:
 linked_content: {es: "contenido de creator {value}", en: "creator content {value}"}
 linked_preview: {es: "preview {value}", en: "preview {value}"}
 linked_review: {es: "enlace de revisión {value}", en: "review link {value}"}
+character_not_produced:
+  es: "dialog: el retrato de '{name}' aún no está subido (coursekit media extract y /produce-media)"
+  en: "dialog: the portrait of '{name}' is not uploaded yet (coursekit media extract and /produce-media)"

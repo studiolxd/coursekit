@@ -225,7 +225,7 @@ La página se construye con mejora progresiva. Las lecciones (una por apartado d
 
 | Directiva o Markdown | Brick | En el paquete |
 |---|---|---|
-| Párrafos, `###`–`######`, listas, tablas, bloques de código | `TEXT`, `HEADING`, `LIST`, `TABLE`, `CODE` | Texto, títulos (nivel 3 a 6; el título de la lección es el nivel 2), listas, tablas en una caja con desplazamiento, bloques de código |
+| Párrafos, `###`–`######`, listas, tablas, bloques de código | `TEXT`, `HEADING`, `LIST`, `TABLE`, `CODE` | Texto, títulos (nivel 3 a 6; el título de la lección es el nivel 2), listas, tablas en una caja con desplazamiento, bloques de código. Se usa el lenguaje de la valla si creator lo conoce (`bash`, `python`, `yaml`…; `powershell`, `pwsh`, `cmd` y `terminal` pasan a `bash`); un bloque `text` o sin lenguaje formado solo por órdenes pasa a `bash`, y cualquier otro usa la detección automática de creator, porque creator no tiene un lenguaje de texto plano (cuando añada `plaintext`, `shell`, `powershell`, `diff`, `dockerfile` y `http`, indícalos en `rules › assembly › code_languages`: [Configuración](04-configuration.md)) |
 | `note`, `highlight`, cita en bloque simple, `quote` | `NOTE`, `HIGHLIGHT`, `QUOTE` | Una nota con título, un bloque destacado, una cita con su autoría |
 | `accordion` | `ACCORDION` | Elementos `details` nativos (funcionan sin JavaScript) |
 | `tabs` | `TABS` | Lista de pestañas con las teclas de flecha, Inicio y Fin; todos los paneles están en el marcado |

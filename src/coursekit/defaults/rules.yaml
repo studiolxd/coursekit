@@ -36,6 +36,12 @@ design:
   objectives_per_unit: "2–4"
   intro_summary_hours: "0.2–0.3"
 
+# Assembly in creator: its code block takes only the languages of its `codeLanguage` list (`get_brick_type_schema` CODE). When it
+# adds some, list them here and coursekit uses them: `plaintext` for the blocks that show output, `shell` ("Terminal") for those
+# made of commands and for `console`/`terminal` fences, `powershell` for PowerShell, `diff`, `dockerfile`, `http`.
+assembly:
+  code_languages: []           # e.g. [plaintext, shell, powershell, diff, dockerfile, http]
+
 content:
   word_margin: 0.05                    # recommended margin over the minimum (warning only)
   placeholders_per_hour: 2.5           # multimedia placeholders per unit hour (rounded up)

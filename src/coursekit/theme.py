@@ -100,6 +100,8 @@ def css(tokens: dict) -> str:
     lines.append(":root {")
     for name, value in (tokens.get("color") or {}).items():
         lines.append(f"  --color-{name}: {value};")
+    for name, value in (tokens.get("palette") or {}).items():  # the named colours of the brand, to draw with (not roles)
+        lines.append(f"  --palette-{name}: {value};")
     for key, var in (("family", "font-family"), ("headings", "font-family-headings"), ("ui", "font-family-ui"),
                      ("size-base", "font-size-base"), ("line-height", "line-height")):
         if font.get(key):
@@ -315,6 +317,7 @@ def from_creator(response: dict) -> dict:
         "radius": DEFAULT_RADIUS,
         "space": DEFAULT_SPACE,
         "shadow": DEFAULT_SHADOW,
+        "palette": {pid: hexed for pid, value in palette.items() if (hexed := to_hex(value))},
     }
 
 

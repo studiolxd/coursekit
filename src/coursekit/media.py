@@ -21,7 +21,7 @@ from coursekit import course as coursemod
 from coursekit import lang
 from coursekit import theme as thememod
 from coursekit.i18n import t
-from coursekit.util import roundtrip_yaml
+from coursekit.util import character_asset_id, roundtrip_yaml
 
 FIELD_KEYS = ("title", "description", "how", "specs")  # in the order of the language's placeholder_fields
 
@@ -110,6 +110,38 @@ def scan(course: dict) -> list[dict]:
     return assets
 
 
+DIALOG_OPEN = re.compile(r"^:::dialog\s*$")
+DIALOG_LINE = re.compile(r"^\*\*(.+?):\*\*")
+
+
+def scan_characters(course: dict) -> list[dict]:
+    """A portrait asset (an image) for every character of the dialogues, so that the agent gives each one a face instead of leaving
+    an initial. The id is the same wherever the character speaks; the first dialogue gives the unit and the section."""
+    tk = coursemod.tokens(course)
+    section_re = re.compile(rf"^## {re.escape(tk['section'])} (\d+)\s*[—-]")
+    found: dict[str, dict] = {}
+    for unit in course.get("units") or []:
+        path = coursemod.unit_dir(course["_dir"], unit["n"]) / "content.md"
+        if not path.exists():
+            continue
+        section, inside = None, False
+        for line in path.read_text(encoding="utf-8").splitlines():
+            m = section_re.match(line)
+            if m:
+                section, inside = int(m.group(1)), False
+            elif DIALOG_OPEN.match(line.strip()):
+                inside = True
+            elif line.strip() == ":::":
+                inside = False
+            elif inside and section is not None and (m := DIALOG_LINE.match(line.strip())):
+                name = m.group(1).strip()
+                found.setdefault(character_asset_id(name), {
+                    "id": character_asset_id(name), "unit": unit["n"], "section": section, "type": "image", "character": name,
+                    "title": t("media", "character_title", name=name), "description": t("media", "character_description", name=name),
+                    "specs": t("media", "character_specs")})
+    return list(found.values())
+
+
 def load_manifest(course_dir):
     ry = roundtrip_yaml()
     path = course_dir / "media" / "manifest.yaml"
@@ -124,7 +156,7 @@ def load_manifest(course_dir):
 def extract(course: dict) -> dict[str, int]:
     ry, path, data = load_manifest(course["_dir"])
     existing = {a["id"]: a for a in data["assets"]}
-    found = scan(course)
+    found = scan(course) + scan_characters(course)
     merged = []
     for asset in found:
         old = existing.pop(asset["id"], None)

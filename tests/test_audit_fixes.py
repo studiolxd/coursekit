@@ -229,3 +229,31 @@ def test_assembly_state_is_never_edited_by_hand_and_ids_can_come_from_a_file(cou
                  "--brick-ids-file", str(ids)]) == 0
     applied = json.loads((course / "assembly" / "unit-01.applied.json").read_text(encoding="utf-8"))
     assert [b["brickId"] for b in applied["lessons"][lesson["key"]]["bricks"]] == [f"b{i}" for i in range(len(lesson["bricks"]))]
+
+
+def test_every_character_of_a_dialogue_gets_a_portrait_that_reaches_the_dialogue(course, capsys):  # noqa: F811
+    import re
+
+    content = course / "content" / "unit-01" / "content.md"
+    text = content.read_text(encoding="utf-8")
+    heading = re.search(r"^## [^\n]+\n", text, re.M)
+    dialog = "\n:::dialog\n**Ana:** Hello Luis.\n**Luis:** Hi Ana.\n**Ana:** How are you?\n:::\n"
+    content.write_text(text[:heading.end()] + dialog + text[heading.end():], encoding="utf-8")
+    assert main(["media", "extract", "PWD"]) == 0
+    path = course / "media" / "manifest.yaml"
+    manifest = yaml.safe_load(path.read_text(encoding="utf-8"))
+    portraits = {a["id"]: a for a in manifest["assets"] if a.get("character")}
+    assert sorted(portraits) == ["CHAR-ANA", "CHAR-LUIS"]  # one per character, however many lines it has
+    assert portraits["CHAR-ANA"]["type"] == "image" and portraits["CHAR-ANA"]["status"] == "pending"
+    capsys.readouterr()
+    assert main(["assemble", "plan", "PWD", "--unit", "1"]) == 0
+    assert "portrait of 'Ana'" in capsys.readouterr().out  # a warning until it is uploaded
+    manifest["assets"] = [{**a, "status": "uploaded", "asset_path": "c/ana.png", "alt": "Portrait of Ana"} if a["id"] == "CHAR-ANA" else a
+                          for a in manifest["assets"]]
+    path.write_text(yaml.safe_dump(manifest, allow_unicode=True), encoding="utf-8")
+    assert main(["assemble", "plan", "PWD", "--unit", "1"]) == 0
+    plan = json.loads((course / "assembly" / "unit-01.plan.json").read_text(encoding="utf-8"))
+    brick = next(b for lesson in plan["lessons"] for b in lesson["bricks"] if b["type"] == "DIALOG")
+    people = {c["name"]: c for c in brick["data"]["characters"]}
+    assert people["Ana"]["imagePath"] == "c/ana.png" and people["Ana"]["imageAlt"] == "Portrait of Ana"
+    assert "imagePath" not in people["Luis"]

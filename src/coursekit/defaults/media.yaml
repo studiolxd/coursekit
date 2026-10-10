@@ -28,6 +28,7 @@ types:
   image:
     - {id: magnific-api, needs: {env: MAGNIFIC_API_KEY}, how: "Image generated with the Magnific API"}
     - {id: magnific-mcp, needs: {mcp: images_generate}, how: "Claude's Magnific connector"}
+    - {id: agent-svg, needs: none, how: "Illustration drawn by the agent as SVG with the theme colours and exported to PNG (creator does not take SVG as an image); portraits of characters as flat busts"}
     - {id: creator-stock, needs: {mcp: search_stock_images}, how: "Licensed stock from creator (Pexels, Pixabay, Unsplash, Freepik) + import_stock_image"}
   infographic:
     - {id: agent-svg, needs: none, how: "SVG written by the agent with the theme tokens (coursekit theme show); icons with search_stock_icons"}

@@ -143,3 +143,32 @@ def test_panel_directive_without_panels_is_an_error(course, capsys):
     capsys.readouterr()
     assert main(["verify", "PWD", "--no-update"]) == 1
     assert ":::accordion has no panels" in capsys.readouterr().out
+
+
+def test_the_language_of_a_code_block_for_creator():
+    from coursekit.assemble import code_language
+
+    assert code_language("bash", ["ls"]) == "bash" and code_language("yaml", ["a: 1"]) == "yaml"
+    assert code_language("powershell", ["Get-Date"]) == "bash" and code_language("pwsh", ["x"]) == "bash"
+    assert code_language("text", ["/assemble PWD"]) == "bash"
+    assert code_language("text", ["coursekit status PWD", "", "git status"]) == "bash"
+    assert code_language("", ["$ pwd"]) == "bash"
+    assert code_language("text", ["ok      .env", "coursekit 0.1.0"]) == "auto"  # an output, not only commands
+    assert code_language("text", ["Estado: delivered"]) == "auto"
+    assert code_language("text", []) == "auto"
+
+
+def test_the_languages_creator_adds_are_used_once_they_are_listed():
+    from coursekit.assemble import code_language
+
+    new = ["plaintext", "shell", "powershell", "diff", "dockerfile", "http"]
+    assert code_language("text", ["Estado: delivered"], new) == "plaintext" and code_language("", ["ok  .env"], new) == "plaintext"
+    assert code_language("text", ["/assemble PWD"], new) == "shell" and code_language("console", ["x"], new) == "shell"
+    assert code_language("terminal", ["x"], new) == "shell" and code_language("shell", ["x"], new) == "shell"
+    assert code_language("powershell", ["x"], new) == "powershell" and code_language("pwsh", ["x"], new) == "powershell"
+    assert code_language("diff", ["+a"], new) == "diff" and code_language("patch", ["+a"], new) == "diff"
+    assert code_language("dockerfile", ["FROM x"], new) == "dockerfile" and code_language("http", ["GET /"], new) == "http"
+    assert code_language("bash", ["ls"], new) == "bash"
+    # not listed yet: creator would reject them
+    assert code_language("diff", ["+a"]) == "auto" and code_language("http", ["GET /"]) == "auto"
+    assert code_language("console", ["x"]) == "bash" and code_language("text", ["Estado: x"]) == "auto"

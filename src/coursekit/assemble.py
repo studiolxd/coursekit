@@ -35,15 +35,41 @@ from coursekit import config, lang
 from coursekit import course as coursemod
 from coursekit.i18n import t
 from coursekit.states import history_entry
-from coursekit.util import edit_yaml, load_yaml, save_yaml
+from coursekit.util import character_asset_id, edit_yaml, load_yaml, save_yaml
 
 MD = MarkdownIt("commonmark").enable("table")
 CODE_LANGUAGES = {
     "javascript", "typescript", "python", "html", "css", "java", "go", "rust", "sql", "json", "yaml",
     "bash", "c", "cpp", "csharp", "php", "ruby", "swift", "kotlin", "markdown", "xml",
 }
-LANGUAGE_ALIASES = {"js": "javascript", "ts": "typescript", "py": "python", "sh": "bash", "shell": "bash",
-                    "zsh": "bash", "console": "bash", "yml": "yaml", "c++": "cpp", "cs": "csharp", "md": "markdown"}
+LANGUAGE_ALIASES = {"js": "javascript", "ts": "typescript", "py": "python", "sh": "bash", "zsh": "bash", "yml": "yaml",
+                    "c++": "cpp", "cs": "csharp", "md": "markdown", "cmd": "bash", "bat": "bash", "patch": "diff",
+                    "docker": "dockerfile"}
+# Languages that, when creator has them (`rules › assembly › code_languages`), replace a nearby one: the fence may name them or one
+# of their aliases; without them the second is used.
+LANGUAGE_UPGRADES = {"shell": ("bash", ("shell", "console", "terminal", "shell-session")),
+                     "powershell": ("bash", ("powershell", "pwsh", "ps1"))}
+# A fence with no language, or `text`, holds the output of a program or a conversation, or commands. Creator takes plain text
+# only if it lists `plaintext`; otherwise it guesses (`auto`), which is bad with short code.
+TEXT_FENCES = {"", "text", "txt", "plain", "plaintext", "output"}
+COMMAND_PROGRAMS = "coursekit|git|uv|cd|ls|pwd|mkdir|claude|opencode|codex|npm|npx|curl|irm|brew|echo|export|source"
+COMMAND_LINE = re.compile(rf"(\$ |/[a-z][\w-]*(\s|$)|({COMMAND_PROGRAMS})\b)")
+
+
+def code_language(fence: str, code: list[str], extra: list[str] | tuple[str, ...] = ()) -> str:
+    """The `codeLanguage` of a code block. `extra` are the languages creator has added to its list. The language of the fence if
+    creator knows it; a `text` block made only of commands is `shell` (`bash` without it); other text is `plaintext` (`auto`)."""
+    known = CODE_LANGUAGES | set(extra)
+    for language, (fallback, names) in LANGUAGE_UPGRADES.items():
+        if fence in names:
+            return language if language in known else fallback
+    lang = LANGUAGE_ALIASES.get(fence, fence)
+    if lang in known:
+        return lang
+    lines = [line.strip() for line in code if line.strip()]
+    if lang in TEXT_FENCES and lines and all(COMMAND_LINE.match(line) for line in lines):
+        return "shell" if "shell" in known else "bash"
+    return "plaintext" if "plaintext" in known else "auto"
 
 DIRECTIVE_OPEN_RE = re.compile(r"^:::([a-z][a-z-]*)\s*$")
 DIRECTIVE_CLOSE_RE = re.compile(r"^:::\s*$")
@@ -207,7 +233,15 @@ def directive_brick(name: str, body: list[str], ctx: dict) -> dict:
                 if m.group(1) not in characters:
                     characters.append(m.group(1))
                 items.append({"characterId": m.group(1), "content": inline(m.group(2))})
-        data = {"characters": [{"name": c} for c in characters], "items": items}
+        people = []
+        for name in characters:
+            portrait = ctx["assets"].get(character_asset_id(name))
+            if portrait and portrait.get("asset_path") and portrait.get("status") == "uploaded":
+                people.append({"name": name, "imagePath": portrait["asset_path"], "imageAlt": portrait.get("alt") or name})
+            else:
+                people.append({"name": name})
+                ctx["warnings"].append(t("assemble", "character_not_produced", name=name))
+        data = {"characters": people, "items": items}
     elif brick_type == "CAROUSEL_QUOTES":
         items = []
         for block in "\n".join(rest).strip().split("\n\n"):
@@ -373,13 +407,12 @@ def parse_blocks(lines: list[str], ctx: dict, section_key: str) -> list[dict]:
         if stripped.startswith("```"):
             close_text()
             lang = stripped[3:].strip().lower()
-            lang = LANGUAGE_ALIASES.get(lang, lang)
             code = []
             i += 1
             while i < len(lines) and not lines[i].strip().startswith("```"):
                 code.append(lines[i])
                 i += 1
-            bricks.append({"type": "CODE", "data": {"properties": {"codeLanguage": lang if lang in CODE_LANGUAGES else "auto"},
+            bricks.append({"type": "CODE", "data": {"properties": {"codeLanguage": code_language(lang, code, ctx["code_languages"])},
                                                     "content": {"content": "\n".join(code)}}, "meta": {}})
         elif DIRECTIVE_OPEN_RE.match(stripped):
             close_text()
@@ -512,6 +545,7 @@ def build_plan(course: dict, unit: dict, assets: dict[str, dict] | None = None) 
         "syntax": syntax,
         "assets": assets,
         "media_by_title": {a.get("title"): a for a in assets.values()},
+        "code_languages": (coursemod.rules(course=course).get("assembly") or {}).get("code_languages") or [],
         "errors": [],
         "warnings": [],
     }

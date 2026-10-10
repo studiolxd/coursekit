@@ -54,6 +54,11 @@ def slugify(text: str, limit: int = 48) -> str:
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:limit]
 
 
+def character_asset_id(name: str) -> str:
+    """Id of the portrait asset of a character of a dialogue (`Daniel` -> `CHAR-DANIEL`): one per character in the whole course."""
+    return "CHAR-" + slugify(name).upper()
+
+
 def sha256_file(path: Path) -> str:
     h = hashlib.sha256()
     with path.open("rb") as fh:

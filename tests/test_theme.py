@@ -207,3 +207,15 @@ def test_doctor_reports_the_theme(course, capsys):  # noqa: F811
     capsys.readouterr()
     assert main(["doctor"]) in (0, 1)
     assert "tokens derived from the theme of the platform" in capsys.readouterr().out
+
+
+def test_the_named_colours_of_the_palette_travel_in_the_tokens_without_changing_the_look():
+    response = creator()
+    tokens = theme.from_creator(response)
+    palette = {p["id"]: p["value"] for p in (response.get("theme") or response)["config"]["colors"]["palette"]}
+    assert tokens["palette"] and all(v.startswith("#") and len(v) == 7 for v in tokens["palette"].values())
+    first = next(k for k, v in palette.items() if v.startswith("#"))
+    assert tokens["palette"][first] == palette[first].upper()
+    assert f"--palette-{first}: {palette[first].upper()};" in theme.css(tokens)
+    # the media made with the tokens is not stale because the palette is listed: only the look counts
+    assert theme.fingerprint(tokens) == theme.fingerprint({k: v for k, v in tokens.items() if k != "palette"})

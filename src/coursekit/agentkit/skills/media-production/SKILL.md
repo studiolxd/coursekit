@@ -47,6 +47,12 @@ credits.
 
 ## 3. Production by type
 
+- **Portrait of a character (`CHAR-<NAME>`)** — `coursekit media extract` adds one image per character that speaks in a
+  dialogue: never leave a character with an initial or without a face. Square 512x512 px, centred bust, plain background in a colour
+  of the theme palette (not the same for the two characters of a dialogue), the same style for every character of the course:
+  a flat illustration drawn as SVG and exported to PNG, an image generated with the configured provider, or a licensed photograph of a
+  person (`search_stock_images`). Alt text describes the person briefly («Retrato ilustrado de Marta, responsable de proyecto»).
+  Once uploaded (step 4), the assembly puts it in the dialogue as the avatar of the character.
 - **Image** — generated with the configured provider (prompt from the description and
   specifications, sober and coherent style, no embedded text) or licensed stock
   (`search_stock_images` + `import_stock_image`).

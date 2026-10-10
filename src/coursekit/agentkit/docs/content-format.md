@@ -29,6 +29,9 @@ format words below (section heading, objective tag, media placeholder) are in th
   {{words_per_page}} words).
 - Each section becomes one lesson.
 - Subsections with `###`. Prose, lists, Markdown tables and code blocks are converted as they are.
+- Code blocks: write ```` ```bash ```` for commands (also PowerShell and `cmd`) and ```` ```text ```` for what a program prints or a
+  conversation. Creator has no plain-text language, so a `text` block made only of commands is shown as `bash` and the rest
+  uses the platform's automatic detection, which guesses badly with short code: keep outputs in `text` and commands in `bash`.
 - The tag `*[{{t_objective}} UN.M — Verb]*`, one per line, closes each content section. It is
   editorial metadata: it is not published.
 

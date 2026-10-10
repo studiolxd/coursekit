@@ -50,6 +50,11 @@ The files of the media of a course are in `courses/PWD/media/`: `manifest.yaml`,
 | `downloads` | The downloadable files: `file`, `title`, `asset_path` and `size` of each one |
 | `theme` | The fingerprint of the theme tokens the asset was made with ([The media guard](#the-media-guard)) |
 
+### Portraits of the characters of a dialogue
+
+`extract` also adds one `image` asset, with id `CHAR-<NAME>` (`CHAR-DANIEL`), for every character that speaks in a `:::dialog` directive: a character has one portrait for the whole course, wherever it speaks. The media agent produces it like any other image (a flat illustration drawn as SVG and exported to PNG, an image generated with a provider, or a licensed photograph of a person), square, as a bust on a plain background in a colour of the theme palette, and it never leaves a character with an initial. Once uploaded, the assembly puts it in the dialogue as the avatar of that character, with the alt text of the asset; until then it warns `dialog: the portrait of 'Daniel' is not uploaded yet`.
+
+
 ### Statuses
 
 | Status | Meaning |
@@ -312,6 +317,7 @@ A project has one theme, in `theme/`, which every course inherits. A course that
 |---|---|
 | `background`, `text`, `headings`, `accent`, `on-accent` (the `accentText` role), `link`, `correct`, `on-correct`, `wrong`, `on-wrong` | The semantic colour roles of the platform theme, with palette references resolved. A text role the theme does not set inherits the text colour. |
 | `text-soft`, `surface`, `highlight`, `line`, `accent-strong` | Derived by coursekit from the colours above (mixes of text, background and accent); the soft text is kept at least 4.5:1 on the background. `accent-strong` equals `accent`. Listed in `origin.derived`. |
+| `palette.<id>` | The named colours of the platform theme (`emerald`, `cayenne`, `prussian`…), imported with their ids, to draw with: portraits, illustrations. They are not roles and they do not change the fingerprint of the tokens. In `tokens.css` they are `--palette-<id>`. |
 | `font.family`, `font.headings`, `font.ui` | The font assignments of the theme: the system font stack, an uploaded font by its name (followed by the system stack as fallback), or a font included in the platform by its id, with a note because the name may not match its CSS family. |
 | `font.size-base`, `font.line-height` | The base font size and line height of the theme. |
 | `radius`, `space`, `shadow` | Package defaults: the platform has no such values. Listed in `origin.defaults`. |
