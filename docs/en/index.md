@@ -44,7 +44,7 @@ You do not need to program. You need a terminal and one of the supported AI tool
 ## Quick start
 
 ```bash
-uv tool install git+https://github.com/studiolxd/coursekit
+uv tool install slxd-coursekit
 coursekit init acme-courses
 cd acme-courses
 coursekit doctor

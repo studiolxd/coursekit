@@ -17,12 +17,14 @@ Everything else (ffmpeg, voices, API keys) is optional and only matters for medi
 
 ## Install
 
-coursekit is not on PyPI yet. Install it from the repository:
+coursekit is published on PyPI as `slxd-coursekit`:
 
 ```bash
-uv tool install git+https://github.com/studiolxd/coursekit
+uv tool install slxd-coursekit
 coursekit --version
 ```
+
+To install the development version from the repository instead: `uv tool install git+https://github.com/studiolxd/coursekit`.
 
 To try it from a clone, with your changes taking effect immediately (an editable install):
 
@@ -37,7 +39,7 @@ The package is called `slxd-coursekit`; the command is `coursekit`. To update it
 uv tool upgrade slxd-coursekit
 ```
 
-To install an exact released version, name its tag: `uv tool install git+https://github.com/studiolxd/coursekit@v0.1.0`.
+To install an exact version: `uv tool install slxd-coursekit==0.1.0` (from the repository, name its tag: `uv tool install git+https://github.com/studiolxd/coursekit@v0.1.0`).
 
 After upgrading you need to do nothing in your projects: the first coursekit command you run in each project notices that the installed coursekit changed and regenerates the managed files and the agent files before it runs (see [Refreshing generated files](#refreshing-generated-files)). An editable install is refreshed the same way whenever the shipped skills, templates or rules change.
 

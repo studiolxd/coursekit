@@ -17,12 +17,14 @@ Todo lo demás (ffmpeg, voces, claves de API) es opcional y solo importa para pr
 
 ## Instalación
 
-coursekit aún no está en PyPI. Instálalo desde el repositorio:
+coursekit está publicado en PyPI como `slxd-coursekit`:
 
 ```bash
-uv tool install git+https://github.com/studiolxd/coursekit
+uv tool install slxd-coursekit
 coursekit --version
 ```
+
+Para instalar en su lugar la versión en desarrollo desde el repositorio: `uv tool install git+https://github.com/studiolxd/coursekit`.
 
 Para probarlo desde un clon, con tus cambios aplicados al instante (instalación editable):
 
@@ -37,7 +39,7 @@ El paquete se llama `slxd-coursekit`; el comando es `coursekit`. Para actualizar
 uv tool upgrade slxd-coursekit
 ```
 
-Para instalar una versión publicada concreta, indica su etiqueta: `uv tool install git+https://github.com/studiolxd/coursekit@v0.1.0`.
+Para instalar una versión exacta: `uv tool install slxd-coursekit==0.1.0` (desde el repositorio, indica su etiqueta: `uv tool install git+https://github.com/studiolxd/coursekit@v0.1.0`).
 
 Tras actualizar no tienes que hacer nada en tus proyectos: el primer comando de coursekit que ejecutes en cada proyecto detecta que el coursekit instalado cambió y regenera los ficheros gestionados y los de los agentes antes de ejecutarse (mira [Refrescar los ficheros generados](#refrescar-los-ficheros-generados)). Una instalación editable no necesita actualizarse.
 

@@ -20,7 +20,7 @@ Imprime qué hay instalado y configurado en este equipo para el proyecto actual.
 
 | Comprobación | Significado y solución |
 |---|---|
-| `coursekit <versión> (Python <x.y>)` | `falta` si Python es anterior a la 3.12. Reinstala con uv, que trae un Python válido: `uv tool install --force git+https://github.com/studiolxd/coursekit` |
+| `coursekit <versión> (Python <x.y>)` | `falta` si Python es anterior a la 3.12. Reinstala con uv, que trae un Python válido: `uv tool install --force slxd-coursekit` |
 | `.env` | tu fichero de ajustes personales. Solución: `coursekit setup` |
 | `identidad de firma` | el nombre y el email que firman las aprobaciones. Solución: `coursekit setup --identity` |
 | `hooks de git` / `no es un repositorio git` | `info` cuando la carpeta no es un repositorio git. En otro caso, los hooks (`.githooks`) no están activos. Solución: `coursekit setup` |

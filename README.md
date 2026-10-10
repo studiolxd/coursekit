@@ -30,9 +30,11 @@ Only a person can sign (`coursekit approve`); agents are forbidden to run it.
 You need [uv](https://docs.astral.sh/uv/); it brings the right Python (3.12 or 3.13). To work on courses you also need git, an AI tool (Claude Code, opencode or Codex) and the URL of your SLXD Creator MCP server; see [Getting started](docs/en/01-getting-started.md#requirements).
 
 ```bash
-uv tool install git+https://github.com/studiolxd/coursekit
+uv tool install slxd-coursekit
 coursekit --version
 ```
+
+To install the development version straight from the repository instead: `uv tool install git+https://github.com/studiolxd/coursekit`.
 
 To try it from a clone, with changes taking effect immediately:
 
@@ -40,7 +42,7 @@ To try it from a clone, with changes taking effect immediately:
 uv tool install --editable /path/to/coursekit
 ```
 
-To update an installed copy: `uv tool upgrade slxd-coursekit`. Nothing else: the first command in each project regenerates its managed files and agent files. A released version is installed with its tag: `uv tool install git+https://github.com/studiolxd/coursekit@v0.1.0`.
+To update an installed copy: `uv tool upgrade slxd-coursekit`. Nothing else: the first command in each project regenerates its managed files and agent files. A specific version: `uv tool install slxd-coursekit==0.1.0`.
 
 ## Quick start
 

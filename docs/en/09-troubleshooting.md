@@ -20,7 +20,7 @@ It prints what is installed and configured on this machine for the current proje
 
 | Check | Meaning and fix |
 |---|---|
-| `coursekit <version> (Python <x.y>)` | `missing` if Python is older than 3.12. Reinstall with uv, which brings a valid Python: `uv tool install --force git+https://github.com/studiolxd/coursekit` |
+| `coursekit <version> (Python <x.y>)` | `missing` if Python is older than 3.12. Reinstall with uv, which brings a valid Python: `uv tool install --force slxd-coursekit` |
 | `.env` | your personal settings file. Fix: `coursekit setup` |
 | `signing identity` | the name and email that sign approvals. Fix: `coursekit setup --identity` |
 | `git hooks` / `not a git repository` | `info` when the folder is not a git repository. Otherwise the hooks (`.githooks`) are not active. Fix: `coursekit setup` |

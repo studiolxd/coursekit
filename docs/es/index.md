@@ -44,7 +44,7 @@ No hace falta programar. Necesitas una terminal y una de las herramientas de IA 
 ## Inicio rápido
 
 ```bash
-uv tool install git+https://github.com/studiolxd/coursekit
+uv tool install slxd-coursekit
 coursekit init acme-courses
 cd acme-courses
 coursekit doctor
