@@ -1,7 +1,7 @@
 name: release
 
-# A tag `vX.Y.Z` publishes that version: the package is built, attached to a GitHub release and, when the repository variable
-# PUBLISH_PYPI is `true` (and PyPI trusted publishing is set up for this repository), uploaded to PyPI.
+# A tag `vX.Y.Z` publishes that version: the package is built, attached to a GitHub release and uploaded to PyPI (trusted publishing:
+# the `pypi` environment of this repository, registered as publisher of the project on PyPI).
 on:
   push:
     tags: ["v*"]
@@ -42,7 +42,6 @@ jobs:
 
   pypi:
     needs: build
-    if: vars.PUBLISH_PYPI == 'true'
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
