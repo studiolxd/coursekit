@@ -1,4 +1,5 @@
 import json
+import sys
 
 import pytest
 import yaml
@@ -295,6 +296,7 @@ def test_the_wizard_can_hand_the_whole_process_off(tmp_path, monkeypatch, capsys
     assert "Handoff mode" in capsys.readouterr().out
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="on Windows the pending keys are read from the console (msvcrt), not from the stream")
 def test_pending_lines_are_what_a_paste_leaves_and_never_wait():
     import os
 
