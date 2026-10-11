@@ -384,6 +384,8 @@ Pendientes de que creator los resuelva; mientras tanto, el pipeline los esquiva 
   en decisiones, sección 11.6): mientras no exista, se monta la versión neutra (`:::else`) y se avisa.
 - Nota de los EMBED: que una simulación embebida pueda informar de su puntuación y de sus
   interacciones al SCORM del contenido (sección 11.7).
+- Especificación completa de lo que necesita creator para los cursos basados en decisiones (mensajes entre el EMBED
+  y la lección, estado, bloques condicionales, nota, altura, MCP): `dev/creator-decisiones.md`.
 
 ## 10. Pendiente de decidir
 
