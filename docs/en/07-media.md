@@ -63,6 +63,8 @@ The files of the media of a course are in `courses/PWD/media/`: `manifest.yaml`,
 
 They are produced in the visual style of the course (`media › visual › style`, see [Configuration](04-configuration.md#media-production-options)), which `coursekit media plan` prints. Without an image generator, `plan` warns and the style is `visual.fallback` (`flat`), drawn as SVG by the **illustration** role: `coursekit run produce-media <CODE> --role illustration`.
 
+With the **creator** backend `extract` also adds `SIM-<ID>` (kind `package`, type `simulation`): the package of each simulation, built with `coursekit media embed <CODE> SIM-<ID>` once its images are produced (see [Simulations in creator](08-assembly-and-delivery.md#simulations-in-creator)).
+
 **Style sheet.** Before them, the media agent produces a sample in `courses/<CODE>/media/style/` (a background, a character in several expressions and some objects) and a person signs it with [`coursekit approve style <CODE>`](03-commands.md#coursekit-approve). Until then `coursekit media set … --status produced` refuses those images (unless `--force`) and `plan` warns. In handoff mode the media agent produces the sample and coursekit signs it as Coursekit Handoff. The assembly takes each image by its id; until it is produced the simulation works without it (initials stand for the portraits).
 
 ### Portraits of the characters of a dialogue

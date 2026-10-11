@@ -176,7 +176,6 @@ def verify(unit, section2, capsys):
 def test_a_decision_based_unit_verifies(decision_course, capsys):
     code, out = verify(decision_course, GOOD_SECTION, capsys)
     assert code == 0, out
-    assert "not assembled in creator yet" in out
 
 
 def test_the_section_must_open_with_a_simulation(decision_course, capsys):
@@ -229,15 +228,20 @@ def test_the_plan_carries_simulations_and_adaptive_blocks(decision_course, capsy
 
     (decision_course / "content.md").write_text(decision_content(GOOD_SECTION), encoding="utf-8")
     data = course.load(find_project(decision_course), "DB1")
-    plan, errors, _ = assemble.build_plan(data, data["units"][0])
+    plan, errors, _ = assemble.build_plan(data, data["units"][0], simulations=True)
     assert not errors
     bricks = plan["lessons"][1]["bricks"]
     assert bricks[0]["type"] == "SIMULATION" and bricks[0]["data"]["id"] == "call" and bricks[0]["data"]["max_score"] == 2
     conditional = bricks[1]
     assert conditional["type"] == "CONDITIONAL" and conditional["data"]["condition"] == "call.risk >= 3"
     assert conditional["data"]["then"][0]["type"] == "TEXT" and conditional["data"]["else"][0]["type"] == "TEXT"
-    _, errors, _, _ = assemble.write_plan(data, data["units"][0])
-    assert any("not assembled in creator yet" in e for e in errors)
+    creator_plan, errors, warnings, counts = assemble.write_plan(data, data["units"][0])
+    assert not errors and "SIMULATION" not in counts and "CONDITIONAL" not in counts
+    first = creator_plan["lessons"][1]["bricks"]
+    assert first[0]["type"] == "NOTE" and first[0]["meta"]["asset"] == "SIM-CALL"
+    assert first[1]["type"] == "TEXT" and "No caíste" in first[1]["data"]["content"]["content"]
+    assert any("simulation 'call' is not uploaded" in w for w in warnings)
+    assert any("the neutral version (:::else)" in w for w in warnings)
 
 
 def test_simulation_words_do_not_count_and_only_the_else_branch_does():
@@ -342,7 +346,7 @@ def test_the_html_backend_renders_simulations_and_adaptive_blocks(decision_cours
 
     (decision_course / "content.md").write_text(decision_content(GOOD_SECTION), encoding="utf-8")
     data = course.load(find_project(decision_course), "DB1")
-    plan, errors, warnings = assemble.build_plan(data, data["units"][0])
+    plan, errors, warnings = assemble.build_plan(data, data["units"][0], simulations=True)
     assert not errors and not render.unsupported_bricks(plan)
     assert any("images not produced yet" in w for w in warnings)
     html = render.lesson(plan["lessons"][1], lang.tokens("es")["player"])
@@ -461,3 +465,22 @@ def test_an_unknown_visual_style_is_an_error(decision_course, capsys):
     capsys.readouterr()
     assert main(["media", "plan", "DB1"]) == 1
     assert "media › visual › style is 'watercolour'" in capsys.readouterr().err
+
+
+def test_a_simulation_becomes_an_embed_package_for_creator(decision_course, capsys):
+    from coursekit import assemble, course
+    from coursekit.project import find_project
+
+    course_dir = decision_course.parent.parent
+    (decision_course / "content.md").write_text(decision_content(GOOD_SECTION), encoding="utf-8")
+    assert main(["media", "extract", "DB1"]) == 0
+    capsys.readouterr()
+    assert main(["media", "embed", "DB1", "SIM-CALL"]) == 0
+    page = (course_dir / "media" / "src" / "SIM-CALL" / "index.html").read_text(encoding="utf-8")
+    assert 'data-sim="call"' in page and "const __expr = (() =>" in page and "__simulation.initSimulations" in page
+    assert "import " not in page.split("<script>")[1] and "export " not in page.split("<script>")[1]
+    assert main(["media", "set", "DB1", "SIM-CALL", "--status", "uploaded", "--asset-path", "embeds/sim-call", "--force"]) == 0
+    data = course.load(find_project(decision_course), "DB1")
+    creator_plan, errors, _, _ = assemble.write_plan(data, data["units"][0])
+    embed = creator_plan["lessons"][1]["bricks"][0]
+    assert embed["type"] == "EMBED" and embed["data"]["properties"]["embedFolderPrefix"] == "embeds/sim-call"

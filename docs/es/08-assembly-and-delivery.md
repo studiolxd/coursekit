@@ -130,6 +130,15 @@ La actividad de una lección es la que tiene el mismo título en el diseño y, s
 
 Un cambio solo en la calificación de un test (tras firmar de nuevo el diseño y ejecutar `plan`) aparece en `diff` como una operación `update_quiz` de esa lección, y el curso no vuelve a `assembly` hasta que se aplica. Con el backend html los tres valores se escriben en los ajustes de cada test, pero el paquete informa de una sola nota por unidad (la mejor de sus tests), así que el peso no la cambia.
 
+### Simulaciones en creator
+
+Creator no tiene un bloque para una simulación ni comparte estado entre bloques, así que en su plan:
+
+- Una **simulación** es un `EMBED` de su propio paquete: `coursekit media extract` añade el recurso `SIM-<ID>` (kind `package`), `coursekit media embed <CODE> SIM-<ID>` construye `media/src/SIM-<ID>/` (`index.html` con el reproductor de las simulaciones, las pieles, los estilos y el theme, y las imágenes producidas en `media/`), y el agente de multimedia sube esa carpeta con `request_embed_upload` y la registra (`media set … --status uploaded --asset-path <embedFolderPrefix>`). Mientras, una nota ocupa su lugar y `plan` avisa. La simulación se juega dentro del embed; su estado dura mientras la página está abierta y su puntuación no llega al SCORM de creator.
+- Un **bloque adaptativo** se monta con su rama neutra (`:::else`), y `plan` avisa.
+
+Las dos cosas son huecos de creator anotados en el plan de coursekit: estado compartido entre bloques y la puntuación de un embed.
+
 ### `diff`
 
 Por cada lección, `diff` da una acción y sus operaciones; el `data` de cada operación es la carga útil para la herramienta de creator:

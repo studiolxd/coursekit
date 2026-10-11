@@ -293,6 +293,10 @@ def parse(kind: str, body: list[str], where: str, line: int = 0) -> Simulation:
     if data.get("skin") is not None and data.get("skin") not in SKINS:
         err("bad_skin", value=data.get("skin"), valid=", ".join(SKINS))
     _check_screen(data.get("screen"), data.get("skin"), "screen", err)
+    scenes_data = data.get("scenes") if isinstance(data.get("scenes"), dict) else {}
+    if data.get("skin") in SCREEN_KEYS and not data.get("screen") and not any(isinstance(sc, dict) and sc.get("screen")
+                                                                            for sc in scenes_data.values()):
+        sim.warnings.append(f"{where}: " + t("simulation", "skin_without_screen", skin=data["skin"]))
     if kind == "conversation" and not str(data.get("character") or "").strip():
         err("missing", key="character")
     for objective in sim.objectives:

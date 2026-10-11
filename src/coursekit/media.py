@@ -206,6 +206,13 @@ def scan_simulations(course: dict) -> list[dict]:
                                      description=t("media", f"{ref['kind']}_description", text=ref["description"]),
                                      specs=t("media", f"{ref['kind']}_specs"))
                     found.setdefault(ref["id"], entry)
+                if coursemod.backend(course) == "creator" and data.get("id"):
+                    from coursekit.htmlkit.simpackage import asset_id
+
+                    found.setdefault(asset_id(str(data["id"])), {
+                        "id": asset_id(str(data["id"])), "unit": unit["n"], "section": section, "type": "simulation",
+                        "kind": "package", "simulation": str(data["id"]), "title": str(data.get("title") or data["id"]),
+                        "description": t("media", "package_description", id=data["id"]), "specs": t("media", "package_specs")})
     return list(found.values())
 
 
@@ -338,11 +345,24 @@ def providers(project) -> list[str]:
 
 
 def embed(course: dict, asset_id: str) -> str:
-    """Wraps the SVG of an asset in `media/src/<id>/index.html`, the EMBED package that creator takes in place of an SVG image."""
+    """Wraps the SVG of an asset in `media/src/<id>/index.html`, the EMBED package that creator takes in place of an SVG image; for
+    the package of a simulation (`SIM-…`), builds the simulation with its images."""
     _, _, data = load_manifest(course["_dir"])
     asset = next((a for a in data["assets"] if a["id"] == asset_id), None)
     if asset is None:
         raise MediaError(t("media", "asset_not_found", asset_id=asset_id))
+    if asset.get("kind") == "package":
+        from coursekit import assemble as assemblemod
+        from coursekit.htmlkit import simpackage
+
+        unit = next((u for u in course.get("units") or [] if u["n"] == asset.get("unit")), None)
+        plan_data, _, _ = assemblemod.build_plan(course, unit, simulations=True) if unit else ({"lessons": []}, [], [])
+        brick = next((b for lesson in plan_data["lessons"] for b in assemblemod.walk(lesson["bricks"])
+                      if b["type"] == "SIMULATION" and b["data"].get("id") == asset.get("simulation")), None)
+        if brick is None:
+            raise MediaError(t("media", "package_not_found", asset=asset_id))
+        page = simpackage.build(course, brick, course["_dir"] / "media" / "src" / asset_id)
+        return t("media", "embed_written", path=page.as_posix(), asset=asset_id)
     source = course["_dir"] / "media" / str(asset.get("file") or "").removeprefix("media/")
     if not str(asset.get("file") or "").lower().endswith(".svg") or not source.is_file():
         raise MediaError(t("media", "embed_needs_svg", asset=asset_id))

@@ -130,5 +130,11 @@ Assets are **not approved one by one**: they are validated in the assembled cour
    `request_embed_upload` (`folderId` = the asset id, `relativePath` = `index.html`, `text/html`) and
    `coursekit media upload`, and record the `embedFolderPrefix` as the `--asset-path`. Keep the `.svg` as the
    asset `--file`: the assembly puts an EMBED block where it sees an SVG.
+   **A simulation in creator** (`SIM-<id>`, kind `package`, only with the creator backend): once its images are produced,
+   `coursekit media embed <CODE> SIM-<id>` builds `media/src/SIM-<id>/` (`index.html` and `media/` with its images). Upload
+   **every file of the folder** with `request_embed_upload` (`folderId` = the asset id, `relativePath` = the path inside the
+   folder: `index.html`, `media/<file>`), then `coursekit media set <CODE> SIM-<id> --status uploaded --asset-path
+   <embedFolderPrefix> --file media/src/SIM-<id>/index.html`. Build and upload it again whenever the simulation or its images
+   change.
 2. `/assemble <CODE> <N>` replaces each placeholder with its media block.
 3. Summarise for the person what was produced and with what, to review it in the preview.

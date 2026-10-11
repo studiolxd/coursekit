@@ -62,6 +62,9 @@ screen_not_list: {es: "{place}: debe ser una lista", en: "{place}: must be a lis
 bad_phone_state: {es: "{place}: estado '{value}' no válido (válidos: {valid})", en: "{place}: invalid state '{value}' (valid: {valid})"}
 target_without_skin: {es: "{place}: 'target' necesita una 'skin' (sin ella, usa 'area')", en: "{place}: 'target' needs a 'skin' (without one, use 'area')"}
 bad_target: {es: "{place}: destino '{value}' no válido para esta piel (válidos: {valid})", en: "{place}: invalid target '{value}' for this skin (valid: {valid})"}
+skin_without_screen:
+  es: "la piel '{skin}' no tiene 'screen': la aplicación saldrá vacía (qué muestra: docs, Pieles)"
+  en: "skin '{skin}' has no 'screen': the application will be empty (what it shows: docs, Skins)"
 unreachable: {es: "la escena '{scene}' no se alcanza por ningún camino", en: "scene '{scene}' cannot be reached by any path"}
 dead_end:
   es: "callejón sin salida en la escena '{scene}': con algún estado no queda ninguna opción"

@@ -71,9 +71,15 @@ keep_ids_nothing_recorded:
 keep_ids_count:
   es: "la lección {key} tenía {ids} bloques registrados y el plan tiene {bricks}: se añadieron o borraron bloques, pasa la lista completa con --brick-ids o --brick-ids-file"
   en: "lesson {key} had {ids} recorded bricks and the plan has {bricks}: bricks were added or deleted, give the whole list with --brick-ids or --brick-ids-file"
-pending_bricks:
-  es: "el contenido tiene {types}: las simulaciones y los bloques adaptativos aún no se montan en creator (fase 8 en desarrollo)"
-  en: "the content has {types}: simulations and adaptive blocks are not assembled in creator yet (phase 8 in development)"
 simulation_media_missing:
   es: "simulación '{id}': {count} imágenes aún sin producir (fondos, capas o retratos: coursekit media extract y /produce-media)"
   en: "simulation '{id}': {count} images not produced yet (backgrounds, layers or portraits: coursekit media extract and /produce-media)"
+adaptive_neutral:
+  es: "{key}: creator no adapta el contenido: se monta la versión neutra (:::else) del bloque «{condition}»"
+  en: "{key}: creator does not adapt content: the neutral version (:::else) of the block «{condition}» is assembled"
+simulation_not_uploaded:
+  es: "{key}: la simulación '{id}' no está subida: coursekit media embed CODE {asset}, súbela como EMBED y regístrala (media set --status uploaded --asset-path …); mientras, va una nota"
+  en: "{key}: simulation '{id}' is not uploaded: coursekit media embed CODE {asset}, upload it as an EMBED and record it (media set --status uploaded --asset-path …); meanwhile a note stands for it"
+simulation_note:
+  es: "Simulación pendiente de montar ({asset})."
+  en: "Simulation still to be assembled ({asset})."

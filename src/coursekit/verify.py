@@ -432,8 +432,6 @@ def verify_unit(course: dict, unit: dict) -> Report:
                     if name and str(name).strip().casefold() not in cast:
                         report.error(f"{sim.id}: " + t("story", "unknown_character", place=place, name=name))
     backend = coursemod.backend(course) if course.get("_project") else None
-    if (unit_sims or adaptive) and backend == "creator":
-        report.warn(t("verify", "simulations_not_assembled"))
     checks = list(BACKEND_CHECKS)
     if backend == "creator":
         from coursekit.assemble import check_unit

@@ -189,9 +189,6 @@ def question_content(values: dict[str, str], syntax: Syntax) -> dict:
     return content
 
 
-PENDING_BRICKS = ("SIMULATION", "CONDITIONAL")  # in the plan, not assembled by a backend yet (phase 8)
-
-
 def screen_html(value: object, key: str = "") -> object:
     """The texts of the screen of a skin: `body` and `text` are Markdown, the rest short texts; numbers and flags as they are."""
     if isinstance(value, dict):
@@ -642,8 +639,47 @@ def quiz_settings(course: dict, unit: dict, number: str, title: str) -> dict:
             "courseWeight": pick(found.get("weight"), 1)}
 
 
-def build_plan(course: dict, unit: dict, assets: dict[str, dict] | None = None) -> tuple[dict, list[str], list[str]]:
-    """The plan of a unit. `assets` are the media of the manifest as the plan reads them (the html backend gives its own copies)."""
+def walk(bricks: list[dict]):
+    """The bricks, and those inside the branches of the adaptive blocks."""
+    for brick in bricks:
+        yield brick
+        if brick["type"] == "CONDITIONAL":
+            yield from walk((brick["data"].get("then") or []) + (brick["data"].get("else") or []))
+
+
+def for_creator(bricks: list[dict], ctx: dict, key: str) -> list[dict]:
+    """Creator has no adaptive content (its neutral branch is assembled) and takes a simulation as an EMBED of its package
+    (`SIM-<id>` in the manifest, built with `coursekit media embed` and uploaded); until it is uploaded, a note stands for it."""
+    from coursekit.htmlkit.simpackage import asset_id
+
+    out: list[dict] = []
+    for brick in bricks:
+        if brick["type"] == "CONDITIONAL":
+            ctx["warnings"].append(t("assemble", "adaptive_neutral", key=key, condition=brick["data"].get("condition", "")))
+            out += for_creator(brick["data"].get("else") or [], ctx, key)
+        elif brick["type"] == "SIMULATION":
+            sid = str(brick["data"].get("id") or "")
+            asset = ctx["assets"].get(asset_id(sid)) or {}
+            title = re.sub(r"<[^>]+>", "", str(brick["data"].get("title") or sid))
+            meta = {**brick["meta"], "asset": asset_id(sid)}
+            if asset.get("asset_path") and asset.get("status") == "uploaded":
+                out.append({"type": "EMBED", "data": {"properties": {"embedFolderPrefix": asset["asset_path"], "embedTitle": title}},
+                            "meta": meta})
+            else:
+                ctx["warnings"].append(t("assemble", "simulation_not_uploaded", key=key, id=sid, asset=asset_id(sid)))
+                out.append({"type": "NOTE", "data": {"content": {"title": inline(f"{title}"),
+                                                                  "content": html(t("assemble", "simulation_note", asset=asset_id(sid)))}},
+                            "meta": meta})
+        else:
+            out.append(brick)
+    return out
+
+
+def build_plan(course: dict, unit: dict, assets: dict[str, dict] | None = None,
+               simulations: bool = False) -> tuple[dict, list[str], list[str]]:
+    """The plan of a unit. `assets` are the media of the manifest as the plan reads them (the html backend gives its own copies).
+    With the creator backend the simulations become embeds and the adaptive blocks their neutral branch, unless `simulations`
+    asks for them as they are (to build their packages)."""
     folder = coursemod.unit_dir(course["_dir"], unit["n"])
     syntax = Syntax(coursemod.tokens(course))
     assets = manifest_assets(course) if assets is None else assets
@@ -679,6 +715,9 @@ def build_plan(course: dict, unit: dict, assets: dict[str, dict] | None = None) 
                             "quiz": quiz_settings(course, unit, m.group(1), m.group(2)),
                             "bricks": parse_blocks(body, ctx, key)})
 
+    if coursemod.backend(course) == "creator" and not simulations and course.get("_project"):
+        for lesson in lessons:
+            lesson["bricks"] = for_creator(lesson["bricks"], ctx, lesson["key"])
     for lesson in lessons:
         for brick in lesson["bricks"]:
             brick["hash"] = brick_hash(brick)
@@ -717,9 +756,6 @@ def _read(path: Path, default: dict | None = None) -> dict:
 def write_plan(course: dict, unit: dict) -> tuple[dict | None, list[str], list[str], dict[str, int]]:
     """Build and save the plan. Returns (plan or None on errors, errors, warnings, bricks per type)."""
     plan, errors, warnings = build_plan(course, unit)
-    pending = sorted({b["type"] for lesson in plan["lessons"] for b in lesson["bricks"] if b["type"] in PENDING_BRICKS})
-    if pending:
-        errors = errors + [t("assemble", "pending_bricks", types=", ".join(pending))]
     if errors:
         return None, errors, warnings, {}
     plan_path, _ = paths(course["_dir"], unit["n"])

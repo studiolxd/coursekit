@@ -376,8 +376,9 @@ objective of the unit is practised in one (`objective`).
 
 This approach is being built: the agents design, write and review it (action map, story bible, simulations, adaptive
 blocks, [`coursekit paths`](03-commands.md#coursekit-paths) for the review of every path) and `coursekit verify` checks it,
-and the html backend assembles it ([Components](08-assembly-and-delivery.md#components)). The creator backend does not
-assemble simulations and adaptive blocks yet (`coursekit verify` warns, and the assembly refuses them).
+and both backends assemble it: html plays it in the package ([Components](08-assembly-and-delivery.md#components)); creator
+takes each simulation as an EMBED of its own package and the neutral branch of the adaptive blocks, and the score of the
+simulations does not reach its SCORM ([Simulations in creator](08-assembly-and-delivery.md#simulations-in-creator)).
 
 ### Story bible
 

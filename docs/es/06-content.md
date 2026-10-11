@@ -376,8 +376,9 @@ objetivo de la unidad se practica en alguna (`objective`).
 
 Este enfoque está en construcción: los agentes lo diseñan, lo redactan y lo revisan (mapa de acciones, biblia narrativa,
 simulaciones, bloques adaptativos, [`coursekit paths`](03-commands.md#coursekit-paths) para revisar todos los caminos) y
-`coursekit verify` lo comprueba, y el backend html lo monta ([Componentes](08-assembly-and-delivery.md#componentes)). El
-backend creator aún no monta las simulaciones ni los bloques adaptativos (`coursekit verify` avisa y el montaje los rechaza).
+`coursekit verify` lo comprueba, y los dos backends lo montan: html lo juega en el paquete ([Componentes](08-assembly-and-delivery.md#componentes)); creator
+monta cada simulación como un EMBED de su propio paquete y la rama neutra de los bloques adaptativos, y la puntuación de las
+simulaciones no llega a su SCORM ([Simulaciones en creator](08-assembly-and-delivery.md#simulaciones-en-creator)).
 
 ### Biblia narrativa
 

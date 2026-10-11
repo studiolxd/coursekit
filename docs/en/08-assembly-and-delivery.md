@@ -130,6 +130,15 @@ The activity of a lesson is the one with the same title in the design, else the 
 
 A change only in the grading of a test (after signing the design again and running `plan`) shows in `diff` as an `update_quiz` operation of that lesson, and the course is not `assembly` again until it is applied. With the html backend the three values are written in the settings of each test, but the package reports one score for the unit (the best of its tests), so the weight does not change it.
 
+### Simulations in creator
+
+Creator has no brick for a simulation and does not share state between bricks, so in its plan:
+
+- A **simulation** is an `EMBED` of its own package: `coursekit media extract` adds the asset `SIM-<ID>` (kind `package`), `coursekit media embed <CODE> SIM-<ID>` builds `media/src/SIM-<ID>/` (`index.html` with the player of the simulations, the skins, the styles and the theme, and the produced images in `media/`), and the media agent uploads that folder with `request_embed_upload` and records it (`media set … --status uploaded --asset-path <embedFolderPrefix>`). Until then a note stands for it and `plan` warns. The simulation plays inside the embed; its state lives while the page is open and its score does not reach the SCORM of creator.
+- An **adaptive block** is assembled with its neutral branch (`:::else`), and `plan` warns.
+
+Both are gaps of creator listed in the plan of coursekit: shared state between bricks and the score of an embed.
+
 ### `diff`
 
 For every lesson, `diff` gives an action and its operations; the `data` of each operation is the payload for the creator tool:
