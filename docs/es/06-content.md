@@ -417,7 +417,9 @@ cada apartado, qué objetivos practica y qué está en juego).
 [`coursekit approve design`](03-commands.md#coursekit-approve) la firma con el diseño: se niega si falta o si su cabecera no
 es válida (`world`, `protagonist` y `characters` obligatorias), y un cambio posterior de `story.md` invalida la firma, igual
 que un cambio de `matrix.json`. `coursekit verify` comprueba que todo personaje que usa una simulación (`character`,
-`characters` de las escenas) está en el reparto.
+`characters` de las escenas) está en el reparto, y también quien habla en un `:::dialog`: por su nombre completo, por su
+nombre de pila si nadie más del reparto lo tiene («Aisha» por «Aisha Benali») o como `Tú` / `You`, el alumno, que no tiene
+retrato.
 
 ### Simulaciones
 

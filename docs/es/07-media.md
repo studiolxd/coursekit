@@ -59,7 +59,7 @@ con un `kind`:
 |---|---|---|
 | `background` | `BG-<descripción>` | El fondo de una escena (`background` de la escena), 1920x1080, sin texto dentro |
 | `layer` | `LAYER-<descripción>` | Un objeto sobre un fondo (`layers.image`), PNG transparente |
-| `portrait` | `CHAR-<NOMBRE>` y `CHAR-<NOMBRE>-<EXPRESIÓN>` | Un personaje de la biblia narrativa, base y con cada expresión que usan las simulaciones, transparente, con el `look` de la biblia en su descripción |
+| `portrait` | `CHAR-<NOMBRE>` (también la expresión `neutral`) y `CHAR-<NOMBRE>-<EXPRESIÓN>` | Un personaje de la biblia narrativa, base y con cada expresión que usan las simulaciones, transparente, con el `look` de la biblia en su descripción |
 
 Se producen en el estilo visual del curso (`media › visual › style`, ver [Configuración](04-configuration.md#media-opciones-de-producción)), que imprime `coursekit media plan`. Sin generador de imágenes, `plan` avisa y el estilo es `visual.fallback` (`flat`), dibujado en SVG por el rol de **ilustración**: `coursekit run produce-media <CODE> --role illustration`.
 

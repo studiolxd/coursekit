@@ -59,7 +59,7 @@ The files of the media of a course are in `courses/PWD/media/`: `manifest.yaml`,
 |---|---|---|
 | `background` | `BG-<description>` | The background of a scene (`background` of the scene), 1920x1080, without text inside |
 | `layer` | `LAYER-<description>` | An object on top of a background (`layers.image`), transparent PNG |
-| `portrait` | `CHAR-<NAME>` and `CHAR-<NAME>-<EXPRESSION>` | A character of the story bible, base and with each expression the simulations use, transparent, with the `look` of the bible in its description |
+| `portrait` | `CHAR-<NAME>` (also the `neutral` expression) and `CHAR-<NAME>-<EXPRESSION>` | A character of the story bible, base and with each expression the simulations use, transparent, with the `look` of the bible in its description |
 
 They are produced in the visual style of the course (`media › visual › style`, see [Configuration](04-configuration.md#media-production-options)), which `coursekit media plan` prints. Without an image generator, `plan` warns and the style is `visual.fallback` (`flat`), drawn as SVG by the **illustration** role: `coursekit run produce-media <CODE> --role illustration`.
 
