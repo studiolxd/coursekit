@@ -57,7 +57,7 @@ img, video, iframe { max-width: 100%; }
 body:not(.ck-js) .ck-controls { display: none; }
 body:not(.ck-js) .ck-lesson { border-bottom: 1px solid var(--color-line); margin-bottom: var(--space-xl); }
 .ck-lesson-title { margin-top: 0; font-size: 1.7rem; }
-.ck-lesson-title:focus { outline: none; }
+.ck-lesson .ck-lesson-title[tabindex]:focus, .ck-lesson .ck-lesson-title[tabindex]:focus-visible { outline: none; }  /* focus for screen readers, without a ring, also with the theme's [tabindex]:focus-visible */
 .ck-lesson > * + * { margin-top: var(--space-md); }
 
 .ck-btn { font: 600 1rem var(--font-family-ui); padding: var(--space-sm) var(--space-md); border-radius: var(--radius); border: 2px solid var(--color-accent); background: var(--color-background); color: var(--color-accent-strong); cursor: pointer; }
