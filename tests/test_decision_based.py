@@ -614,3 +614,21 @@ def test_a_course_with_the_html_backend_needs_the_builder(project):
     course_yaml = project / "courses" / "PWD" / "course.yaml"
     course_yaml.write_text(course_yaml.read_text(encoding="utf-8") + "assembly:\n  backend: html\n", encoding="utf-8")
     assert setup.needs_html_builder(p)
+
+
+def test_the_words_check_reads_the_simulations_and_skips_the_unit_header(decision_course):
+    from coursekit import assemble, course, lang
+    from coursekit.htmlkit import check, render
+    from coursekit.project import find_project
+
+    header = "> **Duración:** 1 horas · **Páginas mínimas:** 10 · **Palabras mínimas:** 5.000\n\n"
+    title = "# Unidad 1 — Contraseñas que protegen\n"
+    text = decision_content(GOOD_SECTION).replace(title, title + "\n" + header)
+    (decision_course / "content.md").write_text(text, encoding="utf-8")
+    data = course.load(find_project(decision_course), "DB1")
+    plan, _, _ = assemble.build_plan(data, data["units"][0], simulations=True)
+    page = "".join(render.lesson(lesson, lang.tokens("es")["player"]) for lesson in plan["lessons"])
+    assert check.missing_words(data, data["units"][0], page) == []
+    assert "Verificar por otro canal" not in "".join(check.page_words(page.split("ck-sim-data")[0]))  # the debriefing lives in the data
+    without = page.replace("La urgencia es la palanca habitual de la ingeniería social.", "")
+    assert "palanca" in check.missing_words(data, data["units"][0], without)
