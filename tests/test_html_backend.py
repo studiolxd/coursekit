@@ -350,3 +350,13 @@ def test_css_variables_are_resolved_through_var_references():
     tokens = theme.from_css(":root { --color-text: #111111; --color-headings: var(--color-text); }", "", "x.css", "h")
     assert tokens["color"]["headings"] == "#111111"
     assert theme._resolve_css("var(--d)", variables) == "var(--missing)"  # an unknown variable stays as it is
+
+
+def test_an_svg_is_an_image_in_the_html_backend_and_an_embed_in_creator():
+    from coursekit import assemble
+
+    asset = {"id": "U1-S2-M1", "file": "media/files/U1-S2-M1.svg", "asset_path": "media/U1-S2-M1.svg", "status": "uploaded"}
+    fields = {"title": "Infographic"}
+    assert assemble.placeholder_brick("infographic", fields, asset, "Media")["type"] == "EMBED"
+    html_brick = assemble.placeholder_brick("infographic", fields, asset, "Media", svg_as_image=True)
+    assert html_brick["type"] == "IMAGE" and html_brick["data"]["properties"]["imagePath"] == "media/U1-S2-M1.svg"

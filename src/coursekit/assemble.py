@@ -472,7 +472,8 @@ def download_bricks(asset: dict | None, download_label: str) -> list[dict]:
     return out
 
 
-def placeholder_brick(kind: str, fields: dict, asset: dict | None, label: str, written: str | None = None) -> dict:
+def placeholder_brick(kind: str, fields: dict, asset: dict | None, label: str, written: str | None = None,
+                      svg_as_image: bool = False) -> dict:
     """`kind` is the id of the resource type; `written` how the content names it (for the note that stands for it)."""
     title = fields.get("title", "")
     media = MEDIA_KIND.get(kind)
@@ -480,7 +481,7 @@ def placeholder_brick(kind: str, fields: dict, asset: dict | None, label: str, w
     if asset and asset.get("asset_path") and asset.get("status") == "uploaded":
         meta["asset"] = asset["id"]
         caption = inline(title)
-        if media == "image" and str(asset.get("file") or "").lower().endswith(".svg"):
+        if media == "image" and not svg_as_image and str(asset.get("file") or "").lower().endswith(".svg"):
             media = "embed"  # creator does not take SVG as an image: it goes up as an EMBED package (`coursekit media embed`)
         if media == "image":
             return {"type": "IMAGE", "data": {"properties": {"imagePath": asset["asset_path"], "imageAlt": asset.get("alt")},
@@ -566,7 +567,9 @@ def parse_blocks(lines: list[str], ctx: dict, section_key: str) -> list[dict]:
             counters[section_key] = counters.get(section_key, 0) + 1
             asset_id = f"{section_key}-M{counters[section_key]}"
             asset = ctx["assets"].get(asset_id)
-            bricks.append(placeholder_brick(kind, fields, asset, syntax.t["placeholder"].capitalize(), written))
+            html_backend = bool(ctx.get("course") and ctx["course"].get("_project") and coursemod.backend(ctx["course"]) == "html")
+            bricks.append(placeholder_brick(kind, fields, asset, syntax.t["placeholder"].capitalize(), written,
+                                            svg_as_image=html_backend))  # a browser shows an SVG; only creator needs an EMBED
             bricks[-1]["meta"]["placeholder_id"] = asset_id
             bricks.extend(download_bricks(asset, syntax.t["download"]))
         elif stripped.startswith(">"):
