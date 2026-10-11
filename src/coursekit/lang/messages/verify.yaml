@@ -63,6 +63,12 @@ few_simulations:
 objective_not_practised:
   es: "content.md: el objetivo {id} no se practica en ninguna simulación ('objective' de :::scenario o :::conversation)"
   en: "content.md: objective {id} is not practised in any simulation ('objective' of :::scenario or :::conversation)"
+assessment_simulations_without_section:
+  es: "assessment.md: las simulaciones de la evaluación duran {minutes} min y la unidad no tiene un apartado de actividades donde contarlas: el diseño las reserva en un apartado sin objetivos (/design-change)"
+  en: "assessment.md: the simulations of the assessment take {minutes} min and the unit has no activities section to count them in: the design reserves them in a section without objectives (/design-change)"
+simulation_longer_than_section:
+  es: "{label}: la simulación '{id}' dura {minutes} min, más que las {hours} h del apartado: acórtala o pide más horas en el diseño"
+  en: "{label}: simulation '{id}' takes {minutes} min, more than the {hours} h of the section: shorten it or ask the design for more hours"
 duplicate_simulation:
   es: "la simulación '{id}' está repetida en el curso ({places}): cada id es único"
   en: "simulation '{id}' appears more than once in the course ({places}): every id is unique"

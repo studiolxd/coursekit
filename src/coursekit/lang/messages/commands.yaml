@@ -152,6 +152,11 @@ help_voice_character:
 help_tts_character:
   es: "la voz de este personaje (voice set --character; con Piper, sin voz propia, alterna los hablantes)"
   en: "the voice of this character (voice set --character; with Piper and none of its own, the speakers take turns)"
+help_download:
+  es: "descarga una dirección https a un fichero del proyecto (p. ej. el Excel del diseño que exporta slxd)"
+  en: "download an https address to a file of the project (e.g. the Excel of the design that slxd exports)"
+help_download_url: {es: "dirección https", en: "https address"}
+help_download_out: {es: "fichero de destino, dentro del proyecto", en: "target file, inside the project"}
 help_new_approach:
   es: "enfoque del curso: expository (explicar y practicar) o decision-based (cada apartado abre con una simulación); por defecto: rules › defaults.approach"
   en: "approach of the course: expository (explain, then practise) or decision-based (every section opens with a simulation); default: rules › defaults.approach"

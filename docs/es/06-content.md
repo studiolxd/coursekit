@@ -422,8 +422,10 @@ que un cambio de `matrix.json`. `coursekit verify` comprueba que todo personaje 
 ### Simulaciones
 
 `:::scenario` y `:::conversation` (cualquier curso puede usarlas). Su cuerpo es **YAML con un esquema fijo en inglés**; solo
-los textos van en el idioma del curso. No cuenta como palabras: su tiempo se descuenta de las horas del apartado con
-`decision_based.minutes` (por escena y decisión del camino más largo, más el debriefing).
+los textos van en el idioma del curso. Lo que se lee en su camino más largo (situación, variantes, decisiones tomadas, su
+feedback y el debriefing) cuenta como palabras de su apartado, al mismo ritmo que el resto del curso, más
+`decision_based.decision_seconds` por decisión. Las simulaciones evaluables de `assessment.md` cuentan en el apartado de
+actividades de su unidad, que el diseño reserva para ellas; una simulación nunca puede durar más que su apartado.
 
 ```markdown
 :::scenario

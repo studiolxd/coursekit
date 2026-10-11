@@ -536,6 +536,12 @@ def cmd_media(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_download(args: argparse.Namespace) -> int:
+    project = _project()
+    print(mediatools.download(args.url, Path(args.out), project.root))
+    return 0
+
+
 def cmd_voice(args: argparse.Namespace) -> int:
     project = _project()
     course = coursemod.load(project, args.code) if args.code else None
@@ -831,6 +837,11 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--force", action="store_true", help=t("commands", "help_media_force"))
     p.add_argument("--all", action="store_true", help=t("commands", "help_media_all"))
     p.set_defaults(func=cmd_media)
+
+    p = sub.add_parser("download", help=t("commands", "help_download"))
+    p.add_argument("url", help=t("commands", "help_download_url"))
+    p.add_argument("--out", required=True, help=t("commands", "help_download_out"))
+    p.set_defaults(func=cmd_download)
 
     p = sub.add_parser("voice", help=t("commands", "help_voice"))
     p.add_argument("action", choices=("list", "set"))

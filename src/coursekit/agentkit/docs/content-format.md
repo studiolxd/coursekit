@@ -76,7 +76,8 @@ A plain blockquote (`> text`) becomes a highlight.
 
 Decision-based courses (`course.yaml › design.approach: decision-based`) open every content section with a simulation; any
 course may use them. The body is **YAML with a fixed schema in English**; only the texts are in {{language_name}}. It is not
-counted as words: its time (`coursekit config rules`, `decision_based.minutes`) is taken from the hours of the section.
+counted as text: what is read on its longest path counts as words of its section, plus `decision_based.decision_seconds`
+per decision (`coursekit config rules`); scored simulations of `assessment.md` count in the activities section of the unit.
 
 ```markdown
 :::scenario

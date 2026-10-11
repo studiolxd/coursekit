@@ -210,7 +210,7 @@ Structure (units, sections, objectives, hours) is not set here: it comes from ea
 | `decision_based.optional` | `[decide_again]` | Parts of the cycle the writer may leave out when the section has practised enough. |
 | `decision_based.min_simulations_per_content_section` | `1` | Simulations required in every content section of a decision-based course. |
 | `decision_based.rewind` | `true` | The learner may go back to a checkpoint of a simulation and try another path. |
-| `decision_based.minutes.scene`, `.decision`, `.debriefing` | `1.5`, `1`, `1.5` | Minutes a simulation takes per scene, decision and debriefing, to fit it in the hours of its section; the rest of the section keeps the words-per-hour rule. |
+| `decision_based.decision_seconds` | `15` | Thinking time of each decision. A simulation takes the time of what is read on its longest path (situation, variants, the decisions taken, their feedback, the debriefing) at the words-per-hour pace of the course, plus these seconds per decision: those words count in its section like any text. The scored simulations of `assessment.md` count in the activities section of their unit (a section without objectives); without one, `verify` fails. A simulation longer than its section fails too. |
 | `design.competencies_per_course` | `"2–4"` | Guidance given to the design agent: competencies per course. |
 | `design.objectives_per_unit` | `"2–4"` | Guidance: objectives per unit. |
 | `design.intro_summary_hours` | `"0.2–0.3"` | Guidance: hours for the introduction and the summary. |

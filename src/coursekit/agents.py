@@ -172,14 +172,11 @@ def context(project: Project) -> dict[str, str]:
 def decision_tokens(cfg: dict) -> dict[str, str]:
     """The rules of decision-based courses for the skills (rules › decision_based)."""
     optional = set(cfg.get("optional") or [])
-    minutes = cfg.get("minutes") or {}
     return {
         "decision_cycle": " → ".join(f"{part} (optional)" if part in optional else str(part) for part in cfg.get("cycle") or []),
         "min_simulations_per_content_section": str(cfg.get("min_simulations_per_content_section", 1)),
         "simulation_rewind": "on" if cfg.get("rewind", True) else "off",
-        "minutes_per_scene": f"{float(minutes.get('scene', 0)):g}",
-        "minutes_per_decision": f"{float(minutes.get('decision', 0)):g}",
-        "minutes_per_debriefing": f"{float(minutes.get('debriefing', 0)):g}",
+        "decision_seconds": f"{float(cfg.get('decision_seconds', 0)):g}",
     }
 
 

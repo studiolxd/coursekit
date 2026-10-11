@@ -210,7 +210,7 @@ La estructura (unidades, apartados, objetivos, horas) no se fija aquí: sale del
 | `decision_based.optional` | `[decide_again]` | Partes del ciclo que quien redacta puede omitir cuando el apartado ya se ha practicado lo suficiente. |
 | `decision_based.min_simulations_per_content_section` | `1` | Simulaciones exigidas en cada apartado de contenido de un curso basado en decisiones. |
 | `decision_based.rewind` | `true` | El alumno puede volver a un punto de control de una simulación y probar otro camino. |
-| `decision_based.minutes.scene`, `.decision`, `.debriefing` | `1.5`, `1`, `1.5` | Minutos que ocupa una simulación por escena, decisión y debriefing, para encajarla en las horas de su apartado; el resto del apartado sigue la regla de palabras por hora. |
+| `decision_based.decision_seconds` | `15` | Tiempo para pensar cada decisión. Una simulación dura lo que se lee en su camino más largo (situación, variantes, decisiones tomadas, su feedback y el debriefing) al ritmo de palabras por hora del curso, más estos segundos por decisión: esas palabras cuentan en su apartado como cualquier texto. Las simulaciones evaluables de `assessment.md` cuentan en el apartado de actividades de su unidad (un apartado sin objetivos); si no lo hay, `verify` falla. Una simulación más larga que su apartado también falla. |
 | `design.competencies_per_course` | `"2–4"` | Orientación para el agente de diseño: competencias por curso. |
 | `design.objectives_per_unit` | `"2–4"` | Orientación: objetivos por unidad. |
 | `design.intro_summary_hours` | `"0.2–0.3"` | Orientación: horas de la introducción y del resumen. |

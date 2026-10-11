@@ -241,7 +241,7 @@ class Simulation:
     reached_endings: list[str] = field(default_factory=list)
     max_score: float = 0
     min_score: float = 0
-    longest: tuple[int, int] = (0, 0)  # (scenes, decisions) of the longest path
+    longest: tuple[int, int] = (0, 0)  # (words read, decisions) of the path that takes longest
     paths: list[dict] = field(default_factory=list)
     truncated: bool = False
 
@@ -258,10 +258,14 @@ class Simulation:
     def scored(self) -> bool:
         return self.data.get("scored") is True
 
-    def minutes(self, cfg: dict) -> float:
-        """Time of the longest path with rules › decision_based › minutes."""
-        scenes, decisions = self.longest
-        return scenes * float(cfg.get("scene", 0)) + decisions * float(cfg.get("decision", 0)) + float(cfg.get("debriefing", 0))
+    def time_words(self, words_per_hour: float, decision_seconds: float) -> int:
+        """The time of the path that takes longest, in words of the course: what is read on it (situation, variants, the
+        decisions taken, their feedback, the debriefing) plus the thinking time of each decision at the same pace."""
+        words, decisions = self.longest
+        return round(words + decisions * decision_seconds * words_per_hour / 3600)
+
+    def minutes(self, words_per_hour: float, decision_seconds: float) -> float:
+        return round(60 * self.time_words(words_per_hour, decision_seconds) / max(1.0, words_per_hour), 1)
 
 
 def _decisions(scene: dict) -> list[dict]:
@@ -558,28 +562,55 @@ def _walk(sim: Simulation, scenes: dict, start: str, state: dict, err) -> None:
     _paths(sim, scenes, start, state)
 
 
+TAG_RE = re.compile(r"<[^>]+>")
+
+
+def _words(text: object) -> int:
+    """Words of a text of a simulation (Markdown or HTML)."""
+    return len(TAG_RE.sub(" ", str(text or "")).replace("*", " ").replace("#", " ").split())
+
+
+def _scene_words(scene: dict, env: dict) -> int:
+    count = _words(scene.get("text"))
+    count += sum(_words(v.get("text")) for v in scene.get("variants") or [] if isinstance(v, dict) and _holds(v.get("if"), env))
+    return count + _words(scene.get("debriefing"))
+
+
+def _holds(condition: object, env: dict) -> bool:
+    try:
+        return test(condition, env)
+    except ExpressionError:
+        return False
+
+
 def _paths(sim: Simulation, scenes: dict, start: str, state: dict) -> None:
-    """The complete paths, in the order of the decisions (up to MAX_PATHS), and the longest one. A path that comes back to a
-    scene with the same state is a loop and is not followed."""
+    """The complete paths, in the order of the decisions (up to MAX_PATHS), and the one that takes longest (most words read,
+    then most decisions). A path that comes back to a scene with the same state is a loop and is not followed."""
     longest = (0, 0)
-    stack = [(start, dict(state), 0.0, (), frozenset())]
+    stack = [(start, dict(state), 0.0, (), frozenset(), 0)]
     while stack:
-        sid, env, score, steps, visited = stack.pop()
+        sid, env, score, steps, visited, words = stack.pop()
         key = (sid, tuple(sorted(env.items())))
         if key in visited:
             continue
         scene = scenes[sid]
+        words += _scene_words(scene, env)
         if scene.get("ending"):
             decisions = sum(1 for _, label in steps if label is not None)
-            longest = max(longest, (len(steps) + 1, decisions))
+            longest = max(longest, (words, decisions))
             if len(sim.paths) >= MAX_PATHS:
                 sim.truncated = True
                 break
-            sim.paths.append({"steps": list(steps), "ending": sid, "kind": scene["ending"], "score": score, "state": env})
+            sim.paths.append({"steps": list(steps), "ending": sid, "kind": scene["ending"], "score": score, "state": env,
+                              "words": words})
             continue
-        moves = _next_states(scene, env) or []
-        for target, after, points, label in reversed(moves):
-            stack.append((target, after, score + points, steps + ((sid, label),), visited | {key}))
+        if scene.get("next"):
+            moves = [(target, after, points, label, 0) for target, after, points, label in _next_states(scene, env) or []]
+        else:
+            moves = [(d["goto"], _apply(d, env), float(d.get("score") or 0), str(d.get("text") or d.get("label")),
+                      _words(d.get("text") or d.get("label")) + _words(d.get("feedback"))) for d in options(scene, env)]
+        for target, after, points, label, extra in reversed(moves):
+            stack.append((target, after, score + points, steps + ((sid, label),), visited | {key}, words + extra))
     sim.longest = longest
 
 

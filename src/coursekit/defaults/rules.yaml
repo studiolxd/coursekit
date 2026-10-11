@@ -45,10 +45,10 @@ decision_based:
   optional: [decide_again]     # parts of the cycle the writer may leave out when the section has practised enough
   min_simulations_per_content_section: 1
   rewind: true                 # the learner may go back to a checkpoint of a simulation and try another path
-  minutes:                     # time of a simulation, to fit it in the hours of its section; the rest of the
-    scene: 1.5                 # section keeps the words-per-hour rule
-    decision: 1
-    debriefing: 1.5
+  decision_seconds: 15         # time of a simulation: the words of its longest path (situation, variants, decisions taken,
+                               # feedback, debriefing) count like any text of its section, at the words-per-hour pace, plus
+                               # these seconds to think each decision. The scored simulations of assessment.md count in the
+                               # activities section of their unit (a section without objectives), which the design reserves
 
 # Guidance for the instructional design proposal (given to the design agent).
 design:

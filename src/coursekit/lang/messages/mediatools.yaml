@@ -32,4 +32,6 @@ network_failed:
 upload_not_https:
   es: "la dirección de subida debe empezar por https://"
   en: "the upload address must start with https://"
+downloaded: {es: "descargado {path} ({size} bytes)", en: "downloaded {path} ({size} bytes)"}
+download_outside: {es: "{path} queda fuera del proyecto: descarga solo dentro de él", en: "{path} is outside the project: download only inside it"}
 uploaded: {es: "subido {name} ({size} bytes)", en: "uploaded {name} ({size} bytes)"}

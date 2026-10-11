@@ -422,8 +422,10 @@ uses (`character`, `characters` of the scenes) is in the cast.
 ### Simulations
 
 `:::scenario` and `:::conversation` (any course may use them). Their body is **YAML with a fixed schema in English**; only
-the texts are in the course language. It is not counted as words: its time is taken from the hours of the section, with
-`decision_based.minutes` (per scene and decision of the longest path, plus the debriefing).
+the texts are in the course language. What is read on its longest path (situation, variants, the decisions taken, their
+feedback, the debriefing) counts as words of its section, at the same pace as the rest of the course, plus
+`decision_based.decision_seconds` per decision. Scored simulations of `assessment.md` count in the activities section of
+their unit, which the design reserves for them; a simulation can never take longer than its section.
 
 ```markdown
 :::scenario

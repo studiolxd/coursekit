@@ -78,7 +78,7 @@ Mientras un curso está en `on_hold`, los comandos que cambian su trabajo se rec
 | Fase | Comandos |
 |---|---|
 | Proyecto y máquina | `coursekit help`, `coursekit init`, `coursekit config`, `coursekit rules`, `coursekit agents`, `coursekit setup`, `coursekit doctor`, `coursekit uninstall`, `coursekit roles` |
-| Cursos y diseño | `coursekit new`, `coursekit handoff`, `coursekit status`, `coursekit sync`, `coursekit outline`, `coursekit brief` |
+| Cursos y diseño | `coursekit new`, `coursekit handoff`, `coursekit status`, `coursekit sync`, `coursekit outline`, `coursekit brief`, `coursekit download` |
 | Verificación y firma | `coursekit verify`, `coursekit paths`, `coursekit reviewed`, `coursekit approve` |
 | Estado del curso y revisión del cliente | `coursekit hold`, `coursekit resume`, `coursekit client` |
 | Lanzar agentes | `coursekit write`, `coursekit review`, `coursekit run` |
@@ -390,6 +390,25 @@ coursekit outline [--section SECTION] code
 
 ```
 coursekit outline PWD --section 1.2
+```
+
+### `coursekit download`
+
+Guarda lo que sirve una dirección `https` en un fichero del proyecto: el agente de diseño lo usa para el Excel que exporta slxd (`design_matrix_export` da una `downloadUrl`), porque una sesión sin interfaz puede ejecutar `coursekit` pero no `curl`. Quién: ambos.
+
+```
+coursekit download --out OUT url
+```
+
+| Argumento | Valores / por defecto | Significado |
+|---|---|---|
+| `url` | `https://…` | Dirección que se descarga. Cualquier otro esquema se rechaza. |
+| `--out OUT` | ruta (obligatoria) | Fichero que se escribe, relativo a la raíz del proyecto o absoluto; tiene que estar dentro del proyecto. |
+
+Imprime `descargado <ruta> (<tamaño> bytes)`. Código de salida 1 si la dirección no es `https`, si la ruta queda fuera del proyecto o si el servidor responde con un error o no se puede alcanzar. Usa los certificados de `network.ca_bundles`, como el resto de llamadas de red.
+
+```
+coursekit download "https://…/export/download?t=…" --out courses/PWD/design/PWD-instructional-design.xlsx
 ```
 
 ### `coursekit brief`

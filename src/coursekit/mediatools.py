@@ -61,6 +61,20 @@ def upload(path: Path, url: str, content_type: str, method: str = "PUT") -> str:
     return t("mediatools", "uploaded", name=path.name, size=path.stat().st_size)
 
 
+def download(url: str, out: Path, root: Path) -> str:
+    """Saves what an https address serves (the export of a platform, for instance) in a file inside the project: the sessions
+    without an interface have `coursekit`, not `curl`."""
+    if not url.startswith("https://"):
+        raise ToolError(t("mediatools", "upload_not_https"))
+    target = (out if out.is_absolute() else root / out).resolve()
+    if not target.is_relative_to(root.resolve()):
+        raise ToolError(t("mediatools", "download_outside", path=out.as_posix()))
+    body = fetch(urllib.request.Request(url, headers={"User-Agent": USER_AGENT}))
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(body)
+    return t("mediatools", "downloaded", path=target.relative_to(root.resolve()).as_posix(), size=len(body))
+
+
 def require_file(path: Path) -> None:
     if not path.is_file():
         raise ToolError(t("mediatools", "input_missing", path=path.as_posix()))

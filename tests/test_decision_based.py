@@ -55,7 +55,7 @@ def test_decision_based_rules_are_configurable(project, capsys):
     assert main(["config", "rules"]) == 0
     out = capsys.readouterr().out
     assert "decision_based.cycle" in out
-    assert "decision_based.minutes.scene" in out
+    assert "decision_based.decision_seconds" in out
 
 
 # ── Simulations and verify ──────────────────────────────────────────────────────────────────
@@ -244,6 +244,22 @@ def test_the_plan_carries_simulations_and_adaptive_blocks(decision_course, capsy
     assert any("the neutral version (:::else)" in w for w in warnings)
 
 
+def test_scored_simulations_of_the_assessment_need_an_activities_section(decision_course, capsys):
+    assessment = ASSESSMENT + "\n" + SCENARIO.replace("id: call", "id: final")
+    (decision_course / "assessment.md").write_text(assessment, encoding="utf-8")
+    code, out = verify(decision_course, GOOD_SECTION, capsys)
+    assert code == 1
+    assert "the unit has no activities section to count them in" in out
+
+
+def test_a_simulation_cannot_take_longer_than_its_section(decision_course, capsys):
+    long_text = " ".join(["palabra"] * 400)
+    code, out = verify(decision_course, GOOD_SECTION.replace("text: Suena el teléfono. Alguien de soporte te pide tu contraseña.",
+                                                            f"text: {long_text}"), capsys)
+    assert code == 1
+    assert "simulation 'call' takes" in out and "more than the" in out
+
+
 def test_simulation_words_do_not_count_and_only_the_else_branch_does():
     from coursekit import lang
     from coursekit.verify import Syntax, learner_words
@@ -262,7 +278,11 @@ def test_paths_and_points():
     assert sim.max_score == 2 and sim.min_score == -2
     assert sorted(p["ending"] for p in sim.paths) == ["leak", "leak", "safe", "safe"]
     assert simulation.grade(sim, 1) == 50
-    assert sim.minutes({"scene": 1.5, "decision": 1, "debriefing": 1.5}) == 3 * 1.5 + 1 + 1.5
+    # longest path: begin + "Se la doy" + leak with its variant? (risk 3: no) + debriefing, or the hotspot path through note
+    words, decisions = sim.longest
+    assert decisions == 1 and words > 20
+    assert sim.time_words(5000, 15) == round(words + 15 * 5000 / 3600)
+    assert sim.minutes(5000, 15) == round(60 * sim.time_words(5000, 15) / 5000, 1)
 
 
 def test_condition_language():
@@ -484,3 +504,14 @@ def test_a_simulation_becomes_an_embed_package_for_creator(decision_course, caps
     creator_plan, errors, _, _ = assemble.write_plan(data, data["units"][0])
     embed = creator_plan["lessons"][1]["bricks"][0]
     assert embed["type"] == "EMBED" and embed["data"]["properties"]["embedFolderPrefix"] == "embeds/sim-call"
+
+
+def test_download_writes_inside_the_project_only(project, monkeypatch, capsys):
+    from coursekit import mediatools
+
+    monkeypatch.setattr(mediatools, "fetch", lambda req, timeout=300: b"xlsx-bytes")
+    assert main(["download", "https://x.example/export", "--out", "courses/a.xlsx"]) == 0
+    assert (project / "courses" / "a.xlsx").read_bytes() == b"xlsx-bytes"
+    assert main(["download", "https://x.example/export", "--out", "../fuera.xlsx"]) == 1
+    assert "outside the project" in capsys.readouterr().err
+    assert main(["download", "http://x.example/export", "--out", "courses/b.xlsx"]) == 1

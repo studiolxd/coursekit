@@ -78,7 +78,7 @@ While a course is `on_hold`, the commands that change its work are refused with 
 | Phase | Commands |
 |---|---|
 | Project and machine | `coursekit help`, `coursekit init`, `coursekit config`, `coursekit rules`, `coursekit agents`, `coursekit setup`, `coursekit doctor`, `coursekit uninstall`, `coursekit roles` |
-| Courses and design | `coursekit new`, `coursekit handoff`, `coursekit status`, `coursekit sync`, `coursekit outline`, `coursekit brief` |
+| Courses and design | `coursekit new`, `coursekit handoff`, `coursekit status`, `coursekit sync`, `coursekit outline`, `coursekit brief`, `coursekit download` |
 | Verification and sign-off | `coursekit verify`, `coursekit paths`, `coursekit reviewed`, `coursekit approve` |
 | Course state and client review | `coursekit hold`, `coursekit resume`, `coursekit client` |
 | Launching agents | `coursekit write`, `coursekit review`, `coursekit run` |
@@ -390,6 +390,25 @@ coursekit outline [--section SECTION] code
 
 ```
 coursekit outline PWD --section 1.2
+```
+
+### `coursekit download`
+
+Saves what an `https` address serves in a file of the project: the design agent uses it for the Excel that slxd exports (`design_matrix_export` gives a `downloadUrl`), because a session without an interface may run `coursekit` but not `curl`. Who: both.
+
+```
+coursekit download --out OUT url
+```
+
+| Argument | Values / default | Meaning |
+|---|---|---|
+| `url` | `https://…` | Address to download. Any other scheme is refused. |
+| `--out OUT` | path (required) | File to write, relative to the root of the project or absolute; it must be inside the project. |
+
+Prints `downloaded <path> (<size> bytes)`. Exit code 1 when the address is not `https`, when the path is outside the project, or when the server answers with an error or cannot be reached. It uses the CA certificates of `network.ca_bundles`, like every other network call.
+
+```
+coursekit download "https://…/export/download?t=…" --out courses/PWD/design/PWD-instructional-design.xlsx
 ```
 
 ### `coursekit brief`

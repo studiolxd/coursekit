@@ -100,9 +100,12 @@ keeps every directive and resource around the simulations. Design it this way, o
    to a simulation or case study among those the tool offers; a scored simulation is also an assessment activity
    (`design_matrix_ae_create`), with its weight. The unit test can mix questions and scored simulations in a new
    situation (transfer).
-6. **Hours.** A simulation takes {{minutes_per_scene}} min per scene and {{minutes_per_decision}} min per decision of
-   its longest path, plus {{minutes_per_debriefing}} min of debriefing; that time is part of the section hours, and the
-   rest of the section keeps the words-per-hour rule. Plan the sections with that in mind.
+6. **Hours, strictly.** A simulation takes the time of what is read on its longest path at the pace of the course
+   ({{words_per_hour}} words per hour), plus {{decision_seconds}} s to think each decision: a short simulation is a few
+   minutes, never a quarter of an hour. Its time is part of the hours of its section. The **scored simulations of the
+   assessment** take time too: give each unit that has them an activities section (a section without objectives, e.g.
+   "Put it to the test") whose hours hold them; `coursekit verify` fails otherwise. The course has to take the hours it
+   says, no more and no less.
 
 ### Story bible (`design/story.md`)
 
@@ -150,8 +153,9 @@ characters:
 
 1. `design_matrix_get` → save the JSON **as it is** in `courses/<CODE>/design/matrix.json`.
 2. `design_matrix_validate` → `courses/<CODE>/design/validation.json`.
-3. `design_matrix_export` → download the `downloadUrl` (expires in 24 h) to
-   `courses/<CODE>/design/<CODE>-instructional-design.xlsx`. That is what the person reviews.
+3. `design_matrix_export` → download the `downloadUrl` (expires in 24 h) with
+   `coursekit download "<downloadUrl>" --out courses/<CODE>/design/<CODE>-instructional-design.xlsx` (not `curl`: a
+   session without an interface cannot run it). That is what the person reviews.
 4. `coursekit sync <CODE> --check` to confirm the structure is understood and the hours add up.
 5. `coursekit publish <CODE>` so the Excel is in the mirror folder: the only publication an agent runs, because
    downloading the files is not a `coursekit` command that could do it by itself (every other command that

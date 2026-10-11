@@ -88,13 +88,13 @@ def _state(env: dict) -> str:
     return ", ".join(f"{k} = {str(v).lower() if isinstance(v, bool) else v}" for k, v in env.items())
 
 
-def section(sim: simmod.Simulation, minutes_cfg: dict) -> str:
+def section(sim: simmod.Simulation, words_per_hour: float, think: float) -> str:
     scenes = sim.data.get("scenes") or {}
     out = [f"## {sim.kind} `{sim.id}` — {sim.data.get('title', '')}", ""]
     out.append(t("paths", "summary", file=sim.data.get("_file", ""), line=sim.line, scenes=len(scenes),
                  endings=", ".join(sim.reached_endings) or "-", paths=len(sim.paths),
                  more=t("paths", "truncated") if sim.truncated else "",
-                 low=f"{sim.min_score:g}", high=f"{sim.max_score:g}", minutes=f"{sim.minutes(minutes_cfg):g}",
+                 low=f"{sim.min_score:g}", high=f"{sim.max_score:g}", minutes=f"{sim.minutes(words_per_hour, think):g}",
                  scored=t("paths", "scored_yes") if sim.scored else t("paths", "scored_no"),
                  objectives=", ".join(sim.objectives) or "-"))
     out += ["", flowchart(sim), "", f"| # | {t('paths', 'col_decisions')} | {t('paths', 'col_ending')} | "
@@ -111,9 +111,11 @@ def write(course: dict, unit: dict) -> UnitPaths:
     result = unit_simulations(course, unit)
     if not result.simulations or result.errors:
         return result
-    minutes_cfg = (coursemod.rules(course).get("decision_based") or {}).get("minutes") or {}
+    rules = coursemod.rules(course)
+    words_per_hour = rules["pages_per_hour"] * rules["words_per_page"]
+    think = float((rules.get("decision_based") or {}).get("decision_seconds", 0))
     body = [f"# {t('paths', 'title', code=course['code'], n=unit['n'])}", "", t("paths", "intro"), ""]
-    body += [section(sim, minutes_cfg) + "\n" for sim in result.simulations]
+    body += [section(sim, words_per_hour, think) + "\n" for sim in result.simulations]
     target = course["_dir"] / "reviews" / f"unit-{unit['n']:02d}-paths.md"
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text("\n".join(body), encoding="utf-8", newline="\n")

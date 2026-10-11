@@ -323,6 +323,18 @@ def verify_unit(course: dict, unit: dict) -> Report:
     placeholders: list[Placeholder] = []
     covered: set[str] = set()
     margin = rules.get("word_margin", 0)
+    words_per_hour = all_rules["pages_per_hour"] * all_rules["words_per_page"]
+    think = float(decision.get("decision_seconds", 0))
+    sim_words = lambda sims: sum(sim.time_words(words_per_hour, think) for sim in sims)  # noqa: E731
+    assessment_sims: list[simmod.Simulation] = []
+    if assessment_path.exists():  # their time belongs to the activities section of the unit
+        quiet_lines = assessment_path.read_text(encoding="utf-8").splitlines()
+        assessment_sims = parse_simulations(assessment_path, parse_directives(assessment_path, quiet_lines, rules, Report()), rules,
+                                            Report())
+    activities = next((s["n"] for s in specs if s["kind"] == "activities"), None)
+    if assessment_sims and activities is None:
+        report.error(t("verify", "assessment_simulations_without_section", minutes=fmt(round(
+            60 * sim_words(assessment_sims) / words_per_hour, 1))))
     unit_sims: list[simmod.Simulation] = []
     practised: set[str] = set()
     min_total = 0
@@ -339,9 +351,15 @@ def verify_unit(course: dict, unit: dict) -> Report:
             practised.update(sim.objectives)
         label = f"content.md › {tokens['section']} {spec['n']}"
         minimum = spec["min_words"]
-        sim_minutes = sum(sim.minutes(decision.get("minutes") or {}) for sim in sec.simulations)
-        if sim_minutes:  # the time of the simulations is part of the hours of the section
-            minimum = coursemod.min_words(max(0.0, float(spec["hours"]) - sim_minutes / 60), all_rules)
+        played = sim_words(sec.simulations)
+        if spec["n"] == activities:
+            played += sim_words(assessment_sims)
+        for sim in sec.simulations + (assessment_sims if spec["n"] == activities else []):
+            if sim.time_words(words_per_hour, think) > minimum:
+                report.error(t("verify", "simulation_longer_than_section", label=label, id=sim.id,
+                               minutes=fmt(sim.minutes(words_per_hour, think)), hours=fmt(spec["hours"])))
+        sec.words += played  # a simulation takes the time of what is read in it, like the rest of the section
+        total_words += played
         min_total += minimum
         if sec.title.strip() != spec["title"].strip():
             report.warn(t("verify", "title_differs", label=label, title=sec.title, design=spec["title"]))
