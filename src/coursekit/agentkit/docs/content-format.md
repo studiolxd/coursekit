@@ -125,6 +125,7 @@ scenes:
 | `character` | `conversation` only, required: the person the learner talks to |
 | `objective` | `U1.2` or a list: the objectives it practises (every objective of the unit, in decision-based courses) |
 | `scored`, `weight` | counts for the grade (default `false`), and its weight among the scored ones (default 1) |
+| `pass_requires` | scored only: the condition every passing path meets (the key behaviour, e.g. `"reported"`); verify fails otherwise and warns when a good ending fails or a bad one passes |
 | `state` | variables and their initial value (numbers, `true`, `false`) |
 | `start` | first scene (default: the first one) |
 | `scenes.<id>` | `skin` (optional: the scene happens in another application, e.g. from the chat to the email; it shows only its own `screen`; a scene with `background` happens in that place instead of on the screen), `text` (required), `background`, `layers` (`image`, `area`, `if`), `characters` (`name`, `expression`, `position`: `left`, `right` or `center`), `variants` (`if`, `text`: extra text when the condition holds), `checkpoint`, and **one** way out: `choices`, `hotspots`, `next` or `ending` |

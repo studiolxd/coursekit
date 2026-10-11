@@ -66,6 +66,16 @@ bad_target: {es: "{place}: destino '{value}' no válido para esta piel (válidos
 skin_without_screen:
   es: "la piel '{skin}' no tiene 'screen': la aplicación saldrá vacía (qué muestra: docs, Pieles)"
   en: "skin '{skin}' has no 'screen': the application will be empty (what it shows: docs, Skins)"
+pass_requires_unscored: {es: "'pass_requires' solo vale en una simulación evaluable (scored: true)", en: "'pass_requires' only applies to a scored simulation (scored: true)"}
+passes_without_requirement:
+  es: "simulación '{id}': hay caminos que aprueban ({grade} %, final '{ending}') sin cumplir pass_requires «{condition}»"
+  en: "simulation '{id}': some paths pass ({grade} %, ending '{ending}') without meeting pass_requires «{condition}»"
+good_ending_fails:
+  es: "simulación '{id}': un camino llega al final bueno '{ending}' con un {grade} %, por debajo del aprobado ({passing} %): el alumno lee un buen final y suspende"
+  en: "simulation '{id}': a path reaches the good ending '{ending}' with {grade} %, below the pass mark ({passing} %): the learner reads a good ending and fails"
+bad_ending_passes:
+  es: "simulación '{id}': un camino llega al final malo '{ending}' con un {grade} %, por encima del aprobado ({passing} %)"
+  en: "simulation '{id}': a path reaches the bad ending '{ending}' with {grade} %, at or above the pass mark ({passing} %)"
 unreachable: {es: "la escena '{scene}' no se alcanza por ningún camino", en: "scene '{scene}' cannot be reached by any path"}
 dead_end:
   es: "callejón sin salida en la escena '{scene}': con algún estado no queda ninguna opción"

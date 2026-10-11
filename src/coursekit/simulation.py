@@ -203,7 +203,8 @@ def test(condition: object, env: dict) -> bool:
 
 # ── Schema ──────────────────────────────────────────────────────────────────────────────────
 
-TOP_KEYS = {"id", "title", "skin", "character", "objective", "scored", "weight", "state", "start", "scenes", "screen"}
+TOP_KEYS = {"id", "title", "skin", "character", "objective", "scored", "weight", "state", "start", "scenes", "screen",
+            "pass_requires"}
 SCENE_KEYS = {"text", "background", "layers", "characters", "variants", "checkpoint", "choices", "hotspots", "next", "ending",
               "debriefing", "expression", "screen", "skin"}
 CHOICE_KEYS = {"text", "goto", "if", "effects", "set", "score", "feedback"}
@@ -311,6 +312,12 @@ def parse(kind: str, body: list[str], where: str, line: int = 0) -> Simulation:
             err("bad_objective", value=objective)
     if "scored" in data and not isinstance(data["scored"], bool):
         err("not_bool", key="scored")
+    if "pass_requires" in data:
+        if data.get("scored") is not True:
+            err("pass_requires_unscored")
+        else:
+            _check_condition(data["pass_requires"], data.get("state") if isinstance(data.get("state"), dict) else {}, err,
+                             "pass_requires")
     if "weight" in data and (isinstance(data["weight"], bool) or not isinstance(data["weight"], (int, float)) or data["weight"] <= 0):
         err("bad_weight", value=data["weight"])
     state = data.get("state") or {}
@@ -621,6 +628,33 @@ def _paths(sim: Simulation, scenes: dict, start: str, state: dict) -> None:
         for target, after, points, label, extra in reversed(moves):
             stack.append((target, after, score + points, steps + ((sid, label),), visited | {key}, words + extra))
     sim.longest = longest
+
+
+def grading_problems(sim: Simulation, passing: float) -> tuple[list[str], list[str]]:
+    """(errors, warnings) of a scored simulation against the pass mark: a path that passes without what `pass_requires`
+    asks is an error; a good ending that fails or a bad ending that passes is a warning (the learner reads one thing and
+    gets the opposite grade)."""
+    if not sim.scored or not sim.paths:
+        return [], []
+    errors, warnings = [], []
+    requires = sim.data.get("pass_requires")
+    seen: set[tuple[str, str]] = set()
+    for path in sim.paths:
+        value = grade(sim, path["score"])
+        passed = value >= passing
+        if passed and requires is not None and not _holds(requires, path["state"]) and ("requires", path["ending"]) not in seen:
+            seen.add(("requires", path["ending"]))
+            errors.append(t("simulation", "passes_without_requirement", id=sim.id, condition=requires, ending=path["ending"],
+                            grade=f"{value:.0f}"))
+        if path["kind"] == "good" and not passed and ("good", path["ending"]) not in seen:
+            seen.add(("good", path["ending"]))
+            warnings.append(t("simulation", "good_ending_fails", id=sim.id, ending=path["ending"], grade=f"{value:.0f}",
+                              passing=f"{passing:g}"))
+        if path["kind"] == "bad" and passed and ("bad", path["ending"]) not in seen:
+            seen.add(("bad", path["ending"]))
+            warnings.append(t("simulation", "bad_ending_passes", id=sim.id, ending=path["ending"], grade=f"{value:.0f}",
+                              passing=f"{passing:g}"))
+    return errors, warnings
 
 
 def grade(sim: Simulation, points: float) -> float:

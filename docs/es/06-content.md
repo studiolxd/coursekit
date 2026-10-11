@@ -475,6 +475,7 @@ scenes:
 | `character` | Solo en `conversation`, obligatoria: la persona con la que habla el alumno. |
 | `objective` | `U1.2` o una lista: los objetivos que practica. |
 | `scored`, `weight` | Si cuenta para la nota (por defecto `false`) y su peso entre las evaluables (por defecto 1). |
+| `pass_requires` | Solo evaluables: una condición que cumple todo camino que aprueba, para la conducta sin la que nadie debería aprobar (p. ej. `"reported"`). `coursekit verify` falla si un camino aprueba sin ella, y avisa si un camino llega a un final `good` y suspende, o a uno `bad` y aprueba (aprobado: `design.grading.passing_score`). |
 | `state` | Variables y su valor inicial: números, `true`, `false`. |
 | `start` | Escena inicial; por defecto, la primera. |
 | `scenes.<id>` | `text` (obligatorio), `skin` (otra aplicación para esta escena), `screen`, `background`, `layers` (`image`, `area`, `if`), `characters` (`name`, `expression`, `position`: `left`, `right` o `center` en una escena con fondo), `variants` (`if`, `text`: texto añadido cuando se cumple la condición), `checkpoint` (el alumno puede volver aquí si `decision_based.rewind` está activo) y **una** salida: `choices`, `hotspots`, `next` o `ending`. |

@@ -473,6 +473,7 @@ scenes:
 | `character` | `conversation` only, required: the person the learner talks to. |
 | `objective` | `U1.2` or a list: the objectives it practises. |
 | `scored`, `weight` | Whether it counts for the grade (default `false`) and its weight among the scored ones (default 1). |
+| `pass_requires` | Scored only: a condition every passing path must meet, for the behaviour without which nobody should pass (e.g. `"reported"`). `coursekit verify` fails when a path passes without it, and warns when a path reaches a `good` ending and fails, or a `bad` one and passes (pass mark: `design.grading.passing_score`). |
 | `state` | Variables and their initial value: numbers, `true`, `false`. |
 | `start` | First scene; by default the first one. |
 | `scenes.<id>` | `text` (required), `skin` (another application for this scene), `screen`, `background`, `layers` (`image`, `area`, `if`), `characters` (`name`, `expression`, `position`: `left`, `right` or `center` in a scene with a background), `variants` (`if`, `text`: extra text when the condition holds), `checkpoint` (the learner may come back here when `decision_based.rewind` is on) and **one** way out: `choices`, `hotspots`, `next` or `ending`. |

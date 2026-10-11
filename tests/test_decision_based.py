@@ -635,3 +635,17 @@ def test_the_words_check_reads_the_simulations_and_skips_the_unit_header(decisio
     assert "Verificar por otro canal" not in "".join(check.page_words(page.split("ck-sim-data")[0]))  # the debriefing lives in the data
     without = page.replace("La urgencia es la palanca habitual de la ingeniería social.", "")
     assert "palanca" in check.missing_words(data, data["units"][0], without)
+
+
+def test_what_a_scored_simulation_requires_to_pass_and_its_endings():
+    from coursekit import simulation
+
+    body = SCENARIO.splitlines()[1:-1]
+    sim = simulation.parse("scenario", body + ['pass_requires: "called"'], "x")
+    assert not sim.errors
+    errors, warnings = simulation.grading_problems(sim, 50)
+    assert any("pass (50 %, ending 'safe') without meeting pass_requires «called»" in e for e in errors)  # "Lo consulto"
+    errors, warnings = simulation.grading_problems(sim, 60)
+    assert any("reaches the good ending 'safe' with 50 %" in w for w in warnings)
+    unscored = [line for line in body if not line.startswith("scored")] + ['pass_requires: "called"']
+    assert any("only applies to a scored simulation" in e for e in simulation.parse("scenario", unscored, "x").errors)

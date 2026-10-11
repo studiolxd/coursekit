@@ -95,7 +95,8 @@ simulation format in `.coursekit/docs/content-format.md` (section 2.1).
   - Consequences in the story, not "Correct!": what happens next. Make some appear later (state + `variants`, layers
     with `if`, conditional choices, `next`) and give paths to recover from a mistake.
   - `score` rewards the decisions an expert would take (and subtracts the harmful ones); a scored simulation must have a
-    path that earns points. `checkpoint: true` on the scenes worth trying again (rewind is {{simulation_rewind}}).
+    path that earns points. Give it `pass_requires` with the key behaviour of the objective (a state variable), and make
+    the endings and the grades agree: a good ending passes, a bad one fails (`coursekit verify` checks both). `checkpoint: true` on the scenes worth trying again (rewind is {{simulation_rewind}}).
   - Every ending has a `debriefing`: what happened and why, what an expert would have done and the principle, without
     preaching or blaming.
   - When the situation happens on a screen (email, chat, call, web page), use a `skin` with its `screen`, and make

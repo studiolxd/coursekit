@@ -201,8 +201,9 @@ def split_sections(text: str, syntax: Syntax) -> list[Section]:
     return sections
 
 
-def parse_simulations(path: Path, directives, rules: dict, report: Report) -> list[simmod.Simulation]:
-    """Read and check the simulations among some directives; their problems go to the report."""
+def parse_simulations(path: Path, directives, rules: dict, report: Report, passing: float = 50) -> list[simmod.Simulation]:
+    """Read and check the simulations among some directives; their problems go to the report (`passing`: the pass mark the
+    scored ones are checked against)."""
     found = []
     for line_no, name, body in directives:
         if name in (rules.get("simulation_directives") or ()):
@@ -214,6 +215,12 @@ def parse_simulations(path: Path, directives, rules: dict, report: Report) -> li
                 report.error(e)
             for w in sim.warnings:
                 report.warn(w)
+            if not sim.errors:
+                problems, notes = simmod.grading_problems(sim, passing)
+                for e in problems:
+                    report.error(f"{path.name}:{line_no}: {e}")
+                for w in notes:
+                    report.warn(f"{path.name}:{line_no}: {w}")
             found.append(sim)
     return found
 
@@ -434,7 +441,8 @@ def verify_unit(course: dict, unit: dict) -> Report:
         check_pictographs(assessment_path, a_text, rules["allowed_symbols"], report)
         directives = list(parse_directives(assessment_path, a_text.splitlines(), rules, report))
         questions = check_questions(assessment_path, directives, rules, syntax, report)
-        unit_sims += parse_simulations(assessment_path, directives, rules, report)
+        passing = float(((course.get("design") or {}).get("grading") or {}).get("passing_score") or 50)
+        unit_sims += parse_simulations(assessment_path, directives, rules, report, passing)
         adaptive += check_adaptive(assessment_path, a_text.splitlines(), unit["n"], sims, report)
         quizzes = [a for a in (unit.get("activities") or {}).get("assessment", []) if a.get("instrument") == "cuestionario"]
         quiz_objectives = {o for a in quizzes for o in a.get("objectives") or []}
