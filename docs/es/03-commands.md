@@ -295,7 +295,7 @@ coursekit roles
 Crea un curso a partir de su título y su duración. Úsalo para empezar un curso; después el agente de diseño propone el diseño instruccional. Quién: ambos (`/new-course` lo ejecuta).
 
 ```
-coursekit new [--code CODE] [--language LANGUAGE] [--no-intro] [--no-summary] [--notes NOTES] title hours
+coursekit new [--code CODE] [--language LANGUAGE] [--no-intro] [--no-summary] [--notes NOTES] [--approach {expository,decision-based}] title hours
 ```
 
 | Argumento | Valores / por defecto | Significado |
@@ -307,6 +307,7 @@ coursekit new [--code CODE] [--language LANGUAGE] [--no-intro] [--no-summary] [-
 | `--no-intro` | indicador | Unidades sin el apartado inicial de introducción. |
 | `--no-summary` | indicador | Unidades sin el apartado final de resumen. |
 | `--notes NOTES` | texto | Instrucciones adicionales para el diseño instruccional. |
+| `--approach APPROACH` | `expository` o `decision-based`; por defecto: `rules › defaults.approach` | Cómo enseña el curso: `expository` explica y después practica y evalúa; `decision-based` abre cada apartado de contenido con una simulación y explica después (ver [Cursos basados en decisiones](06-content.md#cursos-basados-en-decisiones)). |
 
 Crea `courses/<CODE>/` con `course.yaml` (estado `design`), las carpetas `brief/sources/`, `design/`, `content/`, `media/`, `reviews/`, `brief/links.md`, `brief/notes.md` y `media/manifest.yaml`. Las unidades y los apartados no se crean aquí: salen del diseño aprobado con [`coursekit sync`](#coursekit-sync). Código de salida 1 si la carpeta del curso ya existe.
 
@@ -319,7 +320,7 @@ coursekit new "Contraseñas seguras" 2 --code PWD --notes "Centrado en personal 
 Lleva un curso desde su título y sus horas hasta su entrega por sí solo, sin que nadie revise nada por el camino: el diseño, la redacción, la revisión con IA, las firmas, el multimedia, el montaje y la entrega. Quién: solo personas (los agentes no pueden ejecutarlo). Detalles y límites en [Modo handoff](02-workflow.md#modo-handoff).
 
 ```
-coursekit handoff [--code CODE] [--no-intro] [--no-summary] [--notes NOTES] [--rounds ROUNDS] [--no-pause] [--new-version] target [hours]
+coursekit handoff [--code CODE] [--no-intro] [--no-summary] [--notes NOTES] [--approach {expository,decision-based}] [--rounds ROUNDS] [--no-pause] [--new-version] target [hours]
 ```
 
 | Argumento | Valores / por defecto | Significado |
@@ -327,7 +328,7 @@ coursekit handoff [--code CODE] [--no-intro] [--no-summary] [--notes NOTES] [--r
 | `target` | texto | Con `hours`: el título del curso nuevo (entrecomíllalo). Sin ellas: el código de un curso para continuarlo donde se quedó. |
 | `hours` | número; opcional | Duración total. Hace que `handoff` cree un curso nuevo. |
 | `--code CODE` | por defecto: el título como slug en mayúsculas | Código del curso. Solo al crear; se rechaza con un código para continuar (código de salida 2). |
-| `--no-intro`, `--no-summary`, `--notes NOTES` | como en [`coursekit new`](#coursekit-new) | Solo al crear; con un código para continuar se rechazan (código de salida 2), igual que `--code`. |
+| `--no-intro`, `--no-summary`, `--notes NOTES`, `--approach APPROACH` | como en [`coursekit new`](#coursekit-new) | Solo al crear; con un código para continuar se rechazan (código de salida 2), igual que `--code`. |
 | `--rounds ROUNDS` | número entero; por defecto `rules › handoff › rounds` (`2`) | Intentos por paso antes de parar. |
 | `--no-pause` | flag | No esperar al material de partida tras crear las carpetas del curso. Sin terminal nunca espera. Solo al crear (se rechaza con un código para continuar, código de salida 2). |
 | `--new-version` | indicador | Con el código de un curso `delivered` cuyo contenido has editado: lo reabre y lo lleva a la versión siguiente ([Modo handoff](02-workflow.md#modo-handoff)). Se rechaza (código de salida 1) si el curso no está `delivered`; con título y horas, código 2. |

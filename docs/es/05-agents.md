@@ -14,7 +14,7 @@ coursekit trabaja con tres herramientas. No las instala: tienen que estar en tu 
 
 Cualquiera de ellas también se puede lanzar por ti con `coursekit write`, `coursekit review` y `coursekit run` (mira más abajo).
 
-El trabajo se reparte en cinco roles. Cada rol tiene una herramienta y un modelo.
+El trabajo se reparte en seis roles. Cada rol tiene una herramienta y un modelo.
 
 | Rol | Qué hace | Comandos con barra que ejecuta | Herramienta por defecto | Modelo por defecto (Claude Code) | Modelo por defecto (opencode) |
 |---|---|---|---|---|---|
@@ -22,9 +22,10 @@ El trabajo se reparte en cinco roles. Cada rol tiene una herramienta y un modelo
 | `writer` | Redacta el contenido de una unidad | `/write-unit` | `claude` | `sonnet` | `anthropic/claude-sonnet-5-5` |
 | `reviewer` | Revisión con IA de una unidad redactada | `/review-unit`, `/approve-unit` | `claude` | `opus` | `anthropic/claude-opus-5-5` |
 | `media` | Produce y sube los recursos multimedia | `/produce-media` | `claude` | `opus` | `anthropic/claude-opus-5-5` |
+| `illustration` | Dibuja en SVG: escenas, personajes y objetos cuando no hay generador de imágenes, diagramas, infografías | (ninguno aún: lo usa la producción multimedia) | como `media` | como `media` | como `media` |
 | `assembly` | Carga el contenido en creator o construye los paquetes html, trata los comentarios de la revisión del cliente, exporta o registra paquetes, sincroniza directivas | `/assemble`, `/client-feedback`, `/deliver`, `/sync-directives` | `claude` | `sonnet` | `anthropic/claude-sonnet-5-5` |
 
-Codex no tiene modelo propuesto: con `codex`, el modelo es el que Codex trae por defecto salvo que indiques uno. El rol de revisión (`reviewer`) lleva por defecto un modelo distinto del de redacción (`writer`) a propósito: otro modelo detecta más.
+`illustration` sigue a `media` mientras `ILLUSTRATION_AGENT` e `ILLUSTRATION_MODEL` estén vacías: ponlas solo para dibujar con otra herramienta u otro modelo. Codex no tiene modelo propuesto: con `codex`, el modelo es el que Codex trae por defecto salvo que indiques uno. El rol de revisión (`reviewer`) lleva por defecto un modelo distinto del de redacción (`writer`) a propósito: otro modelo detecta más.
 
 ## Elegir la herramienta y el modelo de cada rol
 

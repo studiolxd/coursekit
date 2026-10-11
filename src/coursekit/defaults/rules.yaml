@@ -8,6 +8,8 @@ words_per_page: 500            # minimum learner-facing words = hours x 10 x 500
 
 # Defaults for new courses (each course can change them in its course.yaml).
 defaults:
+  approach: expository         # expository: each section explains, then practises and assesses
+                               # decision-based: each section opens with a simulation (see decision_based below)
   intro_section: true          # first section of every unit: introduction and objectives
   summary_section: true        # last section of every unit: summary
   structure: sin_modulos       # slxd patronEstructural: sin_modulos | con_modulos
@@ -29,6 +31,24 @@ handoff:
                                # `coursekit`, `npx`, Python and those the recipes of the media configuration declare in `needs`
                                # (bin, media); add the rest here, e.g. [blender, gs]. `bash`, `sh` and `node` let the agent run any
                                # command: add them only if you accept that
+
+# Decision-based courses (course.yaml › design.approach: decision-based). The learner does not start by reading: every content
+# section opens with a simulation where they decide, get it wrong or right and see the consequences, and only then reads,
+# practises and is assessed. The course keeps every other directive and resource around the simulations.
+decision_based:
+  cycle: [challenge, explanation, practice, decide_again, closing]   # order of the parts of a content section:
+                               # challenge     a simulation opens the section, with no text before it
+                               # explanation   any content, built on what the learner has just lived through
+                               # practice      interactive directives and questions on what was explained
+                               # decide_again  a second, shorter simulation or a variant, applying what was learnt
+                               # closing       the key idea and the link to the next challenge
+  optional: [decide_again]     # parts of the cycle the writer may leave out when the section has practised enough
+  min_simulations_per_content_section: 1
+  rewind: true                 # the learner may go back to a checkpoint of a simulation and try another path
+  minutes:                     # time of a simulation, to fit it in the hours of its section; the rest of the
+    scene: 1.5                 # section keeps the words-per-hour rule
+    decision: 1
+    debriefing: 1.5
 
 # Guidance for the instructional design proposal (given to the design agent).
 design:

@@ -144,7 +144,7 @@ File format: one `KEY=value` per line; lines starting with `#` are comments; `ex
 
 ### Roles: tool and model
 
-Five roles, two variables each. Full details in [Agents](05-agents.md).
+Six roles, two variables each. Full details in [Agents](05-agents.md).
 
 | Variable | Default after `coursekit setup` | Meaning |
 |---|---|---|
@@ -152,6 +152,7 @@ Five roles, two variables each. Full details in [Agents](05-agents.md).
 | `WRITER_AGENT` / `WRITER_MODEL` | `claude` / `sonnet` | Writing units. |
 | `REVIEWER_AGENT` / `REVIEWER_MODEL` | `claude` / `opus` | AI review of units. |
 | `MEDIA_AGENT` / `MEDIA_MODEL` | `claude` / `opus` | Media production. |
+| `ILLUSTRATION_AGENT` / `ILLUSTRATION_MODEL` | empty / empty | Drawing in SVG (scenes, characters and objects when there is no image generator, diagrams, infographics). Both empty: the media role's tool and model. |
 | `ASSEMBLY_AGENT` / `ASSEMBLY_MODEL` | `claude` / `sonnet` | Assembly, delivery and directive sync. |
 
 - `<ROLE>_AGENT` is `claude`, `opencode` or `codex`. If unset or empty, `claude`. Any other value is an error when the role is launched.
@@ -199,11 +200,17 @@ Structure (units, sections, objectives, hours) is not set here: it comes from ea
 |---|---|---|
 | `pages_per_hour` | `10` | Pages of learner-facing text per hour of study. |
 | `words_per_page` | `500` | Words per page. Minimum words of a section = pages (rounded up) × `words_per_page`; the minimum is stored in `course.yaml` by `coursekit sync`. |
+| `defaults.approach` | `expository` | Approach of new courses: `expository` or `decision-based` (see [Decision-based courses](06-content.md#decision-based-courses)). `coursekit new --approach` chooses it for one course. |
 | `defaults.intro_section` | `true` | New courses start with an introduction-and-objectives section in every unit. |
 | `defaults.summary_section` | `true` | New courses end every unit with a summary section. |
 | `defaults.structure` | `sin_modulos` | Structure of new courses: `sin_modulos` or `con_modulos` (slxd structural pattern). |
 | `defaults.grading.passing_score` | `50` | Passing score of a test, when the design does not give that assessment activity its own (`notaAprobado`). |
 | `defaults.grading.attempts` | `2` | Attempts allowed per test, when the design does not give that assessment activity its own (`intentosMax`; `0` is unlimited). |
+| `decision_based.cycle` | `[challenge, explanation, practice, decide_again, closing]` | Order of the parts of a content section in a decision-based course: a simulation opens it (`challenge`), the explanation builds on what the learner lived through, then practice, an optional second simulation (`decide_again`) and the closing. |
+| `decision_based.optional` | `[decide_again]` | Parts of the cycle the writer may leave out when the section has practised enough. |
+| `decision_based.min_simulations_per_content_section` | `1` | Simulations required in every content section of a decision-based course. |
+| `decision_based.rewind` | `true` | The learner may go back to a checkpoint of a simulation and try another path. |
+| `decision_based.minutes.scene`, `.decision`, `.debriefing` | `1.5`, `1`, `1.5` | Minutes a simulation takes per scene, decision and debriefing, to fit it in the hours of its section; the rest of the section keeps the words-per-hour rule. |
 | `design.competencies_per_course` | `"2–4"` | Guidance given to the design agent: competencies per course. |
 | `design.objectives_per_unit` | `"2–4"` | Guidance: objectives per unit. |
 | `design.intro_summary_hours` | `"0.2–0.3"` | Guidance: hours for the introduction and the summary. |
@@ -243,6 +250,8 @@ For each placeholder type, an ordered list of options; `coursekit media plan` ke
 
 | Key | Meaning |
 |---|---|
+| `visual.style` | Visual style of the scenes, characters and objects of the simulations and of the illustrations: `flat`, `pixel-art`, `3d`, `isometric`, `illustration` (default) or `photo`. A course changes it in `course.yaml › media › visual › style`; the details go in the [house style](07-media.md#house-style-for-media). |
+| `visual.fallback` | The style used when no image generator is available (default `flat`): the illustration role draws it as SVG. |
 | `voice` | Options for narration (Video and Audio). A course uses one provider for all its narration. |
 | `subtitles` | Options for subtitles. |
 | `types.<id>` | Options for each placeholder type, keyed by its id: `image`, `infographic`, `diagram`, `animated_gif`, `terminal_demo`, `video`, `audio`, `simulation`. A project override of `types` uses the same ids (not the words of the content); mappings merge, so `types: {image: [...]}` replaces only the options of `image`. |
@@ -302,6 +311,7 @@ delivery:
 | `client` | Client of the course. |
 | `design.hours` | Total hours. `coursekit sync` reports a mismatch with the sum of the unit hours of the approved design. |
 | `design.structure` | `sin_modulos` or `con_modulos`. |
+| `design.approach` | `expository` or `decision-based` (see [Decision-based courses](06-content.md#decision-based-courses)). |
 | `design.intro_section`, `design.summary_section` | Whether every unit opens with an introduction and closes with a summary. |
 | `design.audience`, `design.level`, `design.prerequisites` | Free text for the design agent. |
 | `design.tone`, `design.notes` | Tone and extra instructions for this course. |

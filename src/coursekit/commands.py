@@ -59,7 +59,7 @@ def cmd_new(args: argparse.Namespace) -> int:
     project = _project()
     folder = new.create(
         project, args.title, args.hours, code=args.code, intro=not args.no_intro, summary=not args.no_summary,
-        notes=args.notes, language=args.language,
+        notes=args.notes, language=args.language, approach=args.approach,
     )
     print(t("commands", "new_created", path=folder.relative_to(project.root).as_posix(), hours=args.hours))
     _mirror(project, folder.name)
@@ -93,9 +93,9 @@ def cmd_handoff(args: argparse.Namespace) -> int:
     try:
         if starting:
             course = handoffmod.start(project, args.target, args.hours, args.code, not args.no_intro, not args.no_summary, args.notes,
-                                      rounds, log, mirror, pause)
+                                      rounds, log, mirror, pause, approach=args.approach)
         else:
-            if args.no_intro or args.no_summary or args.notes or args.code or args.no_pause:
+            if args.no_intro or args.no_summary or args.notes or args.code or args.no_pause or args.approach:
                 print(t("commands", "handoff_resume_options"), file=sys.stderr)
                 return 2
             course = (handoffmod.reopen if args.new_version else handoffmod.resume)(project, args.target, rounds, log, mirror)
@@ -687,6 +687,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--no-intro", action="store_true", help=t("commands", "help_new_no_intro"))
     p.add_argument("--no-summary", action="store_true", help=t("commands", "help_new_no_summary"))
     p.add_argument("--notes", default="", help=t("commands", "help_new_notes"))
+    p.add_argument("--approach", choices=new.APPROACHES, help=t("commands", "help_new_approach"))
     p.set_defaults(func=cmd_new)
 
     p = sub.add_parser("handoff", help=t("commands", "help_handoff"))
@@ -696,6 +697,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--no-intro", action="store_true", help=t("commands", "help_new_no_intro"))
     p.add_argument("--no-summary", action="store_true", help=t("commands", "help_new_no_summary"))
     p.add_argument("--notes", default="", help=t("commands", "help_new_notes"))
+    p.add_argument("--approach", choices=new.APPROACHES, help=t("commands", "help_new_approach"))
     p.add_argument("--rounds", type=int, help=t("commands", "help_handoff_rounds"))
     p.add_argument("--no-pause", action="store_true", help=t("commands", "help_handoff_no_pause"))
     p.add_argument("--new-version", action="store_true", help=t("commands", "help_handoff_new_version"))

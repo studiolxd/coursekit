@@ -348,6 +348,30 @@ If a directive name is not in the registry, `verify` fails and suggests the equi
 | branching-scenario | `dialog` (complex branches: `Interactive simulation` placeholder) |
 | simulated-terminal | `Interactive terminal demo` placeholder |
 
+## Decision-based courses
+
+A course has an **approach** (`course.yaml › design.approach`, chosen with `coursekit new --approach`; the default is
+`rules › defaults.approach`):
+
+- `expository`: each section explains, then practises and assesses. Everything above in this page describes it.
+- `decision-based`: the learner does not start by reading. Every content section opens with a **simulation** where they
+  decide, get it wrong or right and see the consequences; the explanation comes afterwards and builds on what they lived
+  through. The course keeps every directive and resource of an expository course around the simulations.
+
+The parts of a content section follow `rules › decision_based › cycle`:
+
+| Part | What it is |
+|---|---|
+| `challenge` | a simulation opens the section, with no text before it |
+| `explanation` | any content (text, tabs, labelled graphics, video, dialogs…), built on what the learner has just lived through |
+| `practice` | interactive directives and questions on what was explained |
+| `decide_again` | a second, shorter simulation or a variant, applying what was learnt (optional: `decision_based › optional`) |
+| `closing` | the key idea and the link to the next challenge |
+
+The rules of the approach are in [`rules`](04-configuration.md#rules-production-rules) (`decision_based.*`). This
+approach is being built: in this version a course records its approach and the rules can be configured, but the
+simulation directives, their checks in `coursekit verify` and the agents' guidance for it are not available yet.
+
 ## `coursekit sync` and `coursekit outline`
 
 ### `coursekit sync CODE [--check]`

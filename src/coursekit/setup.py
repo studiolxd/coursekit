@@ -309,11 +309,17 @@ def agent_roles(project: Project, say: Say, ask: Ask | None, confirm: Callable[[
     It runs when asked (`--roles`) or while some role has no model that we have a default for."""
     values = envfile.parse(project.env_file.read_text(encoding="utf-8")) if project.env_file.exists() else {}
     plan = {}
+    following = {}  # roles that take another role's tool and model while their own variables are empty (same_as)
     for role in agentsmod.ROLES:
         key = role.upper()
+        base = agentsmod.same_as(role)
+        if base and not values.get(f"{key}_AGENT") and not values.get(f"{key}_MODEL"):
+            following[role] = base
+            plan[role] = plan[base]
+            continue
         tool = values.get(f"{key}_AGENT") or agentsmod.default_tool(role)
         plan[role] = (tool, values.get(f"{key}_MODEL") or agentsmod.default_model(role, tool))
-    open_roles = [r for r in agentsmod.ROLES if not values.get(f"{r.upper()}_MODEL") and plan[r][1]]
+    open_roles = [r for r in agentsmod.ROLES if r not in following and not values.get(f"{r.upper()}_MODEL") and plan[r][1]]
     if not (force or open_roles):
         return
     if ask and confirm:
@@ -323,6 +329,8 @@ def agent_roles(project: Project, say: Say, ask: Ask | None, confirm: Callable[[
         if not confirm(t("setup", "roles_confirm")):
             for role in agentsmod.ROLES:
                 name = t("setup", f"role_{role}")
+                if role in following:
+                    plan[role] = plan[following[role]]  # what the role it follows has just been given
                 tool, model = plan[role]
                 while True:
                     tool = ask(t("setup", "role_tool", role=name, tools="/".join(agentsmod.TOOLS)), tool).lower()
@@ -332,7 +340,16 @@ def agent_roles(project: Project, say: Say, ask: Ask | None, confirm: Callable[[
                 if tool != plan[role][0]:
                     model = agentsmod.default_model(role, tool)
                 plan[role] = (tool, ask(t("setup", "role_model", role=name), model))
+                if role in following and plan[role] == plan[following[role]]:
+                    continue  # still the same as the role it follows: it keeps following it
+                following.pop(role, None)
+        for role, base in following.items():
+            plan[role] = plan[base]
     for role, (tool, model) in plan.items():
+        if role in following:  # empty variables: it follows the other role, also when that one changes later
+            set_env_value(project.env_file, f"{role.upper()}_AGENT", "")
+            set_env_value(project.env_file, f"{role.upper()}_MODEL", "")
+            continue
         set_env_value(project.env_file, f"{role.upper()}_AGENT", tool)
         set_env_value(project.env_file, f"{role.upper()}_MODEL", model)
     say(t("setup", "roles_saved"))

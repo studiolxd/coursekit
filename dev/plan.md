@@ -524,12 +524,14 @@ hoja de personaje; nunca texto dentro de la imagen generada (se superpone en HTM
 **Estilo.**
 
 ```yaml
+# config/media.yaml (o project.yaml › media); un curso: course.yaml › media › visual
 visual:
   style: illustration   # flat | pixel-art | 3d | isometric | illustration | photo
-  notes: ""
+  fallback: flat        # sin generador de imágenes
 ```
 
-- En `project.yaml`, sustituible en `course.yaml`; imágenes de referencia en `brief/style/`.
+- En la configuración `media`, sustituible por curso; los detalles van en el estilo de la casa
+  (`theme/branding/media-style.md`) y las imágenes de referencia en `theme/branding/style/`.
 - Lámina de prueba (un fondo, un personaje en tres expresiones, dos objetos) que firma una
   persona antes de producir, como el theme; todo se genera después con esa guía.
 - Sin generador de imágenes: estilo `flat` en SVG por `ILLUSTRATION_AGENT` / `ILLUSTRATION_MODEL`
@@ -551,7 +553,7 @@ visual:
 
 | Paso | Qué | Comprobación | Estado |
 |---|---|---|---|
-| 8.1 | Configuración: `design.approach`, ciclo del apartado y reglas de duración en `rules.yaml`, `visual` en `project.yaml`/`course.yaml`, rol `ILLUSTRATION_*`, voces por personaje en `course.yaml`; textos en `lang/` y mensajes; docs en `docs/en` y `docs/es`. | `coursekit config` muestra los valores y su origen; tests de `init` y de idioma. | pendiente |
+| 8.1 | Configuración: `design.approach` (`new`/`handoff --approach`, `rules › defaults.approach`), `rules › decision_based` (ciclo, partes opcionales, mínimo de simulaciones, volver atrás, minutos), `media › visual` (`style`, `fallback`), rol `illustration` (`same_as: media`); docs en `docs/en` y `docs/es`. Las voces por personaje pasan al 8.7 (necesitan código en `voices`/`tts`); la validación del estilo, al 8.7 (`media plan`). | `coursekit config` muestra los valores y su origen; `tests/test_decision_based.py`, tests de `setup`. | hecho |
 | 8.2 | Formato: directivas `scenario` y `conversation` (rol `simulation`), sintaxis, `:::if`/`:::else`; compilador a JSON; `verify` (sección 11.5). | Fixtures genéricos que pasan y que fallan cada regla. | pendiente |
 | 8.3 | Diseño y narrativa: `brief/story-notes.md`, rama decision-based de `instructional-design` (action mapping, `story.md`, mapa de simulaciones, actividades en la matriz), `/approve-design` con la biblia. | Propuesta de diseño de un curso de prueba con su biblia. | pendiente |
 | 8.4 | Redacción y revisión: skills del enfoque; recorrido automático de caminos con informe y diagrama. | Una unidad de prueba redactada, revisada y con su informe de recorridos. | pendiente |

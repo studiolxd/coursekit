@@ -144,7 +144,7 @@ Formato del fichero: un `CLAVE=valor` por línea; las líneas que empiezan por `
 
 ### Roles: herramienta y modelo
 
-Cinco roles, dos variables cada uno. Detalles en [Agentes](05-agents.md).
+Seis roles, dos variables cada uno. Detalles en [Agentes](05-agents.md).
 
 | Variable | Por defecto tras `coursekit setup` | Significado |
 |---|---|---|
@@ -152,6 +152,7 @@ Cinco roles, dos variables cada uno. Detalles en [Agentes](05-agents.md).
 | `WRITER_AGENT` / `WRITER_MODEL` | `claude` / `sonnet` | Redacción de unidades. |
 | `REVIEWER_AGENT` / `REVIEWER_MODEL` | `claude` / `opus` | Revisión con IA de las unidades. |
 | `MEDIA_AGENT` / `MEDIA_MODEL` | `claude` / `opus` | Producción multimedia. |
+| `ILLUSTRATION_AGENT` / `ILLUSTRATION_MODEL` | vacío / vacío | Dibujo en SVG (escenas, personajes y objetos cuando no hay generador de imágenes, diagramas, infografías). Los dos vacíos: la herramienta y el modelo del rol de multimedia. |
 | `ASSEMBLY_AGENT` / `ASSEMBLY_MODEL` | `claude` / `sonnet` | Montaje, entrega y sincronización de directivas. |
 
 - `<ROLE>_AGENT` es `claude`, `opencode` o `codex`. Si no está definida o está vacía, `claude`. Cualquier otro valor da error al lanzar el rol.
@@ -199,11 +200,17 @@ La estructura (unidades, apartados, objetivos, horas) no se fija aquí: sale del
 |---|---|---|
 | `pages_per_hour` | `10` | Páginas de texto para el alumno por hora de estudio. |
 | `words_per_page` | `500` | Palabras por página. Palabras mínimas de un apartado = páginas (redondeadas hacia arriba) × `words_per_page`; el mínimo lo guarda `coursekit sync` en `course.yaml`. |
+| `defaults.approach` | `expository` | Enfoque de los cursos nuevos: `expository` o `decision-based` (ver [Cursos basados en decisiones](06-content.md#cursos-basados-en-decisiones)). `coursekit new --approach` lo elige para un curso. |
 | `defaults.intro_section` | `true` | Los cursos nuevos empiezan cada unidad con un apartado de introducción y objetivos. |
 | `defaults.summary_section` | `true` | Los cursos nuevos cierran cada unidad con un apartado de resumen. |
 | `defaults.structure` | `sin_modulos` | Estructura de los cursos nuevos: `sin_modulos` o `con_modulos` (patrón estructural de slxd). |
 | `defaults.grading.passing_score` | `50` | Nota para aprobar un test, cuando el diseño no da a esa actividad de evaluación la suya (`notaAprobado`). |
 | `defaults.grading.attempts` | `2` | Intentos permitidos por test, cuando el diseño no da a esa actividad de evaluación los suyos (`intentosMax`; `0` es sin límite). |
+| `decision_based.cycle` | `[challenge, explanation, practice, decide_again, closing]` | Orden de las partes de un apartado de contenido en un curso basado en decisiones: lo abre una simulación (`challenge`), la explicación parte de lo que el alumno acaba de vivir, después la práctica, una segunda simulación opcional (`decide_again`) y el cierre. |
+| `decision_based.optional` | `[decide_again]` | Partes del ciclo que quien redacta puede omitir cuando el apartado ya se ha practicado lo suficiente. |
+| `decision_based.min_simulations_per_content_section` | `1` | Simulaciones exigidas en cada apartado de contenido de un curso basado en decisiones. |
+| `decision_based.rewind` | `true` | El alumno puede volver a un punto de control de una simulación y probar otro camino. |
+| `decision_based.minutes.scene`, `.decision`, `.debriefing` | `1.5`, `1`, `1.5` | Minutos que ocupa una simulación por escena, decisión y debriefing, para encajarla en las horas de su apartado; el resto del apartado sigue la regla de palabras por hora. |
 | `design.competencies_per_course` | `"2–4"` | Orientación para el agente de diseño: competencias por curso. |
 | `design.objectives_per_unit` | `"2–4"` | Orientación: objetivos por unidad. |
 | `design.intro_summary_hours` | `"0.2–0.3"` | Orientación: horas de la introducción y del resumen. |
@@ -243,6 +250,8 @@ Para cada tipo de marcador, una lista ordenada de opciones; `coursekit media pla
 
 | Clave | Significado |
 |---|---|
+| `visual.style` | Estilo visual de las escenas, personajes y objetos de las simulaciones y de las ilustraciones: `flat`, `pixel-art`, `3d`, `isometric`, `illustration` (por defecto) o `photo`. Un curso lo cambia en `course.yaml › media › visual › style`; los detalles van en el [estilo de la casa](07-media.md#estilo-de-la-casa-para-los-recursos). |
+| `visual.fallback` | El estilo cuando no hay generador de imágenes (por defecto `flat`): lo dibuja en SVG el rol de ilustración. |
 | `voice` | Opciones de locución (Vídeo y Audio). Un curso usa un solo proveedor para toda su locución. |
 | `subtitles` | Opciones de subtítulos. |
 | `types.<id>` | Opciones de cada tipo de marcador, con su id como clave: `image`, `infographic`, `diagram`, `animated_gif`, `terminal_demo`, `video`, `audio`, `simulation`. Un override de `types` en un proyecto usa los mismos ids (no las palabras del contenido); los mapas se fusionan, así que `types: {image: [...]}` sustituye solo las opciones de `image`. |
@@ -302,6 +311,7 @@ delivery:
 | `client` | Cliente del curso. |
 | `design.hours` | Horas totales. `coursekit sync` avisa si no coinciden con la suma de horas de las unidades del diseño aprobado. |
 | `design.structure` | `sin_modulos` o `con_modulos`. |
+| `design.approach` | `expository` o `decision-based` (ver [Cursos basados en decisiones](06-content.md#cursos-basados-en-decisiones)). |
 | `design.intro_section`, `design.summary_section` | Si cada unidad abre con una introducción y cierra con un resumen. |
 | `design.audience`, `design.level`, `design.prerequisites` | Texto libre para el agente de diseño. |
 | `design.tone`, `design.notes` | Tono e instrucciones adicionales para este curso. |

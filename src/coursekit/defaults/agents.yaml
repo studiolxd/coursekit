@@ -2,6 +2,7 @@
 # (<ROLE>_AGENT / <ROLE>_MODEL). Tools: claude | opencode | codex.
 # `models` is what each tool understands: Claude Code takes an alias or an id; opencode takes
 # provider/model; a tool without an entry runs with its own default model (empty).
+# `same_as: <role>`: the role takes the tool and model of that other role while its own variables are empty.
 # The reviewer defaults to a different model than the writer (opus vs sonnet): another model catches more.
 roles:
   design:
@@ -16,6 +17,8 @@ roles:
   media:
     tool: claude
     models: {claude: opus, opencode: anthropic/claude-opus-5-5}
+  illustration:                # draws in SVG: scenes, characters and objects without an image generator, diagrams, infographics
+    same_as: media             # with ILLUSTRATION_AGENT and ILLUSTRATION_MODEL empty it uses the media role's tool and model
   assembly:
     tool: claude
     models: {claude: sonnet, opencode: anthropic/claude-sonnet-5-5}

@@ -426,7 +426,7 @@ def course_code(title: str, code: str | None) -> str:
 
 
 def start(project: Project, title: str, hours: float, code: str | None, intro: bool, summary: bool, notes: str, rounds: int,
-          log: Log, mirror: Callable[[str], None], pause: Callable[[Path], None] | None = None) -> dict:
+          log: Log, mirror: Callable[[str], None], pause: Callable[[Path], None] | None = None, approach: str | None = None) -> dict:
     """Create the course, wait for the person to drop the reference material (`pause`), let the design agent propose it and
     take it to its delivery."""
     code = course_code(title, code)
@@ -435,7 +435,7 @@ def start(project: Project, title: str, hours: float, code: str | None, intro: b
     if (config.effective("delivery", project).value.get("client_review") or {}).get("required"):
         raise HandoffError(t("handoff", "client_review_required", code=code))
     log(t("handoff", "start_line", code=code, who=HANDOFF.name))
-    folder = new.create(project, title, hours, code=code, intro=intro, summary=summary, notes=notes)
+    folder = new.create(project, title, hours, code=code, intro=intro, summary=summary, notes=notes, approach=approach)
     log(t("commands", "new_created", path=folder.relative_to(project.root).as_posix(), hours=hours))
     mirror(code)
     if pause:

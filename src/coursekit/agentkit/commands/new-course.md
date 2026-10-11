@@ -1,14 +1,18 @@
 ---
 description: Create a course from its title and hours and build the instructional design proposal in slxd for human review.
-argument-hint: "\"<title>\" <hours> [--code ABC101] [--no-intro] [--no-summary] [--no-material] [indications]"
+argument-hint: "\"<title>\" <hours> [--code ABC101] [--approach expository|decision-based] [--no-intro] [--no-summary] [--no-material] [indications]"
 ---
 
 Create a new course and its instructional design **proposal**. Arguments from the person:
 
 $ARGUMENTS
 
-1. Separate the title (in quotes), the hours, the options `--code`, `--no-intro`, `--no-summary`,
+1. Separate the title (in quotes), the hours, the options `--code`, `--approach`, `--no-intro`, `--no-summary`,
    `--no-material` (only for you: do not pass it to `coursekit new`) and the rest as free indications. If the title or the hours are missing, ask for them and stop.
+   The approach: `--approach expository` (each section explains, then practises and assesses) or
+   `--approach decision-based` (each section opens with a simulation where the learner decides, and the explanation comes
+   after). If it is not given but the indications clearly ask for learning by deciding, practising first, scenarios or
+   simulations, pass `--approach decision-based`; otherwise leave it out and the project default applies.
 2. Run `coursekit new "<title>" <hours> [options] --notes "<indications>"`, unless `courses/<CODE>/course.yaml` already
    exists (the course was created before, for example in handoff mode): then skip this step and work on it as it is.
 3. Run `coursekit brief <CODE>` and read `brief/index.md` and `brief/notes.md`. If there is no

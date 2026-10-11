@@ -113,7 +113,7 @@ def test_roles_get_default_tool_and_model_in_the_env(project):
 
 def test_roles_can_be_chosen_one_by_one(project, monkeypatch):
     p = find_project(project)
-    answers = iter(["codex", "", "claude", "opus"] + ["", ""] * 3)
+    answers = iter(["codex", "", "claude", "opus"] + ["", ""] * 4)
     said = []
     setup.agent_roles(p, said.append, lambda q, d: next(answers) or d, lambda q: False, force=True)
     from coursekit import envfile
@@ -121,6 +121,43 @@ def test_roles_can_be_chosen_one_by_one(project, monkeypatch):
     values = envfile.parse((project / ".env").read_text(encoding="utf-8"))
     assert values["DESIGN_AGENT"] == "codex" and values["DESIGN_MODEL"] == ""
     assert values["WRITER_AGENT"] == "claude" and values["WRITER_MODEL"] == "opus"
+
+
+def test_illustration_follows_media_while_empty(project, monkeypatch):
+    from coursekit import agents, envfile
+
+    values = envfile.parse((project / ".env").read_text(encoding="utf-8"))
+    assert values.get("ILLUSTRATION_AGENT", "") == "" and values.get("ILLUSTRATION_MODEL", "") == ""
+    monkeypatch.setenv("MEDIA_AGENT", "opencode")
+    monkeypatch.setenv("MEDIA_MODEL", "anthropic/claude-opus-5-5")
+    monkeypatch.delenv("ILLUSTRATION_AGENT", raising=False)
+    monkeypatch.delenv("ILLUSTRATION_MODEL", raising=False)
+    assert agents.role("illustration") == ("opencode", "anthropic/claude-opus-5-5")
+    monkeypatch.setenv("ILLUSTRATION_MODEL", "sonnet")
+    assert agents.role("illustration") == ("claude", "sonnet")
+
+
+def test_illustration_chosen_apart_from_media(project):
+    p = find_project(project)
+    # design, writer, reviewer keep theirs; media changes; illustration takes another model; assembly keeps its own
+    answers = iter(["", "", "", "", "", "", "", "haiku", "", "fable", "", ""])
+    setup.agent_roles(p, lambda m: None, lambda q, d: next(answers) or d, lambda q: False, force=True)
+    from coursekit import envfile
+
+    values = envfile.parse((project / ".env").read_text(encoding="utf-8"))
+    assert values["MEDIA_MODEL"] == "haiku"
+    assert values["ILLUSTRATION_AGENT"] == "claude" and values["ILLUSTRATION_MODEL"] == "fable"
+
+
+def test_illustration_left_as_media_keeps_following_it(project):
+    p = find_project(project)
+    answers = iter(["", "", "", "", "", "", "", "haiku", "", "", "", ""])
+    setup.agent_roles(p, lambda m: None, lambda q, d: next(answers) or d, lambda q: False, force=True)
+    from coursekit import envfile
+
+    values = envfile.parse((project / ".env").read_text(encoding="utf-8"))
+    assert values["MEDIA_MODEL"] == "haiku"
+    assert values["ILLUSTRATION_AGENT"] == "" and values["ILLUSTRATION_MODEL"] == ""
 
 
 def test_media_keys_are_asked_and_saved(project, monkeypatch):

@@ -11,6 +11,13 @@
 # placeholder's description.
 # The agent uses the first option it can actually run and records it in the manifest.
 
+# Visual style of the scenes, characters and objects of the simulations and of the illustrations (generated or drawn). A course
+# changes it in course.yaml › media › visual. How they must look in detail goes in theme/branding/media-style.md (house style),
+# with reference images in theme/branding/style/.
+visual:
+  style: illustration          # flat | pixel-art | 3d | isometric | illustration | photo
+  fallback: flat               # the style when there is no image generator: the illustration role draws it as SVG
+
 # Voice-over for video and audio. A course uses ONE provider for all its narration:
 # course.yaml › media.voice, chosen with `coursekit voice set` when several are available.
 # `coursekit tts --course CODE` uses it.

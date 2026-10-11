@@ -111,5 +111,6 @@ role_design: {es: diseño, en: design}
 role_writer: {es: redacción, en: writing}
 role_reviewer: {es: revisión, en: review}
 role_media: {es: multimedia, en: media}
+role_illustration: {es: ilustración, en: illustration}
 role_assembly: {es: montaje, en: assembly}
 help_roles: {es: "vuelve a elegir la herramienta y el modelo de cada rol", en: "choose again the tool and model of each role"}

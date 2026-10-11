@@ -348,6 +348,30 @@ Si el nombre de una directiva no está en el registro, `verify` falla y sugiere 
 | branching-scenario | `dialog` (ramas complejas: recurso `Simulación interactiva`) |
 | simulated-terminal | recurso `Demo interactiva en terminal` |
 
+## Cursos basados en decisiones
+
+Un curso tiene un **enfoque** (`course.yaml › design.approach`, elegido con `coursekit new --approach`; por defecto,
+`rules › defaults.approach`):
+
+- `expository`: cada apartado explica y después practica y evalúa. Es lo que describe todo lo anterior de esta página.
+- `decision-based`: el alumno no empieza leyendo. Cada apartado de contenido abre con una **simulación** en la que decide,
+  se equivoca o acierta y ve las consecuencias; la explicación llega después y parte de lo que acaba de vivir. El curso
+  conserva alrededor de las simulaciones todas las directivas y recursos de un curso expositivo.
+
+Las partes de un apartado de contenido siguen `rules › decision_based › cycle`:
+
+| Parte | Qué es |
+|---|---|
+| `challenge` | una simulación abre el apartado, sin texto antes |
+| `explanation` | cualquier contenido (texto, pestañas, gráficos con etiquetas, vídeo, diálogos…), construido sobre lo que el alumno acaba de vivir |
+| `practice` | directivas interactivas y preguntas sobre lo explicado |
+| `decide_again` | una segunda simulación, más corta o una variante, en la que se aplica lo aprendido (opcional: `decision_based › optional`) |
+| `closing` | la idea clave y el enlace con el siguiente reto |
+
+Las reglas del enfoque están en [`rules`](04-configuration.md#rules-reglas-de-producción) (`decision_based.*`). Este
+enfoque está en construcción: en esta versión un curso registra su enfoque y las reglas se pueden configurar, pero las
+directivas de simulación, sus comprobaciones en `coursekit verify` y las indicaciones de los agentes aún no están disponibles.
+
 ## `coursekit sync` y `coursekit outline`
 
 ### `coursekit sync CODE [--check]`

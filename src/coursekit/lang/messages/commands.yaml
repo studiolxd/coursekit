@@ -139,9 +139,12 @@ handoff_new_version_options:
   es: "--new-version se usa con el código de un curso entregado, no al crear uno"
   en: "--new-version is used with the code of a delivered course, not when creating one"
 handoff_resume_options:
-  es: "--code, --no-intro, --no-summary y --notes solo valen al crear un curso: para continuar uno, `coursekit handoff CODIGO`"
-  en: "--code, --no-intro, --no-summary and --notes only apply when creating a course: to carry on one, `coursekit handoff CODE`"
+  es: "--code, --no-intro, --no-summary, --notes y --approach solo valen al crear un curso: para continuar uno, `coursekit handoff CODIGO`"
+  en: "--code, --no-intro, --no-summary, --notes and --approach only apply when creating a course: to carry on one, `coursekit handoff CODE`"
 help_new_notes: {es: "instrucciones extra para el diseño instruccional", en: "extra instructions for the instructional design"}
+help_new_approach:
+  es: "enfoque del curso: expository (explicar y practicar) o decision-based (cada apartado abre con una simulación); por defecto: rules › defaults.approach"
+  en: "approach of the course: expository (explain, then practise) or decision-based (every section opens with a simulation); default: rules › defaults.approach"
 help_status:
   es: "estado de todos los cursos, o detalle y siguiente paso de uno"
   en: "state of every course, or the detail and next step of one"

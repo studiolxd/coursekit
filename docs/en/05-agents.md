@@ -14,7 +14,7 @@ coursekit works with three tools. It does not install them: they must be on your
 
 Any of them can also be launched for you with `coursekit write`, `coursekit review` and `coursekit run` (see below).
 
-The work is split into five roles. Each role has a tool and a model.
+The work is split into six roles. Each role has a tool and a model.
 
 | Role | Does | Slash commands it runs | Default tool | Default model (Claude Code) | Default model (opencode) |
 |---|---|---|---|---|---|
@@ -22,9 +22,10 @@ The work is split into five roles. Each role has a tool and a model.
 | `writer` | Writes the content of a unit | `/write-unit` | `claude` | `sonnet` | `anthropic/claude-sonnet-5-5` |
 | `reviewer` | AI review of a written unit | `/review-unit`, `/approve-unit` | `claude` | `opus` | `anthropic/claude-opus-5-5` |
 | `media` | Produces and uploads media assets | `/produce-media` | `claude` | `opus` | `anthropic/claude-opus-5-5` |
+| `illustration` | Draws in SVG: scenes, characters and objects when there is no image generator, diagrams, infographics | (none yet: the media production uses it) | as `media` | as `media` | as `media` |
 | `assembly` | Loads content into creator or builds the html packages, processes the client's review comments, exports or records packages, syncs directives | `/assemble`, `/client-feedback`, `/deliver`, `/sync-directives` | `claude` | `sonnet` | `anthropic/claude-sonnet-5-5` |
 
-Codex has no proposed model: with `codex`, the model is Codex's own default unless you set one. The reviewer defaults to a different model than the writer on purpose: another model catches more.
+`illustration` follows `media` while `ILLUSTRATION_AGENT` and `ILLUSTRATION_MODEL` are empty: set them only to draw with another tool or model. Codex has no proposed model: with `codex`, the model is Codex's own default unless you set one. The reviewer defaults to a different model than the writer on purpose: another model catches more.
 
 ## Choose the tool and model of each role
 

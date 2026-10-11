@@ -295,7 +295,7 @@ coursekit roles
 Creates a course from its title and duration. Use it to start a course; the design agent then proposes the instructional design. Who: both (`/new-course` runs it).
 
 ```
-coursekit new [--code CODE] [--language LANGUAGE] [--no-intro] [--no-summary] [--notes NOTES] title hours
+coursekit new [--code CODE] [--language LANGUAGE] [--no-intro] [--no-summary] [--notes NOTES] [--approach {expository,decision-based}] title hours
 ```
 
 | Argument | Values / default | Meaning |
@@ -307,6 +307,7 @@ coursekit new [--code CODE] [--language LANGUAGE] [--no-intro] [--no-summary] [-
 | `--no-intro` | flag | Units without the opening introduction section. |
 | `--no-summary` | flag | Units without the closing summary section. |
 | `--notes NOTES` | text | Extra instructions for the instructional design. |
+| `--approach APPROACH` | `expository` or `decision-based`; default: `rules › defaults.approach` | How the course teaches: `expository` explains, then practises and assesses; `decision-based` opens every content section with a simulation and explains afterwards (see [Decision-based courses](06-content.md#decision-based-courses)). |
 
 Creates `courses/<CODE>/` with `course.yaml` (status `design`), the folders `brief/sources/`, `design/`, `content/`, `media/`, `reviews/`, `brief/links.md`, `brief/notes.md` and `media/manifest.yaml`. Units and sections are not created here: they come from the approved design with [`coursekit sync`](#coursekit-sync). Exit code 1 if the course folder already exists.
 
@@ -319,7 +320,7 @@ coursekit new "Strong passwords" 2 --code PWD --notes "Focus on office staff"
 Takes a course from its title and hours to its delivery by itself, with nobody reviewing anything on the way: the design, the writing, the AI review, the sign-offs, the media, the assembly and the delivery. Who: people only (the agents cannot run it). Details and limits in [Handoff mode](02-workflow.md#handoff-mode).
 
 ```
-coursekit handoff [--code CODE] [--no-intro] [--no-summary] [--notes NOTES] [--rounds ROUNDS] [--no-pause] [--new-version] target [hours]
+coursekit handoff [--code CODE] [--no-intro] [--no-summary] [--notes NOTES] [--approach {expository,decision-based}] [--rounds ROUNDS] [--no-pause] [--new-version] target [hours]
 ```
 
 | Argument | Values / default | Meaning |
@@ -327,7 +328,7 @@ coursekit handoff [--code CODE] [--no-intro] [--no-summary] [--notes NOTES] [--r
 | `target` | text | With `hours`: the title of the new course (quote it). Without them: the code of a course to carry on from where it stopped. |
 | `hours` | number; optional | Total duration. It makes `handoff` create a new course. |
 | `--code CODE` | default: the title as an upper-case slug | Course code. Only when creating; refused with a code to carry on (exit code 2). |
-| `--no-intro`, `--no-summary`, `--notes NOTES` | as in [`coursekit new`](#coursekit-new) | Only when creating; with a code to carry on they are refused (exit code 2), like `--code`. |
+| `--no-intro`, `--no-summary`, `--notes NOTES`, `--approach APPROACH` | as in [`coursekit new`](#coursekit-new) | Only when creating; with a code to carry on they are refused (exit code 2), like `--code`. |
 | `--rounds ROUNDS` | whole number; default `rules › handoff › rounds` (`2`) | Attempts per step before it stops. |
 | `--no-pause` | flag | Do not wait for the reference material after creating the course folders. Without a terminal it never waits. Only when creating (refused with a code to carry on, exit code 2). |
 | `--new-version` | flag | With the code of a `delivered` course whose content you edited: reopens it and takes it to the next version ([Handoff mode](02-workflow.md#handoff-mode)). Refused (exit code 1) if the course is not `delivered`; with a title and hours it is exit code 2. |
