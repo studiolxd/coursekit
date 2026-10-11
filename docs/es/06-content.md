@@ -497,7 +497,7 @@ debriefing, variables no declaradas, condiciones no válidas e ids repetidos en 
 Con `skin`, la simulación ocurre dentro de una aplicación dibujada en HTML: texto real (lo leen los lectores de pantalla,
 se traduce y se edita sin imágenes nuevas), el aspecto de las aplicaciones que se usan a diario, pero nunca sus nombres,
 logotipos ni iconos. Lo que muestra sale de `screen`: el de la simulación, completado por el de cada escena (una escena
-solo escribe lo que cambia). Una escena puede ocurrir en otra aplicación con su propia `skin` (un mensaje del chat te
+solo escribe lo que cambia). Una escena con `background` ocurre en ese lugar, no en la pantalla; una escena puede ocurrir en otra aplicación con su propia `skin` (un mensaje del chat te
 manda al correo): entonces muestra solo su propio `screen`, y al volver a la primera aplicación esta sigue como estaba.
 `body` y `text` son Markdown.
 

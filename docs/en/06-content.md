@@ -495,7 +495,7 @@ conditions, and ids repeated in the course.
 With `skin`, the simulation happens inside an application drawn in HTML: real text (readable by screen readers,
 translatable, editable without new images), the look of the applications people use every day, but never their names,
 logos or icons. What it shows comes from `screen`: the one of the simulation, completed by the one of each scene (a scene
-writes only what changes). A scene may happen in another application with its own `skin` (a chat message sends you to
+writes only what changes). A scene with a `background` happens in that place, not on the screen; a scene may happen in another application with its own `skin` (a chat message sends you to
 your email): it then shows only its own `screen`, and going back to the first application finds it as it was. `body` and
 `text` are Markdown.
 

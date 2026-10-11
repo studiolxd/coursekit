@@ -95,7 +95,9 @@ simulation format in `.coursekit/docs/content-format.md` (section 2.1).
     noticing the signal the decision (`hotspots` with `target`). In the chat skins (`chat-workspace`, `messenger`, `phone`)
     the `messages` of each scene **add up** along the path: write in each scene only the new messages. Any other screen
     shows what its scene says (or the simulation's `screen`), so give each scene the screen it needs. When the situation
-    moves to another application (a chat message sends you to an email), give that scene its own `skin` and `screen`.
+    moves to another application (a chat message sends you to an email), give that scene its own `skin` and `screen`. A
+    scene with a `background` happens in that place, not on the screen: give a background only to the scenes that happen
+    away from the screen (Ramón's desk), and none to the scenes on the screen.
   - `background` and `layers.image` are **descriptions of the image** (what it shows, from the point of view of the
     learner); the media is produced from them, one image per description in the whole course, so repeat the exact same
     text when a scene reuses an image. Portraits come from the cast of the story bible (`look`) with the `expression` of

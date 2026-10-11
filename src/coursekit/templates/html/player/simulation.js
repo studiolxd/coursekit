@@ -113,7 +113,8 @@ function initSimulation(root, ui, tracker) {
   }
 
   const chatSkin = data.kind === "conversation" && CHAT_SKINS.includes(data.skin);
-  const skinOf = (scene) => scene.skin || data.skin;
+  // where a scene happens: its own skin; else its background (a place); else the skin of the simulation (a screen)
+  const skinOf = (scene) => scene.skin || (scene.background ? null : data.skin);
 
   // In a chat (team chat, messaging, text messages) the messages of each scene the learner goes through add up, as in
   // the real application; any other screen shows what its scene says.

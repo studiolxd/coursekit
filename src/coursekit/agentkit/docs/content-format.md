@@ -127,7 +127,7 @@ scenes:
 | `scored`, `weight` | counts for the grade (default `false`), and its weight among the scored ones (default 1) |
 | `state` | variables and their initial value (numbers, `true`, `false`) |
 | `start` | first scene (default: the first one) |
-| `scenes.<id>` | `skin` (optional: the scene happens in another application, e.g. from the chat to the email; it shows only its own `screen`), `text` (required), `background`, `layers` (`image`, `area`, `if`), `characters` (`name`, `expression`), `variants` (`if`, `text`: extra text when the condition holds), `checkpoint`, and **one** way out: `choices`, `hotspots`, `next` or `ending` |
+| `scenes.<id>` | `skin` (optional: the scene happens in another application, e.g. from the chat to the email; it shows only its own `screen`; a scene with `background` happens in that place instead of on the screen), `text` (required), `background`, `layers` (`image`, `area`, `if`), `characters` (`name`, `expression`), `variants` (`if`, `text`: extra text when the condition holds), `checkpoint`, and **one** way out: `choices`, `hotspots`, `next` or `ending` |
 | choice / hotspot | `text` (choice) or `label` + `area` `[x, y]` or `[x, y, w, h]` in % (hotspot); `goto`; optional `if`, `effects` (adds to variables), `set` (gives them a value), `score` (points, `+` or `-`), `feedback` |
 | hotspot `target` | instead of `area`, a part of the screen of the skin (keys per skin below) |
 | `next` | moves on without a decision: list of `{if, goto}`, the first that holds |
