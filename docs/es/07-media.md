@@ -158,6 +158,8 @@ coursekit voice set PWD piper --speaker 1  # un locutor de una voz de Piper con 
 coursekit voice set PWD elevenlabs --voice <id-de-voz>
 ```
 
+**Voces de los personajes.** Los personajes de los diálogos y de las simulaciones pueden tener voz propia, del mismo proveedor: `coursekit voice set PWD azure --voice es-ES-AlvaroNeural --character Daniel` la guarda en `course.yaml › media.voices`, y `coursekit tts --course PWD --character Daniel …` la usa. Con Piper, un personaje sin voz propia toma por turnos un locutor de la voz, en el orden del reparto de la biblia narrativa: suficiente para borradores.
+
 `voice set` necesita el código del curso y el proveedor. Si el proveedor no está configurado en este equipo, avisa (puede que otras personas del equipo lo tengan) pero lo guarda igualmente. Con varios proveedores disponibles y ninguno elegido, `tts` se detiene y te pide ejecutar `voice set`; sin ninguno disponible, indica qué claves definir.
 
 ## `coursekit tts`

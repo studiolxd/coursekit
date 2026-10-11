@@ -126,3 +126,40 @@ def test_vtt_from_characters():
     vtt = mediatools.vtt_from_characters(list(text), starts, [s + 0.1 for s in starts])
     assert vtt.splitlines()[:6] == ["WEBVTT", "", "1", "00:00:00.000 --> 00:00:00.500", "Hola.", ""]
     assert "Adiós." in vtt
+
+
+def test_voices_of_the_characters(course, monkeypatch, capsys):  # noqa: F811
+    for key in ("ELEVENLABS_API_KEY", "GOOGLE_TTS_API_KEY", "PIPER_VOICE"):
+        monkeypatch.delenv(key, raising=False)
+    monkeypatch.setenv("AZURE_SPEECH_KEY", "k")
+    monkeypatch.setenv("AZURE_SPEECH_REGION", "westeurope")
+    from coursekit import course as coursemod
+    from coursekit.project import find_project
+
+    assert main(["voice", "set", "PWD", "azure"]) == 0
+    assert main(["voice", "set", "PWD", "azure", "--voice", "es-ES-AlvaroNeural", "--character", "Daniel"]) == 0
+    c = coursemod.load(find_project(), "PWD")
+    assert voices.resolve(c) == ("azure", "es-ES-ElviraNeural", None)
+    assert voices.resolve_character(c, "daniel") == ("azure", "es-ES-AlvaroNeural", None)
+    with pytest.raises(voices.VoiceError, match="Marta has no voice of azure"):
+        voices.resolve_character(c, "Marta")
+    capsys.readouterr()
+    assert main(["voice", "set", "PWD", "google", "--voice", "x", "--character", "Marta"]) == 1
+    assert "must be of the provider of the course (azure)" in capsys.readouterr().err
+    assert main(["voice", "list", "PWD"]) == 0
+    assert "Daniel: azure · es-ES-AlvaroNeural" in capsys.readouterr().out
+
+
+def test_piper_drafts_alternate_the_speakers(course, monkeypatch):  # noqa: F811
+    for key in ("ELEVENLABS_API_KEY", "AZURE_SPEECH_KEY", "GOOGLE_TTS_API_KEY"):
+        monkeypatch.delenv(key, raising=False)
+    monkeypatch.setenv("PIPER_VOICE", "/voices/v.onnx")
+    monkeypatch.setattr(voices.shutil, "which", lambda t: f"/fake/{t}")
+    from coursekit import course as coursemod
+    from coursekit.project import find_project
+
+    c = coursemod.load(find_project(), "PWD")
+    (c["_dir"] / "design" / "story.md").write_text(
+        "---\nworld: ACME\nprotagonist: {role: x}\ncharacters: [{name: Marta}, {name: Daniel}]\n---\n", encoding="utf-8")
+    assert voices.resolve_character(c, "Marta")[2] == "1"
+    assert voices.resolve_character(c, "Daniel")[2] == "0"

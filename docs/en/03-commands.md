@@ -713,7 +713,7 @@ coursekit media set PWD U1-S2-M1 --status produced --recipe agent-svg --file med
 Shows the voice-over providers available on this machine, or fixes the single voice of a course. A course never mixes voices. Who: both.
 
 ```
-coursekit voice [--voice VOICE] [--speaker SPEAKER] {list,set} [code] [{elevenlabs,azure,google,piper}]
+coursekit voice [--voice VOICE] [--speaker SPEAKER] [--character CHARACTER] {list,set} [code] [{elevenlabs,azure,google,piper}]
 ```
 
 | Argument | Values / default | Meaning |
@@ -723,8 +723,9 @@ coursekit voice [--voice VOICE] [--speaker SPEAKER] {list,set} [code] [{elevenla
 | `provider` | `elevenlabs`, `azure`, `google`, `piper` | Required by `set`. |
 | `--voice VOICE` | provider voice id; default: the provider's voice variable in `.env`, then the language default | Voice to use. |
 | `--speaker SPEAKER` | integer | Speaker of multi-speaker Piper voices. |
+| `--character CHARACTER` | name (`set`) | Fix the voice of this character instead of the course voice: it must be of the provider of the course (exit code 1 otherwise) and needs `--voice` (or `--speaker` with Piper). Stored in `course.yaml › media.voices`. |
 
-`list` prints one line per provider (`available` or `missing`, with a note) and, with a course, which voice it uses or what to do next. `set` writes `course.yaml › media.voice` (`provider`, `voice`, `speaker`) and warns, without failing, when the provider is not configured on this machine. Exit code 2 when `set` lacks the course or the provider.
+`list` prints one line per provider (`available` or `missing`, with a note) and, with a course, which voice it uses or what to do next. `set` writes `course.yaml › media.voice` (`provider`, `voice`, `speaker`), or with `--character` the voice of that character in `media.voices`, and warns, without failing, when the provider is not configured on this machine. Exit code 2 when `set` lacks the course or the provider.
 
 ```
 coursekit voice set PWD azure --voice es-ES-ElviraNeural
@@ -735,7 +736,7 @@ coursekit voice set PWD azure --voice es-ES-ElviraNeural
 Produces the voice-over of a script. Who: agents (the media agent) and people.
 
 ```
-coursekit tts [--course COURSE] [--engine {elevenlabs,azure,google,piper}] --in INPUT --out OUT [--voice VOICE] [--speaker SPEAKER]
+coursekit tts [--course COURSE] [--engine {elevenlabs,azure,google,piper}] --in INPUT --out OUT [--voice VOICE] [--speaker SPEAKER] [--character CHARACTER]
 ```
 
 | Argument | Values / default | Meaning |
@@ -746,6 +747,7 @@ coursekit tts [--course COURSE] [--engine {elevenlabs,azure,google,piper}] --in 
 | `--out OUT` | path (required) | Audio file to write (`.mp3`). |
 | `--voice VOICE` | text | Voice, overriding the course's. |
 | `--speaker SPEAKER` | integer | Speaker of multi-speaker Piper voices. |
+| `--character CHARACTER` | name | Use the voice of this character (`voice set --character`). With Piper and no voice of its own, the speakers of the voice take turns in the order of the cast of the story bible (a draft); with another provider and no voice of its own it fails, saying how to set it. |
 
 Fails with a message (exit code 1) when the provider is not configured, when several providers are available and none is chosen (use `coursekit voice set`), or when none is, when the `--in` file does not exist, when a program it needs (`ffmpeg`, `piper`) is not installed or fails (`<program> is not installed or not on the PATH (coursekit setup --media)`, `<program> failed (exit code N)`), and when the voice API answers with an error or cannot be reached (`<host> answered <status> <reason>: check the key, the region and the voice configured`, `could not reach <host>: <reason>`). ElevenLabs also writes a `.vtt` file (captions) next to the audio, with the name of `--out` and the extension `.vtt` (`u1.mp3` gives `u1.vtt`), from the character timestamps the API returns; for the other providers use [`coursekit subtitles`](#coursekit-subtitles).
 

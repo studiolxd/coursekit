@@ -713,7 +713,7 @@ coursekit media set PWD U1-S2-M1 --status produced --recipe agent-svg --file med
 Muestra los proveedores de locución disponibles en esta máquina, o fija la voz única de un curso. Un curso nunca mezcla voces. Quién: ambos.
 
 ```
-coursekit voice [--voice VOICE] [--speaker SPEAKER] {list,set} [code] [{elevenlabs,azure,google,piper}]
+coursekit voice [--voice VOICE] [--speaker SPEAKER] [--character CHARACTER] {list,set} [code] [{elevenlabs,azure,google,piper}]
 ```
 
 | Argumento | Valores / por defecto | Significado |
@@ -723,8 +723,9 @@ coursekit voice [--voice VOICE] [--speaker SPEAKER] {list,set} [code] [{elevenla
 | `provider` | `elevenlabs`, `azure`, `google`, `piper` | Obligatorio en `set`. |
 | `--voice VOICE` | id de voz del proveedor; por defecto: la variable de voz del proveedor en `.env` y después la voz por defecto del idioma | Voz que usar. |
 | `--speaker SPEAKER` | entero | Locutor de las voces Piper multilocutor. |
+| `--character CHARACTER` | nombre (`set`) | Fija la voz de este personaje en vez de la del curso: tiene que ser del proveedor del curso (si no, código de salida 1) y necesita `--voice` (o `--speaker` con Piper). Se guarda en `course.yaml › media.voices`. |
 
-`list` imprime una línea por proveedor (`disponible` o `falta`, con una nota) y, con un curso, qué voz usa o qué hacer a continuación. `set` escribe `course.yaml › media.voice` (`provider`, `voice`, `speaker`) y avisa, sin fallar, cuando el proveedor no está configurado en esta máquina. Código de salida 2 cuando a `set` le falta el curso o el proveedor.
+`list` imprime una línea por proveedor (`disponible` o `falta`, con una nota) y, con un curso, qué voz usa o qué hacer a continuación. `set` escribe `course.yaml › media.voice` (`provider`, `voice`, `speaker`), o con `--character` la voz de ese personaje en `media.voices`, y avisa, sin fallar, cuando el proveedor no está configurado en esta máquina. Código de salida 2 cuando a `set` le falta el curso o el proveedor.
 
 ```
 coursekit voice set PWD azure --voice es-ES-ElviraNeural
@@ -735,7 +736,7 @@ coursekit voice set PWD azure --voice es-ES-ElviraNeural
 Produce la locución de un guion. Quién: agentes (el agente multimedia) y personas.
 
 ```
-coursekit tts [--course COURSE] [--engine {elevenlabs,azure,google,piper}] --in INPUT --out OUT [--voice VOICE] [--speaker SPEAKER]
+coursekit tts [--course COURSE] [--engine {elevenlabs,azure,google,piper}] --in INPUT --out OUT [--voice VOICE] [--speaker SPEAKER] [--character CHARACTER]
 ```
 
 | Argumento | Valores / por defecto | Significado |
@@ -746,6 +747,7 @@ coursekit tts [--course COURSE] [--engine {elevenlabs,azure,google,piper}] --in 
 | `--out OUT` | ruta (obligatorio) | Fichero de audio que escribir (`.mp3`). |
 | `--voice VOICE` | texto | Voz, que sustituye a la del curso. |
 | `--speaker SPEAKER` | entero | Locutor de las voces Piper multilocutor. |
+| `--character CHARACTER` | nombre | Usa la voz de este personaje (`voice set --character`). Con Piper y sin voz propia, los locutores de la voz se turnan en el orden del reparto de la biblia narrativa (un borrador); con otro proveedor y sin voz propia falla y dice cómo fijarla. |
 
 Falla con un mensaje (código de salida 1) cuando el proveedor no está configurado, cuando hay varios proveedores disponibles y no se ha elegido ninguno (usa `coursekit voice set`) o cuando no hay ninguno, cuando el fichero de `--in` no existe, cuando un programa que necesita (`ffmpeg`, `piper`) no está instalado o falla (`<programa> no está instalado o no se encuentra en el PATH (coursekit setup --media)`, `<programa> terminó con error (código N)`), y cuando la API de voz responde con un error o no se puede alcanzar (`<host> respondió <estado> <motivo>: revisa la clave, la región y la voz configuradas`, `no se pudo conectar con <host>: <motivo>`). ElevenLabs escribe además un fichero `.vtt` (subtítulos) junto al audio, con el nombre de `--out` y la extensión `.vtt` (`u1.mp3` da `u1.vtt`), a partir de las marcas de tiempo por carácter que devuelve la API; con los demás proveedores usa [`coursekit subtitles`](#coursekit-subtitles).
 

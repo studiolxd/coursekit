@@ -146,6 +146,12 @@ help_paths:
   es: "todos los caminos de las simulaciones de un curso, con su diagrama, en reviews/unit-NN-paths.md (para la revisión)"
   en: "every path of the simulations of a course, with its flowchart, in reviews/unit-NN-paths.md (for the review)"
 help_paths_unit: {es: "solo esta unidad", en: "only this unit"}
+help_voice_character:
+  es: "fija la voz de este personaje (del proveedor del curso) en vez de la del curso"
+  en: "set the voice of this character (of the provider of the course) instead of the course voice"
+help_tts_character:
+  es: "la voz de este personaje (voice set --character; con Piper, sin voz propia, alterna los hablantes)"
+  en: "the voice of this character (voice set --character; with Piper and none of its own, the speakers take turns)"
 help_new_approach:
   es: "enfoque del curso: expository (explicar y practicar) o decision-based (cada apartado abre con una simulación); por defecto: rules › defaults.approach"
   en: "approach of the course: expository (explain, then practise) or decision-based (every section opens with a simulation); default: rules › defaults.approach"

@@ -545,7 +545,7 @@ def cmd_voice(args: argparse.Namespace) -> int:
     if not (course and args.provider):
         print(t("commands", "voice_set_needs"), file=sys.stderr)
         return 2
-    message, warning = voices.set_voice(course, args.provider, args.voice, args.speaker)
+    message, warning = voices.set_voice(course, args.provider, args.voice, args.speaker, args.character)
     if warning:
         print(t("commands", "voice_warning", warning=warning), file=sys.stderr)
     print(message)
@@ -555,7 +555,7 @@ def cmd_voice(args: argparse.Namespace) -> int:
 def cmd_tts(args: argparse.Namespace) -> int:
     project = _project()
     course = coursemod.load(project, args.course) if args.course else None
-    print(mediatools.tts(course, args.engine, Path(args.input), Path(args.out), args.voice, args.speaker))
+    print(mediatools.tts(course, args.engine, Path(args.input), Path(args.out), args.voice, args.speaker, args.character))
     return 0
 
 
@@ -838,6 +838,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("provider", nargs="?", choices=tuple(voices.PROVIDERS))
     p.add_argument("--voice")
     p.add_argument("--speaker")
+    p.add_argument("--character", help=t("commands", "help_voice_character"))
     p.set_defaults(func=cmd_voice)
 
     p = sub.add_parser("tts", help=t("commands", "help_tts"))
@@ -847,6 +848,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--out", required=True)
     p.add_argument("--voice")
     p.add_argument("--speaker", help=t("commands", "help_tts_speaker"))
+    p.add_argument("--character", help=t("commands", "help_tts_character"))
     p.set_defaults(func=cmd_tts)
 
     p = sub.add_parser("subtitles", help=t("commands", "help_subtitles"))

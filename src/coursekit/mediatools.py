@@ -22,7 +22,7 @@ from pathlib import Path
 from coursekit import course as coursemod
 from coursekit.i18n import t
 from coursekit.util import USER_AGENT
-from coursekit.voices import LOCALES, resolve
+from coursekit.voices import LOCALES, resolve, resolve_character
 
 
 class ToolError(Exception):
@@ -210,11 +210,11 @@ ENGINES = {"elevenlabs": tts_elevenlabs, "azure": tts_azure, "google": tts_googl
 
 
 def tts(course: dict | None, engine: str | None, input_path: Path, out: Path, voice: str | None = None,
-        speaker: str | None = None) -> str:
+        speaker: str | None = None, character: str | None = None) -> str:
     require_file(input_path)
     text = re.sub(r"\s+", " ", input_path.read_text(encoding="utf-8")).strip()
     out.parent.mkdir(parents=True, exist_ok=True)
-    provider, course_voice, course_speaker = resolve(course, engine)
+    provider, course_voice, course_speaker = resolve_character(course, character, engine) if character else resolve(course, engine)
     language = coursemod.language(course) if course else "es"
     ENGINES[provider](text, out, voice or course_voice, speaker or course_speaker, language)
     used_voice = voice or course_voice or t("mediatools", "default_voice")

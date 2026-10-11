@@ -40,3 +40,12 @@ voice_set: {es: "{code}: voz {provider} · {voice}", en: "{code}: voice {provide
 voice_set_speaker:
   es: "{code}: voz {provider} · {voice} · locutor {speaker}"
   en: "{code}: voice {provider} · {voice} · speaker {speaker}"
+character_without_voice:
+  es: "{name} no tiene voz propia de {provider}: coursekit voice set {code} {provider} --voice … --character \"{name}\""
+  en: "{name} has no voice of {provider} of their own: coursekit voice set {code} {provider} --voice … --character \"{name}\""
+character_other_provider:
+  es: "la voz de {name} tiene que ser del proveedor del curso ({course}), no de {provider}: un curso no mezcla proveedores"
+  en: "the voice of {name} must be of the provider of the course ({course}), not {provider}: a course does not mix providers"
+character_needs_voice: {es: "indica la voz de {name} con --voice (o --speaker con Piper)", en: "give the voice of {name} with --voice (or --speaker with Piper)"}
+character_set: {es: "voz de {name}: {provider} · {voice}{speaker}", en: "voice of {name}: {provider} · {voice}{speaker}"}
+character_uses: {es: "  {name}: {provider} · {voice}{speaker}", en: "  {name}: {provider} · {voice}{speaker}"}

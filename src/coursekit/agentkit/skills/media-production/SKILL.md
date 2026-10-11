@@ -43,7 +43,9 @@ The whole course uses **one voice**. `coursekit voice list <CODE>` shows the con
 providers and the chosen voice. If there are several and the course has none, **ask the person
 which one** (you can generate a sample sentence with each using `--engine`) and set it with
 `coursekit voice set <CODE> <provider> [--voice …] [--speaker …]`. Then every voice-over is made
-with `coursekit tts --course <CODE> …`.
+with `coursekit tts --course <CODE> …`. The characters (dialogues, simulations) may have their own voice of the same
+provider: propose one per character that fits the story bible (`personality`, `speech`), ask the person, set it with
+`coursekit voice set <CODE> <provider> --voice … --character <Name>` and make their lines with `tts --character <Name>`.
 
 ## 2. Script before producing (video, audio, GIF, demo)
 
