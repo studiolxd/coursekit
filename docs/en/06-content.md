@@ -417,7 +417,7 @@ section, the objectives it practises and what is at stake).
 [`coursekit approve design`](03-commands.md#coursekit-approve) signs it with the design: it refuses when it is missing or
 its front matter is not valid (`world`, `protagonist` and `characters` required), and a later change of `story.md`
 invalidates the signature, like a change of `matrix.json`. `coursekit verify` checks that every character a simulation
-uses (`character`, `characters` of the scenes) is in the cast.
+uses (`character`, `characters` of the scenes) is in the cast, and so is everyone who speaks in a `:::dialog`: by their full name, by their first name when no one else in the cast has it ("Aisha" for "Aisha Benali"), or as `Tú` / `You`, the learner, who has no portrait.
 
 ### Simulations
 

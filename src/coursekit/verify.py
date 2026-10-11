@@ -281,6 +281,20 @@ def check_adaptive(path: Path, lines: list[str], unit_n: int, sims: list, report
     return len(blocks)
 
 
+def in_dialog(lines: list[str], line_no: int) -> bool:
+    """The line (1-based) is inside a :::dialog directive."""
+    inside = False
+    for n, line in enumerate(lines, 1):
+        stripped = line.strip()
+        if n == line_no:
+            return inside
+        if stripped == ":::dialog":
+            inside = True
+        elif stripped == ":::":
+            inside = False
+    return False
+
+
 def opens_with_simulation(sec: Section, simulations: tuple[str, ...]) -> bool:
     """The first thing of a section, after headings and comments, is a simulation."""
     text = HTML_COMMENT_RE.sub(" ", "\n".join(sec.lines))
@@ -452,6 +466,12 @@ def verify_unit(course: dict, unit: dict) -> Report:
                 for place, name in people:
                     if name and str(name).strip().casefold() not in cast:
                         report.error(f"{sim.id}: " + t("story", "unknown_character", place=place, name=name))
+            for line_no, line in enumerate(text.splitlines(), 1):
+                m = re.match(r"^\*\*(.+?):\*\*", line.strip())
+                if m and in_dialog(text.splitlines(), line_no) and not storymod.is_learner(course, m.group(1)) \
+                        and storymod.canonical(course, m.group(1)) is None:
+                    report.error(f"content.md:{line_no}: " + t("story", "unknown_speaker", name=m.group(1),
+                                                                 learner=coursemod.tokens(course).get("learner", "")))
     backend = coursemod.backend(course) if course.get("_project") else None
     checks = list(BACKEND_CHECKS)
     if backend == "creator":

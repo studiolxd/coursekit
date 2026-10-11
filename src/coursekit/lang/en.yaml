@@ -15,6 +15,7 @@ thousands_separator: ","
 assessment_instructions: Instructions for the learner
 assessment_bank: Question bank
 download: Download
+learner: You                          # the learner when they speak in a dialogue (no portrait)
 note: Note
 
 # Resource types of the media placeholders: the id (configuration, manifest) -> what is written in the content.

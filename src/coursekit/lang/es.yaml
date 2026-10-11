@@ -15,6 +15,7 @@ thousands_separator: "."
 assessment_instructions: Instrucciones para el alumno
 assessment_bank: Banco de preguntas
 download: Descargar
+learner: Tú                          # the learner when they speak in a dialogue (no portrait)
 note: Nota
 
 # Resource types of the media placeholders: the id (configuration, manifest) -> what is written in the content.

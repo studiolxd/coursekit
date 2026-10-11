@@ -33,6 +33,7 @@ from markdown_it import MarkdownIt
 
 from coursekit import config, lang, simulation
 from coursekit import course as coursemod
+from coursekit import story as storymod
 from coursekit.i18n import t
 from coursekit.states import history_entry
 from coursekit.util import character_asset_id, edit_yaml, load_yaml, save_yaml
@@ -350,8 +351,13 @@ def directive_brick(name: str, body: list[str], ctx: dict) -> dict:
                     characters.append(m.group(1))
                 items.append({"characterId": m.group(1), "content": inline(m.group(2))})
         people = []
+        course = ctx.get("course")
         for name in characters:
-            portrait = ctx["assets"].get(character_asset_id(name))
+            if course and storymod.is_learner(course, name):
+                people.append({"name": name})
+                continue
+            full = (storymod.canonical(course, name) if course and course.get("_dir") else None) or name
+            portrait = ctx["assets"].get(character_asset_id(full))
             if portrait and portrait.get("asset_path") and portrait.get("status") == "uploaded":
                 people.append({"name": name, "imagePath": portrait["asset_path"], "imageAlt": portrait.get("alt") or name})
             else:

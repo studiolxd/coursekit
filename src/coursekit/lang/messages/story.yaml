@@ -13,6 +13,9 @@ character_repeated: {es: "el personaje '{name}' está repetido", en: "character 
 unknown_character_key:
   es: "clave desconocida '{key}' en el personaje '{name}' (válidas: {valid})"
   en: "unknown key '{key}' in character '{name}' (valid: {valid})"
+unknown_speaker:
+  es: "en un diálogo habla '{name}', que no está en el reparto de design/story.md (vale su nombre completo, su nombre de pila si no hay otro igual, o '{learner}' para el alumno)"
+  en: "'{name}' speaks in a dialogue but is not in the cast of design/story.md (their full name, their first name when no one else has it, or '{learner}' for the learner)"
 unknown_character:
   es: "{place}: el personaje '{name}' no está en el reparto de design/story.md"
   en: "{place}: character '{name}' is not in the cast of design/story.md"

@@ -559,3 +559,23 @@ def test_a_section_far_above_its_minimum_gets_a_warning(decision_course, capsys)
     code, out = verify(decision_course, GOOD_SECTION, capsys)
     assert code == 0  # only a warning
     assert "above the minimum (120): the section takes longer than its hours" in out
+
+
+def test_short_names_and_the_learner_in_the_dialogues(decision_course, capsys):
+    from coursekit import course, simulation, story
+    from coursekit.project import find_project
+
+    data = course.load(find_project(decision_course), "DB1")
+    assert story.canonical(data, "Marta") == "Marta" and story.canonical(data, "técnico") == "Técnico"
+    assert story.canonical(data, "Lucía") is None and story.is_learner(data, "Tú")
+    assert simulation.portrait_id("Marta", "neutral") == simulation.portrait_id("Marta") == "CHAR-MARTA"
+    dialog = ":::dialog\n**Marta:** Hola.\n**Tú:** Hola, Marta.\n**Lucía:** ¿Y yo?\n:::\n"
+    code, out = verify(decision_course, GOOD_SECTION + "\n" + dialog, capsys)
+    assert code == 1
+    assert "'Lucía' speaks in a dialogue but is not in the cast" in out
+    assert "'Marta' speaks" not in out and "'Tú' speaks" not in out
+    capsys.readouterr()
+    assert main(["media", "extract", "DB1"]) == 0
+    manifest = yaml.safe_load((decision_course.parent.parent / "media" / "manifest.yaml").read_text(encoding="utf-8"))
+    ids = {a["id"] for a in manifest["assets"]}
+    assert "CHAR-MARTA" in ids and "CHAR-TU" not in ids

@@ -21,6 +21,7 @@ import yaml
 from coursekit import config as configmod
 from coursekit import course as coursemod
 from coursekit import lang
+from coursekit import story as storymod
 from coursekit import theme as thememod
 from coursekit.i18n import t
 from coursekit.util import character_asset_id, roundtrip_yaml
@@ -137,6 +138,9 @@ def scan_characters(course: dict) -> list[dict]:
                 inside = False
             elif inside and section is not None and (m := DIALOG_LINE.match(line.strip())):
                 name = m.group(1).strip()
+                if storymod.is_learner(course, name):
+                    continue
+                name = storymod.canonical(course, name) or name
                 found.setdefault(character_asset_id(name), {
                     "id": character_asset_id(name), "unit": unit["n"], "section": section, "type": "image", "character": name,
                     "title": t("media", "character_title", name=name), "description": t("media", "character_description", name=name),

@@ -718,7 +718,8 @@ def portrait_id(name: str, expression: object = None) -> str:
     from coursekit.util import character_asset_id, slugify
 
     base = character_asset_id(name)
-    return f"{base}-{slugify(str(expression), 24).upper()}" if expression else base
+    neutral = not expression or str(expression).strip().casefold() == "neutral"  # the base portrait is the neutral one
+    return base if neutral else f"{base}-{slugify(str(expression), 24).upper()}"
 
 
 def media_refs(data: dict) -> list[dict]:
@@ -736,7 +737,7 @@ def media_refs(data: dict) -> list[dict]:
         if not name:
             return
         add(portrait_id(name), "portrait", character=name)
-        if expression:
+        if portrait_id(name, expression) != portrait_id(name):
             add(portrait_id(name, expression), "portrait", character=name, expression=str(expression))
 
     portrait(data.get("character"))

@@ -81,6 +81,33 @@ def load(course: dict) -> tuple[dict | None, list[str]]:
     return data, problems
 
 
+def cast(course: dict) -> list[str]:
+    """The names of the cast of the story bible of a course, in order (empty without one)."""
+    if not path(course).exists():
+        return []
+    data, _ = load(course)
+    return [str(p["name"]).strip() for p in (data or {}).get("characters") or [] if isinstance(p, dict) and p.get("name")]
+
+
+def canonical(course: dict, name: str) -> str | None:
+    """The full name of the cast a speaker refers to: the same name, or the only character whose first name it is
+    ("Aisha" for "Aisha Benali"); None when it is not in the cast or is ambiguous."""
+    names = cast(course)
+    wanted = name.strip().casefold()
+    exact = [n for n in names if n.casefold() == wanted]
+    if exact:
+        return exact[0]
+    first = [n for n in names if n.split()[0].casefold() == wanted]
+    return first[0] if len(first) == 1 else None
+
+
+def is_learner(course: dict, name: str) -> bool:
+    """The learner speaking in a dialogue ("Tú", "You"): they have no portrait."""
+    from coursekit import course as coursemod
+
+    return name.strip().casefold() == str(coursemod.tokens(course).get("learner") or "").casefold()
+
+
 def character_names(data: dict | None) -> set[str]:
     """Names of the cast, case-insensitive."""
     return {str(p["name"]).strip().casefold() for p in (data or {}).get("characters") or []
