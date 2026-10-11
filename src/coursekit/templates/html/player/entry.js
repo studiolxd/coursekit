@@ -92,6 +92,45 @@ lessons.forEach((lesson) => {
     report.textContent = parts.filter(Boolean).join(" ");
   };
 
+  // A test made only of scored simulations needs no button: it is graded when they all reach an ending. Starting a
+  // simulation again opens a new attempt while there are attempts left; after that it can be played, without a grade.
+  const automatic = !questions.length && scoredSims.length > 0;
+  let armed = true;
+
+  const grade = () => {
+    const results = questions.map((item) => ({ item, ok: item.grade() }));
+    const weights = scoredSims.reduce((sum, sim) => sum + sim.weight, 0);
+    const earned = results.filter((r) => r.ok).length + scoredSims.reduce((sum, sim) => sum + (sim.weight * sim.grade()) / 100, 0);
+    const score = Math.round((100 * earned) / Math.max(1, results.length + weights));
+    const passed = score >= (quiz.passingGrade ?? 0);
+    const interactions = results.map((r) => ({
+      id: r.item.q.dataset.id,
+      type: ["single", "multi"].includes(r.item.q.dataset.type) ? "choice" : "fill-in",
+      learnerResponse: r.item.response().slice(0, 250),
+      result: r.ok ? "correct" : "incorrect",
+      weighting: 1,
+    }));
+    tracker.quiz({ score, passed, interactions });
+    status(score, passed);
+    return passed;
+  };
+
+  if (automatic) {
+    submit.hidden = true;
+    const closed = () => left() === 0 || (tracker.state.best !== null && tracker.state.best >= (quiz.passingGrade ?? 0));
+    armed = !closed();
+    scoredSims.forEach((sim) => sim.onChange(() => {
+      const ended = scoredSims.every((s) => s.finished());
+      if (ended && armed) {
+        armed = false;
+        grade();
+      } else if (!ended && !armed && !closed()) {
+        armed = true;  // started again: a new attempt
+        report.textContent = "";
+      }
+    }));
+  }
+
   submit.addEventListener("click", () => {
     if (!questions.every((item) => item.answered())) {
       report.textContent = ui.answer_all;
@@ -101,21 +140,8 @@ lessons.forEach((lesson) => {
       report.textContent = ui.sim_finish_first;
       return;
     }
-    const results = questions.map((item) => ({ item, ok: item.grade() }));
-    const weights = scoredSims.reduce((sum, sim) => sum + sim.weight, 0);
-    const earned = results.filter((r) => r.ok).length + scoredSims.reduce((sum, sim) => sum + (sim.weight * sim.grade()) / 100, 0);
-    const score = Math.round((100 * earned) / Math.max(1, results.length + weights));
-    const passed = score >= (quiz.passingGrade ?? 0);
-    const interactions = results.map((r, i) => ({
-      id: r.item.q.dataset.id,
-      type: ["single", "multi"].includes(r.item.q.dataset.type) ? "choice" : "fill-in",
-      learnerResponse: r.item.response().slice(0, 250),
-      result: r.ok ? "correct" : "incorrect",
-      weighting: 1,
-    }));
-    tracker.quiz({ score, passed, interactions });
+    const passed = grade();
     submit.disabled = true;
-    status(score, passed);
     again.hidden = passed || left() === 0;
   });
   again.addEventListener("click", () => {

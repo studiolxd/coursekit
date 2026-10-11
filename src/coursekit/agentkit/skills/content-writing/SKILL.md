@@ -57,7 +57,10 @@ Mandatory format: `.coursekit/docs/content-format.md`. Write in {{language_name}
   accessibility; verify gives the minimum per unit (by hours) and of types.
 - Assessment: present each activity of `activities.assessment` in the relevant section (what it
   assesses, how it is graded, attempts). The detail and the question bank go in
-  `assessment.md`: {{questions_per_objective}} questions per objective assessed by questionnaire.
+  `assessment.md`: {{questions_per_objective}} questions per objective assessed by questionnaire. Of each activity the
+  learner sees **only** the instructions, its simulations and its question bank, exactly as written: they are for the
+  learner, never notes for people ("this activity has no question bank…"). An activity that is only a scored simulation
+  leaves its bank empty; the other subsections (objectives, development, marking, attempts) are for people.
 - **No emojis.** Only `{{allowed_symbols}}`.
 
 ## Decision-based courses

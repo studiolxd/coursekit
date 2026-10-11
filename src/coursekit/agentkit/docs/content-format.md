@@ -231,4 +231,6 @@ The summative activities of the unit, in order:
 ```
 
 The unit test bank has {{questions_per_objective}} questions per objective assessed by
-questionnaire.
+questionnaire. The learner sees the instructions, the simulations (wherever they are in the activity) and the question
+bank, as written; the other subsections are for people. An activity made only of a scored simulation leaves its bank
+empty, and it is graded by itself when the simulation ends (no submit button).
