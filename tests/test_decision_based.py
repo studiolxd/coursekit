@@ -579,3 +579,16 @@ def test_short_names_and_the_learner_in_the_dialogues(decision_course, capsys):
     manifest = yaml.safe_load((decision_course.parent.parent / "media" / "manifest.yaml").read_text(encoding="utf-8"))
     ids = {a["id"] for a in manifest["assets"]}
     assert "CHAR-MARTA" in ids and "CHAR-TU" not in ids
+
+
+def test_a_character_of_a_dialogue_and_a_simulation_has_one_portrait(decision_course):
+    dialog = ":::dialog\n**Técnico:** Hola.\n**Tú:** ¿Qué tal?\n:::\n"
+    (decision_course / "content.md").write_text(decision_content(GOOD_SECTION + "\n" + dialog), encoding="utf-8")
+    manifest_path = decision_course.parent.parent / "media" / "manifest.yaml"
+    assert main(["media", "extract", "DB1"]) == 0
+    first = {a["id"]: a for a in yaml.safe_load(manifest_path.read_text(encoding="utf-8"))["assets"]}
+    assert first["CHAR-TECNICO"]["kind"] == "portrait" and "transparent" in first["CHAR-TECNICO"]["specs"]
+    assert main(["media", "set", "DB1", "CHAR-TECNICO", "--status", "produced", "--force"]) == 0
+    assert main(["media", "extract", "DB1"]) == 0  # extracting again keeps it produced
+    again = {a["id"]: a for a in yaml.safe_load(manifest_path.read_text(encoding="utf-8"))["assets"]}
+    assert again["CHAR-TECNICO"]["status"] == "produced"

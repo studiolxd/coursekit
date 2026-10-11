@@ -234,9 +234,11 @@ def load_manifest(course_dir):
 def extract(course: dict) -> dict[str, int]:
     ry, path, data = load_manifest(course["_dir"])
     existing = {a["id"]: a for a in data["assets"]}
-    found = scan(course) + scan_characters(course)
-    known = {a["id"] for a in found}
-    found += [a for a in scan_simulations(course) if a["id"] not in known]  # a dialogue gives the base portrait first
+    simulations = scan_simulations(course)
+    of_simulations = {a["id"] for a in simulations}
+    # a character who speaks in a dialogue and appears in a simulation has one portrait: the one of the simulation, transparent
+    # and larger, which also serves as the avatar of the dialogue
+    found = scan(course) + [a for a in scan_characters(course) if a["id"] not in of_simulations] + simulations
     merged = []
     for asset in found:
         old = existing.pop(asset["id"], None)
