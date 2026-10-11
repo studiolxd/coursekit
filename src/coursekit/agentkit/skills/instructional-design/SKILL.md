@@ -129,7 +129,8 @@ characters:
 ## Protagonist
 ## Cast
 ## Arc
-<!-- the conflict of the course, the tension of each unit and how it is solved -->
+<!-- the conflict of the course, the tension of each unit and how it is solved; the resolution is told in the endings of
+     the last scored simulation, one per ending (good, mixed, bad), never as a fixed epilogue that assumes the learner did well -->
 ## Simulation map
 | Unit | Section | Simulation | Objectives | At stake | Characters | Scored |
 ```

@@ -82,6 +82,10 @@ simulation format in `.coursekit/docs/content-format.md` (section 2.1).
   - *decide_again* (optional): a second, shorter simulation or a variant in a new situation; leave it out when the
     section has already practised enough.
   - *closing*: the key idea in one `> ` highlight or `:::highlight`, and the link to the next challenge of the story.
+- **The end of the story** goes in the endings of the last scored simulation of the unit (or of the course), one per
+  ending, coherent with what the learner did: it is the last thing they play, and the assessment comes after the summary.
+  The summary keeps the key ideas and never states what the learner did ("you reported it in time", "you gave away no
+  password"): they may have done the opposite.
 - **Inside the story.** Use the world, the protagonist and the cast of the bible; a character not in the cast cannot
   appear (`coursekit verify` checks it). Keep their personality and way of speaking. Every unit moves the arc.
 - **Writing a simulation:**
