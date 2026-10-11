@@ -12,6 +12,12 @@ excel_none: {es: "(ninguno)", en: "(none)"}
 design_summary:
   es: "{code} — {title} ({hours} h)\n  matriz de slxd: {matrix_id} · actualizada {updated}\n  unidades: {units} · Excel: {excel}"
   en: "{code} — {title} ({hours} h)\n  slxd matrix: {matrix_id} · updated {updated}\n  units: {units} · Excel: {excel}"
+design_summary_story:
+  es: "  biblia narrativa: {path} (se firma con el diseño)"
+  en: "  story bible: {path} (signed with the design)"
+story_problems:
+  es: "la biblia narrativa no está lista:\n  {problems}"
+  en: "the story bible is not ready:\n  {problems}"
 design_confirm:
   es: "{summary}\n¿Apruebas este diseño instruccional? Firmas como {who}"
   en: "{summary}\nApprove this instructional design? You sign as {who}"

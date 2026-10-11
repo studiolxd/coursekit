@@ -29,6 +29,7 @@ import yaml
 
 from coursekit import course as coursemod
 from coursekit import simulation as simmod
+from coursekit import story as storymod
 from coursekit.fingerprint import changed_since_review
 from coursekit.i18n import t
 from coursekit.lang import format_number
@@ -416,6 +417,20 @@ def verify_unit(course: dict, unit: dict) -> Report:
     for sid in sorted({sim.id for sim in unit_sims if sim.id}):
         if len(places.get(sid, [])) > 1:
             report.error(t("verify", "duplicate_simulation", id=sid, places=", ".join(places[sid])))
+    if decision_based and unit_sims:
+        bible, problems = storymod.load(course)
+        for problem in problems:
+            report.error(problem)
+        if bible is not None:
+            cast = storymod.character_names(bible)
+            for sim in unit_sims:
+                people = [("character", sim.data.get("character"))] if sim.data.get("character") else []
+                for sid, scene in (sim.data.get("scenes") or {}).items():
+                    people += [(f"scenes.{sid}.characters", p.get("name")) for p in (scene or {}).get("characters") or []
+                               if isinstance(p, dict)]
+                for place, name in people:
+                    if name and str(name).strip().casefold() not in cast:
+                        report.error(f"{sim.id}: " + t("story", "unknown_character", place=place, name=name))
     if unit_sims or adaptive:
         report.warn(t("verify", "simulations_not_assembled"))
 

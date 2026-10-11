@@ -432,8 +432,8 @@ aplican en cada fase según el enfoque.
 
 ### 11.3 Narrativa
 
-- **Entrada (opcional):** `brief/story-notes.md`, del proyecto o del curso: sector, tono,
-  personajes, situaciones reales que reflejar.
+- **Entrada (opcional):** la sección *Historia* de `brief/notes.md`, del proyecto o del curso: sector,
+  tono, personajes, situaciones reales que reflejar.
 - **Salida del diseño:** `courses/<CODE>/design/story.md`, la biblia narrativa:
   - mundo: organización ficticia, sector, lugar, época;
   - protagonista: el papel del alumno, su puesto y su misión;
@@ -556,7 +556,7 @@ visual:
 |---|---|---|---|
 | 8.1 | Configuración: `design.approach` (`new`/`handoff --approach`, `rules › defaults.approach`), `rules › decision_based` (ciclo, partes opcionales, mínimo de simulaciones, volver atrás, minutos), `media › visual` (`style`, `fallback`), rol `illustration` (`same_as: media`); docs en `docs/en` y `docs/es`. Las voces por personaje pasan al 8.7 (necesitan código en `voices`/`tts`); la validación del estilo, al 8.7 (`media plan`). | `coursekit config` muestra los valores y su origen; `tests/test_decision_based.py`, tests de `setup`. | hecho |
 | 8.2 | Formato: directivas `scenario` y `conversation` (rol `simulation`, cuerpo **YAML con esquema en inglés**, condiciones con sintaxis de código `&& \|\| !`, puntos por decisión con `score`), `:::if`/`:::else`; `simulation.py` (esquema, condiciones, recorrido de caminos con estado, puntuación máxima, duración); `verify` (sección 11.5); bloques `SIMULATION` y `CONDITIONAL` en el plan, rechazados por el montaje hasta 8.5/8.8. Pendiente para 8.7: comprobar que `background`, `layers` y retratos apuntan a recursos de la unidad. | `tests/test_decision_based.py`. | hecho |
-| 8.3 | Diseño y narrativa: `brief/story-notes.md`, rama decision-based de `instructional-design` (action mapping, `story.md`, mapa de simulaciones, actividades en la matriz), `/approve-design` con la biblia. | Propuesta de diseño de un curso de prueba con su biblia. | pendiente |
+| 8.3 | Diseño y narrativa: sección *Historia* en las plantillas de `brief/notes.md` (en vez de un fichero aparte), `design/story.md` con cabecera YAML (`world`, `protagonist`, `characters`) y prosa, `story.py`; `approve design` la exige y registra `story_sha256` (un cambio invalida la firma); `verify` comprueba que los personajes están en el reparto; rama decision-based de `instructional-design` (mapa de acciones, biblia, mapa de simulaciones, actividades en la matriz, horas) con `{{tokens}}` de `rules › decision_based`; `/new-course` y `/approve-design`. | Tests de firma y personajes; falta probarlo con un agente real (fase 2 / 8.9). | hecho |
 | 8.4 | Redacción y revisión: skills del enfoque; recorrido automático de caminos con informe y diagrama. | Una unidad de prueba redactada, revisada y con su informe de recorridos. | pendiente |
 | 8.5 | Motor html: escenas por capas, zonas, estado del curso, contenido adaptativo, interacciones y nota SCORM opcional. | Un SCO de prueba funciona en SCORM Cloud y guarda el estado entre sesiones. | pendiente |
 | 8.6 | Pieles: `mail-desktop`, `mail-web`, `chat-workspace`, `messenger`, `phone`, `browser`. | Catálogo con ejemplos genéricos; axe sin errores. | pendiente |

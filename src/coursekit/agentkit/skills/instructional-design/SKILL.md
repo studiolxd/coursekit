@@ -75,7 +75,66 @@ sections the course needs, and justify it.
 10. **Export** (see "Export").
 11. **Proposal notes** in `courses/<CODE>/design/proposal-notes.md` ({{ui_language_name}}):
     structure and why, hour split and criterion, assumptions (syllabus, audience, level),
-    questions for the person, accepted validation warnings and why.
+    questions for the person, accepted validation warnings and why. In a decision-based course, also the action map
+    and the story bible (see "Decision-based courses").
+
+## Decision-based courses
+
+When `course.yaml › design.approach` is `decision-based`, the learner does not start by reading: every content section
+opens with a simulation where they decide and see the consequences, and the explanation comes afterwards. The course
+keeps every directive and resource around the simulations. Design it this way, on top of the steps above:
+
+1. **Action map, before the units.** From the material: the goal of the organisation → what people must **do** (observable
+   decisions and actions, not what they must know) → why they get it wrong today (habits, pressure, misconceptions) →
+   which situations put those decisions to the test → the minimum information needed to decide well. Write it in
+   `proposal-notes.md`; objectives come from the actions (apply, analyse, evaluate are the usual levels).
+2. **Story bible** in `courses/<CODE>/design/story.md` (format below), written in {{language_name}}: one story for the
+   whole course. Read the *Story* section of `brief/notes.md` (course and project) first.
+3. **Sections.** Each content section is one challenge: a situation where the objectives of the section are put to the
+   test. Its parts follow the cycle {{decision_cycle}}; at least {{min_simulations_per_content_section}} simulation per
+   content section. Give the section a title about the situation or the decision, not about the theory.
+4. **Simulation map** (in the story bible): unit, section, simulation (`scenario` or `conversation`, with an id), the
+   objectives it practises, what is at stake, the characters, and whether it is scored. Every objective of a unit is
+   practised in a simulation before it is assessed.
+5. **Activities in the matrix.** Each simulation is a learning activity (`design_matrix_aa_create`) of the type closest
+   to a simulation or case study among those the tool offers; a scored simulation is also an assessment activity
+   (`design_matrix_ae_create`), with its weight. The unit test can mix questions and scored simulations in a new
+   situation (transfer).
+6. **Hours.** A simulation takes {{minutes_per_scene}} min per scene and {{minutes_per_decision}} min per decision of
+   its longest path, plus {{minutes_per_debriefing}} min of debriefing; that time is part of the section hours, and the
+   rest of the section keeps the words-per-hour rule. Plan the sections with that in mind.
+
+### Story bible (`design/story.md`)
+
+```markdown
+---
+world: <organisation (invented), sector, place, time>
+protagonist: {role: <the learner's role in the story>, mission: <what they must achieve in the course>}
+characters:
+  - name: <name>
+    role: <role in the organisation and in the story>
+    personality: <two or three traits>
+    speech: <how they talk>
+    look: <age range, hair, clothes, a detail: for the illustrations>
+    expressions: [neutral, <the ones the simulations need>]
+    voice: ""                      # left empty: chosen with the media
+---
+# <story bible title>
+
+## World
+## Protagonist
+## Cast
+## Arc
+<!-- the conflict of the course, the tension of each unit and how it is solved -->
+## Simulation map
+| Unit | Section | Simulation | Objectives | At stake | Characters | Scored |
+```
+
+- `coursekit approve design` signs it with the matrix and refuses without it; every character a simulation uses must be
+  in `characters` (`coursekit verify` checks it). Minor roles (a caller, a customer) are characters too.
+- Invented organisation and people only; real situations of the sector, never real names.
+- Self-review it: one coherent world; every unit moves the arc; the protagonist's role fits the audience of the course;
+  the characters are diverse and not caricatures; the situations are the ones the audience meets in real life.
 
 ## Changes (from /design-change)
 
@@ -84,7 +143,7 @@ sections the course needs, and justify it.
 2. Apply exactly what was asked; if a change forces others (hours, links, activities), make
    them and explain them.
 3. Validate again, self-review, export and update `proposal-notes.md` (a dated "Changes"
-   section).
+   section). In a decision-based course, update `design/story.md` too when the change touches it.
 4. If the design was signed, say that the signature is no longer valid.
 
 ## Export (always the three together, so they match the same version)

@@ -165,6 +165,21 @@ def context(project: Project) -> dict[str, str]:
         "competencies_per_course": str(design.get("competencies_per_course", "2–4")),
         "objectives_per_unit": str(design.get("objectives_per_unit", "2–4")),
         "intro_summary_hours": str(design.get("intro_summary_hours", "0.2–0.3")),
+        **decision_tokens(rules.get("decision_based") or {}),
+    }
+
+
+def decision_tokens(cfg: dict) -> dict[str, str]:
+    """The rules of decision-based courses for the skills (rules › decision_based)."""
+    optional = set(cfg.get("optional") or [])
+    minutes = cfg.get("minutes") or {}
+    return {
+        "decision_cycle": " → ".join(f"{part} (optional)" if part in optional else str(part) for part in cfg.get("cycle") or []),
+        "min_simulations_per_content_section": str(cfg.get("min_simulations_per_content_section", 1)),
+        "simulation_rewind": "on" if cfg.get("rewind", True) else "off",
+        "minutes_per_scene": f"{float(minutes.get('scene', 0)):g}",
+        "minutes_per_decision": f"{float(minutes.get('decision', 0)):g}",
+        "minutes_per_debriefing": f"{float(minutes.get('debriefing', 0)):g}",
     }
 
 

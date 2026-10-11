@@ -112,4 +112,8 @@ def approval_problem(course: dict) -> str | None:
         return t("course", "matrix_missing")
     if sha256_file(matrix) != approval.get("snapshot_sha256"):
         return t("course", "matrix_changed")
+    if approval.get("story_sha256"):
+        story = course["_dir"] / "design" / "story.md"
+        if not story.exists() or sha256_file(story) != approval["story_sha256"]:
+            return t("course", "story_changed")
     return None

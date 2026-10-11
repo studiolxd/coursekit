@@ -374,8 +374,48 @@ decision-based course `coursekit verify` also checks that every content section 
 and comments before it), that it has `decision_based.min_simulations_per_content_section` of them, and that every
 objective of the unit is practised in one (`objective`).
 
-This approach is being built: simulations and adaptive blocks are written and verified, but no backend assembles them yet
-(`coursekit verify` warns, and the assembly refuses them); the agents do not have its guidance yet either.
+This approach is being built: the design agent already designs it (action map, story bible, simulation map) and
+simulations and adaptive blocks are written and verified, but no backend assembles them yet (`coursekit verify` warns, and
+the assembly refuses them), and the writing and review agents do not have its guidance yet.
+
+### Story bible
+
+A decision-based course has **one story** for the whole course. The design agent writes it with the design in
+`courses/<CODE>/design/story.md`, taking into account the *Historia* (story) section of `brief/notes.md` (of the course and
+of the project), where you can describe the world, the sector, the tone and the characters you want. It is Markdown with a
+YAML front matter that coursekit reads:
+
+```markdown
+---
+world: ACME, a mid-sized insurance company, today
+protagonist: {role: new administrative assistant, mission: keep the team's accounts safe during the move to the cloud}
+characters:
+  - name: Marta
+    role: head of IT security
+    personality: calm, direct
+    speech: short sentences
+    look: in her forties, short grey hair, glasses, navy blazer
+    expressions: [neutral, worried, satisfied]
+    voice: ""
+---
+# Story bible — Strong passwords
+
+## World
+## Protagonist
+## Cast
+## Arc
+## Simulation map
+```
+
+The keys of a character are `name` (required and unique), `role`, `personality`, `speech`, `look` (for the
+illustrations), `expressions` (the ones the simulations need) and `voice` (chosen with the media). The rest of the file is
+prose for the agents and for you: the world, the arc of the course and the simulation map (which simulation goes in each
+section, the objectives it practises and what is at stake).
+
+[`coursekit approve design`](03-commands.md#coursekit-approve) signs it with the design: it refuses when it is missing or
+its front matter is not valid (`world`, `protagonist` and `characters` required), and a later change of `story.md`
+invalidates the signature, like a change of `matrix.json`. `coursekit verify` checks that every character a simulation
+uses (`character`, `characters` of the scenes) is in the cast.
 
 ### Simulations
 

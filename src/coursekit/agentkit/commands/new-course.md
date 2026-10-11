@@ -23,11 +23,13 @@ $ARGUMENTS
    it is there (then run `coursekit brief <CODE>` again), or tell you to go on without it. If you
    cannot ask (non-interactive session) or the person goes on without material, say in the final
    summary that the syllabus is an assumption and that `/design-change` redoes it with material.
-4. Load the `instructional-design` skill and follow its **Proposal** section.
+4. Load the `instructional-design` skill and follow its **Proposal** section (and **Decision-based courses** when
+   `course.yaml › design.approach` is `decision-based`).
 5. Run `coursekit theme show`. If the project has no theme tokens, say in the summary that `/define-theme`
    must be run before producing media.
 6. Finish with a short summary for the person, in {{ui_language_name}}: units with hours and
-   objectives, decisions and assumptions to check, where the Excel is, and how to go on: changes
+   objectives, decisions and assumptions to check, where the Excel is (and, in a decision-based course, the story in
+   two lines and where `design/story.md` is), and how to go on: changes
    with `/design-change <CODE> <changes>` and sign-off with `/approve-design <CODE>`.
 
 Do not sign anything and do not commit.

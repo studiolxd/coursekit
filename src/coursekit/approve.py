@@ -24,6 +24,7 @@ from pathlib import Path
 
 from coursekit import course as coursemod
 from coursekit import identity
+from coursekit import story as storymod
 from coursekit.fingerprint import changed_since_review
 from coursekit.i18n import t
 from coursekit.lang import format_number
@@ -90,6 +91,11 @@ def approve_design(course: dict, confirm: Confirm, do_commit: bool = True, who: 
         errors = [h for h in findings if h.get("severidad") == "error"]
         if errors:
             raise ApprovalError(t("approve", "design_errors", count=len(errors)))
+    decision_based = (course.get("design") or {}).get("approach") == "decision-based"
+    if decision_based:  # the story bible is signed with the design
+        _, problems = storymod.load(course)
+        if problems:
+            raise ApprovalError(t("approve", "story_problems", problems="\n  ".join(problems)))
     excel = sorted(design.glob("*.xlsx"))
     graph = json.loads(matrix.read_text(encoding="utf-8"))
     meta = graph.get("matrix") or {}
@@ -101,6 +107,8 @@ def approve_design(course: dict, confirm: Confirm, do_commit: bool = True, who: 
         matrix_id=meta.get("id"), updated=meta.get("updatedAt"),
         units=len(check.units), excel=excel[-1].name if excel else t("approve", "excel_none"),
     )
+    if decision_based:
+        summary += "\n" + t("approve", "design_summary_story", path=storymod.FILE.as_posix())
     if not confirm(t("approve", "design_confirm", summary=summary, who=who)):
         raise ApprovalError(t("approve", "cancelled"))
     sync(course)
@@ -113,6 +121,8 @@ def approve_design(course: dict, confirm: Confirm, do_commit: bool = True, who: 
         "snapshot_sha256": sha256_file(matrix),
         "excel": excel[-1].name if excel else None,
     }
+    if decision_based:
+        entry["story_sha256"] = sha256_file(storymod.path(course))
     if via:
         entry["via"] = via
     _record(course_dir, entry, "design_approved", "Instructional design approved")

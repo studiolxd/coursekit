@@ -67,6 +67,7 @@ scored: true
 state: {risk: 0, trust: 2, called: false}
 scenes:
   begin:
+    characters: [{name: Técnico, expression: con prisa}]
     text: Suena el teléfono. Alguien de soporte te pide tu contraseña.
     choices:
       - {text: Se la doy, goto: leak, effects: {risk: 3}, score: -2}
@@ -134,6 +135,20 @@ Más larga es mejor.
 """
 
 
+STORY = """---
+world: ACME, una aseguradora mediana, hoy
+protagonist: {role: auxiliar administrativo recién llegado, mission: mantener seguras las cuentas del equipo}
+characters:
+  - {name: Marta, role: responsable de seguridad, personality: tranquila y directa, expressions: [neutral, preocupada]}
+  - {name: Técnico, role: falso técnico de soporte, personality: "con prisa, seguro de sí mismo"}
+---
+# Biblia narrativa — Contraseñas
+
+## Mundo
+ACME se muda a la nube y todo el mundo tiene prisa.
+"""
+
+
 @pytest.fixture
 def decision_course(project):
     (project / ".env").write_text("COURSEKIT_USER_NAME=Ana\nCOURSEKIT_USER_EMAIL=ana@example.com\n", encoding="utf-8")
@@ -141,6 +156,7 @@ def decision_course(project):
     course_dir = project / "courses" / "DB1"
     write_course_rules(course_dir)
     shutil.copy(FIXTURES / "matrix.json", course_dir / "design" / "matrix.json")
+    (course_dir / "design" / "story.md").write_text(STORY, encoding="utf-8")
     assert main(["approve", "design", "DB1", "--yes", "--no-commit"]) == 0
     unit = course_dir / "content" / "unit-01"
     unit.mkdir(parents=True, exist_ok=True)
@@ -254,3 +270,37 @@ def test_condition_language():
         with pytest.raises(s.ExpressionError):
             s.parse_expression(bad)
 
+
+
+# ── Story bible ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_the_design_is_not_signed_without_the_story_bible(project, capsys):
+    (project / ".env").write_text("COURSEKIT_USER_NAME=Ana\nCOURSEKIT_USER_EMAIL=ana@example.com\n", encoding="utf-8")
+    assert main(["new", "Contraseñas", "1", "--code", "DB2", "--approach", "decision-based", "--language", "es"]) == 0
+    course_dir = project / "courses" / "DB2"
+    shutil.copy(FIXTURES / "matrix.json", course_dir / "design" / "matrix.json")
+    capsys.readouterr()
+    assert main(["approve", "design", "DB2", "--yes", "--no-commit"]) == 1
+    assert "design/story.md is missing" in capsys.readouterr().err
+    (course_dir / "design" / "story.md").write_text("---\nworld: ACME\ncharacters: [{role: x}]\n---\n", encoding="utf-8")
+    assert main(["approve", "design", "DB2", "--yes", "--no-commit"]) == 1
+    err = capsys.readouterr().err
+    assert "'protagonist' is missing" in err and "character 1 has no 'name'" in err
+    (course_dir / "design" / "story.md").write_text(STORY, encoding="utf-8")
+    assert main(["approve", "design", "DB2", "--yes", "--no-commit"]) == 0
+    approval = yaml.safe_load((course_dir / "course.yaml").read_text(encoding="utf-8"))["approvals"][-1]
+    assert approval["story_sha256"]
+
+
+def test_changing_the_story_after_the_sign_off_needs_a_new_one(decision_course, capsys):
+    story = decision_course.parent.parent / "design" / "story.md"
+    story.write_text(STORY + "\nUn cambio.\n", encoding="utf-8")
+    code, out = verify(decision_course, GOOD_SECTION, capsys)
+    assert code == 1
+
+
+def test_characters_come_from_the_cast(decision_course, capsys):
+    code, out = verify(decision_course, GOOD_SECTION.replace("{name: Técnico, expression", "{name: Lucía, expression"), capsys)
+    assert code == 1
+    assert "character 'Lucía' is not in the cast of design/story.md" in out

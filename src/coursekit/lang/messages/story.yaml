@@ -1,0 +1,18 @@
+# The story bible of a decision-based course (courses/<CODE>/design/story.md).
+missing:
+  es: "falta {path}, la biblia narrativa: en un curso basado en decisiones la escribe el agente de diseño con el diseño"
+  en: "{path} is missing, the story bible: in a decision-based course the design agent writes it with the design"
+no_front_matter: {es: "no empieza con la cabecera YAML entre '---'", en: "it does not start with the YAML front matter between '---'"}
+front_matter_not_closed: {es: "la cabecera YAML no se cierra con '---'", en: "the YAML front matter is not closed with '---'"}
+front_matter_not_yaml: {es: "la cabecera no es YAML válido: {problem}", en: "the front matter is not valid YAML: {problem}"}
+not_mapping: {es: "la cabecera debe ser un mapa (world, protagonist, characters)", en: "the front matter must be a mapping (world, protagonist, characters)"}
+missing_key: {es: "falta '{key}' en la cabecera", en: "'{key}' is missing in the front matter"}
+characters_not_list: {es: "'characters' debe ser una lista", en: "'characters' must be a list"}
+character_without_name: {es: "el personaje {n} no tiene 'name'", en: "character {n} has no 'name'"}
+character_repeated: {es: "el personaje '{name}' está repetido", en: "character '{name}' appears twice"}
+unknown_character_key:
+  es: "clave desconocida '{key}' en el personaje '{name}' (válidas: {valid})"
+  en: "unknown key '{key}' in character '{name}' (valid: {valid})"
+unknown_character:
+  es: "{place}: el personaje '{name}' no está en el reparto de design/story.md"
+  en: "{place}: character '{name}' is not in the cast of design/story.md"

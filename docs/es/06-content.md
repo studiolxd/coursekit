@@ -374,8 +374,48 @@ curso basado en decisiones `coursekit verify` comprueba además que cada apartad
 (antes solo puede haber títulos y comentarios), que tiene `decision_based.min_simulations_per_content_section` y que cada
 objetivo de la unidad se practica en alguna (`objective`).
 
-Este enfoque está en construcción: las simulaciones y los bloques adaptativos se escriben y se verifican, pero ningún
-backend los monta todavía (`coursekit verify` avisa y el montaje los rechaza); los agentes tampoco tienen aún sus indicaciones.
+Este enfoque está en construcción: el agente de diseño ya lo diseña (mapa de acciones, biblia narrativa, mapa de
+simulaciones) y las simulaciones y los bloques adaptativos se escriben y se verifican, pero ningún backend los monta todavía
+(`coursekit verify` avisa y el montaje los rechaza), y los agentes de redacción y revisión aún no tienen sus indicaciones.
+
+### Biblia narrativa
+
+Un curso basado en decisiones tiene **una historia** para todo el curso. El agente de diseño la escribe con el diseño en
+`courses/<CODE>/design/story.md`, teniendo en cuenta la sección *Historia* de `brief/notes.md` (del curso y del proyecto),
+donde puedes describir el mundo, el sector, el tono y los personajes que quieres. Es Markdown con una cabecera YAML que
+coursekit lee:
+
+```markdown
+---
+world: ACME, una aseguradora mediana, hoy
+protagonist: {role: auxiliar administrativo recién llegado, mission: mantener seguras las cuentas del equipo en la mudanza a la nube}
+characters:
+  - name: Marta
+    role: responsable de seguridad informática
+    personality: tranquila, directa
+    speech: frases cortas
+    look: unos cuarenta años, pelo corto canoso, gafas, americana azul marino
+    expressions: [neutral, preocupada, satisfecha]
+    voice: ""
+---
+# Biblia narrativa — Contraseñas seguras
+
+## Mundo
+## Protagonista
+## Reparto
+## Arco
+## Mapa de simulaciones
+```
+
+Las claves de un personaje son `name` (obligatoria y única), `role`, `personality`, `speech`, `look` (para las
+ilustraciones), `expressions` (las que necesitan las simulaciones) y `voice` (se elige con el multimedia). El resto del
+fichero es prosa para los agentes y para ti: el mundo, el arco del curso y el mapa de simulaciones (qué simulación va en
+cada apartado, qué objetivos practica y qué está en juego).
+
+[`coursekit approve design`](03-commands.md#coursekit-approve) la firma con el diseño: se niega si falta o si su cabecera no
+es válida (`world`, `protagonist` y `characters` obligatorias), y un cambio posterior de `story.md` invalida la firma, igual
+que un cambio de `matrix.json`. `coursekit verify` comprueba que todo personaje que usa una simulación (`character`,
+`characters` de las escenas) está en el reparto.
 
 ### Simulaciones
 

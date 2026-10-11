@@ -241,7 +241,7 @@ El agente refresca la exportación si editaste en Creator, valida el diseño, ej
 coursekit approve design PWD
 ```
 
-La firma exige `design/matrix.json` y que `design/validation.json` no tenga errores de validación. Escribe las unidades y sus apartados en `course.yaml` (el progreso ya anotado se conserva: estado, registro de revisión y enlaces), crea un esqueleto de `content.md` y `assessment.md` por unidad en `content/unit-NN/`, registra la aprobación, deja el curso en `design_approved` y hace commit.
+La firma exige `design/matrix.json` y que `design/validation.json` no tenga errores de validación (y, en un curso basado en decisiones, la [biblia narrativa](06-content.md#biblia-narrativa)). Escribe las unidades y sus apartados en `course.yaml` (el progreso ya anotado se conserva: estado, registro de revisión y enlaces), crea un esqueleto de `content.md` y `assessment.md` por unidad en `content/unit-NN/`, registra la aprobación, deja el curso en `design_approved` y hace commit.
 
 ### 3. Redacción
 

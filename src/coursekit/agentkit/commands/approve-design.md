@@ -10,7 +10,9 @@ Prepare the approval of the instructional design of course $ARGUMENTS.
    `validation.json`).
 2. `design_matrix_validate`: if there are errors, stop and explain them.
 3. Run `coursekit sync <CODE> --check` and summarise what will be signed: units, hours, sections,
-   objectives and minimum words, plus the warnings.
+   objectives and minimum words, plus the warnings. In a decision-based course the story bible
+   (`design/story.md`) is signed too: summarise its world, protagonist, cast and simulation map, and check that every
+   objective is practised in a simulation of the map.
 4. Tell the person that, if they agree, they sign it themselves by typing in this same chat:
 
    `! coursekit approve design <CODE> --yes`

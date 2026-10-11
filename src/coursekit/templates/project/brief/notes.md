@@ -7,6 +7,10 @@ Las notas de un curso (courses/<CODE>/brief/notes.md) mandan sobre estas. -->
 
 ## Diseño instruccional
 
+## Historia
+
+<!-- Cursos basados en decisiones: mundo, sector, tono y personajes comunes a los cursos del proyecto. -->
+
 ## Redacción
 
 ## Revisión

@@ -241,7 +241,7 @@ The agent refreshes the export if you edited in Creator, validates the design, r
 coursekit approve design PWD
 ```
 
-The sign-off requires `design/matrix.json` and no validation errors in `design/validation.json`. It writes the units and their sections into `course.yaml` (progress already recorded is kept: status, review record and links), creates a skeleton `content.md` and `assessment.md` per unit in `content/unit-NN/`, records the approval, sets the course to `design_approved` and commits.
+The sign-off requires `design/matrix.json` and no validation errors in `design/validation.json` (and, in a decision-based course, the [story bible](06-content.md#story-bible)). It writes the units and their sections into `course.yaml` (progress already recorded is kept: status, review record and links), creates a skeleton `content.md` and `assessment.md` per unit in `content/unit-NN/`, records the approval, sets the course to `design_approved` and commits.
 
 ### 3. Writing
 
