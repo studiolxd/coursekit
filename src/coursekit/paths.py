@@ -84,6 +84,40 @@ def flowchart(sim: simmod.Simulation) -> str:
     return "\n".join(lines)
 
 
+def _screen(sim: simmod.Simulation, scene: dict) -> str:
+    """What the screen of the skin shows in a scene (chat skins add up the messages of the scenes before)."""
+    screen = {**(sim.data.get("screen") or {}), **(scene.get("screen") or {})}
+    if not sim.data.get("skin") or not screen:
+        return ""
+    parts = []
+    message = screen.get("message")
+    if isinstance(message, dict):
+        parts.append(f"{t('paths', 'screen_mail')}: {_label(message.get('from'), 30)} <{_label(message.get('address'), 40)}> · "
+                     f"«{_label(message.get('subject'), 50)}»")
+    if screen.get("url"):
+        parts.append(f"URL: {_label(screen['url'], 60)}{' (' + t('paths', 'not_secure') + ')' if screen.get('secure') is False else ''}")
+    if screen.get("caller"):
+        parts.append(f"{t('paths', 'screen_caller')}: {_label(screen['caller'], 30)} {_label(screen.get('number'), 20)}")
+    own = (scene.get("screen") or {}).get("messages") or []
+    if own:
+        parts.append(t("paths", "screen_messages", n=len(own)) + ": "
+                     + " / ".join(f"{_label(m.get('from') or '-', 20)}: {_label(m.get('text'), 60)}" for m in own if isinstance(m, dict)))
+    return " · ".join(parts)
+
+
+def scenes_table(sim: simmod.Simulation) -> list[str]:
+    """Every scene as the learner sees it: text, screen, background and characters."""
+    rows = [f"| {t('paths', 'col_scene')} | {t('paths', 'col_text')} | {t('paths', 'col_screen')} | {t('paths', 'col_people')} |",
+            "|---|---|---|---|"]
+    for sid, scene in (sim.data.get("scenes") or {}).items():
+        people = ", ".join(f"{p.get('name')}{' (' + str(p['expression']) + ')' if p.get('expression') else ''}"
+                           for p in scene.get("characters") or [] if isinstance(p, dict))
+        if scene.get("background"):
+            people = (people + " · " if people else "") + t("paths", "background", text=_label(scene["background"], 40))
+        rows.append(f"| {sid} | {_label(scene.get('text'), 110)} | {_screen(sim, scene) or '-'} | {people or '-'} |")
+    return rows
+
+
 def _state(env: dict) -> str:
     return ", ".join(f"{k} = {str(v).lower() if isinstance(v, bool) else v}" for k, v in env.items())
 
@@ -97,7 +131,7 @@ def section(sim: simmod.Simulation, words_per_hour: float, think: float) -> str:
                  low=f"{sim.min_score:g}", high=f"{sim.max_score:g}", minutes=f"{sim.minutes(words_per_hour, think):g}",
                  scored=t("paths", "scored_yes") if sim.scored else t("paths", "scored_no"),
                  objectives=", ".join(sim.objectives) or "-"))
-    out += ["", flowchart(sim), "", f"| # | {t('paths', 'col_decisions')} | {t('paths', 'col_ending')} | "
+    out += ["", *scenes_table(sim), "", flowchart(sim), "", f"| # | {t('paths', 'col_decisions')} | {t('paths', 'col_ending')} | "
             f"{t('paths', 'col_points')} | {t('paths', 'col_grade')} | {t('paths', 'col_state')} |", "|---|---|---|---|---|---|"]
     for i, path in enumerate(sorted(sim.paths, key=lambda p: -p["score"]), 1):
         decisions = " → ".join(_label(label, 50) for _, label in path["steps"] if label is not None) or "-"

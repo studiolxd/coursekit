@@ -160,7 +160,8 @@ The application is drawn in HTML with real text; it recalls the everyday ones bu
 | `phone` | `caller`, `number`, `state` (`incoming`, `call`, `sms`), `time`, `messages` | `caller`, `number`, `message:N`, `link:N` |
 | `browser` | `url`, `title`, `secure`, `body` | `url`, `lock`, `link:N` |
 
-Use a skin whenever the situation happens on a screen (an email, a chat, a call, a web page): spotting the signal in a
+In the chat skins (`chat-workspace`, `messenger`, `phone`) the `messages` of each scene add up along the path: each scene
+writes only its new messages. Use a skin whenever the situation happens on a screen (an email, a chat, a call, a web page): spotting the signal in a
 realistic screen (`hotspots` with `target`) is the decision. Addresses and domains are invented (`.example`).
 
 ### Adaptive blocks

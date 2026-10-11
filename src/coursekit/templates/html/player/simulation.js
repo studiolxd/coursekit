@@ -61,7 +61,7 @@ function initSimulation(root, ui, tracker) {
   root.appendChild(play);
 
   const fresh = () => ({ at: start, env: { ...(data.state || {}) }, score: 0, path: [], done: false, ending: null,
-    checkpoints: [], transcript: [] });
+    checkpoints: [], transcript: [], feed: [], fed: [] });
   const saved = tracker.simulation(data.id);  // only where it was, the state, the points and whether it ended
   let run = saved && scenes[saved.at] ? { ...fresh(), ...saved } : null;
   const persist = () => {
@@ -113,12 +113,23 @@ function initSimulation(root, ui, tracker) {
   }
 
   const chatSkin = data.kind === "conversation" && CHAT_SKINS.includes(data.skin);
+  const chatScreen = CHAT_SKINS.includes(data.skin);
+
+  // In a chat (team chat, messaging, text messages) the messages of each scene the learner goes through add up, as in
+  // the real application; any other screen shows what its scene says.
+  function feedScene(scene) {
+    const key = `${run.at}:${run.path.length}`;
+    if (!chatScreen || !(scene.screen && scene.screen.messages) || run.fed.includes(key)) return;
+    run.fed.push(key);
+    run.feed = run.feed.concat(scene.screen.messages);
+  }
 
   function drawStage(scene) {
     stage.replaceChildren();
     stage.classList.remove("is-empty", "is-skin");
     if (data.skin) {
       const screen = { ...(data.screen || {}), ...(scene.screen || {}) };
+      if (chatScreen) screen.messages = ((data.screen && data.screen.messages) || []).concat(run.feed);
       const lines = chatSkin ? run.transcript.map((line) => ({ me: line.me === true, from: line.me ? "" : data.character,
         text: line.html, target: false })) : [];
       const node = drawSkin(data.skin, screen, ui, lines);
@@ -201,6 +212,7 @@ function initSimulation(root, ui, tracker) {
     hint.hidden = true;
     choices.replaceChildren();
     end.replaceChildren();
+    feedScene(scene);
     drawStage(scene);
     drawPeople(scene);
     const body = sceneText(scene);
@@ -217,7 +229,8 @@ function initSimulation(root, ui, tracker) {
       log.hidden = true;
     }
     if (scene.checkpoint && !run.done) {
-      const snap = { at: run.at, env: { ...run.env }, score: run.score, path: run.path.slice(), transcript: run.transcript.slice() };
+      const snap = { at: run.at, env: { ...run.env }, score: run.score, path: run.path.slice(), transcript: run.transcript.slice(),
+        feed: run.feed.slice(), fed: run.fed.slice() };
       const top = run.checkpoints[run.checkpoints.length - 1];
       if (!top || top.at !== snap.at || top.path.length !== snap.path.length) run.checkpoints.push(snap);
     }
@@ -271,6 +284,8 @@ function initSimulation(root, ui, tracker) {
   }
 
   if (!run) run = fresh();
+  run.feed = run.feed || [];
+  run.fed = run.fed || [];
   if (data.kind === "conversation" && !run.transcript) run.transcript = [];
   log.setAttribute("aria-live", "polite");
   log.setAttribute("tabindex", "-1");

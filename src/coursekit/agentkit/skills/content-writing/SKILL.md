@@ -92,7 +92,9 @@ simulation format in `.coursekit/docs/content-format.md` (section 2.1).
   - Every ending has a `debriefing`: what happened and why, what an expert would have done and the principle, without
     preaching or blaming.
   - When the situation happens on a screen (email, chat, call, web page), use a `skin` with its `screen`, and make
-    noticing the signal the decision (`hotspots` with `target`).
+    noticing the signal the decision (`hotspots` with `target`). In the chat skins (`chat-workspace`, `messenger`, `phone`)
+    the `messages` of each scene **add up** along the path: write in each scene only the new messages. Any other screen
+    shows what its scene says (or the simulation's `screen`), so give each scene the screen it needs.
   - `background` and `layers.image` are **descriptions of the image** (what it shows, from the point of view of the
     learner); the media is produced from them, one image per description in the whole course, so repeat the exact same
     text when a scene reuses an image. Portraits come from the cast of the story bible (`look`) with the `expression` of

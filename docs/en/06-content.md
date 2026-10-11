@@ -508,8 +508,9 @@ writes only what changes). `body` and `text` are Markdown.
 
 A hotspot with `target` makes that part of the screen the thing to click (for example the address of the sender of a
 suspicious email, or a link: `link:1` is the first link of the message or the page), instead of an `area` of a
-background. Links never leave the course. In a `conversation` with `chat-workspace`, `messenger` or `phone`, the exchange
-appears inside the application.
+background. Links never leave the course. In the chat skins (`chat-workspace`, `messenger`, `phone`) the `messages` of each scene add
+up along the path, as in the real application: each scene writes only its new messages. In a `conversation` with one of
+them, the exchange appears inside the application.
 
 ```yaml
 skin: mail-desktop

@@ -508,8 +508,9 @@ solo escribe lo que cambia). `body` y `text` son Markdown.
 
 Una zona con `target` convierte esa parte de la pantalla en lo que se pulsa (por ejemplo la dirección del remitente de un
 correo sospechoso, o un enlace: `link:1` es el primer enlace del mensaje o de la página), en lugar de un `area` de un fondo.
-Los enlaces nunca salen del curso. En una `conversation` con `chat-workspace`, `messenger` o `phone`, el intercambio aparece
-dentro de la aplicación.
+Los enlaces nunca salen del curso. En las pieles de chat (`chat-workspace`, `messenger`, `phone`) los `messages` de cada
+escena se van sumando a lo largo del camino, como en la aplicación real: cada escena escribe solo sus mensajes nuevos. En
+una `conversation` con una de ellas, el intercambio aparece dentro de la aplicación.
 
 ```yaml
 skin: mail-desktop

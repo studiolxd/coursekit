@@ -15,6 +15,15 @@ col_ending: {es: "Final", en: "Ending"}
 col_points: {es: "Puntos", en: "Points"}
 col_grade: {es: "Nota", en: "Grade"}
 col_state: {es: "Estado final", en: "Final state"}
+col_scene: {es: "Escena", en: "Scene"}
+col_text: {es: "Texto", en: "Text"}
+col_screen: {es: "Pantalla (piel)", en: "Screen (skin)"}
+col_people: {es: "Personajes y fondo", en: "Characters and background"}
+screen_mail: {es: "correo", en: "mail"}
+screen_caller: {es: "llama", en: "calling"}
+screen_messages: {es: "{n} mensajes nuevos", en: "{n} new messages"}
+not_secure: {es: "no segura", en: "not secure"}
+background: {es: "fondo: {text}", en: "background: {text}"}
 # command output
 none: {es: "{code}: ninguna unidad tiene simulaciones", en: "{code}: no unit has simulations"}
 unit_written: {es: "unidad {n}: {count} simulaciones → {path}", en: "unit {n}: {count} simulations → {path}"}

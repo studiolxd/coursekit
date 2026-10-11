@@ -465,7 +465,7 @@ coursekit paths [--unit UNIT] code
 | `code` | course code or folder | Course whose simulations are walked. |
 | `--unit UNIT` | number; default: every unit | Only this unit. |
 
-For each simulation the report has a summary (file and line, scenes, endings reached, number of paths, points from the lowest to the highest, minutes of the longest path, whether it is scored, objectives), a Mermaid flowchart of scenes and decisions (with conditions, effects and points) and a table of every complete path, from most to fewest points: its decisions, ending, points, grade (scored ones) and final state. Prints `unit N: K simulations → <file>` per unit; `<CODE>: no unit has simulations` when there are none. A unit whose simulations have errors gets no report: the errors are printed and the exit code is 1 (fix them with `coursekit verify`). See [Simulations](06-content.md#simulations).
+For each simulation the report has a summary (file and line, scenes, endings reached, number of paths, points from the lowest to the highest, minutes of the longest path, whether it is scored, objectives), a table of the scenes as the learner sees them (text, the screen of the skin, characters and background), a Mermaid flowchart of scenes and decisions (with conditions, effects and points) and a table of every complete path, from most to fewest points: its decisions, ending, points, grade (scored ones) and final state. Prints `unit N: K simulations → <file>` per unit; `<CODE>: no unit has simulations` when there are none. A unit whose simulations have errors gets no report: the errors are printed and the exit code is 1 (fix them with `coursekit verify`). See [Simulations](06-content.md#simulations).
 
 ```
 coursekit paths PWD --unit 1
