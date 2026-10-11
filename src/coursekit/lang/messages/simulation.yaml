@@ -9,6 +9,9 @@ expr_not_text: {es: "la condición debe ser texto (entre comillas), no {value}",
 not_yaml:
   es: "el cuerpo no es YAML válido (línea {line}): {problem}"
   en: "the body is not valid YAML (line {line}): {problem}"
+inline_comment:
+  es: "línea {line}: un «#» tras un espacio empieza un comentario de YAML y se pierde el resto del texto; pon el texto entre comillas: {text}"
+  en: "line {line}: a «#» after a space starts a YAML comment and the rest of the text is lost; put the text in quotes: {text}"
 not_mapping: {es: "el cuerpo debe ser un mapa YAML (id, title, scenes…)", en: "the body must be a YAML mapping (id, title, scenes…)"}
 unknown_key: {es: "clave desconocida '{key}' (válidas: {valid})", en: "unknown key '{key}' (valid: {valid})"}
 bad_id:

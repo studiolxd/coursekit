@@ -280,6 +280,10 @@ def parse(kind: str, body: list[str], where: str, line: int = 0) -> Simulation:
     """Read and check one simulation (`body`: the lines between `:::<kind>` and `:::`)."""
     sim = Simulation(kind=kind, id="", data={}, line=line)
     err = lambda message, /, **v: sim.errors.append(f"{where}: " + t("simulation", message, **v))  # noqa: E731
+    for n, raw in enumerate(body, line + 1):  # a `#` after a space starts a YAML comment: the rest of the text is lost
+        unquoted = re.sub(r'"(?:[^"\\]|\\.)*"|\'[^\']*\'', "", raw)
+        if not raw.lstrip().startswith("#") and re.search(r"\s#", unquoted):
+            err("inline_comment", line=n, text=raw.strip()[:80])
     try:
         data = yaml.safe_load("\n".join(body))
     except yaml.YAMLError as exc:

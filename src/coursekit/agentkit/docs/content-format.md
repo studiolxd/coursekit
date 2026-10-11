@@ -134,6 +134,8 @@ scenes:
 | `next` | moves on without a decision: list of `{if, goto}`, the first that holds |
 | `ending` | `good`, `mixed` or `bad`, with its `debriefing` (required) |
 
+- **Quote the texts** that hold `#` (a YAML comment after a space: the rest of the text is lost), `: ` or a comma inside
+  `{…}`; `coursekit verify` fails on a `#` without quotes.
 - **Conditions** use code syntax, the same in every language: `risk >= 3 && !called || trust < 2`; numbers, `true`, `false`,
   `+`, `-`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `!`, `&&`, `||` and parentheses. Quote them in YAML.
 - **Points:** each decision adds or subtracts `score`; the grade of a scored simulation is the points of the path over the

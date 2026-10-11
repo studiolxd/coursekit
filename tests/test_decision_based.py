@@ -649,3 +649,15 @@ def test_what_a_scored_simulation_requires_to_pass_and_its_endings():
     assert any("reaches the good ending 'safe' with 50 %" in w for w in warnings)
     unscored = [line for line in body if not line.startswith("scored")] + ['pass_requires: "called"']
     assert any("only applies to a scored simulation" in e for e in simulation.parse("scenario", unscored, "x").errors)
+
+
+def test_a_hash_in_a_simulation_text_needs_quotes():
+    from coursekit import simulation
+
+    body = ["id: x", "title: T", "scenes:", "  a:", "    text: A", "    choices:",
+            "      - text: Lo compruebo por #soporte con Seguridad", "        goto: b",
+            "  b: {text: B, ending: good, debriefing: D}"]
+    assert any("starts a YAML comment" in e for e in simulation.parse("scenario", body, "x").errors)
+    quoted = [line.replace("text: Lo compruebo por #soporte con Seguridad", 'text: "Lo compruebo por #soporte con Seguridad"')
+              for line in body]
+    assert simulation.parse("scenario", quoted, "x").errors == []
