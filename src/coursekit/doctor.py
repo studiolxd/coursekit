@@ -15,8 +15,8 @@ from coursekit import agents as agentsmod
 from coursekit import theme as thememod
 from coursekit.i18n import t
 from coursekit.project import Project
-from coursekit.setup import assembly_backend as setup_assembly_backend
 from coursekit.setup import ca_bundle
+from coursekit.setup import needs_html_builder as setup_needs_html_builder
 from coursekit.util import git
 
 
@@ -110,7 +110,7 @@ def collect(project: Project) -> list[Section]:
         folder = os.environ.get("MIRROR_DIR", "")
         mirror.add(bool(folder) and Path(folder).exists(), t("doctor", "mirror_dir", provider=provider), t("doctor", "mirror_hint"))
 
-    if setup_assembly_backend(project) == "html":
+    if setup_needs_html_builder(project):
         builders = sorted(store.workspaces_dir().glob("html-builder-*")) if store.workspaces_dir().is_dir() else []
         base.add(bool(builders) or None, t("doctor", "html_builder"), "coursekit setup")
 

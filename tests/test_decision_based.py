@@ -602,3 +602,15 @@ def test_the_position_of_a_character_is_checked():
             "  b: {text: B, ending: good, debriefing: D}"]
     assert any("invalid position 'arriba'" in e for e in simulation.parse("scenario", body, "x").errors)
     assert simulation.parse("scenario", [line.replace("arriba", "left") for line in body], "x").errors == []
+
+
+def test_a_course_with_the_html_backend_needs_the_builder(project):
+    from coursekit import setup
+    from coursekit.project import find_project
+
+    p = find_project(project)
+    assert not setup.needs_html_builder(p)  # the project assembles in creator
+    assert main(["new", "Strong passwords", "1", "--code", "PWD"]) == 0
+    course_yaml = project / "courses" / "PWD" / "course.yaml"
+    course_yaml.write_text(course_yaml.read_text(encoding="utf-8") + "assembly:\n  backend: html\n", encoding="utf-8")
+    assert setup.needs_html_builder(p)

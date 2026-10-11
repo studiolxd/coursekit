@@ -20,6 +20,8 @@ import urllib.request
 from collections.abc import Callable
 from pathlib import Path
 
+import yaml
+
 from coursekit import agents as agentsmod
 from coursekit import config, envfile, identity, store
 from coursekit.i18n import t
@@ -268,6 +270,20 @@ def assembly_backend(project: Project) -> str:
     return str((config.project_data(project).get("assembly") or {}).get("backend") or "creator")
 
 
+def needs_html_builder(project: Project) -> bool:
+    """The project assembles with the html backend, or one of its courses does (course.yaml › assembly › backend)."""
+    if assembly_backend(project) == "html":
+        return True
+    for folder in project.iter_courses():
+        try:
+            data = yaml.safe_load((folder / "course.yaml").read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError):
+            continue
+        if isinstance(data, dict) and (data.get("assembly") or {}).get("backend") == "html":
+            return True
+    return False
+
+
 def html_builder(project: Project, say: Say) -> None:
     """The builder of the html backend (the SCORM runtime and esbuild), installed once per machine in the store."""
     from importlib import resources
@@ -370,7 +386,7 @@ def run(project: Project, say: Say, ask: Ask | None, confirm: Callable[[str], bo
     say(t("setup", "agents_done", count=len(report.written)))
     if not shutil.which("node"):
         say(t("setup", "node_hint"))
-    if assembly_backend(project) == "html":
+    if needs_html_builder(project):
         html_builder(project, say)
     if not media and confirm and confirm(t("setup", "ask_media")):
         media = True
