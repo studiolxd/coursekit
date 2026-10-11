@@ -267,7 +267,7 @@ types:
     - {id: creator-stock, needs: {mcp: search_stock_images}, how: "Solo stock con licencia"}
 ```
 
-Cada opción tiene `id`, `how` (descripción), `needs` (requisitos) y, opcionalmente, `only` (limita la opción a cierto contenido, por ejemplo `terminal`). `needs` puede combinar:
+Cada opción tiene `id`, `how` (descripción), `needs` (requisitos) y, opcionalmente, `only` (limita la opción a cierto contenido, por ejemplo `terminal`) y, para un generador, `model`, `resolution` y `variants` (versiones que se generan por imagen para elegir; 1 si no se indica), que el agente de multimedia tiene que usar: mantienen bajo control el gasto de créditos. `coursekit media plan` los imprime. `needs` puede combinar:
 
 | Requisito | Se cumple cuando |
 |---|---|

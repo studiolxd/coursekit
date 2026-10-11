@@ -10,6 +10,8 @@
 # `only:` limits an option to some content (e.g. terminal) — the agent decides from the
 # placeholder's description.
 # The agent uses the first option it can actually run and records it in the manifest.
+# A generator option may fix `model`, `resolution` and `variants` (versions per image to choose from; default 1): they
+# keep the cost of the credits under control, e.g. {id: magnific-mcp, …, model: seedream-5-flash, resolution: 1.5k, variants: 1}.
 
 # Visual style of the scenes, characters and objects of the simulations and of the illustrations (generated or drawn). A course
 # changes it in course.yaml › media › visual. How they must look in detail goes in theme/branding/media-style.md (house style),

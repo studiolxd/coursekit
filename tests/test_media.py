@@ -163,3 +163,15 @@ def test_piper_drafts_alternate_the_speakers(course, monkeypatch):  # noqa: F811
         "---\nworld: ACME\nprotagonist: {role: x}\ncharacters: [{name: Marta}, {name: Daniel}]\n---\n", encoding="utf-8")
     assert voices.resolve_character(c, "Marta")[2] == "1"
     assert voices.resolve_character(c, "Daniel")[2] == "0"
+
+
+def test_a_generator_option_shows_its_model_and_variants(course, capsys):  # noqa: F811
+    from coursekit.project import find_project
+
+    root = find_project().root
+    option = "{id: magnific-mcp, needs: {mcp: images_generate}, how: Magnific, model: seedream-5-flash, resolution: 1.5k, variants: 1}"
+    (root / "config" / "media.yaml").write_text(f"types:\n  infographic:\n    - {option}\n", encoding="utf-8")
+    assert main(["media", "extract", "PWD"]) == 0
+    capsys.readouterr()
+    assert main(["media", "plan", "PWD"]) == 0
+    assert "[model: seedream-5-flash, resolution: 1.5k, variants: 1]" in capsys.readouterr().out

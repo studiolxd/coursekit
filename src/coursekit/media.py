@@ -325,7 +325,8 @@ def plan(course: dict) -> tuple[list[str], list[str]]:
         if not chain:
             lines.append(t("media", "no_option"))
         for option in chain:
-            lines.append(f"  - {option['id']} ({option['available']}): {option['how']}")
+            settings = ", ".join(f"{key}: {option[key]}" for key in ("model", "resolution", "variants") if option.get(key) is not None)
+            lines.append(f"  - {option['id']} ({option['available']}): {option['how']}" + (f" [{settings}]" if settings else ""))
         if a["type"] in ("video", "audio"):
             for group in ("voice", "subtitles"):
                 avail = [o["id"] for o in cfg[group] if requirement_met(o.get("needs"), root) is not False]

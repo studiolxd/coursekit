@@ -34,7 +34,11 @@ extra elements to fill the gap. It only needs what is in the project: anything i
    or in the output.
 4. If an option needs something not installed (`coursekit doctor`), **do not install it**: ask
    the person to run `coursekit setup --media` and go on with the next option.
-5. Options marked `only: terminal` (VHS, asciinema) are only for assets that show a terminal;
+5. **Credits.** When an option fixes `model`, `resolution` or `variants` (printed by `media plan` in brackets), use exactly
+   those. Generate **one version per image** unless `variants` says more, look at it and generate again only the ones that
+   fail; never several versions "to choose from" by default. Before a batch, estimate its cost with the provider's simulator
+   when it has one and say it in the summary.
+6. Options marked `only: terminal` (VHS, asciinema) are only for assets that show a terminal;
    decide from the placeholder's description.
 
 ## Course voice
