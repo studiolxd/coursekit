@@ -116,7 +116,10 @@ character) and the house style before producing. They must look **high quality a
    logos, no real people.
 7. **Pixel art:** generate at low resolution with a reduced palette and scale up with nearest neighbour; **3d / isometric:** one
    camera and lighting for the whole course; **photo:** consistent people across scenes (same model and seed or reference).
-8. **Look at every image** before marking it `produced`: style, consistency with the sheet and with the other images of the
+8. **Sizes and SVG, locally and without credits:** `coursekit media fit <CODE> <id> --size 1920x1080` brings a file to
+   the size of its specs (scaled and cropped from the centre; never pay a provider to resize); `coursekit media render
+   <CODE> <id>` draws an SVG as a PNG next to it, to look at it before marking it `produced` (and the PNG creator needs).
+9. **Look at every image** before marking it `produced`: style, consistency with the sheet and with the other images of the
    same character, deformed hands or objects, text that slipped in, contrast with what goes on top. Redo what fails.
 
 ## 4. Upload

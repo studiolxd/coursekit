@@ -90,3 +90,5 @@ package_specs:
   es: "Se construye, no se dibuja: produce antes sus imágenes (fondos, capas, retratos), constrúyelo con coursekit media embed y súbelo como EMBED."
   en: "It is built, not drawn: produce its images first (backgrounds, layers, portraits), build it with coursekit media embed and upload it as an EMBED."
 package_not_found: {es: "{asset}: la simulación ya no está en el contenido", en: "{asset}: the simulation is no longer in the content"}
+asset_without_file: {es: "{asset}: no tiene fichero (media set … --file)", en: "{asset}: it has no file (media set … --file)"}
+render_needs_svg: {es: "{asset}: render es para un SVG", en: "{asset}: render is for an SVG"}

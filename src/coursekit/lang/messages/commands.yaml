@@ -302,6 +302,8 @@ help_assemble_keep_ids:
 help_assemble_replace_id:
   es: "applied: con --keep-ids, cambia el id de un bloque borrado y añadido de nuevo: ID_VIEJO=ID_NUEVO, separados por comas"
   en: "applied: with --keep-ids, swaps the id of a brick that was deleted and added again: OLD_ID=NEW_ID, separated by commas"
+help_media_size: {es: "fit (obligatorio) y render: tamaño ANCHOxALTO, p. ej. 1920x1080", en: "fit (required) and render: size WIDTHxHEIGHT, e.g. 1920x1080"}
+media_fit_needs: {es: "fit necesita el id del recurso y --size; render, el id", en: "fit needs the asset id and --size; render, the id"}
 help_media_force: {es: "set: marca el recurso aunque los tokens del tema no vengan de la plataforma", en: "set: mark the asset even if the theme tokens do not come from the platform"}
 theme_import_needs_file: {es: "coursekit: theme import necesita el fichero con el resultado de get_theme", en: "coursekit: theme import needs the file with the get_theme result"}
 theme_imported:

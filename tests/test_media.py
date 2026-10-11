@@ -175,3 +175,32 @@ def test_a_generator_option_shows_its_model_and_variants(course, capsys):  # noq
     capsys.readouterr()
     assert main(["media", "plan", "PWD"]) == 0
     assert "[model: seedream-5-flash, resolution: 1.5k, variants: 1]" in capsys.readouterr().out
+
+
+def test_fit_and_render_work_locally(course, tmp_path, capsys):  # noqa: F811
+    from PIL import Image
+
+    from coursekit import mediatools
+    from coursekit.project import find_project
+
+    root = find_project().root
+    assert main(["media", "extract", "PWD"]) == 0
+    folder = root / "courses" / "PWD" / "media" / "files"
+    folder.mkdir(parents=True)
+    Image.new("RGBA", (2048, 1152), (10, 20, 30, 255)).save(folder / "big.png")
+    manifest = yaml.safe_load((root / "courses" / "PWD" / "media" / "manifest.yaml").read_text(encoding="utf-8"))
+    asset = manifest["assets"][0]["id"]
+    assert main(["media", "set", "PWD", asset, "--file", "media/files/big.png"]) == 0
+    capsys.readouterr()
+    assert main(["media", "fit", "PWD", asset, "--size", "1920x1080"]) == 0
+    assert "2048x1152 → 1920x1080" in capsys.readouterr().out
+    assert Image.open(folder / "big.png").size == (1920, 1080)
+    assert main(["media", "fit", "PWD", asset]) == 2
+    assert main(["media", "render", "PWD", asset]) == 1  # not an SVG
+    if not mediatools.browser():
+        return
+    svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100"><rect width="200" height="100" fill="#0a58ca"/></svg>'
+    (folder / "d.svg").write_text(svg, encoding="utf-8")
+    assert main(["media", "set", "PWD", asset, "--file", "media/files/d.svg"]) == 0
+    assert main(["media", "render", "PWD", asset]) == 0
+    assert Image.open(folder / "d.png").size == (200, 100)

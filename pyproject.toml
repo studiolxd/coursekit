@@ -13,6 +13,7 @@ dependencies = [
     "openpyxl>=3.1",
     "markdown-it-py>=3.0",
     "markitdown[pdf,docx,pptx,xlsx,xls,outlook]>=0.1",
+    "pillow>=10",
 ]
 
 [project.optional-dependencies]

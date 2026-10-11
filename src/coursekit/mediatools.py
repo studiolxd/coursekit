@@ -235,3 +235,72 @@ def tts(course: dict | None, engine: str | None, input_path: Path, out: Path, vo
     if provider == "elevenlabs" and out.with_suffix(".vtt").exists():
         return t("mediatools", "wrote_vtt", out=out, vtt=out.with_suffix(".vtt").name, provider=provider, voice=used_voice)
     return t("mediatools", "wrote", out=out, provider=provider, voice=used_voice)
+
+
+# ── Images: size and SVG rendering (local, no credits) ─────────────────────────────────────────
+
+BROWSERS = ("google-chrome", "chromium", "chromium-browser", "chrome", "msedge", "microsoft-edge")
+BROWSER_APPS = ("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", "/Applications/Chromium.app/Contents/MacOS/Chromium",
+                "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge")
+
+
+def parse_size(text: str) -> tuple[int, int]:
+    m = re.fullmatch(r"\s*(\d+)\s*[x×]\s*(\d+)\s*", text or "")
+    if not m:
+        raise ToolError(t("mediatools", "bad_size", size=text))
+    return int(m.group(1)), int(m.group(2))
+
+
+def fit(path: Path, size: tuple[int, int]) -> str:
+    """Brings an image to an exact size: scaled to cover it and cropped from the centre (a transparent PNG keeps its alpha)."""
+    from PIL import Image
+
+    require_file(path)
+    with Image.open(path) as im:
+        before = im.size
+        width, height = size
+        scale = max(width / im.width, height / im.height)
+        resized = im.resize((max(width, round(im.width * scale)), max(height, round(im.height * scale))), Image.LANCZOS)
+        left, top = (resized.width - width) // 2, (resized.height - height) // 2
+        out = resized.crop((left, top, left + width, top + height))
+        out.save(path)
+    return t("mediatools", "fitted", path=path.name, before=f"{before[0]}x{before[1]}", after=f"{width}x{height}")
+
+
+def browser() -> str | None:
+    for name in BROWSERS:
+        found = shutil.which(name)
+        if found:
+            return found
+    return next((app for app in BROWSER_APPS if Path(app).exists()), None)
+
+
+def svg_size(svg: Path) -> tuple[int, int]:
+    text = svg.read_text(encoding="utf-8", errors="replace")[:2000]
+    box = re.search(r'viewBox="\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)', text)
+    if box:
+        return round(float(box.group(1))), round(float(box.group(2)))
+    w, h = re.search(r'\bwidth="([\d.]+)', text), re.search(r'\bheight="([\d.]+)', text)
+    return (round(float(w.group(1))), round(float(h.group(1)))) if w and h else (1600, 900)
+
+
+def render_svg(svg: Path, out: Path, size: tuple[int, int] | None = None) -> str:
+    """An SVG as a PNG, drawn by the Chrome, Chromium or Edge of the machine (headless): to look at it and for creator."""
+    require_file(svg)
+    exe = browser()
+    if not exe:
+        raise ToolError(t("mediatools", "no_browser"))
+    width, height = size or svg_size(svg)
+    page = out.with_suffix(".render.html")
+    page.write_text(f'<!doctype html><html><head><meta charset="utf-8"><style>html,body{{margin:0;background:transparent}}'
+                    f'img{{display:block;width:{width}px;height:{height}px}}</style></head>'
+                    f'<body><img src="{svg.resolve().as_uri()}"></body></html>', encoding="utf-8")
+    try:
+        run([exe, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--allow-file-access-from-files",
+             "--default-background-color=00000000", f"--window-size={width},{height}", f"--screenshot={out.resolve()}",
+             page.resolve().as_uri()])
+    finally:
+        page.unlink(missing_ok=True)
+    if not out.exists():
+        raise ToolError(t("mediatools", "render_failed", svg=svg.name))
+    return t("mediatools", "rendered", svg=svg.name, png=out.name, size=f"{width}x{height}")

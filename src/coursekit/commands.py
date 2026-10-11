@@ -509,6 +509,12 @@ def cmd_media(args: argparse.Namespace) -> int:
             return 2
         print(mediamod.embed(course, args.id))
         return 0
+    if args.action in ("fit", "render"):
+        if not args.id or (args.action == "fit" and not args.size):
+            print(t("commands", "media_fit_needs"), file=sys.stderr)
+            return 2
+        print(mediamod.image_tool(course, args.id, args.action, args.size))
+        return 0
     if args.action == "redo":
         statesmod.ensure_active(course)
         chosen = mediamod.redo(course, [args.id, *args.more] if args.id else None, args.all)
@@ -825,7 +831,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.set_defaults(func=cmd_directives)
 
     p = sub.add_parser("media", help=t("commands", "help_media"))
-    p.add_argument("action", choices=("extract", "plan", "providers", "set", "upload", "redo", "embed"))
+    p.add_argument("action", choices=("extract", "plan", "providers", "set", "upload", "redo", "embed", "fit", "render"))
     p.add_argument("code", nargs="?")
     p.add_argument("id", nargs="?")
     p.add_argument("more", nargs="*", help=t("commands", "help_media_more"))
@@ -837,6 +843,7 @@ def register(sub: argparse._SubParsersAction) -> None:
         p.add_argument(f"--{key}")
     p.add_argument("--force", action="store_true", help=t("commands", "help_media_force"))
     p.add_argument("--all", action="store_true", help=t("commands", "help_media_all"))
+    p.add_argument("--size", help=t("commands", "help_media_size"))
     p.set_defaults(func=cmd_media)
 
     p = sub.add_parser("download", help=t("commands", "help_download"))

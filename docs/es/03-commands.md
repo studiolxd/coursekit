@@ -680,13 +680,13 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
                 [--alt ALT] [--transcript TRANSCRIPT] [--subtitles-path SUBTITLES_PATH]
                 [--made-with MADE_WITH] [--download DOWNLOAD] [--download-title DOWNLOAD_TITLE]
                 [--download-asset-path DOWNLOAD_ASSET_PATH] [--force]
-                [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all]
-                {extract,plan,providers,set,upload,redo,embed} [code] [id] [more ...]
+                [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all] [--size SIZE]
+                {extract,plan,providers,set,upload,redo,embed,fit,render} [code] [id] [more ...]
 ```
 
 | Argumento | Valores / por defecto | Significado |
 |---|---|---|
-| `action` | `extract`, `plan`, `providers`, `set`, `upload`, `redo`, `embed` | Ver más abajo. |
+| `action` | `extract`, `plan`, `providers`, `set`, `upload`, `redo`, `embed`, `fit`, `render` | Ver más abajo. |
 | `code` | código o carpeta del curso | Obligatorio en todas las acciones salvo `providers` (código de salida 2 si falta). |
 | `id` | id de recurso como `U1-S2-M1` | Obligatorio en `set` (código de salida 2 si falta). |
 | `--status STATUS` | `pending`, `scripted`, `produced`, `uploaded` | Nuevo estado del recurso (se comprueba con `coursekit config media`). |
@@ -703,6 +703,7 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
 | `--url URL` | dirección `https://` | `upload`: el `uploadUrl` que dio la plataforma (`request_asset_upload` o `request_embed_upload` de creator). |
 | `--content-type CONTENT_TYPE` | tipo MIME, por ejemplo `image/png` | `upload`: el mismo con el que se pidió la subida. |
 | `--method METHOD` | por defecto `PUT` | `upload`: método HTTP. |
+| `--size SIZE` | `ANCHOxALTO` | `fit` (obligatorio) y `render`: el tamaño, p. ej. `1920x1080`. |
 | `--all` | indicador | Solo en `redo`: rehace todos los recursos que usan el tema, no solo los hechos con otros tokens. |
 | `--force` | indicador | Solo en `set`: marca como `produced` o `uploaded` un recurso que usa los tokens del tema aunque los tokens falten o estén escritos a mano (ver más abajo). |
 
@@ -714,6 +715,8 @@ Acciones:
 - `set`: actualiza el recurso `id` con las opciones indicadas; imprime `<id>: <estado>`.
 - `upload`: envía el `--file` local (una ruta desde la carpeta del curso o del proyecto) a la `--url` con el `--content-type` e imprime `subido <nombre> (<n> bytes)`. Existe para que el agente de multimedia no necesite `curl`, que una sesión sin interfaz no puede ejecutar. No cambia el manifiesto: el agente registra después el `path` que dio la plataforma con `set --status uploaded --asset-path`. Código de salida 2 sin `--file`, `--url` o `--content-type`; código 1 si el fichero no existe, la dirección no es `https://` o la subida falla.
 - `embed`: envuelve el `.svg` que el recurso `id` tiene como `--file` en `media/src/<id>/index.html` (el SVG en línea, adaptable, en el idioma del curso, con las animaciones en pausa si se pide `prefers-reduced-motion`) y dice cómo subirlo: creator no admite el SVG como imagen, así que un SVG se sube como paquete EMBED, y el montaje pone un bloque EMBED donde el fichero del recurso es un `.svg`. Código de salida 1 si el recurso no tiene un fichero `.svg`.
+- `fit`: lleva el fichero del recurso `id` a `--size ANCHOxALTO` (obligatorio), escalado para cubrirlo y recortado desde el centro, conservando la transparencia de un PNG; en local, sin gastar créditos de un proveedor. Imprime `<fichero>: <antes> → <después>`.
+- `render`: dibuja el `.svg` del recurso `id` como un PNG a su lado (`<nombre>.png`), con el Chrome, Chromium o Edge de la máquina y sin interfaz, al tamaño de su `viewBox` o de `--size`: para mirarlo antes de marcarlo producido, y el PNG que necesita creator. Código de salida 1 si el fichero no es un SVG o no hay ese navegador.
 - `redo`: marca recursos para producirlos de nuevo e imprime sus ids. Con uno o más ids (`redo CODE U1-S3-M1 U1-S5-M4`), esos; sin ellos, los recursos producidos o subidos de los tipos que usan el tema (`uses_theme`) cuya huella difiere de los tokens actuales (todos con `--all`). Vuelven a `scripted` y olvidan su huella y su ruta subida; su guion y su fichero se conservan. Después `/produce-media` (o `coursekit handoff`) los produce otra vez. Mira [Cambiar el theme después de producir el multimedia](07-media.md#cambiar-el-theme-después-de-producir-el-multimedia). Se niega mientras el curso está en pausa.
 
 Los tipos que usan los tokens del tema figuran en `media.yaml › uses_theme` (por defecto `infographic`, `diagram`, `animated_gif`, `simulation`, `video` y `terminal_demo`). Para ellos:

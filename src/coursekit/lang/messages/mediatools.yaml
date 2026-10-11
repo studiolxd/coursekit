@@ -35,3 +35,10 @@ upload_not_https:
 downloaded: {es: "descargado {path} ({size} bytes)", en: "downloaded {path} ({size} bytes)"}
 download_outside: {es: "{path} queda fuera del proyecto: descarga solo dentro de él", en: "{path} is outside the project: download only inside it"}
 uploaded: {es: "subido {name} ({size} bytes)", en: "uploaded {name} ({size} bytes)"}
+bad_size: {es: "tamaño '{size}' no válido: ANCHOxALTO, p. ej. 1920x1080", en: "invalid size '{size}': WIDTHxHEIGHT, e.g. 1920x1080"}
+fitted: {es: "{path}: {before} → {after}", en: "{path}: {before} → {after}"}
+no_browser:
+  es: "no hay Chrome, Chromium ni Edge en esta máquina para renderizar el SVG (instálalo o revisa el SVG en la vista previa del curso)"
+  en: "there is no Chrome, Chromium or Edge on this machine to render the SVG (install one or check the SVG in the preview of the course)"
+render_failed: {es: "no se pudo renderizar {svg}", en: "could not render {svg}"}
+rendered: {es: "{svg} → {png} ({size})", en: "{svg} → {png} ({size})"}

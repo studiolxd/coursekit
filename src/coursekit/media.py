@@ -386,6 +386,25 @@ def embed(course: dict, asset_id: str) -> str:
     return t("media", "embed_written", path=(folder / "index.html").as_posix(), asset=asset_id)
 
 
+def image_tool(course: dict, asset_id: str, action: str, size: str | None = None) -> str:
+    """`fit`: the file of an asset to an exact size; `render`: its SVG as a PNG next to it (to look at it, and for creator)."""
+    from coursekit import mediatools
+
+    _, _, data = load_manifest(course["_dir"])
+    asset = next((a for a in data["assets"] if a["id"] == asset_id), None)
+    if asset is None:
+        raise MediaError(t("media", "asset_not_found", asset_id=asset_id))
+    path = next((base / str(asset.get("file") or "") for base in (course["_dir"], course["_dir"] / "media")
+                 if asset.get("file") and (base / str(asset["file"])).is_file()), None)
+    if path is None:
+        raise MediaError(t("media", "asset_without_file", asset=asset_id))
+    if action == "fit":
+        return mediatools.fit(path, mediatools.parse_size(size or ""))
+    if path.suffix.lower() != ".svg":
+        raise MediaError(t("media", "render_needs_svg", asset=asset_id))
+    return mediatools.render_svg(path, path.with_suffix(".png"), mediatools.parse_size(size) if size else None)
+
+
 def redo(course: dict, ids: list[str] | None = None, everything: bool = False) -> list[str]:
     """Marks assets to be produced again: the ones named, else those that use the theme and were made with other tokens than the
     current ones (every one that uses the theme with `everything`). They go back to `scripted`, forgetting the fingerprint and
@@ -440,6 +459,8 @@ def set_asset(course: dict, asset_id: str, **values) -> str:
     for key in ("status", "recipe", "asset_path", "file", "alt", "transcript", "subtitles_path", "made_with"):
         if values.get(key) is not None:
             asset[key] = values[key]
+    if values.get("status") in ("produced", "uploaded"):
+        asset.pop("note", None)  # "produce it again" no longer applies
     download = values.get("download")
     if download:
         downloads = asset.get("downloads") or []
