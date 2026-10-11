@@ -625,6 +625,9 @@ def test_the_words_check_reads_the_simulations_and_skips_the_unit_header(decisio
     title = "# Unidad 1 — Contraseñas que protegen\n"
     text = decision_content(GOOD_SECTION).replace(title, title + "\n" + header)
     (decision_course / "content.md").write_text(text, encoding="utf-8")
+    # the sample bank has a question without its `pregunta:` key, which the plan does not publish: give it the key here
+    assessment = ASSESSMENT.replace("¿Qué longitud mínima recomiendas?", "pregunta: ¿Qué longitud mínima recomiendas?")
+    (decision_course / "assessment.md").write_text(assessment, encoding="utf-8")
     data = course.load(find_project(decision_course), "DB1")
     plan, _, _ = assemble.build_plan(data, data["units"][0], simulations=True)
     page = "".join(render.lesson(lesson, lang.tokens("es")["player"]) for lesson in plan["lessons"])
