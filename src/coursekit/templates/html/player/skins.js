@@ -109,7 +109,11 @@ function mailMessage(message, ui) {
 
 function mailList(screen, ui) {
   const list = el("ol", { class: "ck-mail-list", "aria-label": screen.folder || ui.skin_inbox });
-  (screen.inbox || []).forEach((item, i) => {
+  // without an inbox of its own, the list shows the open message (an empty list does not look like a real mail client)
+  const inbox = (screen.inbox || []).length ? screen.inbox : screen.message
+    ? [{ from: screen.message.from, subject: screen.message.subject, time: screen.message.time,
+      preview: plain(screen.message.body).slice(0, 90) }] : [];
+  inbox.forEach((item, i) => {
     const open = screen.message && plain(item.subject) === plain(screen.message.subject);
     const row = el("li", { class: `ck-mail-row${item.unread ? " is-unread" : ""}${open ? " is-open" : ""}`, "data-target": `inbox:${i + 1}` });
     row.appendChild(avatar(item.from));

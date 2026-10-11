@@ -185,7 +185,8 @@ body:not(.ck-js) .ck-card .ck-back { display: block; margin-top: var(--space-sm)
 .ck-sim-initial { display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--color-text); border: 2px solid var(--color-line); }
 .ck-sim-text { font-size: 1.05rem; }
 .ck-sim-hint { margin: 0; font-size: 0.9rem; color: var(--color-text-soft); font-style: italic; }
-.ck-sim-text:focus, .ck-sim-log:focus, .ck-sim-text:focus-visible, .ck-sim-log:focus-visible { outline: none; }
+/* the text and the log take the focus after a decision (for screen readers), without a ring: more specific than the theme's [tabindex]:focus-visible */
+.ck-sim .ck-sim-text[tabindex]:focus, .ck-sim .ck-sim-log[tabindex]:focus, .ck-sim .ck-sim-text[tabindex]:focus-visible, .ck-sim .ck-sim-log[tabindex]:focus-visible { outline: none; }
 .ck-sim-log { display: flex; flex-direction: column; gap: var(--space-sm); max-height: 28rem; overflow-y: auto; padding: var(--space-sm); }
 .ck-sim-msg { max-width: 80%; padding: var(--space-sm) var(--space-md); border-radius: var(--radius); background: var(--color-background); border: 1px solid var(--color-line); }
 .ck-sim-msg.is-me { align-self: flex-end; background: var(--color-accent); color: var(--color-on-accent); border-color: var(--color-accent); }
