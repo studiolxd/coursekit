@@ -373,6 +373,9 @@ def verify_unit(course: dict, unit: dict) -> Report:
             report.error(t("verify", "words_below_minimum", label=label, words=fmt(sec.words), minimum=fmt(minimum)))
         elif sec.words < minimum * (1 + margin):
             report.warn(t("verify", "words_below_margin", label=label, words=fmt(sec.words), margin=int(margin * 100)))
+        elif rules.get("word_margin_max") is not None and sec.words > minimum * (1 + float(rules["word_margin_max"])):
+            report.warn(t("verify", "words_above_margin", label=label, words=fmt(sec.words), minimum=fmt(minimum),
+                          margin=round(float(rules["word_margin_max"]) * 100)))
         if spec["kind"] == "content":
             tags = [line for line in sec.lines if syntax.objective_tag.match(line)]
             if not tags:

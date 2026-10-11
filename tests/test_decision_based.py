@@ -553,3 +553,9 @@ def test_a_scene_can_happen_in_another_application():
     assert any("invalid target 'message:1'" in e for e in simulation.parse("scenario", bad, "x").errors)
     bad = [line.replace("skin: mail-desktop", "skin: fax") for line in body]
     assert any("unknown skin 'fax'" in e for e in simulation.parse("scenario", bad, "x").errors)
+
+
+def test_a_section_far_above_its_minimum_gets_a_warning(decision_course, capsys):
+    code, out = verify(decision_course, GOOD_SECTION, capsys)
+    assert code == 0  # only a warning
+    assert "above the minimum (120): the section takes longer than its hours" in out

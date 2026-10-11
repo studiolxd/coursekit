@@ -64,6 +64,7 @@ assembly:
 
 content:
   word_margin: 0.05                    # recommended margin over the minimum (warning only)
+  word_margin_max: 0.15                # above the minimum by more than this, the section lasts longer than its hours (warning only)
   placeholders_per_hour: 2.5           # multimedia placeholders per unit hour (rounded up)
   min_placeholder_types: 4             # capped by the number of placeholders required
   interactive_per_hour: 4              # distinct interactive directives per content-section hour

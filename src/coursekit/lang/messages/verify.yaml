@@ -30,6 +30,9 @@ words_below_minimum:
 words_below_margin:
   es: "{label}: {words} palabras, por debajo del margen recomendado del {margin} %"
   en: "{label}: {words} words, below the recommended {margin} % margin"
+words_above_margin:
+  es: "{label}: {words} palabras, más del {margin} % por encima del mínimo ({minimum}): el apartado dura más que sus horas"
+  en: "{label}: {words} words, more than {margin} % above the minimum ({minimum}): the section takes longer than its hours"
 missing_objective_tag:
   es: "{label}: falta la etiqueta de objetivo *[{objective} UN.M — …]*"
   en: "{label}: missing objective tag *[{objective} UN.M — …]*"
