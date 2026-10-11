@@ -153,7 +153,8 @@ characters:
 
 ## Export (always the three together, so they match the same version)
 
-1. `design_matrix_get` → save the JSON **as it is** in `courses/<CODE>/design/matrix.json`.
+1. `design_matrix_get` → save the JSON **as it is** in `courses/<CODE>/design/matrix.json`, with your file-writing tool
+   (the whole response, including `updatedAt`): never patch the previous file by hand or with a script.
 2. `design_matrix_validate` → `courses/<CODE>/design/validation.json`.
 3. `design_matrix_export` → download the `downloadUrl` (expires in 24 h) with
    `coursekit download "<downloadUrl>" --out courses/<CODE>/design/<CODE>-instructional-design.xlsx` (not `curl`: a
