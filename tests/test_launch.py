@@ -183,3 +183,13 @@ def test_run_does_not_start_an_agent_on_a_course_on_hold(course, monkeypatch, ca
     assert tools.calls == []
     assert main(["run", "course-status", "PWD"]) == 0  # reading is allowed
     assert len(tools.calls) == 1
+
+
+def test_run_finds_the_course_when_everything_comes_in_one_string(course, monkeypatch, capsys):
+    tools = FakeTools(monkeypatch)
+    assert main(["hold", "PWD", "--reason", "waiting"]) == 0
+    capsys.readouterr()
+    long_text = "PWD " + "cambios muy largos " * 40
+    assert main(["run", "design-change", long_text]) == 1
+    assert "has been on hold since" in capsys.readouterr().err
+    assert tools.calls == []

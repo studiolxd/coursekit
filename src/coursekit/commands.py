@@ -336,7 +336,8 @@ def cmd_run(args: argparse.Namespace) -> int:
     _split_run_arguments(args)
     project = _project()
     if args.name in launch.COMMAND_ROLE and args.name not in ("new-course", "course-status"):
-        code = next((a for a in args.arguments if not a.startswith("-")), None)  # the course the command works on
+        first = next((a for a in args.arguments if a.strip() and not a.startswith("-")), None)
+        code = first.split()[0].strip("\"'") if first else None  # the course the command works on (all may come in one string)
         if code and (project.course_dir(code) / "course.yaml").exists():
             statesmod.ensure_active(coursemod.load(project, code))  # a course on hold does not start an agent session
     role = args.role or launch.COMMAND_ROLE.get(args.name, "design")

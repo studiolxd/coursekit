@@ -62,8 +62,11 @@ class Project:
     def course_dir(self, code_or_path: str) -> Path:
         """Accept a course code (ABC101) or a path to the course folder."""
         path = Path(code_or_path)
-        if (path / "course.yaml").exists():
-            return path.resolve()
+        try:
+            if (path / "course.yaml").exists():
+                return path.resolve()
+        except OSError:  # not a path at all (too long, invalid characters)
+            pass
         return self.courses_dir / code_or_path
 
     def iter_courses(self) -> list[Path]:
