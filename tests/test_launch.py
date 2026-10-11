@@ -193,3 +193,17 @@ def test_run_finds_the_course_when_everything_comes_in_one_string(course, monkey
     assert main(["run", "design-change", long_text]) == 1
     assert "has been on hold since" in capsys.readouterr().err
     assert tools.calls == []
+
+
+def test_media_agents_without_interface_get_the_connectors_of_the_media_configuration(course, monkeypatch):
+    tools = FakeTools(monkeypatch)
+    from coursekit.project import find_project
+
+    root = find_project().root
+    (root / "config" / "media.yaml").write_text("connectors: [Magnific]\n", encoding="utf-8")
+    assert main(["run", "produce-media", "PWD", "--headless"]) == 0
+    assert "mcp__claude_ai_Magnific" in tools.calls[0]
+    assert main(["run", "produce-media", "PWD", "--role", "illustration", "--headless"]) == 0
+    assert "mcp__claude_ai_Magnific" in tools.calls[1]
+    assert main(["run", "assemble", "PWD", "--headless"]) == 0
+    assert "mcp__claude_ai_Magnific" not in tools.calls[2]

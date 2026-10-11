@@ -253,6 +253,7 @@ For each placeholder type, an ordered list of options; `coursekit media plan` ke
 |---|---|
 | `visual.style` | Visual style of the scenes, characters and objects of the simulations and of the illustrations: `flat`, `pixel-art`, `3d`, `isometric`, `illustration` (default) or `photo`. A course changes it in `course.yaml › media › visual › style`; the details go in the [house style](07-media.md#house-style-for-media). |
 | `visual.fallback` | The style used when no image generator is available (default `flat`): the illustration role draws it as SVG. |
+| `connectors` | `[]`: connectors of Claude Code (claude.ai) that the media and illustration agents may use in the sessions without an interface (`--headless`, the handoff), by their name as Claude Code lists them, for example `[Magnific, ElevenLabs]`. The options with `needs: {mcp: …}` come from them. With an interface the person approves each tool. |
 | `voice` | Options for narration (Video and Audio). A course uses one provider for all its narration. |
 | `subtitles` | Options for subtitles. |
 | `types.<id>` | Options for each placeholder type, keyed by its id: `image`, `infographic`, `diagram`, `animated_gif`, `terminal_demo`, `video`, `audio`, `simulation`. A project override of `types` uses the same ids (not the words of the content); mappings merge, so `types: {image: [...]}` replaces only the options of `image`. |

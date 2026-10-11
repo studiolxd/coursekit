@@ -18,6 +18,11 @@ visual:
   style: illustration          # flat | pixel-art | 3d | isometric | illustration | photo
   fallback: flat               # the style when there is no image generator: the illustration role draws it as SVG
 
+# Connectors of Claude Code (claude.ai) that the media and illustration agents may use in the sessions without an interface
+# (`--headless`, the handoff), by their name as Claude Code lists them, e.g. [Magnific, ElevenLabs]: the options with
+# `needs: {mcp: …}` (images_generate, creative_generate_speech…) come from them. With an interface the person approves them.
+connectors: []
+
 # Voice-over for video and audio. A course uses ONE provider for all its narration:
 # course.yaml › media.voice, chosen with `coursekit voice set` when several are available.
 # `coursekit tts --course CODE` uses it.

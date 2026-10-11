@@ -207,26 +207,34 @@ def blocked_programs(log: Path) -> list[str]:
 
 def permission_blocker(project: Project, log: Path, role: str) -> str | None:
     """Which programs the session could not run, for the cause of a stop. None when it was not that."""
-    allowed = set(media_programs(project)) if role == "media" else set()
+    allowed = set(media_programs(project)) if role in ("media", "illustration") else set()
     programs = [p for p in blocked_programs(log) if p not in allowed]
     if not programs:
         return None
-    return t("launch", "programs_blocked_media" if role == "media" else "programs_blocked", programs=", ".join(programs))
+    return t("launch", "programs_blocked_media" if role in ("media", "illustration") else "programs_blocked", programs=", ".join(programs))
+
+
+def media_connectors(project: Project) -> list[str]:
+    """The keys of the claude.ai connectors the media agents may use without an interface (`media › connectors`)."""
+    names = configmod.effective("media", project).value.get("connectors") or []
+    return [agentsmod.server_key(n if str(n).lower().startswith("claude.ai") else f"claude.ai {n}") for n in names if str(n).strip()]
 
 
 def headless_args(agent: Agent, text: str, last_message: Path, mcp_name: str, connector: str | None = None,
-                  programs: list[str] | None = None, folders: list[str] | None = None) -> list[str]:
+                  programs: list[str] | None = None, folders: list[str] | None = None,
+                  connectors: list[str] | None = None) -> list[str]:
     exe = _exe(agent.tool)
     with_model = ["--model", agent.model] if agent.model else []
     if agent.tool == "claude":
         allowed = [*_BASE_TOOLS]
         if agent.role == "reviewer":
             allowed.append("Bash(coursekit reviewed:*)")
-        if agent.role in ("design", "media", "assembly"):
+        if agent.role in ("design", "media", "illustration", "assembly"):
             allowed += [f"mcp__{mcp_name}", *([f"mcp__{connector}"] if connector else []), "Bash(coursekit:*)", "WebFetch"]
-        if agent.role == "media":
+        if agent.role in ("media", "illustration"):
             allowed += [f"Bash({program}:*)" for program in programs or []]
-        outside = ["--add-dir", *folders] if folders and agent.role == "media" else []
+            allowed += [f"mcp__{key}" for key in connectors or []]
+        outside = ["--add-dir", *folders] if folders and agent.role in ("media", "illustration") else []
         return [exe, "-p", text, *with_model, "--permission-mode", "acceptEdits", *outside,
                 "--allowedTools", *allowed, "--disallowedTools", *CLAUDE_DENY,
                 "--output-format", "stream-json", "--verbose"]
@@ -304,7 +312,7 @@ def execute(project: Project, agent: Agent, text: str, headless: bool, log_name:
     last_message = log.with_suffix(".last.txt")
     mcp_name = agentsmod.context(project)["mcp_name"]
     args = headless_args(agent, text, last_message, mcp_name, agentsmod.connector_server(project), media_programs(project),
-                         [store.workspaces_dir().as_posix()])
+                         [store.workspaces_dir().as_posix()], media_connectors(project))
     # A clean session even when launched from inside another agent (e.g. Claude Code).
     env = {k: v for k, v in os.environ.items() if not k.startswith("CLAUDE")} | SESSION_ENV
     with log.open("w", encoding="utf-8") as fh:

@@ -253,6 +253,7 @@ Para cada tipo de marcador, una lista ordenada de opciones; `coursekit media pla
 |---|---|
 | `visual.style` | Estilo visual de las escenas, personajes y objetos de las simulaciones y de las ilustraciones: `flat`, `pixel-art`, `3d`, `isometric`, `illustration` (por defecto) o `photo`. Un curso lo cambia en `course.yaml › media › visual › style`; los detalles van en el [estilo de la casa](07-media.md#estilo-de-la-casa-para-los-recursos). |
 | `visual.fallback` | El estilo cuando no hay generador de imágenes (por defecto `flat`): lo dibuja en SVG el rol de ilustración. |
+| `connectors` | `[]`: conectores de Claude Code (claude.ai) que los agentes de multimedia y de ilustración pueden usar en las sesiones sin interfaz (`--headless`, el handoff), por su nombre tal como los lista Claude Code, por ejemplo `[Magnific, ElevenLabs]`. Las opciones con `needs: {mcp: …}` salen de ellos. Con interfaz, la persona aprueba cada herramienta. |
 | `voice` | Opciones de locución (Vídeo y Audio). Un curso usa un solo proveedor para toda su locución. |
 | `subtitles` | Opciones de subtítulos. |
 | `types.<id>` | Opciones de cada tipo de marcador, con su id como clave: `image`, `infographic`, `diagram`, `animated_gif`, `terminal_demo`, `video`, `audio`, `simulation`. Un override de `types` en un proyecto usa los mismos ids (no las palabras del contenido); los mapas se fusionan, así que `types: {image: [...]}` sustituye solo las opciones de `image`. |
