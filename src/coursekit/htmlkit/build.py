@@ -73,6 +73,38 @@ def _copy(source: Path, target: Path) -> None:
         shutil.copy2(source, target)
 
 
+WEBP_FROM = 200_000  # bytes: a PNG or JPEG above this goes into the package as WebP (the source file is not touched)
+
+
+def _optimisable(source: Path) -> bool:
+    return source.suffix.lower() in (".png", ".jpg", ".jpeg") and source.stat().st_size > WEBP_FROM
+
+
+def _to_webp(source: Path, target: Path) -> None:
+    """A lighter copy for the package: WebP keeps the transparency of the portraits and weighs a fraction of the PNG."""
+    from PIL import Image
+
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with Image.open(source) as im:
+        im.save(target, "WEBP", quality=82, method=6)
+
+
+def _prune_media(out_dir: Path, document: str) -> None:
+    """The package keeps only the media its page uses: the manifest has the media of the whole course."""
+    folder = out_dir / "media"
+    if not folder.is_dir():
+        return
+    used = set(re.findall(r'media/([^"\'\s<>?#)]+)', document))
+    for entry in list(folder.iterdir()):
+        if entry.name == "files":
+            for item in list(entry.iterdir()):
+                if f"files/{item.name}" not in used:
+                    item.unlink() if item.is_file() else shutil.rmtree(item)
+            continue
+        if not any(ref == entry.name or ref.startswith(f"{entry.name}/") for ref in used):
+            entry.unlink() if entry.is_file() else shutil.rmtree(entry)
+
+
 def prepare_assets(course: dict, out_dir: Path) -> tuple[dict[str, dict], list[str]]:
     """Copy the produced media into the package; the entries come back as the plan reads them (`asset_path` inside the package)."""
     warnings: list[str] = []
@@ -87,7 +119,11 @@ def prepare_assets(course: dict, out_dir: Path) -> tuple[dict[str, dict], list[s
                 if source.is_file() and source.name == "index.html":
                     source = source.parent  # a package of a simulation or a demo: its folder
                 name = asset_id if source.is_dir() else f"{asset_id}{source.suffix}"
-                _copy(source, out_dir / "media" / name)
+                if source.is_file() and _optimisable(source):
+                    name = f"{asset_id}.webp"
+                    _to_webp(source, out_dir / "media" / name)
+                else:
+                    _copy(source, out_dir / "media" / name)
                 entry["status"], entry["asset_path"] = "uploaded", f"media/{name}"
                 subtitles = _local(course, asset.get("subtitles_path"))
                 if subtitles is not None and subtitles.is_file():
@@ -236,6 +272,7 @@ def build(course: dict, unit: dict, version: str | None, say: Say = print) -> Bu
         shown = ", ".join(missing[:20]) + (" …" if len(missing) > 20 else "")
         raise HtmlBuildError(t("htmlkit", "missing_text", count=len(missing), words=shown))
     (out_dir / "index.html").write_text(document, encoding="utf-8", newline="\n")
+    _prune_media(out_dir, document)
     (out_dir / "assets").mkdir(exist_ok=True)
     (out_dir / "assets" / "styles.css").write_text(project_css(project, course), encoding="utf-8", newline="\n")
     bundle_player(project, out_dir / "assets" / "player.js", say)

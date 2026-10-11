@@ -360,3 +360,31 @@ def test_an_svg_is_an_image_in_the_html_backend_and_an_embed_in_creator():
     assert assemble.placeholder_brick("infographic", fields, asset, "Media")["type"] == "EMBED"
     html_brick = assemble.placeholder_brick("infographic", fields, asset, "Media", svg_as_image=True)
     assert html_brick["type"] == "IMAGE" and html_brick["data"]["properties"]["imagePath"] == "media/U1-S2-M1.svg"
+
+
+def test_the_package_keeps_only_its_media_and_lighter_images(tmp_path):
+    from PIL import Image
+
+    out = tmp_path / "unit"
+    (out / "media" / "files").mkdir(parents=True)
+    for name in ("BG-USED.webp", "BG-OTHER-UNIT.webp", "U1-S1-M1.svg"):
+        (out / "media" / name).write_bytes(b"x")
+    (out / "media" / "SIM-X").mkdir()
+    (out / "media" / "SIM-X" / "index.html").write_text("x", encoding="utf-8")
+    (out / "media" / "files" / "guide.pdf").write_bytes(b"x")
+    (out / "media" / "files" / "old.pdf").write_bytes(b"x")
+    page = ('<img src="media/BG-USED.webp"><img src="media/U1-S1-M1.svg"><iframe src="media/SIM-X/index.html"></iframe>'
+            '<a href="media/files/guide.pdf">guide</a><script type="application/json">{"path": "media/BG-USED.webp"}</script>')
+    htmlbuild._prune_media(out, page)
+    assert sorted(p.name for p in (out / "media").iterdir()) == ["BG-USED.webp", "SIM-X", "U1-S1-M1.svg", "files"]
+    assert [p.name for p in (out / "media" / "files").iterdir()] == ["guide.pdf"]
+
+    portrait = tmp_path / "portrait.png"
+    image = Image.effect_noise((900, 900), 80).convert("RGBA")  # noise: a PNG well above the threshold
+    image.putalpha(Image.new("L", (900, 900), 0).point(lambda _: 0).resize((900, 900)))
+    image.paste((200, 50, 50, 255), (300, 200, 600, 900))  # an opaque figure on a transparent background, like a portrait
+    image.save(portrait)
+    assert htmlbuild._optimisable(portrait)
+    htmlbuild._to_webp(portrait, tmp_path / "portrait.webp")
+    copy = Image.open(tmp_path / "portrait.webp")
+    assert copy.mode == "RGBA" and copy.size == (900, 900)
