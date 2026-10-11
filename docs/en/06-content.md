@@ -374,9 +374,9 @@ decision-based course `coursekit verify` also checks that every content section 
 and comments before it), that it has `decision_based.min_simulations_per_content_section` of them, and that every
 objective of the unit is practised in one (`objective`).
 
-This approach is being built: the design agent already designs it (action map, story bible, simulation map) and
-simulations and adaptive blocks are written and verified, but no backend assembles them yet (`coursekit verify` warns, and
-the assembly refuses them), and the writing and review agents do not have its guidance yet.
+This approach is being built: the agents design, write and review it (action map, story bible, simulations, adaptive
+blocks, [`coursekit paths`](03-commands.md#coursekit-paths) for the review of every path) and `coursekit verify` checks it,
+but no backend assembles simulations and adaptive blocks yet (`coursekit verify` warns, and the assembly refuses them).
 
 ### Story bible
 
@@ -481,7 +481,7 @@ scenes:
 **Points:** each decision adds or subtracts its `score`. The grade of a scored simulation is the points of the learner's path
 over the maximum reachable, which `coursekit verify` computes; a scored simulation needs some path that earns points.
 
-`coursekit verify` walks every path of every simulation with its state and reports unknown or unreachable scenes, dead ends
+[`coursekit paths`](03-commands.md#coursekit-paths) writes every path with a flowchart for the review. `coursekit verify` walks every path of every simulation with its state and reports unknown or unreachable scenes, dead ends
 (a scene where, with some state, no option is left), endings without debriefing, undeclared variables, invalid
 conditions, and ids repeated in the course.
 

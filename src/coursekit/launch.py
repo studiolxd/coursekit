@@ -63,7 +63,7 @@ HEADLESS_NOTE = (
 )
 _BASE_TOOLS = ["Read", "Edit", "Write", "Glob", "Grep", "Skill", "TodoWrite",
                "Bash(coursekit verify:*)", "Bash(coursekit brief:*)", "Bash(coursekit status:*)",
-               "Bash(coursekit outline:*)", "Bash(coursekit config:*)", "Bash(git status:*)", "Bash(git diff:*)"]
+               "Bash(coursekit outline:*)", "Bash(coursekit paths:*)", "Bash(coursekit config:*)", "Bash(git status:*)", "Bash(git diff:*)"]
 CLAUDE_DENY = ["Bash(git commit:*)", "Bash(git push:*)", "Bash(coursekit approve:*)", "Bash(coursekit client:*)", "Bash(coursekit hold:*)",
                "Bash(coursekit resume:*)", "Bash(coursekit handoff:*)", "Bash(coursekit reviewed*--by*)",
                "Edit(courses/*/assembly/*.json)"]

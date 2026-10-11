@@ -79,7 +79,7 @@ Mientras un curso está en `on_hold`, los comandos que cambian su trabajo se rec
 |---|---|
 | Proyecto y máquina | `coursekit help`, `coursekit init`, `coursekit config`, `coursekit rules`, `coursekit agents`, `coursekit setup`, `coursekit doctor`, `coursekit uninstall`, `coursekit roles` |
 | Cursos y diseño | `coursekit new`, `coursekit handoff`, `coursekit status`, `coursekit sync`, `coursekit outline`, `coursekit brief` |
-| Verificación y firma | `coursekit verify`, `coursekit reviewed`, `coursekit approve` |
+| Verificación y firma | `coursekit verify`, `coursekit paths`, `coursekit reviewed`, `coursekit approve` |
 | Estado del curso y revisión del cliente | `coursekit hold`, `coursekit resume`, `coursekit client` |
 | Lanzar agentes | `coursekit write`, `coursekit review`, `coursekit run` |
 | Multimedia | `coursekit media`, `coursekit voice`, `coursekit tts`, `coursekit subtitles`, `coursekit theme` |
@@ -431,6 +431,25 @@ Por unidad comprueba (sobre `content.md` y `assessment.md`): que el diseño est�
 
 ```
 coursekit verify PWD --unit 1
+```
+
+### `coursekit paths`
+
+Escribe todos los caminos de las simulaciones de un curso (`:::scenario`, `:::conversation`) en `courses/<CODE>/reviews/unit-NN-paths.md`, un fichero por unidad que las tenga, para revisar las ramas sin jugarlas una a una. Quién: ambos (lo ejecutan quien redacta y quien revisa).
+
+```
+coursekit paths [--unit UNIT] code
+```
+
+| Argumento | Valores / por defecto | Significado |
+|---|---|---|
+| `code` | código o carpeta del curso | Curso cuyas simulaciones se recorren. |
+| `--unit UNIT` | número; por defecto: todas las unidades | Solo esta unidad. |
+
+Para cada simulación el informe tiene un resumen (fichero y línea, escenas, finales alcanzados, número de caminos, puntos de menos a más, minutos del camino más largo, si es evaluable, objetivos), un diagrama Mermaid de escenas y decisiones (con condiciones, efectos y puntos) y una tabla con todos los caminos completos, de más a menos puntos: sus decisiones, el final, los puntos, la nota (las evaluables) y el estado final. Imprime `unidad N: K simulaciones → <fichero>` por unidad; `<CODE>: ninguna unidad tiene simulaciones` si no hay. Una unidad cuyas simulaciones tienen errores no recibe informe: se imprimen los errores y el código de salida es 1 (corrígelos con `coursekit verify`). Ver [Simulaciones](06-content.md#simulaciones).
+
+```
+coursekit paths PWD --unit 1
 ```
 
 ### `coursekit reviewed`

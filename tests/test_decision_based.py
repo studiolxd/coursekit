@@ -304,3 +304,27 @@ def test_characters_come_from_the_cast(decision_course, capsys):
     code, out = verify(decision_course, GOOD_SECTION.replace("{name: Técnico, expression", "{name: Lucía, expression"), capsys)
     assert code == 1
     assert "character 'Lucía' is not in the cast of design/story.md" in out
+
+
+# ── Paths report ────────────────────────────────────────────────────────────────────────────
+
+
+def test_paths_report(decision_course, capsys):
+    (decision_course / "content.md").write_text(decision_content(GOOD_SECTION), encoding="utf-8")
+    capsys.readouterr()
+    assert main(["paths", "DB1"]) == 0
+    assert "unit 1: 1 simulations → courses/DB1/reviews/unit-01-paths.md" in capsys.readouterr().out
+    report = (decision_course.parent.parent / "reviews" / "unit-01-paths.md").read_text(encoding="utf-8")
+    assert "## scenario `call` — La llamada de soporte" in report
+    assert "```mermaid" in report and "flowchart TD" in report
+    assert '-->|"Se la doy · risk +3, score -2"|' in report
+    assert "| 1 | Le llamo yo a su extensión | safe (good) | 2 | 100 % |" in report
+    assert "points from -2 to 2" in report
+
+
+def test_paths_report_refuses_broken_simulations(decision_course, capsys):
+    broken = GOOD_SECTION.replace("goto: leak, effects: {risk: 3}", "goto: nowhere, effects: {risk: 3}")
+    (decision_course / "content.md").write_text(decision_content(broken), encoding="utf-8")
+    capsys.readouterr()
+    assert main(["paths", "DB1", "--unit", "1"]) == 1
+    assert "scene 'nowhere' does not exist" in capsys.readouterr().err

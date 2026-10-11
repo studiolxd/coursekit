@@ -60,6 +60,42 @@ Mandatory format: `.coursekit/docs/content-format.md`. Write in {{language_name}
   `assessment.md`: {{questions_per_objective}} questions per objective assessed by questionnaire.
 - **No emojis.** Only `{{allowed_symbols}}`.
 
+## Decision-based courses
+
+When `course.yaml › design.approach` is `decision-based` (read it before writing), the learner does not start by reading.
+Read also the story bible `courses/<CODE>/design/story.md` (world, protagonist, cast, arc, **simulation map**) and the
+simulation format in `.coursekit/docs/content-format.md` (section 2.1).
+
+- **Every content section follows the cycle** {{decision_cycle}}:
+  - *challenge*: the section **opens with the simulation** of the simulation map (`:::scenario` or `:::conversation`),
+    with no text before it (headings and comments only). Its `objective` lists the objectives it practises; every objective
+    of the unit is practised in some simulation.
+  - *explanation*: any content (prose, tabs, labelled graphics, timelines, dialogs, media) that **starts from what the
+    learner has just lived through**: name the situation, the decision and its consequence, then the principle behind
+    it. Use `:::if` / `:::else` to speak to the path they took (the `:::else` branch must work for everyone).
+  - *practice*: interactive directives and questions on what was explained, as in any course.
+  - *decide_again* (optional): a second, shorter simulation or a variant in a new situation; leave it out when the
+    section has already practised enough.
+  - *closing*: the key idea in one `> ` highlight or `:::highlight`, and the link to the next challenge of the story.
+- **Inside the story.** Use the world, the protagonist and the cast of the bible; a character not in the cast cannot
+  appear (`coursekit verify` checks it). Keep their personality and way of speaking. Every unit moves the arc.
+- **Writing a simulation:**
+  - The situation first, in the second person, short and concrete: where you are, who is there, what is at stake.
+  - Options are what real people do, including the common mistakes and the shortcuts under pressure; none obviously
+    right, none absurd, similar length. Three is usual; hotspots when the decision is to notice something in the scene.
+  - Consequences in the story, not "Correct!": what happens next. Make some appear later (state + `variants`, layers
+    with `if`, conditional choices, `next`) and give paths to recover from a mistake.
+  - `score` rewards the decisions an expert would take (and subtracts the harmful ones); a scored simulation must have a
+    path that earns points. `checkpoint: true` on the scenes worth trying again (rewind is {{simulation_rewind}}).
+  - Every ending has a `debriefing`: what happened and why, what an expert would have done and the principle, without
+    preaching or blaming.
+  - `background`, `layers` and `characters` refer to media placeholders of the unit by their title: add one placeholder
+    per scene background and per character portrait you use (`{{t_placeholder}}` of the right type).
+  - Time: {{minutes_per_scene}} min per scene and {{minutes_per_decision}} min per decision of the longest path, plus
+    {{minutes_per_debriefing}} min of debriefing; it is taken from the section hours, so its words minimum drops.
+- After each simulation run `coursekit verify <CODE> --unit N` (it walks every path) and `coursekit paths <CODE> --unit N`,
+  and read `reviews/unit-NN-paths.md`: play each path in your head and fix what does not make sense.
+
 ## Closing
 
 1. `coursekit verify <CODE> --unit N` without errors (warnings justified).

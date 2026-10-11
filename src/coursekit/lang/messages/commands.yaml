@@ -142,6 +142,10 @@ handoff_resume_options:
   es: "--code, --no-intro, --no-summary, --notes y --approach solo valen al crear un curso: para continuar uno, `coursekit handoff CODIGO`"
   en: "--code, --no-intro, --no-summary, --notes and --approach only apply when creating a course: to carry on one, `coursekit handoff CODE`"
 help_new_notes: {es: "instrucciones extra para el diseño instruccional", en: "extra instructions for the instructional design"}
+help_paths:
+  es: "todos los caminos de las simulaciones de un curso, con su diagrama, en reviews/unit-NN-paths.md (para la revisión)"
+  en: "every path of the simulations of a course, with its flowchart, in reviews/unit-NN-paths.md (for the review)"
+help_paths_unit: {es: "solo esta unidad", en: "only this unit"}
 help_new_approach:
   es: "enfoque del curso: expository (explicar y practicar) o decision-based (cada apartado abre con una simulación); por defecto: rules › defaults.approach"
   en: "approach of the course: expository (explain, then practise) or decision-based (every section opens with a simulation); default: rules › defaults.approach"

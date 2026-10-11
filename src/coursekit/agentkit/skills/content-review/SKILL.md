@@ -12,7 +12,8 @@ unit in `course.yaml`; if it matches, say so in the report and carry on.
 
 1. `coursekit verify <CODE> --unit N`: errors are fixed first (they are objective and cheap).
 2. Read `course.yaml` (objectives, sections and activities of the unit, audience, level), the
-   design Excel, `design/proposal-notes.md` and the whole unit.
+   design Excel, `design/proposal-notes.md` and the whole unit. In a decision-based course (`design.approach`), also
+   `design/story.md` and the paths report (`coursekit paths <CODE> --unit N`).
 3. Reference material: `coursekit brief <CODE>`, then `brief/index.md` and `brief/notes.md` of the
    course and of the project. Check technical accuracy (criterion 1) against `brief/text/` and
    resolve the `<!-- VERIFICAR -->` with it; anything contradicting the material is **blocking**.
@@ -33,6 +34,7 @@ reach the learner), **improvement** (noticeably better quality) or **minor** (st
 | 7 | Media | Necessary placeholders, well specified, with accessibility (captions, alt text). |
 | 8 | Style | {{language_name}}, {{address_rule}}, tone of `course.yaml`, inclusive language, no emojis. |
 | 9 | Continuity | No overlap with other units nor content the design keeps for a later one (`coursekit outline <CODE>`; to check an overlap, `--section U.S`); correct cross-references. |
+| 10 | Simulations (decision-based courses, or any simulation) | Run `coursekit paths <CODE> --unit N` and read every path of `reviews/unit-NN-paths.md`. Each section opens with its simulation; the situation is realistic for the audience; options are plausible (none obviously right, none absurd); consequences follow from the decisions and some are delayed; there is a way to recover; points reward what an expert would do; every debriefing explains without preaching; the explanation after it starts from what the learner lived through and the `:::if` branches fit their path; characters, world and tone match `design/story.md`. A path that makes no sense or an ending that teaches the wrong thing is **blocking**. |
 
 ## Partial review
 

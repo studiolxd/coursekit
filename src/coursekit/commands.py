@@ -143,6 +143,33 @@ def cmd_outline(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_paths(args: argparse.Namespace) -> int:
+    from coursekit import paths
+
+    project = _project()
+    course = coursemod.load(project, args.code)
+    units = [u for u in course.get("units") or [] if args.unit is None or u["n"] == args.unit]
+    if not units:
+        message = t("commands", "no_units_n", n=args.unit) if args.unit else t("commands", "no_units")
+        print(message, file=sys.stderr)
+        return 1
+    failed = found = False
+    for unit in units:
+        result = paths.write(course, unit)
+        if result.errors:
+            failed = True
+            print(t("paths", "unit_errors", n=unit["n"], code=course["code"]), file=sys.stderr)
+            for error in result.errors:
+                print(f"  {error}", file=sys.stderr)
+        elif result.report:
+            found = True
+            print(t("paths", "unit_written", n=unit["n"], count=len(result.simulations),
+                    path=result.report.relative_to(project.root).as_posix()))
+    if not found and not failed:
+        print(t("paths", "none", code=course["code"]))
+    return 1 if failed else 0
+
+
 def cmd_verify(args: argparse.Namespace) -> int:
     course = coursemod.load(_project(), args.code)
     problem = coursemod.approval_problem(course)
@@ -716,6 +743,11 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("code")
     p.add_argument("--section", help=t("commands", "help_outline_section"))
     p.set_defaults(func=cmd_outline)
+
+    p = sub.add_parser("paths", help=t("commands", "help_paths"))
+    p.add_argument("code")
+    p.add_argument("--unit", type=int, help=t("commands", "help_paths_unit"))
+    p.set_defaults(func=cmd_paths)
 
     p = sub.add_parser("verify", help=t("commands", "help_verify"))
     p.add_argument("code")

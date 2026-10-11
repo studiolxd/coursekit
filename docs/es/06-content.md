@@ -374,9 +374,10 @@ curso basado en decisiones `coursekit verify` comprueba además que cada apartad
 (antes solo puede haber títulos y comentarios), que tiene `decision_based.min_simulations_per_content_section` y que cada
 objetivo de la unidad se practica en alguna (`objective`).
 
-Este enfoque está en construcción: el agente de diseño ya lo diseña (mapa de acciones, biblia narrativa, mapa de
-simulaciones) y las simulaciones y los bloques adaptativos se escriben y se verifican, pero ningún backend los monta todavía
-(`coursekit verify` avisa y el montaje los rechaza), y los agentes de redacción y revisión aún no tienen sus indicaciones.
+Este enfoque está en construcción: los agentes lo diseñan, lo redactan y lo revisan (mapa de acciones, biblia narrativa,
+simulaciones, bloques adaptativos, [`coursekit paths`](03-commands.md#coursekit-paths) para revisar todos los caminos) y
+`coursekit verify` lo comprueba, pero ningún backend monta todavía las simulaciones ni los bloques adaptativos
+(`coursekit verify` avisa y el montaje los rechaza).
 
 ### Biblia narrativa
 
@@ -481,7 +482,7 @@ scenes:
 **Puntos:** cada decisión suma o resta su `score`. La nota de una simulación evaluable es la puntuación del camino del alumno
 sobre la máxima alcanzable, que calcula `coursekit verify`; una simulación evaluable necesita algún camino que sume puntos.
 
-`coursekit verify` recorre todos los caminos de cada simulación con su estado e informa de escenas desconocidas o
+[`coursekit paths`](03-commands.md#coursekit-paths) escribe todos los caminos con un diagrama para la revisión. `coursekit verify` recorre todos los caminos de cada simulación con su estado e informa de escenas desconocidas o
 inalcanzables, callejones sin salida (una escena en la que, con algún estado, no queda ninguna opción), finales sin
 debriefing, variables no declaradas, condiciones no válidas e ids repetidos en el curso.
 

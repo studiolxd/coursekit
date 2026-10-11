@@ -11,6 +11,7 @@ permission:
     "coursekit status*": allow
     "coursekit brief*": allow
     "coursekit outline*": allow
+    "coursekit paths*": allow
     "coursekit config*": allow
     "coursekit reviewed*": allow
     "git status*": allow

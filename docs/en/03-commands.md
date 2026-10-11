@@ -79,7 +79,7 @@ While a course is `on_hold`, the commands that change its work are refused with 
 |---|---|
 | Project and machine | `coursekit help`, `coursekit init`, `coursekit config`, `coursekit rules`, `coursekit agents`, `coursekit setup`, `coursekit doctor`, `coursekit uninstall`, `coursekit roles` |
 | Courses and design | `coursekit new`, `coursekit handoff`, `coursekit status`, `coursekit sync`, `coursekit outline`, `coursekit brief` |
-| Verification and sign-off | `coursekit verify`, `coursekit reviewed`, `coursekit approve` |
+| Verification and sign-off | `coursekit verify`, `coursekit paths`, `coursekit reviewed`, `coursekit approve` |
 | Course state and client review | `coursekit hold`, `coursekit resume`, `coursekit client` |
 | Launching agents | `coursekit write`, `coursekit review`, `coursekit run` |
 | Media | `coursekit media`, `coursekit voice`, `coursekit tts`, `coursekit subtitles`, `coursekit theme` |
@@ -431,6 +431,25 @@ Per unit it checks (on `content.md` and `assessment.md`): the design is approved
 
 ```
 coursekit verify PWD --unit 1
+```
+
+### `coursekit paths`
+
+Writes every path of the simulations of a course (`:::scenario`, `:::conversation`) to `courses/<CODE>/reviews/unit-NN-paths.md`, one file per unit that has them, so that the branches can be reviewed without playing them one by one. Who: both (the writer and the reviewer run it).
+
+```
+coursekit paths [--unit UNIT] code
+```
+
+| Argument | Values / default | Meaning |
+|---|---|---|
+| `code` | course code or folder | Course whose simulations are walked. |
+| `--unit UNIT` | number; default: every unit | Only this unit. |
+
+For each simulation the report has a summary (file and line, scenes, endings reached, number of paths, points from the lowest to the highest, minutes of the longest path, whether it is scored, objectives), a Mermaid flowchart of scenes and decisions (with conditions, effects and points) and a table of every complete path, from most to fewest points: its decisions, ending, points, grade (scored ones) and final state. Prints `unit N: K simulations → <file>` per unit; `<CODE>: no unit has simulations` when there are none. A unit whose simulations have errors gets no report: the errors are printed and the exit code is 1 (fix them with `coursekit verify`). See [Simulations](06-content.md#simulations).
+
+```
+coursekit paths PWD --unit 1
 ```
 
 ### `coursekit reviewed`
