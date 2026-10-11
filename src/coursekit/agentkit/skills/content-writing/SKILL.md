@@ -89,8 +89,10 @@ simulation format in `.coursekit/docs/content-format.md` (section 2.1).
     path that earns points. `checkpoint: true` on the scenes worth trying again (rewind is {{simulation_rewind}}).
   - Every ending has a `debriefing`: what happened and why, what an expert would have done and the principle, without
     preaching or blaming.
-  - `background`, `layers` and `characters` refer to media placeholders of the unit by their title: add one placeholder
-    per scene background and per character portrait you use (`{{t_placeholder}}` of the right type).
+  - `background` and `layers.image` are **descriptions of the image** (what it shows, from the point of view of the
+    learner); the media is produced from them, one image per description in the whole course, so repeat the exact same
+    text when a scene reuses an image. Portraits come from the cast of the story bible (`look`) with the `expression` of
+    each scene. Do not add media placeholders for them.
   - Time: {{minutes_per_scene}} min per scene and {{minutes_per_decision}} min per decision of the longest path, plus
     {{minutes_per_debriefing}} min of debriefing; it is taken from the section hours, so its words minimum drops.
 - After each simulation run `coursekit verify <CODE> --unit N` (it walks every path) and `coursekit paths <CODE> --unit N`,

@@ -234,6 +234,8 @@ The page is built with progressive enhancement. The lessons (one per section of 
 | `flashcards`, `flashcard-gallery` | `FLASHCARD_CAROUSEL`, `FLASHCARD_GALLERY` | Cards that flip (click, Enter or Space), one at a time or in a grid |
 | `labelled-graphic` | `LABELLED_GRAPHIC` | The image with numbered hotspots that open their explanation (Escape or Close to dismiss). Without a produced image: a plain list of the points |
 | `dialog` | `DIALOG` | The lines of the conversation with the name of each speaker |
+| `scenario`, `conversation` | `SIMULATION` | The simulation played scene by scene: the background with its layers and the areas that can be clicked (focusable buttons with the label as their name), the portraits of the characters, the text with the variants that hold, the choices as buttons, the feedback of a decision before going on, and at the end the ending, the debriefing, the decisions taken, the score (scored ones) and the buttons to go back to the last checkpoint (`decision_based.rewind`) and to start again. A `conversation` shows the exchange as a chat. Without JavaScript: the opening situation and its options. Images not produced yet are left out (initials stand for the portraits) |
+| `:::if` / `:::else` | `CONDITIONAL` | Both branches are in the page; the player shows the `:::if` one when every simulation it reads has been played and its condition holds, else the neutral one (also without JavaScript) |
 | Image, infographic, diagram, animated GIF placeholder (produced) | `IMAGE` | Figure with alt text and caption |
 | Video placeholder (produced) | `VIDEO` | Video with controls, captions track (if there is a `.vtt`) and the transcript in a `details` |
 | Audio placeholder (produced) | `AUDIO` | Audio with controls and the transcript |
@@ -257,6 +259,7 @@ With JavaScript the page becomes a small course player:
 - The unit reopens in the lesson where the learner left it.
 - **Practice questions** (in content lessons) have a **Check** button. It does nothing until the question is answered; then it locks the answers, marks them and shows the feedback, and the button becomes **Try again**, which clears the answer and shuffles again.
 - **The assessment lessons** (`assessment.md`) are graded together with one **Submit answers** button. Unanswered questions block the submit ("Answer every question before submitting."). The score is the percentage of questions fully right, rounded; the learner passes when it reaches `the pass mark of the test (see [Grading of a test](#grading-of-a-test)). The attempts of the test limit them (empty or 0: unlimited). After submitting, each question shows its mark and feedback and the report says the score and whether the learner passed; if not, **Try again** appears while attempts are left (the report says how many) and "No attempts left." when none are. The attempts used and the best score are kept in the suspend data, so reopening the unit does not give new attempts.
+- **Simulations** keep their state (the scene, the variables, the points and whether they ended) when the learner moves between lessons and when the unit is reopened, and every decision updates the adaptive blocks of the unit. A **scored** simulation inside an assessment lesson counts in its test: it weighs `weight` questions and adds its grade (the points of its path over the maximum reachable); the test cannot be submitted until those simulations have ended, and **Try again** restarts them too. In a unit without a test, the score is the weighted grade of its scored simulations once all of them have ended; in a unit with a test, the scored simulations of the content are practice.
 - The interface texts (button labels and messages) are in the language of the course.
 - The page is responsive (the lesson list is a side column on wide screens), respects reduced motion and forced colours, and prints with every lesson.
 
@@ -267,11 +270,11 @@ The runtime is `@studiolxd/scorm`, bundled into `assets/player.js`.
 | What | How it is reported |
 |---|---|
 | Location | The key of the current lesson (`U1-S2`, `U1-E1.1`); the unit reopens there |
-| Suspend data | The visited lessons, the attempts used and the best score |
+| Suspend data | The visited lessons, the attempts used, the best score, the number of interactions recorded and, of each simulation, its scene, variables, points and whether it ended (no more, to stay within the 4,096 characters of SCORM 1.2) |
 | Progress | Lessons visited divided by lessons of the unit (progress measure, SCORM 2004) |
 | Completion | Without a test: completed when every lesson has been visited, incomplete until then. With a test, in SCORM 2004: completed when every lesson has been visited, and passed or failed when the test is submitted. With a test, in SCORM 1.2, which has a single status: passed or failed when the test is submitted |
 | Score | Raw (percentage), minimum 0 and maximum 100; also scaled in SCORM 2004 |
-| Interactions | One per question of the test: its id, the type (choice for single and multiple choice, fill-in for the rest), the learner's response (cut at 250 characters), correct or incorrect, weight 1 |
+| Interactions | One per question of the test: its id, the type (choice for single and multiple choice, fill-in for the rest), the learner's response (cut at 250 characters), correct or incorrect, weight 1. And one per decision in a simulation: `<simulation>-<n>`, choice, the text of the decision, correct when it earned points, incorrect when it lost them and neutral otherwise, weighted by its points |
 | Session | Session time and exit `suspend`; the data is committed after every change and the session is terminated when the page is hidden or closed |
 
 ### Styles

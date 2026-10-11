@@ -17,7 +17,7 @@ export function createTracker(config) {
   }
   const total = config.lessons.length;
   const hasQuiz = config.lessons.some((lesson) => lesson.type === "evaluation");
-  const state = { visited: [], attempts: 0, best: null, location: null };
+  const state = { visited: [], attempts: 0, best: null, location: null, sims: {}, interactions: 0 };
 
   const safe = (fn) => {
     try {
@@ -29,7 +29,12 @@ export function createTracker(config) {
 
   const save = () => {
     if (!api) return;
-    safe(() => api.setSuspendData(JSON.stringify({ v: state.visited, a: state.attempts, b: state.best })));
+    // SCORM 1.2 keeps 4096 characters: of each simulation only where it is, its state, its points and whether it ended
+    const sims = {};
+    Object.entries(state.sims).forEach(([id, run]) => {
+      sims[id] = { a: run.at, e: run.env, s: run.score, d: run.done ? 1 : 0 };
+    });
+    safe(() => api.setSuspendData(JSON.stringify({ v: state.visited, a: state.attempts, b: state.best, s: sims, n: state.interactions })));
     safe(() => api.commit());
   };
 
@@ -41,6 +46,10 @@ export function createTracker(config) {
       state.visited = Array.isArray(saved.v) ? saved.v.filter((n) => Number.isInteger(n) && n >= 0 && n < total) : [];
       state.attempts = Number.isInteger(saved.a) ? saved.a : 0;
       state.best = typeof saved.b === "number" ? saved.b : null;
+      state.interactions = Number.isInteger(saved.n) ? saved.n : 0;
+      Object.entries(saved.s && typeof saved.s === "object" ? saved.s : {}).forEach(([id, run]) => {
+        state.sims[id] = { at: run.a, env: run.e || {}, score: Number(run.s) || 0, done: run.d === 1, path: [] };
+      });
     } catch (error) {
       /* an unreadable record starts from scratch */
     }
@@ -77,9 +86,28 @@ export function createTracker(config) {
       if (api) {
         safe(() => api.setScore({ raw: score, min: 0, max: 100, scaled: score / 100 }));
         safe(() => (passed ? api.setPassed() : api.setFailed()));
-        interactions.forEach((entry, i) => safe(() => api.recordInteraction(i, entry)));
+        interactions.forEach((entry) => {
+          safe(() => api.recordInteraction(state.interactions, entry));
+          state.interactions += 1;
+        });
       }
       save();
+    },
+    // The score of a unit without a test whose scored simulations have all ended.
+    score(score) {
+      if (api) safe(() => api.setScore({ raw: score, min: 0, max: 100, scaled: score / 100 }));
+      save();
+    },
+    // The run of a simulation: read it (`simulation(id)`) or keep it (`simulation(id, run)`).
+    simulation(id, run) {
+      if (run === undefined) return state.sims[id] || null;
+      state.sims[id] = run;
+      save();
+      return run;
+    },
+    interaction(entry) {
+      if (api) safe(() => api.recordInteraction(state.interactions, entry));
+      state.interactions += 1;
     },
     finish() {
       if (!api) return;

@@ -250,7 +250,7 @@ def _decisions(scene: dict) -> list[dict]:
 def parse(kind: str, body: list[str], where: str, line: int = 0) -> Simulation:
     """Read and check one simulation (`body`: the lines between `:::<kind>` and `:::`)."""
     sim = Simulation(kind=kind, id="", data={}, line=line)
-    err = lambda key, **v: sim.errors.append(f"{where}: " + t("simulation", key, **v))  # noqa: E731
+    err = lambda message, /, **v: sim.errors.append(f"{where}: " + t("simulation", message, **v))  # noqa: E731
     try:
         data = yaml.safe_load("\n".join(body))
     except yaml.YAMLError as exc:
@@ -583,3 +583,60 @@ def adaptive_lines(lines: list[str], start: int = 1) -> set[int]:
         if block.end_line is not None:
             hidden.add(block.end_line)
     return hidden
+
+
+# ── Media of a simulation ───────────────────────────────────────────────────────────────────
+
+def background_id(description: str) -> str:
+    from coursekit.util import slugify
+
+    return "BG-" + slugify(description).upper()
+
+
+def layer_id(description: str) -> str:
+    from coursekit.util import slugify
+
+    return "LAYER-" + slugify(description).upper()
+
+
+def portrait_id(name: str, expression: object = None) -> str:
+    """`CHAR-<NAME>` (the portrait of a character, shared with the dialogues) or `CHAR-<NAME>-<EXPRESSION>`."""
+    from coursekit.util import character_asset_id, slugify
+
+    base = character_asset_id(name)
+    return f"{base}-{slugify(str(expression), 24).upper()}" if expression else base
+
+
+def media_refs(data: dict) -> list[dict]:
+    """The images a simulation uses, with the id of their asset in the manifest (one per image in the whole course):
+    backgrounds `BG-<description>`, layers `LAYER-<description>`, portraits `CHAR-<NAME>` and, with an expression,
+    `CHAR-<NAME>-<EXPRESSION>`. Each: {id, kind, description, character, expression}."""
+    found: dict[str, dict] = {}
+
+    def add(asset_id: str, kind: str, description: str = "", character: str = "", expression: str = "") -> None:
+        found.setdefault(asset_id, {"id": asset_id, "kind": kind, "description": description, "character": character,
+                                    "expression": expression})
+
+    def portrait(name: object, expression: object = None) -> None:
+        name = str(name or "").strip()
+        if not name:
+            return
+        add(portrait_id(name), "portrait", character=name)
+        if expression:
+            add(portrait_id(name, expression), "portrait", character=name, expression=str(expression))
+
+    portrait(data.get("character"))
+    for scene in (data.get("scenes") or {}).values():
+        if not isinstance(scene, dict):
+            continue
+        if scene.get("background"):
+            add(background_id(str(scene["background"])), "background", str(scene["background"]))
+        for layer in scene.get("layers") or []:
+            if isinstance(layer, dict) and layer.get("image"):
+                add(layer_id(str(layer["image"])), "layer", str(layer["image"]))
+        for person in scene.get("characters") or []:
+            if isinstance(person, dict):
+                portrait(person.get("name"), person.get("expression"))
+        if data.get("character") and scene.get("expression"):
+            portrait(data["character"], scene["expression"])
+    return list(found.values())

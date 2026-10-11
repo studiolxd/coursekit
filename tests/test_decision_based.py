@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 import shutil
+from pathlib import Path
 
 import pytest
 import yaml
@@ -174,7 +176,7 @@ def verify(unit, section2, capsys):
 def test_a_decision_based_unit_verifies(decision_course, capsys):
     code, out = verify(decision_course, GOOD_SECTION, capsys)
     assert code == 0, out
-    assert "not assembled by any backend yet" in out
+    assert "not assembled in creator yet" in out
 
 
 def test_the_section_must_open_with_a_simulation(decision_course, capsys):
@@ -328,3 +330,67 @@ def test_paths_report_refuses_broken_simulations(decision_course, capsys):
     capsys.readouterr()
     assert main(["paths", "DB1", "--unit", "1"]) == 1
     assert "scene 'nowhere' does not exist" in capsys.readouterr().err
+
+
+# ── html backend ────────────────────────────────────────────────────────────────────────────
+
+
+def test_the_html_backend_renders_simulations_and_adaptive_blocks(decision_course):
+    from coursekit import assemble, course, lang
+    from coursekit.htmlkit import render
+    from coursekit.project import find_project
+
+    (decision_course / "content.md").write_text(decision_content(GOOD_SECTION), encoding="utf-8")
+    data = course.load(find_project(decision_course), "DB1")
+    plan, errors, warnings = assemble.build_plan(data, data["units"][0])
+    assert not errors and not render.unsupported_bricks(plan)
+    assert any("images not produced yet" in w for w in warnings)
+    html = render.lesson(plan["lessons"][1], lang.tokens("es")["player"])
+    assert '<section class="ck-sim ck-sim-scenario ck-skin-phone" data-sim="call"' in html
+    payload = html.split('<script type="application/json" class="ck-sim-data">')[1].split("</script>")[0]
+    sim = json.loads(payload)
+    assert sim["max_score"] == 2 and sim["rewind"] is True and sim["scenes"]["begin"]["text"].startswith("<p>Suena")
+    assert sim["scenes"]["begin"]["characters"][0]["_portrait"] is None
+    assert '<div class="ck-adaptive" data-condition="call.risk &gt;= 3"><div class="ck-if" hidden>' in html
+    assert '<div class="ck-else"><div class="ck-text"><p>No caíste' in html
+    assert '<div class="ck-sim-static"><p>Suena el teléfono.' in html  # readable without JavaScript
+
+
+def test_the_script_of_a_simulation_cannot_close_its_tag():
+    from coursekit.htmlkit import render
+
+    brick = {"type": "SIMULATION", "meta": {}, "data": {"id": "x", "kind": "scenario", "title": "T", "scenes": {
+        "a": {"text": "<p>see </script><script>alert(1)</script></p>", "ending": "good", "debriefing": "<p>d</p>"}}}}
+    html = render.simulation(brick, render.Ctx({}, "U1-S1"))
+    assert "<script>alert" not in html and html.count("</script>") == 1
+
+
+def test_the_player_reads_conditions_like_python(tmp_path):
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("node is not installed")
+    import subprocess
+    from importlib import resources
+
+    from coursekit import simulation
+
+    source = Path(str(resources.files("coursekit.templates.html"))) / "player" / "expr.js"
+    shutil.copy(source, tmp_path / "expr.mjs")
+    cases = [("risk >= 3 && !called", {"risk": 3, "called": False}), ("risk > 3 || trust == 2", {"risk": 3, "trust": 1}),
+             ("-(a - 2) < 0 || b", {"a": 1, "b": True}), ("call.risk + 1 >= 4", {"call.risk": 3}), ("!(x != 0)", {})]
+    script = ("import { test } from './expr.mjs';\n"
+              f"const cases = {json.dumps(cases)};\n"
+              "console.log(JSON.stringify(cases.map(([c, env]) => test(c, env))));\n")
+    (tmp_path / "run.mjs").write_text(script, encoding="utf-8")
+    out = subprocess.run([node, "run.mjs"], cwd=tmp_path, capture_output=True, text=True, check=True).stdout
+    assert json.loads(out) == [simulation.test(c, env) for c, env in cases]
+
+
+def test_unknown_and_missing_keys_are_reported():
+    from coursekit import simulation
+
+    sim = simulation.parse("scenario", ["id: x", "scenes:", "  a:", "    choices:",
+                                        "      - {text: Yes, of course, goto: b}", "  b: {text: B, ending: good, debriefing: D}"], "x")
+    assert any("missing 'title'" in e for e in sim.errors)
+    assert any("unknown key 'scenes.a.choices[0].of course'" in e for e in sim.errors)
+    assert any("missing 'scenes.a.text'" in e for e in sim.errors)

@@ -347,6 +347,49 @@ def short_answer(brick: dict, ctx: Ctx) -> str:
     return question("short", brick, ctx, body)
 
 
+# ── decision-based courses ───────────────────────────────────────────────────────────────────
+
+def _clean_simulation(data: dict) -> dict:
+    """The data of a simulation for the player, with every text sanitised like the rest of the page."""
+    out = json.loads(json.dumps(data))
+    out["title"] = inline(out.get("title"))
+    for scene in (out.get("scenes") or {}).values():
+        for key in ("text", "debriefing"):
+            if scene.get(key):
+                scene[key] = block(scene[key])
+        for variant in scene.get("variants") or []:
+            variant["text"] = block(variant.get("text"))
+        for decision in (scene.get("choices") or []) + (scene.get("hotspots") or []):
+            for key in ("text", "label", "feedback"):
+                if decision.get(key):
+                    decision[key] = inline(decision[key])
+    return out
+
+
+def simulation(brick: dict, ctx: Ctx) -> str:
+    """A simulation: its data for the player (`player/simulation.js`), and without JavaScript the situation it opens with."""
+    data = _clean_simulation(brick["data"])
+    scenes = data.get("scenes") or {}
+    first = scenes.get(data.get("start") or next(iter(scenes), ""), {})
+    payload = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
+    skin = f" ck-skin-{a(data['skin'])}" if data.get("skin") else ""
+    options = "".join(f"<li>{d.get('text') or d.get('label')}</li>" for d in (first.get("choices") or []) + (first.get("hotspots") or []))
+    fallback = f'<div class="ck-sim-static">{first.get("text", "")}<ul>{options}</ul></div>'
+    return (f'<section class="ck-sim ck-sim-{a(data.get("kind", "scenario"))}{skin}" data-sim="{a(data.get("id", ""))}" '
+            f'data-id="{a(ctx.next_id())}" aria-label="{a(re.sub(r"<[^>]+>", "", data.get("title", "")))}">'
+            f'<h3 class="ck-sim-title">{data.get("title", "")}</h3>{fallback}'
+            f'<script type="application/json" class="ck-sim-data">{payload}</script></section>')
+
+
+def conditional(brick: dict, ctx: Ctx) -> str:
+    """Content that depends on what the learner decided: the player shows one branch; without JavaScript, the neutral one."""
+    data = brick["data"]
+    then = "".join(RENDERERS[b["type"]](b, ctx) for b in data.get("then") or [])
+    other = "".join(RENDERERS[b["type"]](b, ctx) for b in data.get("else") or [])
+    return (f'<div class="ck-adaptive" data-condition="{a(data.get("condition", ""))}">'
+            f'<div class="ck-if" hidden>{then}</div><div class="ck-else">{other}</div></div>')
+
+
 RENDERERS: dict[str, Callable[[dict, Ctx], str]] = {
     "TEXT": text, "HEADING": heading, "CODE": code, "LIST": bullets, "TABLE": table, "HIGHLIGHT": highlight, "NOTE": note, "QUOTE": quote,
     "ACCORDION": accordion, "TABS": tabs, "CAROUSEL": carousel, "CAROUSEL_QUOTES": carousel_quotes, "TIMELINE": timeline,
@@ -354,12 +397,19 @@ RENDERERS: dict[str, Callable[[dict, Ctx], str]] = {
     "IMAGE": image, "VIDEO": video, "AUDIO": audio, "EMBED": embed, "ATTACHMENT": attachment,
     "SINGLE_CHOICE": single_choice, "MULTI_SELECT": multi_select, "TRUE_FALSE": true_false, "SORTING": sorting, "MATCH": match,
     "SORTING_GROUPS": sorting_groups, "FILL_IN_THE_BLANK": fill_in_the_blank, "ORDER_WORDS": order_words, "SHORT_ANSWER": short_answer,
+    "SIMULATION": simulation, "CONDITIONAL": conditional,
 }
 
 
 def unsupported_bricks(plan: dict) -> list[str]:
     """The bricks of the plan this backend cannot render yet: `lesson key: BRICK`."""
-    return [f"{lesson['key']}: {brick['type']}" for lesson in plan["lessons"] for brick in lesson["bricks"]
+    def walk(bricks: list[dict]):
+        for brick in bricks:
+            yield brick
+            if brick["type"] == "CONDITIONAL":
+                yield from walk((brick["data"].get("then") or []) + (brick["data"].get("else") or []))
+
+    return [f"{lesson['key']}: {brick['type']}" for lesson in plan["lessons"] for brick in walk(lesson["bricks"])
             if brick["type"] not in RENDERERS]
 
 

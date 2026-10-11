@@ -81,3 +81,14 @@ player:
   question: Pregunta {n}
   media_missing: Recurso multimedia pendiente de producir
   transcript: Transcripción
+  continue: Continuar
+  sim_choices: ¿Qué haces?
+  sim_ending_good: Buen final
+  sim_ending_mixed: Final a medias
+  sim_ending_bad: Mal final
+  sim_debriefing: Qué ha pasado y por qué
+  sim_your_path: Tus decisiones
+  sim_score: "Puntuación: {score} %"
+  sim_checkpoint: Volver al último punto de control
+  sim_restart: Empezar de nuevo
+  sim_finish_first: Termina antes las simulaciones de esta prueba.

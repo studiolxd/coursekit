@@ -2,6 +2,7 @@
 // (`#ck-config`: the standard, the lessons and the texts of the interface).
 import { initQuestion } from "./questions.js";
 import { createTracker } from "./scorm.js";
+import { initSimulations, updateAdaptive } from "./simulation.js";
 import { initWidgets } from "./widgets.js";
 
 const config = JSON.parse(document.getElementById("ck-config").textContent);
@@ -17,6 +18,9 @@ let current = 0;
 
 document.body.classList.add("ck-js");
 initWidgets(document, ui);
+const simulations = initSimulations(document, ui, tracker);
+const adapt = () => updateAdaptive(document, tracker);
+simulations.forEach((sim) => sim.onChange(adapt));
 
 function format(text, values) {
   return Object.entries(values).reduce((out, [key, val]) => out.replace(`{${key}}`, val), text);
@@ -44,6 +48,7 @@ function show(index, focus) {
   previous.disabled = current === 0;
   next.disabled = current === lessons.length - 1;
   tracker.visit(current, lessons[current].dataset.lesson);
+  adapt();
   updateProgress();
   window.scrollTo(0, 0);
   if (focus) lessons[current].querySelector(".ck-lesson-title").focus();
@@ -56,10 +61,14 @@ links.forEach((link, i) => link.addEventListener("click", (event) => {
   show(i, true);
 }));
 
-// Questions: every one is enhanced; the lesson of a test grades them together.
+// Questions: every one is enhanced; the lesson of a test grades them together, with its scored simulations (each one weighs
+// `weight` questions and counts with its grade).
+const inLesson = (lesson) => simulations.filter((sim) => sim.scored && lesson.contains(document.querySelector(`.ck-sim[data-sim="${sim.id}"]`)));
+const hasTest = lessons.some((lesson) => lesson.dataset.type === "evaluation");
 lessons.forEach((lesson) => {
   const questions = Array.from(lesson.querySelectorAll(".ck-q")).map((q) => initQuestion(q, ui)).filter(Boolean);
   if (lesson.dataset.type !== "evaluation") return;
+  const scoredSims = inLesson(lesson);
   const quiz = JSON.parse(lesson.dataset.quiz || "{}");
   const actions = lesson.querySelector(".ck-quiz-actions");
   const report = document.createElement("p");
@@ -88,8 +97,14 @@ lessons.forEach((lesson) => {
       report.textContent = ui.answer_all;
       return;
     }
+    if (!scoredSims.every((sim) => sim.finished())) {
+      report.textContent = ui.sim_finish_first;
+      return;
+    }
     const results = questions.map((item) => ({ item, ok: item.grade() }));
-    const score = Math.round((100 * results.filter((r) => r.ok).length) / Math.max(1, results.length));
+    const weights = scoredSims.reduce((sum, sim) => sum + sim.weight, 0);
+    const earned = results.filter((r) => r.ok).length + scoredSims.reduce((sum, sim) => sum + (sim.weight * sim.grade()) / 100, 0);
+    const score = Math.round((100 * earned) / Math.max(1, results.length + weights));
     const passed = score >= (quiz.passingGrade ?? 0);
     const interactions = results.map((r, i) => ({
       id: r.item.q.dataset.id,
@@ -105,6 +120,7 @@ lessons.forEach((lesson) => {
   });
   again.addEventListener("click", () => {
     questions.forEach((item) => item.reset());
+    scoredSims.forEach((sim) => sim.reset());
     submit.disabled = false;
     again.hidden = true;
     report.textContent = "";
@@ -115,6 +131,17 @@ lessons.forEach((lesson) => {
     if (passed || left() === 0) submit.disabled = true;
   }
 });
+
+// A unit without a test whose content has scored simulations: its score is theirs, once every one has ended.
+const formative = simulations.filter((sim) => sim.scored);
+if (!hasTest && formative.length) {
+  const total = formative.reduce((sum, sim) => sum + sim.weight, 0);
+  const report = () => {
+    if (!formative.every((sim) => sim.finished())) return;
+    tracker.score(Math.round(formative.reduce((sum, sim) => sum + sim.weight * sim.grade(), 0) / total));
+  };
+  formative.forEach((sim) => sim.onChange(report));
+}
 
 window.addEventListener("pagehide", () => tracker.finish());
 window.addEventListener("beforeunload", () => tracker.finish());

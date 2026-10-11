@@ -81,3 +81,14 @@ player:
   question: Question {n}
   media_missing: Media asset still to be produced
   transcript: Transcript
+  continue: Continue
+  sim_choices: What do you do?
+  sim_ending_good: Good ending
+  sim_ending_mixed: Partial ending
+  sim_ending_bad: Bad ending
+  sim_debriefing: What happened and why
+  sim_your_path: Your decisions
+  sim_score: "Score: {score} %"
+  sim_checkpoint: Back to the last checkpoint
+  sim_restart: Start again
+  sim_finish_first: Finish the simulations of this test first.

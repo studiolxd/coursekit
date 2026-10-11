@@ -68,8 +68,8 @@ duplicate_simulation:
   en: "simulation '{id}' appears more than once in the course ({places}): every id is unique"
 unit_word: {es: unidad, en: unit}
 simulations_not_assembled:
-  es: "las simulaciones y los bloques adaptativos aún no se montan en ningún backend (fase 8 en desarrollo)"
-  en: "simulations and adaptive blocks are not assembled by any backend yet (phase 8 in development)"
+  es: "las simulaciones y los bloques adaptativos aún no se montan en creator (fase 8 en desarrollo; el backend html sí los monta)"
+  en: "simulations and adaptive blocks are not assembled in creator yet (phase 8 in development; the html backend assembles them)"
 assembly_error: {es: "ensamblado: {error}", en: "assembly: {error}"}
 changed_after_approval:
   es: "el contenido cambió tras su aprobación: hay que revisarlo y aprobarlo de nuevo"

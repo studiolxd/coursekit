@@ -160,3 +160,44 @@ body:not(.ck-js) .ck-card .ck-back { display: block; margin-top: var(--space-sm)
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }
 @media (forced-colors: active) { .ck-btn, .ck-hs-point, .ck-word { border: 2px solid ButtonText; } .ck-progress span { background: Highlight; } }
 @media print { .ck-nav, .ck-controls, .ck-skip { display: none; } .ck-lesson { display: block !important; page-break-after: always; } }
+
+/* Simulations of decision-based courses (player/simulation.js). The skins of applications (mail, chat, phone…) restyle them. */
+.ck-sim { margin: var(--space-xl) 0; border: 1px solid var(--color-line); border-radius: var(--radius); background: var(--color-surface); overflow: hidden; }
+.ck-sim-title { margin: 0; padding: var(--space-md) var(--space-lg); font-size: 1.15rem; border-bottom: 1px solid var(--color-line); background: var(--color-background); }
+.ck-sim-static { padding: var(--space-md) var(--space-lg); }
+.ck-sim-play { display: grid; gap: var(--space-md); padding: var(--space-lg); }
+.ck-sim-stage { position: relative; aspect-ratio: 16 / 9; border-radius: var(--radius); overflow: hidden; background: var(--color-line); box-shadow: var(--shadow-soft); }
+.ck-sim-stage.is-empty { aspect-ratio: auto; min-height: 12rem; }
+.ck-sim-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ck-sim-layer { position: absolute; object-fit: contain; }
+.ck-sim-layer.is-full { inset: 0; width: 100%; height: 100%; }
+.ck-sim-layer.is-point { width: 12%; transform: translate(-50%, -50%); }
+.ck-sim-hotspot { position: absolute; border: 2px solid var(--color-on-accent); border-radius: var(--radius); background: rgba(0, 0, 0, 0.08); cursor: pointer; box-shadow: 0 0 0 2px var(--color-accent); }
+.ck-sim-hotspot.is-point { width: 2.75rem; height: 2.75rem; border-radius: 50%; transform: translate(-50%, -50%); }
+.ck-sim-hotspot:hover, .ck-sim-hotspot:focus-visible { background: rgba(255, 255, 255, 0.25); }
+@media (prefers-reduced-motion: no-preference) {
+  .ck-sim-hotspot { animation: ck-sim-pulse 2.4s ease-in-out infinite; }
+  @keyframes ck-sim-pulse { 50% { box-shadow: 0 0 0 6px var(--color-accent); } }
+}
+.ck-sim-people { display: flex; flex-wrap: wrap; gap: var(--space-md); }
+.ck-sim-person { margin: 0; display: flex; align-items: center; gap: var(--space-sm); font-family: var(--font-family-ui); font-weight: 600; }
+.ck-sim-person img, .ck-sim-initial { width: 4rem; height: 4rem; border-radius: 50%; object-fit: cover; background: var(--color-highlight); }
+.ck-sim-initial { display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--color-accent-strong); }
+.ck-sim-text { font-size: 1.05rem; }
+.ck-sim-text:focus, .ck-sim-log:focus { outline: none; }
+.ck-sim-log { display: flex; flex-direction: column; gap: var(--space-sm); max-height: 28rem; overflow-y: auto; padding: var(--space-sm); }
+.ck-sim-msg { max-width: 80%; padding: var(--space-sm) var(--space-md); border-radius: var(--radius); background: var(--color-background); border: 1px solid var(--color-line); }
+.ck-sim-msg.is-me { align-self: flex-end; background: var(--color-accent); color: var(--color-on-accent); border-color: var(--color-accent); }
+.ck-sim-msg > :first-child { margin-top: 0; }
+.ck-sim-msg > :last-child { margin-bottom: 0; }
+.ck-sim-feedback:not(:empty) { padding: var(--space-md); border-left: 4px solid var(--color-accent); background: var(--color-highlight); border-radius: var(--radius); }
+.ck-sim-choices { display: grid; gap: var(--space-sm); }
+.ck-sim-choice { text-align: left; padding: var(--space-md); font-size: 1rem; }
+.ck-sim-end:empty { display: none; }
+.ck-sim-end { padding: var(--space-lg); border-radius: var(--radius); background: var(--color-background); border: 1px solid var(--color-line); }
+.ck-sim-ending { display: inline-block; margin: 0; padding: var(--space-xs) var(--space-md); border-radius: 999px; font-family: var(--font-family-ui); font-weight: 700; color: var(--color-on-accent); background: var(--color-text-soft); }
+.ck-sim-ending.is-good { background: var(--color-correct); }
+.ck-sim-ending.is-bad { background: var(--color-wrong); }
+.ck-sim-path { padding-left: var(--space-lg); color: var(--color-text-soft); }
+.ck-sim-path-title, .ck-sim-score { font-family: var(--font-family-ui); font-weight: 600; margin-bottom: var(--space-xs); }
+.ck-sim-actions { display: flex; flex-wrap: wrap; gap: var(--space-sm); margin-top: var(--space-md); }

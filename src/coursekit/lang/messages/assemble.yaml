@@ -74,3 +74,6 @@ keep_ids_count:
 pending_bricks:
   es: "el contenido tiene {types}: las simulaciones y los bloques adaptativos aún no se montan en creator (fase 8 en desarrollo)"
   en: "the content has {types}: simulations and adaptive blocks are not assembled in creator yet (phase 8 in development)"
+simulation_media_missing:
+  es: "simulación '{id}': {count} imágenes aún sin producir (fondos, capas o retratos: coursekit media extract y /produce-media)"
+  en: "simulation '{id}': {count} images not produced yet (backgrounds, layers or portraits: coursekit media extract and /produce-media)"

@@ -192,12 +192,52 @@ def question_content(values: dict[str, str], syntax: Syntax) -> dict:
 PENDING_BRICKS = ("SIMULATION", "CONDITIONAL")  # in the plan, not assembled by a backend yet (phase 8)
 
 
-def simulation_brick(name: str, body: list[str]) -> dict:
-    """A simulation as the plan carries it: its checked data, the maximum points and its paths are for the backends."""
+def simulation_brick(name: str, body: list[str], ctx: dict) -> dict:
+    """A simulation as the plan carries it: its checked data with the texts in HTML, the maximum points, and the images it
+    uses (by the id of their asset) with the path of those already produced."""
     sim = simulation.parse(name, body, f":::{name}")
     if sim.errors:
         raise PlanError(sim.errors[0])
-    data = {"kind": name, **sim.data, "max_score": sim.max_score}
+    data = json.loads(json.dumps(sim.data))
+    data["title"] = inline(str(data.get("title") or ""))
+    for scene in (data.get("scenes") or {}).values():
+        for key in ("text", "debriefing"):
+            if scene.get(key):
+                scene[key] = html(str(scene[key]))
+        for variant in scene.get("variants") or []:
+            variant["text"] = html(str(variant.get("text") or ""))
+        for decision in (scene.get("choices") or []) + (scene.get("hotspots") or []):
+            for key in ("text", "label", "feedback"):
+                if decision.get(key):
+                    decision[key] = inline(str(decision[key]))
+    media: dict[str, dict] = {}
+    missing = 0
+    for ref in simulation.media_refs(sim.data):
+        asset = ctx["assets"].get(ref["id"]) or {}
+        if asset.get("asset_path") and asset.get("status") in ("uploaded", "produced"):
+            media[ref["id"]] = {"path": asset["asset_path"], "alt": asset.get("alt") or ref["description"] or ref["character"]}
+        else:
+            missing += 1
+    if missing:
+        ctx["warnings"].append(t("assemble", "simulation_media_missing", id=sim.id, count=missing))
+
+    def portrait(person: str, expression: object = None) -> dict | None:
+        return media.get(simulation.portrait_id(person, expression)) or media.get(simulation.portrait_id(person))
+
+    character = str(data.get("character") or "")
+    if character:
+        data["_portrait"] = portrait(character)
+    for scene in (data.get("scenes") or {}).values():  # the images of each scene, resolved for the player (`_` keys)
+        if scene.get("background"):
+            scene["_background"] = media.get(simulation.background_id(str(scene["background"])))
+        for layer in scene.get("layers") or []:
+            layer["_image"] = media.get(simulation.layer_id(str(layer.get("image") or "")))
+        for person in scene.get("characters") or []:
+            person["_portrait"] = portrait(str(person.get("name") or ""), person.get("expression"))
+        if character:
+            scene["_portrait"] = portrait(character, scene.get("expression"))
+    rewind = (coursemod.rules(course=ctx["course"]).get("decision_based") or {}).get("rewind", True) if ctx.get("course") else True
+    data.update({"kind": name, "max_score": sim.max_score, "rewind": bool(rewind)})
     return {"type": "SIMULATION", "data": data, "meta": {"directive": name, "simulation": sim.id}}
 
 
@@ -236,7 +276,7 @@ def directive_brick(name: str, body: list[str], ctx: dict) -> dict:
         raise PlanError(t("assemble", "unknown_directive", name=name))
     brick_type = registry[name]["brick"]
     if registry[name].get("role") == "simulation":
-        return simulation_brick(name, body)
+        return simulation_brick(name, body, ctx)
     syntax: Syntax = ctx["syntax"]
     values, rest = key_values(body)
     syntax.check_keys(values)
@@ -593,6 +633,7 @@ def build_plan(course: dict, unit: dict, assets: dict[str, dict] | None = None) 
     syntax = Syntax(coursemod.tokens(course))
     assets = manifest_assets(course) if assets is None else assets
     ctx = {
+        "course": course,
         "registry": config.effective("directives", course.get("_project"), course).value["directives"],
         "syntax": syntax,
         "assets": assets,

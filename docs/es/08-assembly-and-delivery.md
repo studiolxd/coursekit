@@ -234,6 +234,8 @@ La página se construye con mejora progresiva. Las lecciones (una por apartado d
 | `flashcards`, `flashcard-gallery` | `FLASHCARD_CAROUSEL`, `FLASHCARD_GALLERY` | Tarjetas que se giran (clic, Intro o Espacio), una a una o en cuadrícula |
 | `labelled-graphic` | `LABELLED_GRAPHIC` | La imagen con puntos numerados que abren su explicación (Escape o Cerrar para descartarla). Sin imagen producida: una lista simple de los puntos |
 | `dialog` | `DIALOG` | Las intervenciones de la conversación con el nombre de cada interlocutor |
+| `scenario`, `conversation` | `SIMULATION` | La simulación jugada escena a escena: el fondo con sus capas y las zonas que se pueden pulsar (botones enfocables con la etiqueta como nombre), los retratos de los personajes, el texto con las variantes que se cumplen, las opciones como botones, el feedback de una decisión antes de seguir y, al final, el final, el debriefing, las decisiones tomadas, la puntuación (las evaluables) y los botones para volver al último punto de control (`decision_based.rewind`) y empezar de nuevo. Una `conversation` muestra el intercambio como un chat. Sin JavaScript: la situación inicial y sus opciones. Las imágenes aún sin producir se omiten (los retratos se sustituyen por iniciales) |
+| `:::if` / `:::else` | `CONDITIONAL` | Las dos ramas están en la página; el reproductor muestra la de `:::if` cuando todas las simulaciones que lee se han jugado y su condición se cumple, y si no la neutra (también sin JavaScript) |
 | Marcador de imagen, infografía, esquema o GIF animado (producido) | `IMAGE` | Figura con texto alternativo y pie |
 | Marcador de vídeo (producido) | `VIDEO` | Vídeo con controles, pista de subtítulos (si hay un `.vtt`) y la transcripción en un `details` |
 | Marcador de audio (producido) | `AUDIO` | Audio con controles y la transcripción |
@@ -257,6 +259,7 @@ Con JavaScript la página se convierte en un pequeño reproductor de curso:
 - La unidad se reabre en la lección donde la dejó la persona.
 - Las **preguntas de práctica** (en las lecciones de contenido) tienen un botón **Comprobar**. No hace nada hasta que la pregunta está contestada; entonces bloquea las respuestas, las marca y muestra la retroalimentación, y el botón pasa a **Reintentar**, que borra la respuesta y vuelve a desordenar.
 - **Las lecciones de evaluación** (`assessment.md`) se corrigen juntas con un solo botón **Enviar respuestas**. Las preguntas sin contestar impiden el envío («Responde todas las preguntas antes de enviar.»). La puntuación es el porcentaje de preguntas totalmente correctas, redondeado; se aprueba cuando llega a la nota de aprobado del test (mira [Calificación de un test](#calificación-de-un-test)). Los intentos del test los limitan (vacío o 0: sin límite). Tras enviar, cada pregunta muestra su marca y su retroalimentación, y el informe indica la puntuación y si se ha aprobado; si no, aparece **Reintentar** mientras queden intentos (el informe dice cuántos) y «No quedan intentos.» cuando no queda ninguno. Los intentos usados y la mejor puntuación se guardan en los datos de suspensión, de modo que reabrir la unidad no da intentos nuevos.
+- **Las simulaciones** conservan su estado (la escena, las variables, los puntos y si han terminado) al cambiar de lección y al volver a abrir la unidad, y cada decisión actualiza los bloques adaptativos de la unidad. Una simulación **evaluable** dentro de una lección de evaluación cuenta en su prueba: pesa `weight` preguntas y suma su nota (los puntos de su camino sobre el máximo alcanzable); la prueba no se puede enviar hasta que esas simulaciones han terminado, y **Reintentar** también las reinicia. En una unidad sin prueba, la puntuación es la nota ponderada de sus simulaciones evaluables cuando todas han terminado; en una unidad con prueba, las simulaciones evaluables del contenido son de práctica.
 - Los textos de la interfaz (etiquetas de botones y mensajes) están en el idioma del curso.
 - La página es adaptable (la lista de lecciones es una columna lateral en pantallas anchas), respeta el movimiento reducido y los colores forzados, y se imprime con todas las lecciones.
 
@@ -267,11 +270,11 @@ El runtime es `@studiolxd/scorm`, empaquetado en `assets/player.js`.
 | Qué | Cómo se informa |
 |---|---|
 | Ubicación | La clave de la lección actual (`U1-S2`, `U1-E1.1`); la unidad se reabre ahí |
-| Datos de suspensión | Las lecciones visitadas, los intentos usados y la mejor puntuación |
+| Datos de suspensión | Las lecciones visitadas, los intentos usados, la mejor puntuación, el número de interacciones registradas y, de cada simulación, su escena, variables, puntos y si ha terminado (nada más, para no pasar de los 4.096 caracteres de SCORM 1.2) |
 | Progreso | Lecciones visitadas dividido entre las lecciones de la unidad (medida de progreso, SCORM 2004) |
 | Finalización | Sin test: completada cuando se han visitado todas las lecciones, incompleta hasta entonces. Con test, en SCORM 2004: completada cuando se han visitado todas las lecciones, y aprobada o suspensa cuando se envía el test. Con test, en SCORM 1.2, que tiene un único estado: aprobada o suspensa cuando se envía el test |
 | Puntuación | Bruta (porcentaje), mínimo 0 y máximo 100; en SCORM 2004 también la escalada |
-| Interacciones | Una por pregunta del test: su id, el tipo (choice para la opción simple y múltiple, fill-in para el resto), la respuesta de la persona (cortada a 250 caracteres), correcta o incorrecta, peso 1 |
+| Interacciones | Una por pregunta del test: su id, el tipo (choice para la opción simple y múltiple, fill-in para el resto), la respuesta de la persona (cortada a 250 caracteres), correcta o incorrecta, peso 1. Y una por decisión en una simulación: `<simulación>-<n>`, choice, el texto de la decisión, correcta si sumó puntos, incorrecta si los restó y neutral si no, con sus puntos como peso |
 | Sesión | Tiempo de sesión y salida `suspend`; los datos se confirman tras cada cambio y la sesión se termina cuando la página se oculta o se cierra |
 
 ### Estilos

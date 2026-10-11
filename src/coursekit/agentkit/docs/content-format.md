@@ -138,8 +138,9 @@ scenes:
   choices and `next`. Make the bad consequence appear later, as in real life, and give paths to recover.
 - **Realism:** every option is something a real person would do; none is obviously right; the feedback explains, it does not
   preach. The debriefing says what happened, what an expert would have done and why.
-- `background`, `layers.image` and the portraits are titles of media placeholders of the unit (as `{{k_image}}:` in
-  `labelled-graphic`).
+- `background` and `layers.image` describe the image (one image per description in the whole course: repeat the same
+  text to reuse it); portraits come from the cast of the story bible with the `expression` of each scene. They are not
+  media placeholders.
 - `coursekit verify` walks every path: unknown scenes, unreachable scenes, dead ends (a state with no option left), endings
   without debriefing, undeclared variables, ids repeated in the course.
 
