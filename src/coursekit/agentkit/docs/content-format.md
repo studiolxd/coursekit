@@ -120,6 +120,7 @@ scenes:
 | `id` | unique in the course: lower case, digits, `-`, `_`; the content reads its state as `id.variable` |
 | `title` | title shown to the learner |
 | `skin` | optional: `mail-desktop`, `mail-web`, `chat-workspace`, `messenger`, `phone`, `browser` |
+| `screen` | with a `skin`, what the application shows (each scene may add its own `screen`); keys per skin below |
 | `character` | `conversation` only, required: the person the learner talks to |
 | `objective` | `U1.2` or a list: the objectives it practises (every objective of the unit, in decision-based courses) |
 | `scored`, `weight` | counts for the grade (default `false`), and its weight among the scored ones (default 1) |
@@ -127,6 +128,7 @@ scenes:
 | `start` | first scene (default: the first one) |
 | `scenes.<id>` | `text` (required), `background`, `layers` (`image`, `area`, `if`), `characters` (`name`, `expression`), `variants` (`if`, `text`: extra text when the condition holds), `checkpoint`, and **one** way out: `choices`, `hotspots`, `next` or `ending` |
 | choice / hotspot | `text` (choice) or `label` + `area` `[x, y]` or `[x, y, w, h]` in % (hotspot); `goto`; optional `if`, `effects` (adds to variables), `set` (gives them a value), `score` (points, `+` or `-`), `feedback` |
+| hotspot `target` | instead of `area`, a part of the screen of the skin (keys per skin below) |
 | `next` | moves on without a decision: list of `{if, goto}`, the first that holds |
 | `ending` | `good`, `mixed` or `bad`, with its `debriefing` (required) |
 
@@ -143,6 +145,22 @@ scenes:
   media placeholders.
 - `coursekit verify` walks every path: unknown scenes, unreachable scenes, dead ends (a state with no option left), endings
   without debriefing, undeclared variables, ids repeated in the course.
+
+### Skins
+
+The application is drawn in HTML with real text; it recalls the everyday ones but never write their brand names. `body` and
+`text` are Markdown.
+
+| Skin | `screen` | `target` |
+|---|---|---|
+| `mail-desktop`, `mail-web` | `app`, `account`, `folder`, `inbox` (list: `from`, `subject`, `preview`, `time`, `unread`), `message` (`from`, `address`, `to`, `subject`, `time`, `body`, `attachments`) | `sender`, `address`, `subject`, `attachment:N`, `link:N`, `inbox:N` |
+| `chat-workspace` | `app`, `team`, `channel`, `channels`, `messages` (list: `from`, `time`, `text`, `me`) | `message:N`, `link:N` |
+| `messenger` | `contact`, `status`, `messages` | `message:N`, `link:N` |
+| `phone` | `caller`, `number`, `state` (`incoming`, `call`, `sms`), `time`, `messages` | `caller`, `number`, `message:N`, `link:N` |
+| `browser` | `url`, `title`, `secure`, `body` | `url`, `lock`, `link:N` |
+
+Use a skin whenever the situation happens on a screen (an email, a chat, a call, a web page): spotting the signal in a
+realistic screen (`hotspots` with `target`) is the decision. Addresses and domains are invented (`.example`).
 
 ### Adaptive blocks
 

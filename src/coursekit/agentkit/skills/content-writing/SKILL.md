@@ -89,6 +89,8 @@ simulation format in `.coursekit/docs/content-format.md` (section 2.1).
     path that earns points. `checkpoint: true` on the scenes worth trying again (rewind is {{simulation_rewind}}).
   - Every ending has a `debriefing`: what happened and why, what an expert would have done and the principle, without
     preaching or blaming.
+  - When the situation happens on a screen (email, chat, call, web page), use a `skin` with its `screen`, and make
+    noticing the signal the decision (`hotspots` with `target`).
   - `background` and `layers.image` are **descriptions of the image** (what it shows, from the point of view of the
     learner); the media is produced from them, one image per description in the whole course, so repeat the exact same
     text when a scene reuses an image. Portraits come from the cast of the story bible (`look`) with the `expression` of

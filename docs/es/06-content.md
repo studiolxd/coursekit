@@ -465,14 +465,15 @@ scenes:
 |---|---|
 | `id` | Único en el curso: minúsculas, números, `-`, `_`. El contenido lee su estado como `id.variable`. |
 | `title` | Título que ve el alumno. |
-| `skin` | Opcional: la aplicación en la que ocurre: `mail-desktop`, `mail-web`, `chat-workspace`, `messenger`, `phone`, `browser`. |
+| `skin` | Opcional: la aplicación en la que ocurre: `mail-desktop`, `mail-web`, `chat-workspace`, `messenger`, `phone`, `browser` (ver [Pieles](#pieles)). |
+| `screen` | Con una `skin`: lo que muestra la aplicación, para todas las escenas (cada escena puede añadir su propio `screen`). |
 | `character` | Solo en `conversation`, obligatoria: la persona con la que habla el alumno. |
 | `objective` | `U1.2` o una lista: los objetivos que practica. |
 | `scored`, `weight` | Si cuenta para la nota (por defecto `false`) y su peso entre las evaluables (por defecto 1). |
 | `state` | Variables y su valor inicial: números, `true`, `false`. |
 | `start` | Escena inicial; por defecto, la primera. |
-| `scenes.<id>` | `text` (obligatorio), `background`, `layers` (`image`, `area`, `if`), `characters` (`name`, `expression`), `variants` (`if`, `text`: texto añadido cuando se cumple la condición), `checkpoint` (el alumno puede volver aquí si `decision_based.rewind` está activo) y **una** salida: `choices`, `hotspots`, `next` o `ending`. |
-| Una opción o zona | `text` (opción) o `label` y `area` `[x, y]` o `[x, y, ancho, alto]` en % de la escena (zona); `goto`; opcionalmente `if`, `effects` (suma a variables), `set` (les da un valor), `score` (puntos, positivos o negativos) y `feedback`. |
+| `scenes.<id>` | `text` (obligatorio), `screen`, `background`, `layers` (`image`, `area`, `if`), `characters` (`name`, `expression`), `variants` (`if`, `text`: texto añadido cuando se cumple la condición), `checkpoint` (el alumno puede volver aquí si `decision_based.rewind` está activo) y **una** salida: `choices`, `hotspots`, `next` o `ending`. |
+| Una opción o zona | `text` (opción) o `label` y, o bien `area` `[x, y]` o `[x, y, ancho, alto]` en % de la escena, o bien `target`, una parte de la pantalla de la piel (zona); `goto`; opcionalmente `if`, `effects` (suma a variables), `set` (les da un valor), `score` (puntos, positivos o negativos) y `feedback`. |
 | `next` | Avanza sin decisión: una lista de `{if, goto}`; la primera que se cumple. |
 | `ending` | `good`, `mixed` o `bad`, con su `debriefing` (obligatorio). |
 
@@ -485,6 +486,46 @@ sobre la máxima alcanzable, que calcula `coursekit verify`; una simulación eva
 [`coursekit paths`](03-commands.md#coursekit-paths) escribe todos los caminos con un diagrama para la revisión. `coursekit verify` recorre todos los caminos de cada simulación con su estado e informa de escenas desconocidas o
 inalcanzables, callejones sin salida (una escena en la que, con algún estado, no queda ninguna opción), finales sin
 debriefing, variables no declaradas, condiciones no válidas e ids repetidos en el curso.
+
+### Pieles
+
+Con `skin`, la simulación ocurre dentro de una aplicación dibujada en HTML: texto real (lo leen los lectores de pantalla,
+se traduce y se edita sin imágenes nuevas), el aspecto de las aplicaciones que se usan a diario, pero nunca sus nombres,
+logotipos ni iconos. Lo que muestra sale de `screen`: el de la simulación, completado por el de cada escena (una escena
+solo escribe lo que cambia). `body` y `text` son Markdown.
+
+| Piel | Recuerda a | `screen` | `target` de una zona |
+|---|---|---|---|
+| `mail-desktop` | un cliente de correo de escritorio: barra de título, cinta, carpetas, lista y panel de lectura | `app`, `account`, `folder`, `inbox` (lista de `from`, `subject`, `preview`, `time`, `unread`), `message` (`from`, `address`, `to`, `subject`, `time`, `body`, `attachments`) | `sender`, `address`, `subject`, `attachment:N`, `link:N`, `inbox:N` |
+| `mail-web` | un correo web: barra de búsqueda, botón de redactar, el mensaje abierto o la lista | como `mail-desktop` | como `mail-desktop` |
+| `chat-workspace` | un chat de equipo: barra lateral, canales, conversación | `app`, `team`, `channel`, `channels`, `messages` (lista de `from`, `time`, `text`, `me`) | `message:N`, `link:N` |
+| `messenger` | una aplicación de mensajería del móvil: cabecera con el contacto, burbujas con sus marcas de leído | `contact`, `status`, `messages` | `message:N`, `link:N` |
+| `phone` | un móvil: una llamada entrante, una llamada o mensajes de texto | `caller`, `number`, `state` (`incoming`, `call`, `sms`), `time`, `messages` | `caller`, `number`, `message:N`, `link:N` |
+| `browser` | un navegador: pestaña, barra de direcciones con su estado de seguridad, la página | `url`, `title`, `secure` (`false` muestra «No es seguro»), `body` | `url`, `lock`, `link:N` |
+
+Una zona con `target` convierte esa parte de la pantalla en lo que se pulsa (por ejemplo la dirección del remitente de un
+correo sospechoso, o un enlace: `link:1` es el primer enlace del mensaje o de la página), en lugar de un `area` de un fondo.
+Los enlaces nunca salen del curso. En una `conversation` con `chat-workspace`, `messenger` o `phone`, el intercambio aparece
+dentro de la aplicación.
+
+```yaml
+skin: mail-desktop
+screen:
+  inbox:
+    - {from: Finanzas, subject: "URGENTE: factura pendiente", time: "9:14", unread: true}
+  message:
+    from: Finanzas
+    address: finanzas@acme-pagos.example
+    subject: "URGENTE: factura pendiente"
+    body: |
+      Aprueba la factura 2024-118 **antes de las 12:00** desde este [enlace seguro](https://acme-pagos.example/factura).
+scenes:
+  start:
+    text: Este correo está arriba del todo en tu bandeja. ¿Qué te llama la atención?
+    hotspots:
+      - {label: La dirección del remitente, target: address, goto: detectado, score: 2}
+      - {label: El enlace, target: "link:1", goto: pulsado, score: -2}
+```
 
 ### Bloques adaptativos
 

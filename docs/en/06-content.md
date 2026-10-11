@@ -465,14 +465,15 @@ scenes:
 |---|---|
 | `id` | Unique in the course: lower case, digits, `-`, `_`. The content reads its state as `id.variable`. |
 | `title` | Title shown to the learner. |
-| `skin` | Optional: the application it happens in: `mail-desktop`, `mail-web`, `chat-workspace`, `messenger`, `phone`, `browser`. |
+| `skin` | Optional: the application it happens in: `mail-desktop`, `mail-web`, `chat-workspace`, `messenger`, `phone`, `browser` (see [Skins](#skins)). |
+| `screen` | With a `skin`: what the application shows, for every scene (each scene may add its own `screen`). |
 | `character` | `conversation` only, required: the person the learner talks to. |
 | `objective` | `U1.2` or a list: the objectives it practises. |
 | `scored`, `weight` | Whether it counts for the grade (default `false`) and its weight among the scored ones (default 1). |
 | `state` | Variables and their initial value: numbers, `true`, `false`. |
 | `start` | First scene; by default the first one. |
-| `scenes.<id>` | `text` (required), `background`, `layers` (`image`, `area`, `if`), `characters` (`name`, `expression`), `variants` (`if`, `text`: extra text when the condition holds), `checkpoint` (the learner may come back here when `decision_based.rewind` is on) and **one** way out: `choices`, `hotspots`, `next` or `ending`. |
-| A choice or hotspot | `text` (choice) or `label` and `area` `[x, y]` or `[x, y, w, h]` in % of the scene (hotspot); `goto`; optionally `if`, `effects` (adds to variables), `set` (gives them a value), `score` (points, positive or negative) and `feedback`. |
+| `scenes.<id>` | `text` (required), `screen`, `background`, `layers` (`image`, `area`, `if`), `characters` (`name`, `expression`), `variants` (`if`, `text`: extra text when the condition holds), `checkpoint` (the learner may come back here when `decision_based.rewind` is on) and **one** way out: `choices`, `hotspots`, `next` or `ending`. |
+| A choice or hotspot | `text` (choice) or `label` and either `area` `[x, y]` or `[x, y, w, h]` in % of the scene or `target`, a part of the screen of the skin (hotspot); `goto`; optionally `if`, `effects` (adds to variables), `set` (gives them a value), `score` (points, positive or negative) and `feedback`. |
 | `next` | Moves on without a decision: a list of `{if, goto}`; the first that holds. |
 | `ending` | `good`, `mixed` or `bad`, with its `debriefing` (required). |
 
@@ -485,6 +486,46 @@ over the maximum reachable, which `coursekit verify` computes; a scored simulati
 [`coursekit paths`](03-commands.md#coursekit-paths) writes every path with a flowchart for the review. `coursekit verify` walks every path of every simulation with its state and reports unknown or unreachable scenes, dead ends
 (a scene where, with some state, no option is left), endings without debriefing, undeclared variables, invalid
 conditions, and ids repeated in the course.
+
+### Skins
+
+With `skin`, the simulation happens inside an application drawn in HTML: real text (readable by screen readers,
+translatable, editable without new images), the look of the applications people use every day, but never their names,
+logos or icons. What it shows comes from `screen`: the one of the simulation, completed by the one of each scene (a scene
+writes only what changes). `body` and `text` are Markdown.
+
+| Skin | Recalls | `screen` | `target` of a hotspot |
+|---|---|---|---|
+| `mail-desktop` | a desktop mail client: title bar, ribbon, folders, list and reading pane | `app`, `account`, `folder`, `inbox` (list of `from`, `subject`, `preview`, `time`, `unread`), `message` (`from`, `address`, `to`, `subject`, `time`, `body`, `attachments`) | `sender`, `address`, `subject`, `attachment:N`, `link:N`, `inbox:N` |
+| `mail-web` | a web mail: search bar, compose button, the open message or the list | as `mail-desktop` | as `mail-desktop` |
+| `chat-workspace` | a team chat: rail, channels, conversation | `app`, `team`, `channel`, `channels`, `messages` (list of `from`, `time`, `text`, `me`) | `message:N`, `link:N` |
+| `messenger` | a mobile messaging app: header with the contact, bubbles with ticks | `contact`, `status`, `messages` | `message:N`, `link:N` |
+| `phone` | a mobile phone: an incoming call, a call, or text messages | `caller`, `number`, `state` (`incoming`, `call`, `sms`), `time`, `messages` | `caller`, `number`, `message:N`, `link:N` |
+| `browser` | a web browser: tab, address bar with its security state, the page | `url`, `title`, `secure` (`false` shows "Not secure"), `body` | `url`, `lock`, `link:N` |
+
+A hotspot with `target` makes that part of the screen the thing to click (for example the address of the sender of a
+suspicious email, or a link: `link:1` is the first link of the message or the page), instead of an `area` of a
+background. Links never leave the course. In a `conversation` with `chat-workspace`, `messenger` or `phone`, the exchange
+appears inside the application.
+
+```yaml
+skin: mail-desktop
+screen:
+  inbox:
+    - {from: Finance, subject: "URGENT: unpaid invoice", time: "9:14", unread: true}
+  message:
+    from: Finance
+    address: finance@acme-payments.example
+    subject: "URGENT: unpaid invoice"
+    body: |
+      Approve invoice 2024-118 **before 12:00** from this [secure link](https://acme-payments.example/invoice).
+scenes:
+  start:
+    text: This email is at the top of your inbox. What catches your attention?
+    hotspots:
+      - {label: The address of the sender, target: address, goto: spotted, score: 2}
+      - {label: The link, target: "link:1", goto: clicked, score: -2}
+```
 
 ### Adaptive blocks
 

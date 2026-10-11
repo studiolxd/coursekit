@@ -3,6 +3,7 @@
 // back to a checkpoint. The data come in the page (`.ck-sim-data`, from coursekit/htmlkit/render.py); the state of every
 // simulation is kept by the tracker, so the adaptive blocks can read it and a learner who comes back finds it.
 import { test } from "./expr.js";
+import { CHAT_SKINS, drawSkin } from "./skins.js";
 
 const el = (tag, attrs = {}, html = "") => {
   const node = document.createElement(tag);
@@ -51,10 +52,11 @@ function initSimulation(root, ui, tracker) {
   const people = el("div", { class: "ck-sim-people" });
   const log = el("div", { class: "ck-sim-log" });
   const text = el("div", { class: "ck-sim-text", tabindex: "-1" });
+  const hint = el("p", { class: "ck-sim-hint" });
   const feedback = el("div", { class: "ck-sim-feedback", "aria-live": "polite" });
   const choices = el("div", { class: "ck-sim-choices", role: "group", "aria-label": ui.sim_choices });
   const end = el("div", { class: "ck-sim-end" });
-  play.append(stage, people, log, text, feedback, choices, end);
+  play.append(stage, people, log, text, hint, feedback, choices, end);
   root.querySelector(".ck-sim-static").hidden = true;
   root.appendChild(play);
 
@@ -110,9 +112,25 @@ function initSimulation(root, ui, tracker) {
     render(true);
   }
 
+  const chatSkin = data.kind === "conversation" && CHAT_SKINS.includes(data.skin);
+
   function drawStage(scene) {
     stage.replaceChildren();
-    stage.classList.remove("is-empty");
+    stage.classList.remove("is-empty", "is-skin");
+    if (data.skin) {
+      const screen = { ...(data.screen || {}), ...(scene.screen || {}) };
+      const lines = chatSkin ? run.transcript.map((line) => ({ me: line.me === true, from: line.me ? "" : data.character,
+        text: line.html, target: false })) : [];
+      const node = drawSkin(data.skin, screen, ui, lines);
+      if (node) {
+        stage.hidden = false;
+        stage.classList.add("is-skin");
+        stage.appendChild(node);
+        const scroller = node.querySelector(".ck-ms-lines, .ck-cw-lines, .ck-ph-lines");
+        if (scroller) scroller.scrollTop = scroller.scrollHeight;
+        return;
+      }
+    }
     const background = scene._background;
     const layers = (scene.layers || []).filter((layer) => layer._image && test(layer.if, run.env));
     if (!background && !layers.length && !(scene.hotspots || []).length) {
@@ -132,7 +150,7 @@ function initSimulation(root, ui, tracker) {
 
   function drawPeople(scene) {
     people.replaceChildren();
-    if (data.kind === "conversation" && data.character) {
+    if (data.kind === "conversation" && data.character && !chatSkin) {
       people.appendChild(portraitFigure(scene._portrait || data._portrait, data.character));
     }
     (scene.characters || []).forEach((person) => people.appendChild(portraitFigure(person._portrait, person.name)));
@@ -145,7 +163,7 @@ function initSimulation(root, ui, tracker) {
 
   function drawLog() {
     log.replaceChildren();
-    log.hidden = data.kind !== "conversation" || !run.transcript.length;
+    log.hidden = data.kind !== "conversation" || chatSkin || !run.transcript.length;
     run.transcript.forEach((line) => log.appendChild(el("div", { class: line.me ? "ck-sim-msg is-me" : "ck-sim-msg" }, line.html)));
   }
 
@@ -180,6 +198,7 @@ function initSimulation(root, ui, tracker) {
     const scene = scenes[run.at];
     if (!scene) return;
     feedback.textContent = "";
+    hint.hidden = true;
     choices.replaceChildren();
     end.replaceChildren();
     drawStage(scene);
@@ -188,6 +207,7 @@ function initSimulation(root, ui, tracker) {
     if (data.kind === "conversation") {
       const last = run.transcript[run.transcript.length - 1];
       if (!last || last.scene !== run.at || last.me) run.transcript.push({ scene: run.at, html: body });
+      drawStage(scene);
       drawLog();
       text.innerHTML = "";
       text.hidden = true;
@@ -219,7 +239,24 @@ function initSimulation(root, ui, tracker) {
         choices.appendChild(button(d.text, () => decide(d, d.text), "ck-sim-choice"));
       });
       (scene.hotspots || []).filter((d) => test(d.if, run.env)).forEach((d) => {
-        if (scene._background) {
+        const part = d.target ? stage.querySelector(`[data-target="${d.target}"]`) : null;
+        if (part || (scene._background && !d.target)) {
+          hint.textContent = ui.sim_hint;
+          hint.hidden = false;
+        }
+        if (part) {
+          part.classList.add("ck-sim-target");
+          part.setAttribute("role", "button");
+          part.setAttribute("tabindex", "0");
+          part.setAttribute("aria-label", strip(d.label));
+          part.addEventListener("click", () => decide(d, d.label));
+          part.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              decide(d, d.label);
+            }
+          });
+        } else if (scene._background && !d.target) {
           const spot = el("button", { type: "button", class: "ck-sim-hotspot", "aria-label": strip(d.label) });
           area(spot, d.area);
           spot.addEventListener("click", () => decide(d, d.label));

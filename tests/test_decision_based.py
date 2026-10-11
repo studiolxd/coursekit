@@ -346,7 +346,7 @@ def test_the_html_backend_renders_simulations_and_adaptive_blocks(decision_cours
     assert not errors and not render.unsupported_bricks(plan)
     assert any("images not produced yet" in w for w in warnings)
     html = render.lesson(plan["lessons"][1], lang.tokens("es")["player"])
-    assert '<section class="ck-sim ck-sim-scenario ck-skin-phone" data-sim="call"' in html
+    assert '<section class="ck-sim ck-sim-scenario ck-sim-on-phone" data-sim="call"' in html
     payload = html.split('<script type="application/json" class="ck-sim-data">')[1].split("</script>")[0]
     sim = json.loads(payload)
     assert sim["max_score"] == 2 and sim["rewind"] is True and sim["scenes"]["begin"]["text"].startswith("<p>Suena")
@@ -394,3 +394,21 @@ def test_unknown_and_missing_keys_are_reported():
     assert any("missing 'title'" in e for e in sim.errors)
     assert any("unknown key 'scenes.a.choices[0].of course'" in e for e in sim.errors)
     assert any("missing 'scenes.a.text'" in e for e in sim.errors)
+
+
+def test_screens_of_the_skins_are_checked():
+    from coursekit import simulation
+
+    def errors(top, scene_extra=""):
+        body = ["id: x", "title: T", *top, "scenes:", "  a:", "    text: A", *scene_extra.splitlines(),
+                "  b: {text: B, ending: good, debriefing: D}"]
+        return simulation.parse("scenario", body, "x").errors
+
+    mail = ["skin: mail-desktop", "screen:", "  message: {from: Finanzas, address: f@x.example, subject: Factura, body: Paga ya}"]
+    assert errors(mail, "    hotspots:\n      - {label: Remitente, target: address, goto: b}") == []
+    assert any("invalid target 'url'" in e for e in errors(mail, "    hotspots:\n      - {label: X, target: url, goto: b}"))
+    assert any("'target' needs a 'skin'" in e for e in errors([], "    hotspots:\n      - {label: X, target: url, goto: b}"))
+    choice = "    choices: [{text: Y, goto: b}]"
+    assert any("unknown key 'screen.channel'" in e for e in errors(["skin: messenger", "screen: {channel: general}"], choice))
+    assert any("invalid state 'ringing'" in e for e in errors(["skin: phone", "screen: {state: ringing}"], choice))
+    assert any("'screen' needs a 'skin'" in e for e in errors(["screen: {url: x}"], choice))

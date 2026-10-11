@@ -201,11 +201,33 @@ def test(condition: object, env: dict) -> bool:
 
 # ── Schema ──────────────────────────────────────────────────────────────────────────────────
 
-TOP_KEYS = {"id", "title", "skin", "character", "objective", "scored", "weight", "state", "start", "scenes"}
+TOP_KEYS = {"id", "title", "skin", "character", "objective", "scored", "weight", "state", "start", "scenes", "screen"}
 SCENE_KEYS = {"text", "background", "layers", "characters", "variants", "checkpoint", "choices", "hotspots", "next", "ending",
-              "debriefing", "expression"}
+              "debriefing", "expression", "screen"}
 CHOICE_KEYS = {"text", "goto", "if", "effects", "set", "score", "feedback"}
-HOTSPOT_KEYS = CHOICE_KEYS - {"text"} | {"label", "area"}
+HOTSPOT_KEYS = CHOICE_KEYS - {"text"} | {"label", "area", "target"}
+
+# What the screen of each skin shows (`screen` of the simulation, completed by the `screen` of each scene), and the parts of
+# it a hotspot can point at (`target`; `<part>:N` counts from 1).
+MAIL_KEYS = {"app", "account", "folder", "inbox", "message"}
+SCREEN_KEYS = {
+    "mail-desktop": MAIL_KEYS, "mail-web": MAIL_KEYS,
+    "chat-workspace": {"app", "team", "channel", "channels", "messages"},
+    "messenger": {"contact", "status", "messages"},
+    "phone": {"caller", "number", "state", "time", "messages"},
+    "browser": {"url", "title", "secure", "body"},
+}
+LIST_KEYS = {"inbox": {"from", "subject", "preview", "time", "unread"}, "messages": {"from", "time", "text", "me"},
+             "message": {"from", "address", "to", "subject", "time", "body", "attachments"}}
+PHONE_STATES = ("incoming", "call", "sms")
+TARGETS = {
+    "mail-desktop": ("sender", "address", "subject", "attachment:", "link:", "inbox:"),
+    "mail-web": ("sender", "address", "subject", "attachment:", "link:", "inbox:"),
+    "chat-workspace": ("message:", "link:"),
+    "messenger": ("message:", "link:"),
+    "phone": ("caller", "number", "message:", "link:"),
+    "browser": ("url", "lock", "link:"),
+}
 
 
 @dataclass
@@ -270,6 +292,7 @@ def parse(kind: str, body: list[str], where: str, line: int = 0) -> Simulation:
         err("missing", key="title")
     if data.get("skin") is not None and data.get("skin") not in SKINS:
         err("bad_skin", value=data.get("skin"), valid=", ".join(SKINS))
+    _check_screen(data.get("screen"), data.get("skin"), "screen", err)
     if kind == "conversation" and not str(data.get("character") or "").strip():
         err("missing", key="character")
     for objective in sim.objectives:
@@ -293,7 +316,7 @@ def parse(kind: str, body: list[str], where: str, line: int = 0) -> Simulation:
         err("no_scenes")
         return sim
     for sid, scene in scenes.items():
-        _check_scene(str(sid), scene, scenes, state, kind, err)
+        _check_scene(str(sid), scene, scenes, state, kind, err, data.get("skin"))
     start = data.get("start", next(iter(scenes)))
     if start not in scenes:
         err("bad_start", scene=start)
@@ -315,7 +338,7 @@ def _check_condition(value: object, variables: dict, err, where: str) -> None:
         err("undeclared", place=where, name=name)
 
 
-def _check_scene(sid: str, scene: object, scenes: dict, state: dict, kind: str, err) -> None:
+def _check_scene(sid: str, scene: object, scenes: dict, state: dict, kind: str, err, skin: object = None) -> None:
     where = f"scenes.{sid}"
     if not ID_RE.match(sid):
         err("bad_scene_id", value=sid)
@@ -361,7 +384,11 @@ def _check_scene(sid: str, scene: object, scenes: dict, state: dict, kind: str, 
     for i, spot in enumerate(scene.get("hotspots") or []):
         _check_decision(spot, f"{where}.hotspots[{i}]", HOTSPOT_KEYS, "label", scenes, state, err)
         if isinstance(spot, dict):
-            _check_area(spot.get("area"), f"{where}.hotspots[{i}].area", err)
+            if "target" in spot:
+                _check_target(spot["target"], skin, f"{where}.hotspots[{i}].target", err)
+            else:
+                _check_area(spot.get("area"), f"{where}.hotspots[{i}].area", err)
+    _check_screen(scene.get("screen"), skin, f"{where}.screen", err)
     for i, step in enumerate(scene.get("next") or []):
         place = f"{where}.next[{i}]"
         if not isinstance(step, dict) or set(step) - {"if", "goto"}:
@@ -370,6 +397,52 @@ def _check_scene(sid: str, scene: object, scenes: dict, state: dict, kind: str, 
         _check_goto(step.get("goto"), place, scenes, err)
         if "if" in step:
             _check_condition(step["if"], state, err, f"{place}.if")
+
+
+def _check_screen(screen: object, skin: object, place: str, err) -> None:
+    """The `screen` of a skin: only the keys of that skin, lists of mappings with their keys."""
+    if screen is None:
+        return
+    if skin not in SCREEN_KEYS:
+        err("screen_without_skin", place=place)
+        return
+    if not isinstance(screen, dict):
+        err("bad_screen", place=place)
+        return
+    valid = SCREEN_KEYS[skin]
+    for key in sorted(set(screen) - valid):
+        err("unknown_key", key=f"{place}.{key}", valid=", ".join(sorted(valid)))
+    for key in ("inbox", "messages", "channels", "attachments"):
+        if key in screen and not isinstance(screen[key], list):
+            err("screen_not_list", place=f"{place}.{key}")
+    for key in ("inbox", "messages"):
+        for i, item in enumerate(screen.get(key) or [] if isinstance(screen.get(key), list) else []):
+            if not isinstance(item, dict):
+                err("bad_screen", place=f"{place}.{key}[{i}]")
+                continue
+            for extra in sorted(set(item) - LIST_KEYS[key]):
+                err("unknown_key", key=f"{place}.{key}[{i}].{extra}", valid=", ".join(sorted(LIST_KEYS[key])))
+    message = screen.get("message")
+    if message is not None:
+        if not isinstance(message, dict):
+            err("bad_screen", place=f"{place}.message")
+        else:
+            for extra in sorted(set(message) - LIST_KEYS["message"]):
+                err("unknown_key", key=f"{place}.message.{extra}", valid=", ".join(sorted(LIST_KEYS["message"])))
+    if skin == "phone" and screen.get("state") is not None and screen.get("state") not in PHONE_STATES:
+        err("bad_phone_state", place=f"{place}.state", value=screen.get("state"), valid=", ".join(PHONE_STATES))
+
+
+def _check_target(value: object, skin: object, place: str, err) -> None:
+    targets = TARGETS.get(str(skin)) if skin else None
+    if targets is None:
+        err("target_without_skin", place=place)
+        return
+    text = str(value or "")
+    ok = any(text == t_ if not t_.endswith(":") else (text.startswith(t_) and text[len(t_):].isdigit() and int(text[len(t_):]) > 0)
+             for t_ in targets)
+    if not ok:
+        err("bad_target", place=place, value=value, valid=", ".join(f"{t_}N" if t_.endswith(":") else t_ for t_ in targets))
 
 
 def _check_area(value: object, place: str, err) -> None:

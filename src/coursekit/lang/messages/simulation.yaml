@@ -56,6 +56,12 @@ bad_decision: {es: "{place}: cada decisión debe ser un mapa", en: "{place}: eve
 bad_changes: {es: "{place}: debe ser un mapa de variables", en: "{place}: must map variables to values"}
 bad_change_value: {es: "{place}: valor no válido ({value})", en: "{place}: invalid value ({value})"}
 bad_score: {es: "{place}: 'score' debe ser un número ({value})", en: "{place}: 'score' must be a number ({value})"}
+screen_without_skin: {es: "{place}: 'screen' necesita una 'skin'", en: "{place}: 'screen' needs a 'skin'"}
+bad_screen: {es: "{place}: debe ser un mapa", en: "{place}: must be a mapping"}
+screen_not_list: {es: "{place}: debe ser una lista", en: "{place}: must be a list"}
+bad_phone_state: {es: "{place}: estado '{value}' no válido (válidos: {valid})", en: "{place}: invalid state '{value}' (valid: {valid})"}
+target_without_skin: {es: "{place}: 'target' necesita una 'skin' (sin ella, usa 'area')", en: "{place}: 'target' needs a 'skin' (without one, use 'area')"}
+bad_target: {es: "{place}: destino '{value}' no válido para esta piel (válidos: {valid})", en: "{place}: invalid target '{value}' for this skin (valid: {valid})"}
 unreachable: {es: "la escena '{scene}' no se alcanza por ningún camino", en: "scene '{scene}' cannot be reached by any path"}
 dead_end:
   es: "callejón sin salida en la escena '{scene}': con algún estado no queda ninguna opción"

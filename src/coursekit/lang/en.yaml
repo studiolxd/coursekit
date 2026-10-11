@@ -92,3 +92,30 @@ player:
   sim_checkpoint: Back to the last checkpoint
   sim_restart: Start again
   sim_finish_first: Finish the simulations of this test first.
+  skin_mail_app: Mail
+  skin_chat_app: Team
+  skin_inbox: Inbox
+  skin_sent: Sent items
+  skin_deleted: Deleted items
+  skin_starred: Starred
+  skin_search: Search
+  skin_new_mail: New mail
+  skin_compose: Compose
+  skin_reply: Reply
+  skin_forward: Forward
+  skin_delete: Delete
+  skin_to: To
+  skin_attachments: Attachments
+  skin_no_message: Select a message to read it.
+  skin_type_message: Type a message
+  skin_online: online
+  skin_activity: Activity
+  skin_chat: Chat
+  skin_teams: Teams
+  skin_incoming: Incoming call
+  skin_calling: On a call
+  skin_accept: Accept
+  skin_decline: Decline
+  skin_secure: Secure connection
+  skin_not_secure: Not secure
+  sim_hint: You can click on the screen or the scene to point at what catches your attention.

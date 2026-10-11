@@ -92,3 +92,30 @@ player:
   sim_checkpoint: Volver al último punto de control
   sim_restart: Empezar de nuevo
   sim_finish_first: Termina antes las simulaciones de esta prueba.
+  skin_mail_app: Correo
+  skin_chat_app: Equipo
+  skin_inbox: Bandeja de entrada
+  skin_sent: Enviados
+  skin_deleted: Elementos eliminados
+  skin_starred: Destacados
+  skin_search: Buscar
+  skin_new_mail: Nuevo correo
+  skin_compose: Redactar
+  skin_reply: Responder
+  skin_forward: Reenviar
+  skin_delete: Eliminar
+  skin_to: Para
+  skin_attachments: Adjuntos
+  skin_no_message: Selecciona un mensaje para leerlo.
+  skin_type_message: Escribe un mensaje
+  skin_online: en línea
+  skin_activity: Actividad
+  skin_chat: Chat
+  skin_teams: Equipos
+  skin_incoming: Llamada entrante
+  skin_calling: En llamada
+  skin_accept: Aceptar
+  skin_decline: Rechazar
+  skin_secure: Conexión segura
+  skin_not_secure: No es seguro
+  sim_hint: Puedes pulsar sobre la pantalla o la escena para señalar lo que te llama la atención.

@@ -349,16 +349,30 @@ def short_answer(brick: dict, ctx: Ctx) -> str:
 
 # ── decision-based courses ───────────────────────────────────────────────────────────────────
 
+def _clean_screen(value: object, key: str = "") -> object:
+    if isinstance(value, dict):
+        return {k: _clean_screen(v, k) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_clean_screen(v, key) for v in value]
+    if isinstance(value, str):
+        return block(value) if key in ("body", "text") else inline(value)
+    return value
+
+
 def _clean_simulation(data: dict) -> dict:
     """The data of a simulation for the player, with every text sanitised like the rest of the page."""
     out = json.loads(json.dumps(data))
     out["title"] = inline(out.get("title"))
+    if out.get("screen"):
+        out["screen"] = _clean_screen(out["screen"])
     for scene in (out.get("scenes") or {}).values():
         for key in ("text", "debriefing"):
             if scene.get(key):
                 scene[key] = block(scene[key])
         for variant in scene.get("variants") or []:
             variant["text"] = block(variant.get("text"))
+        if scene.get("screen"):
+            scene["screen"] = _clean_screen(scene["screen"])
         for decision in (scene.get("choices") or []) + (scene.get("hotspots") or []):
             for key in ("text", "label", "feedback"):
                 if decision.get(key):
@@ -372,7 +386,7 @@ def simulation(brick: dict, ctx: Ctx) -> str:
     scenes = data.get("scenes") or {}
     first = scenes.get(data.get("start") or next(iter(scenes), ""), {})
     payload = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
-    skin = f" ck-skin-{a(data['skin'])}" if data.get("skin") else ""
+    skin = f" ck-sim-on-{a(data['skin'])}" if data.get("skin") else ""
     options = "".join(f"<li>{d.get('text') or d.get('label')}</li>" for d in (first.get("choices") or []) + (first.get("hotspots") or []))
     fallback = f'<div class="ck-sim-static">{first.get("text", "")}<ul>{options}</ul></div>'
     return (f'<section class="ck-sim ck-sim-{a(data.get("kind", "scenario"))}{skin}" data-sim="{a(data.get("id", ""))}" '

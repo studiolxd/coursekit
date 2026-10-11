@@ -192,6 +192,17 @@ def question_content(values: dict[str, str], syntax: Syntax) -> dict:
 PENDING_BRICKS = ("SIMULATION", "CONDITIONAL")  # in the plan, not assembled by a backend yet (phase 8)
 
 
+def screen_html(value: object, key: str = "") -> object:
+    """The texts of the screen of a skin: `body` and `text` are Markdown, the rest short texts; numbers and flags as they are."""
+    if isinstance(value, dict):
+        return {k: screen_html(v, k) for k, v in value.items()}
+    if isinstance(value, list):
+        return [screen_html(v, key) for v in value]
+    if isinstance(value, str):
+        return html(value) if key in ("body", "text") else inline(value)
+    return value
+
+
 def simulation_brick(name: str, body: list[str], ctx: dict) -> dict:
     """A simulation as the plan carries it: its checked data with the texts in HTML, the maximum points, and the images it
     uses (by the id of their asset) with the path of those already produced."""
@@ -200,12 +211,16 @@ def simulation_brick(name: str, body: list[str], ctx: dict) -> dict:
         raise PlanError(sim.errors[0])
     data = json.loads(json.dumps(sim.data))
     data["title"] = inline(str(data.get("title") or ""))
+    if data.get("screen"):
+        data["screen"] = screen_html(data["screen"])
     for scene in (data.get("scenes") or {}).values():
         for key in ("text", "debriefing"):
             if scene.get(key):
                 scene[key] = html(str(scene[key]))
         for variant in scene.get("variants") or []:
             variant["text"] = html(str(variant.get("text") or ""))
+        if scene.get("screen"):
+            scene["screen"] = screen_html(scene["screen"])
         for decision in (scene.get("choices") or []) + (scene.get("hotspots") or []):
             for key in ("text", "label", "feedback"):
                 if decision.get(key):
