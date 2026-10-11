@@ -1,6 +1,6 @@
 # Plan de coursekit
 
-> Estado: **fase 1 hecha**; siguiente, fase 2 (curso de prueba de extremo a extremo). Paquete `slxd-coursekit`, comando `coursekit`, repositorio
+> Estado: **fase 1 hecha**; siguiente, fase 2 (curso de prueba de extremo a extremo). En diseño: fase 8, enfoque basado en decisiones (sección 11). Paquete `slxd-coursekit`, comando `coursekit`, repositorio
 > público <https://github.com/studiolxd/coursekit>.
 
 ## 1. Objetivo
@@ -324,6 +324,7 @@ Cada fase termina con algo comprobable. No se pasa a la siguiente con la anterio
 | 5 | **`brief/` general del proyecto** con notas por fase en los dos niveles. | Una nota general de redacción se aplica en diseño, redacción y revisión; una nota del curso que la contradice manda. |
 | 6 | **Backend html.** Maqueta base y componentes genéricos, registro de directivas con columna `html`, builder con `@studiolxd/scorm`, verificador de volcado completo, entrega del zip. | Un curso de prueba genérico se genera con `coursekit assemble --backend html` y funciona en un LMS de prueba (SCORM Cloud). |
 | 7 | Opcional: diseño instruccional local (sin slxd, con Excel generado); más idiomas. | — |
+| 8 | **Enfoque basado en decisiones** (sección 11): simulaciones `scenario` y `conversation`, biblia narrativa, contenido adaptativo, pieles de aplicación y escenas por capas de alta fidelidad. | Un curso de prueba genérico con `design.approach: decision-based` recorre el flujo de `new` a `deliver` con el backend html, y con creator salvo lo que creator aún no soporta (sección 9). |
 
 ### 7.1 Pasos de la fase 1
 
@@ -379,9 +380,186 @@ Pendientes de que creator los resuelva; mientras tanto, el pipeline los esquiva 
   visible bajo la tarjeta.
 - Fuentes propias del theme que no cargan en el reproductor (CORS).
 - Código en línea, bloques de código dentro de pestañas y desplegables, textos alternativos largos.
+- Estado compartido entre bricks y bloques condicionales (contenido adaptativo del enfoque basado
+  en decisiones, sección 11.6): mientras no exista, se monta la versión neutra (`:::else`) y se avisa.
+- Nota de los EMBED: que una simulación embebida pueda informar de su puntuación y de sus
+  interacciones al SCORM del contenido (sección 11.7).
 
 ## 10. Pendiente de decidir
 
 - Cuándo publicar en PyPI (`slxd-coursekit`).
 - Si los componentes html se publican también como paquete npm propio.
 - Si el diseño instruccional local (fase 7) es necesario para clientes sin slxd.
+
+## 11. Enfoque basado en decisiones (fase 8)
+
+### 11.1 Qué es
+
+Un segundo enfoque de curso, elegido por curso (`course.yaml › design.approach: expository |
+decision-based`; lo pregunta `/new-course`). El curso sigue siendo un curso completo (unidades,
+apartados, todos los bricks y directivas, multimedia, evaluación); lo que cambia es el orden y el
+motor del aprendizaje: **el alumno no empieza leyendo**, empieza ante una situación, decide, se
+equivoca o acierta, recibe la consecuencia y el feedback, y después lee, practica y se evalúa.
+Las simulaciones son el núcleo, pero no son el curso: son piezas entre los demás bricks.
+
+| | Expositivo | Basado en decisiones |
+|---|---|---|
+| Entrada a cada objetivo | leer | enfrentarse a una situación y decidir |
+| Papel de la teoría | punto de partida | respuesta a lo que acaba de pasar |
+| Interactividades | reforzar lo leído | reforzar y volver a poner en práctica |
+| Evaluación | test sobre lo leído | test y situaciones nuevas en las que se transfiere lo aprendido |
+
+Mismo flujo, mismos estados y mismas firmas; cambian las skills, plantillas y reglas que se
+aplican en cada fase según el enfoque.
+
+### 11.2 Decisiones tomadas
+
+| Tema | Decisión |
+|---|---|
+| Ciclo de cada apartado de contenido | reto (simulación) → explicación (cualquier contenido, que remite a lo vivido) → práctica → volver a decidir (**opcional**) → cierre. Configurable en `defaults/rules.yaml`. |
+| Introducción y resumen | se mantienen; la introducción puede abrir con un reto. |
+| Narrativa | **una historia común a todo el curso**: biblia narrativa `design/story.md`, firmada con el diseño (`/approve-design`). |
+| Contenido adaptativo | sí: `:::if` / `:::else` sobre el estado de las simulaciones. html desde el principio; creator, hueco anotado (sección 9). |
+| Nota | las simulaciones pueden contar para la nota SCORM, opcional en cada una (`scored`, `weight`). |
+| Mecánicas del MVP | `scenario` (con exploración de escena por zonas) y `conversation`. Después: `inbox`, `investigation`, `allocation`, `diagnosis`. |
+| Pieles de aplicación | recuerdan a las aplicaciones conocidas (estructura y aspecto), sin sus nombres, logotipos ni iconos registrados. |
+| Escenas | ilustración por capas de alta calidad, con estilo elegible. |
+| Sin generador de imágenes | escenas en estilo `flat` en SVG, dibujadas por el rol `ILLUSTRATION_AGENT` / `ILLUSTRATION_MODEL`. |
+| Voces | una por personaje (también en los `dialog` del enfoque expositivo) más la del narrador; en borrador con Piper los personajes se reparten los dos hablantes. |
+| Duración | minutos estimados por escena, decisión y debriefing (`defaults/rules.yaml`), más el contenido de alrededor con la regla de palabras por hora. |
+| Matriz de slxd | el diseño sigue en la matriz; las simulaciones se registran como actividades de aprendizaje (caso o simulación) y como actividades de evaluación cuando cuentan para la nota. La biblia narrativa vive en local. |
+| Revisión por recorridos | entra en el MVP: el revisor juega todos los caminos; diagrama y vista previa jugable para la revisión del cliente. |
+
+### 11.3 Narrativa
+
+- **Entrada (opcional):** `brief/story-notes.md`, del proyecto o del curso: sector, tono,
+  personajes, situaciones reales que reflejar.
+- **Salida del diseño:** `courses/<CODE>/design/story.md`, la biblia narrativa:
+  - mundo: organización ficticia, sector, lugar, época;
+  - protagonista: el papel del alumno, su puesto y su misión;
+  - reparto: ficha por personaje (rol, personalidad, forma de hablar, voz asignada, hoja de
+    personaje visual);
+  - arco: conflicto del curso, tensión de cada unidad y resolución;
+  - mapa: qué simulación va en cada apartado y qué objetivo pone a prueba.
+- La usan quien redacta (simulaciones y texto dentro de la historia), quien revisa (coherencia de
+  personajes, tono y hechos) y multimedia (personajes, voces, escenarios).
+- `verify`: todo personaje que aparece en el contenido existe en la biblia.
+
+### 11.4 Las simulaciones como directivas
+
+Directivas nuevas del registro (`defaults/directives.yaml`, rol nuevo `simulation`), conviviendo
+con las demás en `content.md` y `assessment.md`. Todas comparten un motor: **escena, decisión,
+estado, condición, artefacto y debriefing**. Pueden ser micro (una decisión y su consecuencia) o
+largas (varias escenas).
+
+| Directiva | Qué es | Fase |
+|---|---|---|
+| `scenario` | escenas con fondo y capas; se decide con opciones o pulsando zonas de la escena; estado, condiciones, consecuencias diferidas, finales, debriefing; puede ocurrir dentro de una piel | MVP |
+| `conversation` | personaje con expresiones y voz, historial de mensajes; las respuestas cambian su estado de ánimo y este decide las opciones siguientes; en una piel `chat`/`phone` o en una escena | MVP |
+| `inbox` | bandeja de entrada o escritorio simulado: clasificar, responder, escalar | después |
+| `investigation` | expediente: consultar documentos con un coste y decidir con información incompleta | después |
+| `allocation` | repartir presupuesto o tiempo y ver cómo evoluciona | después |
+| `diagnosis` | síntomas → pruebas → diagnóstico → comparación con una persona experta | después |
+
+- Cada simulación tiene un id; su estado se guarda en el estado del curso.
+- Las palabras del formato (escena, recurso, debriefing…) y las claves salen de
+  `lang/<idioma>.yaml` (`directive_keys`, `directive_words`), como hoy.
+- La sintaxis exacta se define en el paso 8.2; se compila a JSON para los dos backends.
+
+### 11.5 Lo que comprueba `verify`
+
+- Cada apartado de contenido abre con una simulación (sin texto antes del primer reto).
+- Cada objetivo se pone en práctica en una simulación antes de evaluarse.
+- Grafo de cada simulación: escenas alcanzables, sin callejones sin salida, cada final con
+  debriefing, referencias a estado y escenas existentes.
+- Todo `:::if` tiene su `:::else`.
+- Personajes existentes en la biblia; mínimos de simulaciones por hora además de los de
+  interactividades y recursos.
+- Que el contenido posterior remita a la simulación lo juzga el revisor, no `verify`.
+
+### 11.6 Contenido adaptativo
+
+```markdown
+:::if llamada.riesgo >= 3
+Le diste tu contraseña al supuesto técnico. Veamos qué recursos usó para conseguirlo.
+:::else
+No caíste, pero muchas personas sí lo hacen. Veamos por qué.
+:::
+```
+
+- html: se resuelve al ejecutarse el curso, con el estado en `cmi.suspend_data`.
+- creator: se monta la versión neutra (`:::else`) y el montaje avisa (sección 9).
+
+### 11.7 Evaluación y SCORM
+
+- Feedback: primero la consecuencia dentro de la historia, después el debriefing (camino seguido,
+  qué habría hecho una persona experta y por qué, enlace a la explicación).
+- Volver atrás desde un punto de control para probar otro camino: configurable.
+- Cada decisión se registra como interacción (`cmi.interactions`); la nota sale del estado final
+  o del peso de las decisiones; `scored: true` y `weight` por simulación.
+- La evaluación de la unidad mezcla preguntas y simulaciones evaluables que transfieren lo
+  aprendido a una situación nueva.
+
+### 11.8 Calidad visual
+
+**Interfaces simuladas: HTML/CSS real, no imágenes.** Pieles de alta fidelidad en htmlkit, con
+texto real (lector de pantalla, traducción, edición sin regenerar), los tokens del theme para el
+aspecto general y su propio diseño de aplicación. Recuerdan a las conocidas sin usar sus marcas:
+
+| Piel | Recuerda a |
+|---|---|
+| `mail-desktop` | cliente de correo de escritorio con cinta de opciones, carpetas y panel de lectura |
+| `mail-web` | correo web con barra lateral, lista compacta e hilos |
+| `chat-workspace` | chat de equipo con equipos, canales, hilos y menciones |
+| `messenger` | mensajería móvil con burbujas, doble check y notas de voz |
+| `phone` | pantalla de llamada, notificaciones y SMS |
+| `browser` | navegador con barra de direcciones |
+
+El proyecto puede añadir pieles propias en `components/`.
+
+**Escenas del mundo real: por capas.** Fondo, objetos y personajes separados con transparencia,
+para que un objeto sea una zona clicable o cambie de estado; personajes con expresiones desde su
+hoja de personaje; nunca texto dentro de la imagen generada (se superpone en HTML).
+
+**Estilo.**
+
+```yaml
+visual:
+  style: illustration   # flat | pixel-art | 3d | isometric | illustration | photo
+  notes: ""
+```
+
+- En `project.yaml`, sustituible en `course.yaml`; imágenes de referencia en `brief/style/`.
+- Lámina de prueba (un fondo, un personaje en tres expresiones, dos objetos) que firma una
+  persona antes de producir, como el theme; todo se genera después con esa guía.
+- Sin generador de imágenes: estilo `flat` en SVG por `ILLUSTRATION_AGENT` / `ILLUSTRATION_MODEL`
+  (vacío: `MEDIA_AGENT` / `MEDIA_MODEL`); `media plan` avisa y la lámina se firma ya en `flat`.
+  Ese rol dibuja todo el SVG (escenas, personajes, objetos, diagramas, infografías) y sustituye a
+  `MEDIA_MODEL_<TIPO>` (sección 3.5.2).
+- Revisión visual: coherencia de personajes entre escenas, defectos de generación, estilo y
+  contraste de lo superpuesto.
+
+### 11.9 Montaje
+
+- html: cada simulación es un componente de htmlkit (motor de simulaciones en JS sin
+  dependencias, accesible: teclado, lector de pantalla, sin límites de tiempo por defecto); los
+  bricks de alrededor se montan como hoy.
+- creator: cada simulación es un EMBED compilado desde su directiva, entre bricks nativos.
+- Vista previa jugable en html para la revisión, aunque el backend sea creator.
+
+### 11.10 Pasos de la fase 8
+
+| Paso | Qué | Comprobación | Estado |
+|---|---|---|---|
+| 8.1 | Configuración: `design.approach`, ciclo del apartado y reglas de duración en `rules.yaml`, `visual` en `project.yaml`/`course.yaml`, rol `ILLUSTRATION_*`, voces por personaje en `course.yaml`; textos en `lang/` y mensajes; docs en `docs/en` y `docs/es`. | `coursekit config` muestra los valores y su origen; tests de `init` y de idioma. | pendiente |
+| 8.2 | Formato: directivas `scenario` y `conversation` (rol `simulation`), sintaxis, `:::if`/`:::else`; compilador a JSON; `verify` (sección 11.5). | Fixtures genéricos que pasan y que fallan cada regla. | pendiente |
+| 8.3 | Diseño y narrativa: `brief/story-notes.md`, rama decision-based de `instructional-design` (action mapping, `story.md`, mapa de simulaciones, actividades en la matriz), `/approve-design` con la biblia. | Propuesta de diseño de un curso de prueba con su biblia. | pendiente |
+| 8.4 | Redacción y revisión: skills del enfoque; recorrido automático de caminos con informe y diagrama. | Una unidad de prueba redactada, revisada y con su informe de recorridos. | pendiente |
+| 8.5 | Motor html: escenas por capas, zonas, estado del curso, contenido adaptativo, interacciones y nota SCORM opcional. | Un SCO de prueba funciona en SCORM Cloud y guarda el estado entre sesiones. | pendiente |
+| 8.6 | Pieles: `mail-desktop`, `mail-web`, `chat-workspace`, `messenger`, `phone`, `browser`. | Catálogo con ejemplos genéricos; axe sin errores. | pendiente |
+| 8.7 | Multimedia: estilo y lámina firmada, tipos de recurso de escena, personaje y objeto, recetas con generador y SVG `flat`, voces por personaje, revisión visual. | Escenas y personajes coherentes de un curso de prueba en dos estilos. | pendiente |
+| 8.8 | Montaje creator: simulaciones como EMBED, versión neutra del contenido adaptativo con aviso. | El curso de prueba montado en creator. | pendiente |
+| 8.9 | Curso de prueba genérico (contraseñas seguras en ACME) de extremo a extremo con los dos backends. | Pasa de `new` a `deliver`. | pendiente |
+
+Durante el desarrollo de esta fase: commits en local sin push; la herramienta instalada apunta a
+la copia de trabajo (`uv tool install --editable`).
