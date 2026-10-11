@@ -475,7 +475,7 @@ scenes:
 | `scored`, `weight` | Si cuenta para la nota (por defecto `false`) y su peso entre las evaluables (por defecto 1). |
 | `state` | Variables y su valor inicial: números, `true`, `false`. |
 | `start` | Escena inicial; por defecto, la primera. |
-| `scenes.<id>` | `text` (obligatorio), `screen`, `background`, `layers` (`image`, `area`, `if`), `characters` (`name`, `expression`), `variants` (`if`, `text`: texto añadido cuando se cumple la condición), `checkpoint` (el alumno puede volver aquí si `decision_based.rewind` está activo) y **una** salida: `choices`, `hotspots`, `next` o `ending`. |
+| `scenes.<id>` | `text` (obligatorio), `skin` (otra aplicación para esta escena), `screen`, `background`, `layers` (`image`, `area`, `if`), `characters` (`name`, `expression`), `variants` (`if`, `text`: texto añadido cuando se cumple la condición), `checkpoint` (el alumno puede volver aquí si `decision_based.rewind` está activo) y **una** salida: `choices`, `hotspots`, `next` o `ending`. |
 | Una opción o zona | `text` (opción) o `label` y, o bien `area` `[x, y]` o `[x, y, ancho, alto]` en % de la escena, o bien `target`, una parte de la pantalla de la piel (zona); `goto`; opcionalmente `if`, `effects` (suma a variables), `set` (les da un valor), `score` (puntos, positivos o negativos) y `feedback`. |
 | `next` | Avanza sin decisión: una lista de `{if, goto}`; la primera que se cumple. |
 | `ending` | `good`, `mixed` o `bad`, con su `debriefing` (obligatorio). |
@@ -495,7 +495,9 @@ debriefing, variables no declaradas, condiciones no válidas e ids repetidos en 
 Con `skin`, la simulación ocurre dentro de una aplicación dibujada en HTML: texto real (lo leen los lectores de pantalla,
 se traduce y se edita sin imágenes nuevas), el aspecto de las aplicaciones que se usan a diario, pero nunca sus nombres,
 logotipos ni iconos. Lo que muestra sale de `screen`: el de la simulación, completado por el de cada escena (una escena
-solo escribe lo que cambia). `body` y `text` son Markdown.
+solo escribe lo que cambia). Una escena puede ocurrir en otra aplicación con su propia `skin` (un mensaje del chat te
+manda al correo): entonces muestra solo su propio `screen`, y al volver a la primera aplicación esta sigue como estaba.
+`body` y `text` son Markdown.
 
 | Piel | Recuerda a | `screen` | `target` de una zona |
 |---|---|---|---|

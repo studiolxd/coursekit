@@ -86,10 +86,12 @@ def flowchart(sim: simmod.Simulation) -> str:
 
 def _screen(sim: simmod.Simulation, scene: dict) -> str:
     """What the screen of the skin shows in a scene (chat skins add up the messages of the scenes before)."""
-    screen = {**(sim.data.get("screen") or {}), **(scene.get("screen") or {})}
-    if not sim.data.get("skin") or not screen:
+    skin = scene.get("skin") or sim.data.get("skin")
+    base = (sim.data.get("screen") or {}) if skin == sim.data.get("skin") else {}
+    screen = {**base, **(scene.get("screen") or {})}
+    if not skin or not screen:
         return ""
-    parts = []
+    parts = [f"[{skin}]"] if scene.get("skin") else []
     message = screen.get("message")
     if isinstance(message, dict):
         parts.append(f"{t('paths', 'screen_mail')}: {_label(message.get('from'), 30)} <{_label(message.get('address'), 40)}> · "

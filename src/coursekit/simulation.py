@@ -4,7 +4,7 @@ The body of a simulation is YAML with a fixed schema in English (the texts are i
 
     id: call                       # unique in the course (a-z, 0-9, _); the content refers to its state as `call.risk`
     title: The support call
-    skin: phone                    # optional: the application it happens in (SKINS)
+    skin: phone                    # optional: the application it happens in (SKINS); a scene may change it with its own `skin`
     character: Technician          # conversation: the person you talk to (required)
     objective: U1.2                # or a list: the objectives it practises
     scored: true                   # counts for the grade (default false)
@@ -204,7 +204,7 @@ def test(condition: object, env: dict) -> bool:
 
 TOP_KEYS = {"id", "title", "skin", "character", "objective", "scored", "weight", "state", "start", "scenes", "screen"}
 SCENE_KEYS = {"text", "background", "layers", "characters", "variants", "checkpoint", "choices", "hotspots", "next", "ending",
-              "debriefing", "expression", "screen"}
+              "debriefing", "expression", "screen", "skin"}
 CHOICE_KEYS = {"text", "goto", "if", "effects", "set", "score", "feedback"}
 HOTSPOT_KEYS = CHOICE_KEYS - {"text"} | {"label", "area", "target"}
 
@@ -300,6 +300,7 @@ def parse(kind: str, body: list[str], where: str, line: int = 0) -> Simulation:
     _check_screen(data.get("screen"), data.get("skin"), "screen", err)
     scenes_data = data.get("scenes") if isinstance(data.get("scenes"), dict) else {}
     if data.get("skin") in SCREEN_KEYS and not data.get("screen") and not any(isinstance(sc, dict) and sc.get("screen")
+                                                                            and sc.get("skin", data.get("skin")) == data.get("skin")
                                                                             for sc in scenes_data.values()):
         sim.warnings.append(f"{where}: " + t("simulation", "skin_without_screen", skin=data["skin"]))
     if kind == "conversation" and not str(data.get("character") or "").strip():
@@ -349,6 +350,10 @@ def _check_condition(value: object, variables: dict, err, where: str) -> None:
 
 def _check_scene(sid: str, scene: object, scenes: dict, state: dict, kind: str, err, skin: object = None) -> None:
     where = f"scenes.{sid}"
+    if isinstance(scene, dict) and scene.get("skin") is not None:  # a scene may happen in another application
+        if scene["skin"] not in SKINS:
+            err("bad_skin", value=scene["skin"], valid=", ".join(SKINS))
+        skin = scene["skin"]
     if not ID_RE.match(sid):
         err("bad_scene_id", value=sid)
     if not isinstance(scene, dict):

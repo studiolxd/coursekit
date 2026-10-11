@@ -537,3 +537,19 @@ def test_a_simulation_in_any_part_of_an_assessment_activity_is_assembled(decisio
     assert not errors
     test = next(lesson for lesson in plan["lessons"] if lesson["type"] == "evaluation")
     assert [b["data"]["id"] for b in test["bricks"] if b["type"] == "SIMULATION"] == ["final"]
+
+
+def test_a_scene_can_happen_in_another_application():
+    from coursekit import simulation
+
+    body = ["id: x", "title: T", "skin: chat-workspace", "screen: {channel: general}", "scenes:",
+            "  a:", "    text: Ramón te avisa por el chat.", "    screen: {messages: [{from: Ramón, text: Mira el correo}]}",
+            "    choices: [{text: Abro el correo, goto: b}]",
+            "  b:", "    skin: mail-desktop", "    text: El correo.", "    screen: {message: {from: X, address: x@y.example, subject: S}}",
+            "    hotspots: [{label: La dirección, target: address, goto: c}]",
+            "  c: {text: C, ending: good, debriefing: D}"]
+    assert simulation.parse("scenario", body, "x").errors == []
+    bad = [line.replace("target: address", "target: message:1") for line in body]
+    assert any("invalid target 'message:1'" in e for e in simulation.parse("scenario", bad, "x").errors)
+    bad = [line.replace("skin: mail-desktop", "skin: fax") for line in body]
+    assert any("unknown skin 'fax'" in e for e in simulation.parse("scenario", bad, "x").errors)
