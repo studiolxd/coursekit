@@ -54,6 +54,22 @@ few_placeholder_types:
 few_questions:
   es: "assessment.md: {questions} preguntas en el banco, se esperaban {expected} ({per_objective} por objetivo evaluado con cuestionario)"
   en: "assessment.md: {questions} questions in the bank, expected {expected} ({per_objective} per objective assessed by questionnaire)"
+section_not_opening_with_simulation:
+  es: "{label}: en un curso basado en decisiones el apartado abre con una simulación (:::scenario o :::conversation), sin texto antes"
+  en: "{label}: in a decision-based course the section opens with a simulation (:::scenario or :::conversation), with no text before it"
+few_simulations:
+  es: "{label}: {count} simulaciones < {needed}"
+  en: "{label}: {count} simulations < {needed}"
+objective_not_practised:
+  es: "content.md: el objetivo {id} no se practica en ninguna simulación ('objective' de :::scenario o :::conversation)"
+  en: "content.md: objective {id} is not practised in any simulation ('objective' of :::scenario or :::conversation)"
+duplicate_simulation:
+  es: "la simulación '{id}' está repetida en el curso ({places}): cada id es único"
+  en: "simulation '{id}' appears more than once in the course ({places}): every id is unique"
+unit_word: {es: unidad, en: unit}
+simulations_not_assembled:
+  es: "las simulaciones y los bloques adaptativos aún no se montan en ningún backend (fase 8 en desarrollo)"
+  en: "simulations and adaptive blocks are not assembled by any backend yet (phase 8 in development)"
 assembly_error: {es: "ensamblado: {error}", en: "assembly: {error}"}
 changed_after_approval:
   es: "el contenido cambió tras su aprobación: hay que revisarlo y aprobarlo de nuevo"

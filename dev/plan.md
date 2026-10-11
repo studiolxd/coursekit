@@ -462,9 +462,10 @@ largas (varias escenas).
 | `diagnosis` | síntomas → pruebas → diagnóstico → comparación con una persona experta | después |
 
 - Cada simulación tiene un id; su estado se guarda en el estado del curso.
-- Las palabras del formato (escena, recurso, debriefing…) y las claves salen de
-  `lang/<idioma>.yaml` (`directive_keys`, `directive_words`), como hoy.
-- La sintaxis exacta se define en el paso 8.2; se compila a JSON para los dos backends.
+- Cuerpo en **YAML con un esquema fijo y claves en inglés** (solo los textos van en el idioma del curso),
+  condiciones con **sintaxis de código** (`risk >= 3 && !called || trust < 2`) y **puntos por decisión**
+  (`score`, positivo o negativo); la nota es la puntuación del camino sobre la máxima alcanzable. Esquema en
+  `docs/*/06-content.md` y `coursekit/simulation.py`.
 
 ### 11.5 Lo que comprueba `verify`
 
@@ -495,8 +496,8 @@ No caíste, pero muchas personas sí lo hacen. Veamos por qué.
 - Feedback: primero la consecuencia dentro de la historia, después el debriefing (camino seguido,
   qué habría hecho una persona experta y por qué, enlace a la explicación).
 - Volver atrás desde un punto de control para probar otro camino: configurable.
-- Cada decisión se registra como interacción (`cmi.interactions`); la nota sale del estado final
-  o del peso de las decisiones; `scored: true` y `weight` por simulación.
+- Cada decisión se registra como interacción (`cmi.interactions`); la nota es la suma de los `score`
+  del camino sobre el máximo alcanzable; `scored: true` y `weight` por simulación.
 - La evaluación de la unidad mezcla preguntas y simulaciones evaluables que transfieren lo
   aprendido a una situación nueva.
 
@@ -554,7 +555,7 @@ visual:
 | Paso | Qué | Comprobación | Estado |
 |---|---|---|---|
 | 8.1 | Configuración: `design.approach` (`new`/`handoff --approach`, `rules › defaults.approach`), `rules › decision_based` (ciclo, partes opcionales, mínimo de simulaciones, volver atrás, minutos), `media › visual` (`style`, `fallback`), rol `illustration` (`same_as: media`); docs en `docs/en` y `docs/es`. Las voces por personaje pasan al 8.7 (necesitan código en `voices`/`tts`); la validación del estilo, al 8.7 (`media plan`). | `coursekit config` muestra los valores y su origen; `tests/test_decision_based.py`, tests de `setup`. | hecho |
-| 8.2 | Formato: directivas `scenario` y `conversation` (rol `simulation`), sintaxis, `:::if`/`:::else`; compilador a JSON; `verify` (sección 11.5). | Fixtures genéricos que pasan y que fallan cada regla. | pendiente |
+| 8.2 | Formato: directivas `scenario` y `conversation` (rol `simulation`, cuerpo **YAML con esquema en inglés**, condiciones con sintaxis de código `&& \|\| !`, puntos por decisión con `score`), `:::if`/`:::else`; `simulation.py` (esquema, condiciones, recorrido de caminos con estado, puntuación máxima, duración); `verify` (sección 11.5); bloques `SIMULATION` y `CONDITIONAL` en el plan, rechazados por el montaje hasta 8.5/8.8. Pendiente para 8.7: comprobar que `background`, `layers` y retratos apuntan a recursos de la unidad. | `tests/test_decision_based.py`. | hecho |
 | 8.3 | Diseño y narrativa: `brief/story-notes.md`, rama decision-based de `instructional-design` (action mapping, `story.md`, mapa de simulaciones, actividades en la matriz), `/approve-design` con la biblia. | Propuesta de diseño de un curso de prueba con su biblia. | pendiente |
 | 8.4 | Redacción y revisión: skills del enfoque; recorrido automático de caminos con informe y diagrama. | Una unidad de prueba redactada, revisada y con su informe de recorridos. | pendiente |
 | 8.5 | Motor html: escenas por capas, zonas, estado del curso, contenido adaptativo, interacciones y nota SCORM opcional. | Un SCO de prueba funciona en SCORM Cloud y guarda el estado entre sesiones. | pendiente |

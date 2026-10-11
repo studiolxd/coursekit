@@ -31,7 +31,7 @@ from pathlib import Path
 
 from markdown_it import MarkdownIt
 
-from coursekit import config, lang
+from coursekit import config, lang, simulation
 from coursekit import course as coursemod
 from coursekit.i18n import t
 from coursekit.states import history_entry
@@ -189,11 +189,54 @@ def question_content(values: dict[str, str], syntax: Syntax) -> dict:
     return content
 
 
+PENDING_BRICKS = ("SIMULATION", "CONDITIONAL")  # in the plan, not assembled by a backend yet (phase 8)
+
+
+def simulation_brick(name: str, body: list[str]) -> dict:
+    """A simulation as the plan carries it: its checked data, the maximum points and its paths are for the backends."""
+    sim = simulation.parse(name, body, f":::{name}")
+    if sim.errors:
+        raise PlanError(sim.errors[0])
+    data = {"kind": name, **sim.data, "max_score": sim.max_score}
+    return {"type": "SIMULATION", "data": data, "meta": {"directive": name, "simulation": sim.id}}
+
+
+def conditional_parts(lines: list[str], start: int) -> tuple[str, list[str], list[str], int]:
+    """From the `:::if` line at `start`: (condition, lines of the :::if branch, lines of the :::else branch, index of the
+    closing line). Directives inside the branches are kept whole."""
+    condition = simulation.IF_RE.match(lines[start].strip()).group(1)
+    then: list[str] = []
+    other: list[str] = []
+    target = then
+    i = start + 1
+    in_directive = in_code = False
+    while i < len(lines):
+        stripped = lines[i].strip()
+        if stripped.startswith("```"):
+            in_code = not in_code
+        elif not in_code:
+            if in_directive:
+                in_directive = not DIRECTIVE_CLOSE_RE.match(stripped)
+            elif simulation.ELSE_RE.match(stripped):
+                target = other
+                i += 1
+                continue
+            elif DIRECTIVE_CLOSE_RE.match(stripped):
+                return condition, then, other, i
+            elif DIRECTIVE_OPEN_RE.match(stripped):
+                in_directive = True
+        target.append(lines[i])
+        i += 1
+    return condition, then, other, i
+
+
 def directive_brick(name: str, body: list[str], ctx: dict) -> dict:
     registry = ctx["registry"]
     if name not in registry:
         raise PlanError(t("assemble", "unknown_directive", name=name))
     brick_type = registry[name]["brick"]
+    if registry[name].get("role") == "simulation":
+        return simulation_brick(name, body)
     syntax: Syntax = ctx["syntax"]
     values, rest = key_values(body)
     syntax.check_keys(values)
@@ -388,7 +431,7 @@ def parse_blocks(lines: list[str], ctx: dict, section_key: str) -> list[dict]:
     syntax: Syntax = ctx["syntax"]
     bricks: list[dict] = []
     paragraph: list[str] = []
-    placeholder_n = 0
+    counters = ctx.setdefault("placeholders", {})  # numbered across the branches of the adaptive blocks of the section
 
     def flush() -> None:
         text = "\n".join(paragraph).strip()
@@ -418,6 +461,11 @@ def parse_blocks(lines: list[str], ctx: dict, section_key: str) -> list[dict]:
                 i += 1
             bricks.append({"type": "CODE", "data": {"properties": {"codeLanguage": code_language(lang, code, ctx["code_languages"])},
                                                     "content": {"content": "\n".join(code)}}, "meta": {}})
+        elif simulation.IF_RE.match(stripped):
+            close_text()
+            condition, then, other, i = conditional_parts(lines, i)
+            bricks.append({"type": "CONDITIONAL", "data": {"condition": condition, "then": parse_blocks(then, ctx, section_key),
+                                                           "else": parse_blocks(other, ctx, section_key)}, "meta": {}})
         elif DIRECTIVE_OPEN_RE.match(stripped):
             close_text()
             name = DIRECTIVE_OPEN_RE.match(stripped).group(1)
@@ -440,8 +488,8 @@ def parse_blocks(lines: list[str], ctx: dict, section_key: str) -> list[dict]:
                 m = syntax.placeholder_field.match(lines[i])
                 if m:
                     fields[syntax.field_key[m.group(1)]] = m.group(2).strip()
-            placeholder_n += 1
-            asset_id = f"{section_key}-M{placeholder_n}"
+            counters[section_key] = counters.get(section_key, 0) + 1
+            asset_id = f"{section_key}-M{counters[section_key]}"
             asset = ctx["assets"].get(asset_id)
             bricks.append(placeholder_brick(kind, fields, asset, syntax.t["placeholder"].capitalize(), written))
             bricks[-1]["meta"]["placeholder_id"] = asset_id
@@ -613,6 +661,9 @@ def _read(path: Path, default: dict | None = None) -> dict:
 def write_plan(course: dict, unit: dict) -> tuple[dict | None, list[str], list[str], dict[str, int]]:
     """Build and save the plan. Returns (plan or None on errors, errors, warnings, bricks per type)."""
     plan, errors, warnings = build_plan(course, unit)
+    pending = sorted({b["type"] for lesson in plan["lessons"] for b in lesson["bricks"] if b["type"] in PENDING_BRICKS})
+    if pending:
+        errors = errors + [t("assemble", "pending_bricks", types=", ".join(pending))]
     if errors:
         return None, errors, warnings, {}
     plan_path, _ = paths(course["_dir"], unit["n"])

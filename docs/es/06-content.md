@@ -232,7 +232,7 @@ No reutilices nunca una contraseña.
 :::
 ```
 
-`:::nombre` abre el bloque y una línea con solo `:::` lo cierra. Las directivas no se pueden anidar y las líneas dentro de bloques de código se ignoran. El registro está en `src/coursekit/defaults/directives.yaml`; un proyecto puede cambiarlo en `config/directives.yaml` (su copia completa está en `config/directives.example.yaml`).
+`:::nombre` abre el bloque y una línea con solo `:::` lo cierra. Las directivas no se pueden anidar (solo los [bloques adaptativos](#bloques-adaptativos) contienen otras directivas) y las líneas dentro de bloques de código se ignoran. El registro está en `src/coursekit/defaults/directives.yaml`; un proyecto puede cambiarlo en `config/directives.yaml` (su copia completa está en `config/directives.example.yaml`).
 
 ### Roles
 
@@ -240,6 +240,7 @@ No reutilices nunca una contraseña.
 |---|---|
 | `interactive` | Cuenta para el mínimo de interactivas de un apartado `content` |
 | `question` | Pregunta de práctica o de evaluación; necesita la clave de objetivo |
+| `simulation` | Una simulación del enfoque basado en decisiones (`scenario`, `conversation`); su cuerpo es YAML (ver [Simulaciones](#simulaciones)); cuenta como interactiva |
 | `static` | Texto destacado; **no** cuenta como interactivo |
 
 ### Tabla de directivas
@@ -368,9 +369,97 @@ Las partes de un apartado de contenido siguen `rules › decision_based › cycl
 | `decide_again` | una segunda simulación, más corta o una variante, en la que se aplica lo aprendido (opcional: `decision_based › optional`) |
 | `closing` | la idea clave y el enlace con el siguiente reto |
 
-Las reglas del enfoque están en [`rules`](04-configuration.md#rules-reglas-de-producción) (`decision_based.*`). Este
-enfoque está en construcción: en esta versión un curso registra su enfoque y las reglas se pueden configurar, pero las
-directivas de simulación, sus comprobaciones en `coursekit verify` y las indicaciones de los agentes aún no están disponibles.
+Las reglas del enfoque están en [`rules`](04-configuration.md#rules-reglas-de-producción) (`decision_based.*`). En un
+curso basado en decisiones `coursekit verify` comprueba además que cada apartado de contenido **abre con una simulación**
+(antes solo puede haber títulos y comentarios), que tiene `decision_based.min_simulations_per_content_section` y que cada
+objetivo de la unidad se practica en alguna (`objective`).
+
+Este enfoque está en construcción: las simulaciones y los bloques adaptativos se escriben y se verifican, pero ningún
+backend los monta todavía (`coursekit verify` avisa y el montaje los rechaza); los agentes tampoco tienen aún sus indicaciones.
+
+### Simulaciones
+
+`:::scenario` y `:::conversation` (cualquier curso puede usarlas). Su cuerpo es **YAML con un esquema fijo en inglés**; solo
+los textos van en el idioma del curso. No cuenta como palabras: su tiempo se descuenta de las horas del apartado con
+`decision_based.minutes` (por escena y decisión del camino más largo, más el debriefing).
+
+```markdown
+:::scenario
+id: call
+title: La llamada de soporte
+skin: phone
+objective: [U1.1, U1.2]
+scored: true
+state: {risk: 0, trust: 2, called: false}
+scenes:
+  begin:
+    background: Puesto de Marta en ACME
+    characters: [{name: Technician, expression: hurried}]
+    text: |
+      Son las 9:10 y suena tu teléfono. Alguien de soporte necesita tu contraseña
+      «para migrar tu buzón antes de las 10».
+    checkpoint: true
+    choices:
+      - {text: Se la doy, goto: leak, effects: {risk: 3}, score: -2}
+      - {text: Le pido su extensión y le llamo yo, goto: safe, set: {called: true}, score: 2}
+      - {text: Lo consulto antes con mi responsable, goto: safe, if: "trust >= 2 && !called", score: 1}
+    hotspots:
+      - {label: Pósit en el monitor, area: [62, 30, 8, 6], goto: note, effects: {risk: 1}}
+  note:
+    text: Tu contraseña está escrita en el pósit.
+    next: [{if: "risk >= 1", goto: leak}, {goto: safe}]
+  safe:
+    text: El «técnico» cuelga.
+    ending: good
+    debriefing: Verificar por otro canal desmonta el engaño.
+  leak:
+    text: Tres días después tu cuenta envía 400 correos a clientes.
+    variants: [{if: "risk >= 4", text: "Y el pósit seguía en el monitor."}]
+    ending: bad
+    debriefing: La urgencia es la palanca habitual de la ingeniería social.
+:::
+```
+
+| Clave | Valor |
+|---|---|
+| `id` | Único en el curso: minúsculas, números, `-`, `_`. El contenido lee su estado como `id.variable`. |
+| `title` | Título que ve el alumno. |
+| `skin` | Opcional: la aplicación en la que ocurre: `mail-desktop`, `mail-web`, `chat-workspace`, `messenger`, `phone`, `browser`. |
+| `character` | Solo en `conversation`, obligatoria: la persona con la que habla el alumno. |
+| `objective` | `U1.2` o una lista: los objetivos que practica. |
+| `scored`, `weight` | Si cuenta para la nota (por defecto `false`) y su peso entre las evaluables (por defecto 1). |
+| `state` | Variables y su valor inicial: números, `true`, `false`. |
+| `start` | Escena inicial; por defecto, la primera. |
+| `scenes.<id>` | `text` (obligatorio), `background`, `layers` (`image`, `area`, `if`), `characters` (`name`, `expression`), `variants` (`if`, `text`: texto añadido cuando se cumple la condición), `checkpoint` (el alumno puede volver aquí si `decision_based.rewind` está activo) y **una** salida: `choices`, `hotspots`, `next` o `ending`. |
+| Una opción o zona | `text` (opción) o `label` y `area` `[x, y]` o `[x, y, ancho, alto]` en % de la escena (zona); `goto`; opcionalmente `if`, `effects` (suma a variables), `set` (les da un valor), `score` (puntos, positivos o negativos) y `feedback`. |
+| `next` | Avanza sin decisión: una lista de `{if, goto}`; la primera que se cumple. |
+| `ending` | `good`, `mixed` o `bad`, con su `debriefing` (obligatorio). |
+
+**Condiciones** con sintaxis de código, igual en todos los idiomas: `risk >= 3 && !called || trust < 2`, con números, `true`,
+`false`, `+`, `-`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `!`, `&&`, `||` y paréntesis (entre comillas en YAML).
+
+**Puntos:** cada decisión suma o resta su `score`. La nota de una simulación evaluable es la puntuación del camino del alumno
+sobre la máxima alcanzable, que calcula `coursekit verify`; una simulación evaluable necesita algún camino que sume puntos.
+
+`coursekit verify` recorre todos los caminos de cada simulación con su estado e informa de escenas desconocidas o
+inalcanzables, callejones sin salida (una escena en la que, con algún estado, no queda ninguna opción), finales sin
+debriefing, variables no declaradas, condiciones no válidas e ids repetidos en el curso.
+
+### Bloques adaptativos
+
+El contenido puede cambiar según lo que el alumno decidió en una simulación anterior:
+
+```markdown
+:::if call.risk >= 3
+Le diste tu contraseña al «técnico». Veamos qué palancas usó.
+:::else
+No caíste, pero mucha gente sí. Veamos por qué.
+:::
+```
+
+`:::else` es obligatorio: es la versión para todos los demás y la que muestra creator mientras no pueda adaptar contenido. La
+condición lee variables de simulaciones anteriores (`id.variable`, de unidades anteriores o de antes en la misma unidad).
+Las ramas pueden contener cualquier contenido y directivas; cuentan las palabras de la rama `:::else`.
 
 ## `coursekit sync` y `coursekit outline`
 

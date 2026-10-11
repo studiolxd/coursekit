@@ -232,7 +232,7 @@ Never reuse a password.
 :::
 ```
 
-`:::name` opens the block and a line with only `:::` closes it. Directives cannot be nested, and lines inside code fences are ignored. The registry lives in `src/coursekit/defaults/directives.yaml`; a project can change it in `config/directives.yaml` (its complete copy is in `config/directives.example.yaml`).
+`:::name` opens the block and a line with only `:::` closes it. Directives cannot be nested (only the [adaptive blocks](#adaptive-blocks) hold other directives), and lines inside code fences are ignored. The registry lives in `src/coursekit/defaults/directives.yaml`; a project can change it in `config/directives.yaml` (its complete copy is in `config/directives.example.yaml`).
 
 ### Roles
 
@@ -241,6 +241,7 @@ Never reuse a password.
 | `interactive` | Counts towards the interactive minimum of a `content` section |
 | `question` | Practice or assessment question; needs the objective key |
 | `static` | Highlighted text; does **not** count as interactive |
+| `simulation` | A decision-based simulation (`scenario`, `conversation`); its body is YAML (see [Simulations](#simulations)); counts as interactive |
 
 ### Directive table
 
@@ -368,9 +369,97 @@ The parts of a content section follow `rules › decision_based › cycle`:
 | `decide_again` | a second, shorter simulation or a variant, applying what was learnt (optional: `decision_based › optional`) |
 | `closing` | the key idea and the link to the next challenge |
 
-The rules of the approach are in [`rules`](04-configuration.md#rules-production-rules) (`decision_based.*`). This
-approach is being built: in this version a course records its approach and the rules can be configured, but the
-simulation directives, their checks in `coursekit verify` and the agents' guidance for it are not available yet.
+The rules of the approach are in [`rules`](04-configuration.md#rules-production-rules) (`decision_based.*`). In a
+decision-based course `coursekit verify` also checks that every content section **opens with a simulation** (only headings
+and comments before it), that it has `decision_based.min_simulations_per_content_section` of them, and that every
+objective of the unit is practised in one (`objective`).
+
+This approach is being built: simulations and adaptive blocks are written and verified, but no backend assembles them yet
+(`coursekit verify` warns, and the assembly refuses them); the agents do not have its guidance yet either.
+
+### Simulations
+
+`:::scenario` and `:::conversation` (any course may use them). Their body is **YAML with a fixed schema in English**; only
+the texts are in the course language. It is not counted as words: its time is taken from the hours of the section, with
+`decision_based.minutes` (per scene and decision of the longest path, plus the debriefing).
+
+```markdown
+:::scenario
+id: call
+title: The support call
+skin: phone
+objective: [U1.1, U1.2]
+scored: true
+state: {risk: 0, trust: 2, called: false}
+scenes:
+  begin:
+    background: Marta's desk at ACME
+    characters: [{name: Technician, expression: hurried}]
+    text: |
+      It is 9:10 and your phone rings. Someone from support needs your password
+      "to migrate your mailbox before 10".
+    checkpoint: true
+    choices:
+      - {text: I give it to him, goto: leak, effects: {risk: 3}, score: -2}
+      - {text: I ask for his extension and call him back, goto: safe, set: {called: true}, score: 2}
+      - {text: I check with my manager first, goto: safe, if: "trust >= 2 && !called", score: 1}
+    hotspots:
+      - {label: Sticky note on the monitor, area: [62, 30, 8, 6], goto: note, effects: {risk: 1}}
+  note:
+    text: Your password is written on the sticky note.
+    next: [{if: "risk >= 1", goto: leak}, {goto: safe}]
+  safe:
+    text: The "technician" hangs up.
+    ending: good
+    debriefing: Checking through another channel breaks the trick.
+  leak:
+    text: Three days later your account sends 400 emails to customers.
+    variants: [{if: "risk >= 4", text: "And the sticky note was still on the monitor."}]
+    ending: bad
+    debriefing: Urgency is the usual lever of social engineering.
+:::
+```
+
+| Key | Value |
+|---|---|
+| `id` | Unique in the course: lower case, digits, `-`, `_`. The content reads its state as `id.variable`. |
+| `title` | Title shown to the learner. |
+| `skin` | Optional: the application it happens in: `mail-desktop`, `mail-web`, `chat-workspace`, `messenger`, `phone`, `browser`. |
+| `character` | `conversation` only, required: the person the learner talks to. |
+| `objective` | `U1.2` or a list: the objectives it practises. |
+| `scored`, `weight` | Whether it counts for the grade (default `false`) and its weight among the scored ones (default 1). |
+| `state` | Variables and their initial value: numbers, `true`, `false`. |
+| `start` | First scene; by default the first one. |
+| `scenes.<id>` | `text` (required), `background`, `layers` (`image`, `area`, `if`), `characters` (`name`, `expression`), `variants` (`if`, `text`: extra text when the condition holds), `checkpoint` (the learner may come back here when `decision_based.rewind` is on) and **one** way out: `choices`, `hotspots`, `next` or `ending`. |
+| A choice or hotspot | `text` (choice) or `label` and `area` `[x, y]` or `[x, y, w, h]` in % of the scene (hotspot); `goto`; optionally `if`, `effects` (adds to variables), `set` (gives them a value), `score` (points, positive or negative) and `feedback`. |
+| `next` | Moves on without a decision: a list of `{if, goto}`; the first that holds. |
+| `ending` | `good`, `mixed` or `bad`, with its `debriefing` (required). |
+
+**Conditions** use code syntax, the same in every language: `risk >= 3 && !called || trust < 2`, with numbers, `true`,
+`false`, `+`, `-`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `!`, `&&`, `||` and parentheses (quoted in YAML).
+
+**Points:** each decision adds or subtracts its `score`. The grade of a scored simulation is the points of the learner's path
+over the maximum reachable, which `coursekit verify` computes; a scored simulation needs some path that earns points.
+
+`coursekit verify` walks every path of every simulation with its state and reports unknown or unreachable scenes, dead ends
+(a scene where, with some state, no option is left), endings without debriefing, undeclared variables, invalid
+conditions, and ids repeated in the course.
+
+### Adaptive blocks
+
+Content may change with what the learner decided in an earlier simulation:
+
+```markdown
+:::if call.risk >= 3
+You gave your password to the "technician". Let us see which levers he used.
+:::else
+You did not fall for it, but many people do. Let us see why.
+:::
+```
+
+`:::else` is required: it is the version for everyone else, and the one creator shows while it cannot adapt content. The
+condition reads variables of simulations that come before it (`id.variable`, from earlier units or earlier in the same
+unit). The branches may hold any content and directives; the words of the `:::else` branch count.
 
 ## `coursekit sync` and `coursekit outline`
 

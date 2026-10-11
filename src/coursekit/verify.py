@@ -9,6 +9,10 @@ Per unit (content.md + assessment.md):
   - multimedia placeholders per unit hour: count, distinct types, required fields;
   - directives well formed (known name, closed, not nested); questions carry an objective;
   - no emojis or pictographs outside the allowed symbols;
+  - simulations (:::scenario, :::conversation): their YAML, every path (no dead ends, every scene reachable, endings with
+    debriefing), unique ids in the course; adaptive blocks (:::if / :::else) read variables of earlier simulations;
+  - decision-based courses (design.approach): every content section opens with a simulation, has the minimum of them, and every
+    objective of the unit is practised in one; the simulation time counts towards the hours of the section;
   - the content converts for the assembly backend (when a backend check is registered).
 Also moves the unit status forward when it passes and back when it no longer does.
 """
@@ -21,7 +25,10 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import yaml
+
 from coursekit import course as coursemod
+from coursekit import simulation as simmod
 from coursekit.fingerprint import changed_since_review
 from coursekit.i18n import t
 from coursekit.lang import format_number
@@ -79,6 +86,7 @@ class Section:
     lines: list[str] = field(default_factory=list)
     directives: list[str] = field(default_factory=list)
     placeholders: list[Placeholder] = field(default_factory=list)
+    simulations: list[simmod.Simulation] = field(default_factory=list)
     words: int = 0
 
 
@@ -105,7 +113,8 @@ def check_pictographs(path: Path, text: str, allowed: str, report: Report) -> No
 
 def parse_directives(path: Path, lines: list[str], rules: dict, report: Report, start: int = 1):
     """Yield (line_no, name, body_lines) for each directive, reporting malformed ones."""
-    known = set(rules["interactive_directives"]) | set(rules["non_interactive_directives"]) | set(rules["question_directives"])
+    known = (set(rules["interactive_directives"]) | set(rules["non_interactive_directives"]) | set(rules["question_directives"])
+             | set(rules.get("simulation_directives") or ()))
     in_code = False
     current = None
     for i, line in enumerate(lines, start):
@@ -115,6 +124,8 @@ def parse_directives(path: Path, lines: list[str], rules: dict, report: Report, 
         if in_code:
             continue
         if current is None:
+            if simmod.IF_RE.match(line.strip()) or simmod.ELSE_RE.match(line.strip()):
+                continue  # the fences of an adaptive block (scan_conditionals checks them)
             m = DIRECTIVE_OPEN_RE.match(line)
             if m:
                 name = m.group(1)
@@ -146,12 +157,25 @@ def check_questions(path: Path, directives, rules: dict, syntax: Syntax, report:
     return count
 
 
-def learner_words(lines: list[str], syntax: Syntax) -> int:
-    """Learner-facing words: without comments, directive fences, objective tags and placeholders."""
-    text = HTML_COMMENT_RE.sub(" ", "\n".join(lines))
+def learner_words(lines: list[str], syntax: Syntax, skip: tuple[str, ...] = ()) -> int:
+    """Learner-facing words: without comments, directive fences, objective tags and placeholders, nor the body of the
+    directives in `skip` (simulations: their time is counted apart) nor the `:::if` branch of adaptive blocks (the `:::else`
+    branch, which every learner may see, is counted)."""
+    text = HTML_COMMENT_RE.sub(lambda m: "\n" * m.group(0).count("\n"), "\n".join(lines))
+    hidden = simmod.adaptive_lines(text.splitlines())
     kept = []
     in_placeholder = False
-    for line in text.splitlines():
+    skipping = False
+    for n, line in enumerate(text.splitlines(), 1):
+        if skipping:
+            skipping = not DIRECTIVE_CLOSE_RE.match(line)
+            continue
+        m = DIRECTIVE_OPEN_RE.match(line)
+        if m and m.group(1) in skip:
+            skipping = True
+            continue
+        if n in hidden:
+            continue
         if syntax.placeholder.match(line):
             in_placeholder = True
             continue
@@ -176,9 +200,29 @@ def split_sections(text: str, syntax: Syntax) -> list[Section]:
     return sections
 
 
+def parse_simulations(path: Path, directives, rules: dict, report: Report) -> list[simmod.Simulation]:
+    """Read and check the simulations among some directives; their problems go to the report."""
+    found = []
+    for line_no, name, body in directives:
+        if name in (rules.get("simulation_directives") or ()):
+            sim = simmod.parse(name, body, f"{path.name}:{line_no} {name}", line_no)
+            if sim.id:
+                sim_label = f"{path.name}:{line_no} {name} '{sim.id}'"
+                sim.errors = [e.replace(f"{path.name}:{line_no} {name}:", f"{sim_label}:", 1) for e in sim.errors]
+            for e in sim.errors:
+                report.error(e)
+            for w in sim.warnings:
+                report.warn(w)
+            found.append(sim)
+    return found
+
+
 def analyse_section(path: Path, sec: Section, rules: dict, syntax: Syntax, report: Report) -> None:
-    sec.words = learner_words(sec.lines, syntax)
-    sec.directives = [name for _, name, _ in parse_directives(path, sec.lines, rules, report, sec.line + 1)]
+    simulations = tuple(rules.get("simulation_directives") or ())
+    sec.words = learner_words(sec.lines, syntax, simulations)
+    directives = list(parse_directives(path, sec.lines, rules, report, sec.line + 1))
+    sec.directives = [name for _, name, _ in directives]
+    sec.simulations = parse_simulations(path, directives, rules, report)
     current = None
     for i, line in enumerate(sec.lines, sec.line + 1):
         m = syntax.placeholder.match(line)
@@ -195,12 +239,69 @@ def analyse_section(path: Path, sec: Section, rules: dict, syntax: Syntax, repor
                     current.fields.add(f)
 
 
+def course_simulations(course: dict, rules: dict) -> list[tuple[int, str, int, str, set[str]]]:
+    """Every simulation of the course, read without checking it: (unit, file, line, id, variables)."""
+    found = []
+    for other in course.get("units") or []:
+        folder = coursemod.unit_dir(course["_dir"], other["n"])
+        for name in ("content.md", "assessment.md"):
+            path = folder / name
+            if not path.exists():
+                continue
+            for line_no, directive, body in parse_directives(path, path.read_text(encoding="utf-8").splitlines(), rules, Report()):
+                if directive not in (rules.get("simulation_directives") or ()):
+                    continue
+                try:
+                    data = yaml.safe_load("\n".join(body))
+                except yaml.YAMLError:
+                    continue
+                if isinstance(data, dict) and data.get("id"):
+                    state = data.get("state") if isinstance(data.get("state"), dict) else {}
+                    found.append((other["n"], name, line_no, str(data["id"]), set(map(str, state))))
+    return found
+
+
+def check_adaptive(path: Path, lines: list[str], unit_n: int, sims: list, report: Report) -> int:
+    """The `:::if` blocks of a file: well formed, with `:::else`, reading variables of simulations that come before."""
+    blocks, problems = simmod.scan_conditionals(lines)
+    for line, key in problems:
+        report.error(f"{path.name}:{line}: " + t("simulation", key))
+    for block in blocks:
+        earlier = {f"{sid}.{var}" for n, name, line, sid, variables in sims for var in variables
+                   if n < unit_n or (n == unit_n and name == path.name and line < block.line)
+                   or (n == unit_n and name == "content.md" and path.name == "assessment.md")}
+        try:
+            node = simmod.parse_expression(block.condition)
+        except simmod.ExpressionError as exc:
+            report.error(f"{path.name}:{block.line}: {exc}")
+            continue
+        for name in sorted(simmod.names(node) - earlier):
+            report.error(f"{path.name}:{block.line}: " + t("simulation", "if_unknown_simulation", condition=block.condition, name=name))
+    return len(blocks)
+
+
+def opens_with_simulation(sec: Section, simulations: tuple[str, ...]) -> bool:
+    """The first thing of a section, after headings and comments, is a simulation."""
+    text = HTML_COMMENT_RE.sub(" ", "\n".join(sec.lines))
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or stripped == "---":
+            continue
+        m = DIRECTIVE_OPEN_RE.match(stripped)
+        return bool(m and m.group(1) in simulations)
+    return False
+
+
 def verify_unit(course: dict, unit: dict) -> Report:
     report = Report()
     language = coursemod.language(course)
     tokens = coursemod.tokens(course)
     syntax = Syntax.for_tokens(tokens)
-    rules = coursemod.rules(course)["content"]
+    all_rules = coursemod.rules(course)
+    rules = all_rules["content"]
+    decision = all_rules.get("decision_based") or {}
+    decision_based = (course.get("design") or {}).get("approach") == "decision-based"
+    simulations = tuple(rules.get("simulation_directives") or ())
     fmt = lambda n: format_number(n, language)  # noqa: E731
     folder = coursemod.unit_dir(course["_dir"], unit["n"])
     content_path, assessment_path = folder / "content.md", folder / "assessment.md"
@@ -221,19 +322,37 @@ def verify_unit(course: dict, unit: dict) -> Report:
     placeholders: list[Placeholder] = []
     covered: set[str] = set()
     margin = rules.get("word_margin", 0)
+    unit_sims: list[simmod.Simulation] = []
+    practised: set[str] = set()
+    min_total = 0
     for spec in specs:
         sec = by_n.get(spec["n"])
         if sec is None:
+            min_total += spec["min_words"]
             continue
         analyse_section(content_path, sec, rules, syntax, report)
         total_words += sec.words
         placeholders += sec.placeholders
+        unit_sims += sec.simulations
+        for sim in sec.simulations:
+            practised.update(sim.objectives)
         label = f"content.md › {tokens['section']} {spec['n']}"
+        minimum = spec["min_words"]
+        sim_minutes = sum(sim.minutes(decision.get("minutes") or {}) for sim in sec.simulations)
+        if sim_minutes:  # the time of the simulations is part of the hours of the section
+            minimum = coursemod.min_words(max(0.0, float(spec["hours"]) - sim_minutes / 60), all_rules)
+        min_total += minimum
         if sec.title.strip() != spec["title"].strip():
             report.warn(t("verify", "title_differs", label=label, title=sec.title, design=spec["title"]))
-        if sec.words < spec["min_words"]:
-            report.error(t("verify", "words_below_minimum", label=label, words=fmt(sec.words), minimum=fmt(spec["min_words"])))
-        elif sec.words < spec["min_words"] * (1 + margin):
+        if decision_based and spec["kind"] == "content":
+            if not opens_with_simulation(sec, simulations):
+                report.error(t("verify", "section_not_opening_with_simulation", label=label))
+            needed_sims = int(decision.get("min_simulations_per_content_section") or 0)
+            if len(sec.simulations) < needed_sims:
+                report.error(t("verify", "few_simulations", label=label, count=len(sec.simulations), needed=needed_sims))
+        if sec.words < minimum:
+            report.error(t("verify", "words_below_minimum", label=label, words=fmt(sec.words), minimum=fmt(minimum)))
+        elif sec.words < minimum * (1 + margin):
             report.warn(t("verify", "words_below_margin", label=label, words=fmt(sec.words), margin=int(margin * 100)))
         if spec["kind"] == "content":
             tags = [line for line in sec.lines if syntax.objective_tag.match(line)]
@@ -241,7 +360,7 @@ def verify_unit(course: dict, unit: dict) -> Report:
                 report.error(t("verify", "missing_objective_tag", label=label, objective=tokens["objective"]))
             for tag in tags:
                 covered.update(re.findall(r"U\d+\.\d+", tag))
-            interactive = {d for d in sec.directives if d in rules["interactive_directives"]}
+            interactive = {d for d in sec.directives if d in rules["interactive_directives"] or d in simulations}
             needed = max(rules["min_interactive_per_content_section"], math.ceil(spec["hours"] * rules["interactive_per_hour"]))
             if len(interactive) < needed:
                 report.error(t("verify", "few_interactive", label=label, count=len(interactive), needed=needed))
@@ -250,6 +369,8 @@ def verify_unit(course: dict, unit: dict) -> Report:
         for obj in unit.get("objectives") or []:
             if obj["id"] not in covered:
                 report.error(t("verify", "objective_not_tagged", id=obj["id"]))
+            if decision_based and obj["id"] not in practised:
+                report.error(t("verify", "objective_not_practised", id=obj["id"]))
 
     allowed = ", ".join(tokens["media_types"][i] for i in rules["placeholder_types"] if i in tokens["media_types"])
     for ph in placeholders:
@@ -268,6 +389,8 @@ def verify_unit(course: dict, unit: dict) -> Report:
 
     quiet = list(parse_directives(Path("content.md"), text.splitlines(), rules, Report()))
     content_questions = check_questions(content_path, quiet, rules, syntax, report)
+    sims = course_simulations(course, rules)
+    adaptive = check_adaptive(content_path, text.splitlines(), unit["n"], sims, report)
 
     questions = 0
     if assessment_path.exists():
@@ -275,6 +398,8 @@ def verify_unit(course: dict, unit: dict) -> Report:
         check_pictographs(assessment_path, a_text, rules["allowed_symbols"], report)
         directives = list(parse_directives(assessment_path, a_text.splitlines(), rules, report))
         questions = check_questions(assessment_path, directives, rules, syntax, report)
+        unit_sims += parse_simulations(assessment_path, directives, rules, report)
+        adaptive += check_adaptive(assessment_path, a_text.splitlines(), unit["n"], sims, report)
         quizzes = [a for a in (unit.get("activities") or {}).get("assessment", []) if a.get("instrument") == "cuestionario"]
         quiz_objectives = {o for a in quizzes for o in a.get("objectives") or []}
         expected_q = rules["questions_per_objective"] * len(quiz_objectives)
@@ -284,6 +409,15 @@ def verify_unit(course: dict, unit: dict) -> Report:
             )
     else:
         report.error(t("verify", "file_missing", path=assessment_path.name))
+
+    places = {}
+    for n, name, line, sid, _ in sims:
+        places.setdefault(sid, []).append(f"{t('verify', 'unit_word')} {n} {name}:{line}")
+    for sid in sorted({sim.id for sim in unit_sims if sim.id}):
+        if len(places.get(sid, [])) > 1:
+            report.error(t("verify", "duplicate_simulation", id=sid, places=", ".join(places[sid])))
+    if unit_sims or adaptive:
+        report.warn(t("verify", "simulations_not_assembled"))
 
     backend = coursemod.backend(course) if course.get("_project") else None
     checks = list(BACKEND_CHECKS)
@@ -301,11 +435,12 @@ def verify_unit(course: dict, unit: dict) -> Report:
 
     report.summary = {
         "words": total_words,
-        "min_words": sum(s["min_words"] for s in specs),
+        "min_words": min_total,
         "placeholders": len(placeholders),
         "placeholder_types": len(kinds),
         "formative_questions": content_questions,
         "bank_questions": questions,
+        "simulations": len(unit_sims),
     }
     return report
 

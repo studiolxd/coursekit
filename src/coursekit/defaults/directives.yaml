@@ -7,6 +7,8 @@
 #   interactive  counts towards the interactive minimum of a content section
 #   question     practice / assessment question (needs the objective key of the course language, e.g. `objective:`)
 #   static       highlighted text, does not count as interactive
+#   simulation   decision-based simulation: its body is YAML (coursekit/simulation.py); counts as interactive. creator takes it
+#                as an EMBED built from the directive
 # Bricks that are not directives are listed in `not_directives` (plain Markdown, multimedia
 # placeholders, or deliberately unused). Every creator brick must be in one of the two lists:
 # `coursekit directives check` reports the ones that are not (/sync-directives updates the file).
@@ -40,6 +42,9 @@ directives:
   pasapalabra:        {brick: PASAPALABRA,        role: interactive, use: "Word wheel with one clue per letter; broad review of a topic."}
   memory:             {brick: MEMORY,             role: interactive, use: "Memory pairs; recall and association."}
   trivial:            {brick: TRIVIAL,            role: interactive, use: "Trivia by category; gamified review."}
+  # simulation (decision-based courses; the body is YAML)
+  scenario:           {brick: EMBED,              role: simulation, use: "Situation where the learner decides: scenes, choices or areas of the scene to click, state, delayed consequences, endings and debriefing."}
+  conversation:       {brick: EMBED,              role: simulation, use: "Conversation with a character who reacts to what the learner answers (mood, expression, voice)."}
   # static text
   note:               {brick: NOTE,               role: static, use: "Note, tip or warning set apart from the main text."}
   highlight:          {brick: HIGHLIGHT,          role: static, use: "Highlight a key idea."}
@@ -75,5 +80,5 @@ component_equivalents:
   checklist: multi-select (as a self-assessment)
   tooltips: note, or a glossary in an accordion
   modal: accordion
-  branching-scenario: "dialog (complex branches: a placeholder of type simulation)"
+  branching-scenario: "scenario (or dialog for a scripted conversation without decisions)"
   simulated-terminal: placeholder of type terminal_demo (it is produced as EMBED)

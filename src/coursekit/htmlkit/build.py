@@ -49,7 +49,8 @@ def check_unit(course: dict, unit: dict) -> list[str]:
     """For `coursekit verify` with the html backend: the unit converts to a plan and every brick can be rendered."""
     plan, errors, _ = assemblemod.build_plan(course, unit)
     problems = list(errors)
-    problems += [t("htmlkit", "unsupported", brick=item) for item in render.unsupported_bricks(plan)]
+    pending = tuple(f": {name}" for name in assemblemod.PENDING_BRICKS)  # verify warns about them; the build refuses them
+    problems += [t("htmlkit", "unsupported", brick=item) for item in render.unsupported_bricks(plan) if not item.endswith(pending)]
     return problems
 
 

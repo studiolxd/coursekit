@@ -36,7 +36,9 @@ itself. The instructions that coursekit generates for course projects live in
   and the keys and words of the directives (`question:`, `answer: true`...) have an English **id** in the
   code, the configuration and the manifest (`image`, `infographic`...) and the word each language writes in
   `media_types`, `directive_keys` and `directive_words` of its `lang/<code>.yaml`: a new type or key is added to
-  every language file (`tests/test_content_words.py` checks it). The defaults and their texts are in English.
+  every language file (`tests/test_content_words.py` checks it). The defaults and their texts are in English. The exception
+  are the simulations (`:::scenario`, `:::conversation`, `coursekit/simulation.py`): their body is YAML with a fixed schema
+  in English and conditions in code syntax, the same in every language; only their texts are in the course language.
 
 ## Working rules
 

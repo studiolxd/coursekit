@@ -72,6 +72,93 @@ Internal structure (anything else fails at assembly):
 
 A plain blockquote (`> text`) becomes a highlight.
 
+## 2.1 Simulations (`scenario`, `conversation`)
+
+Decision-based courses (`course.yaml › design.approach: decision-based`) open every content section with a simulation; any
+course may use them. The body is **YAML with a fixed schema in English**; only the texts are in {{language_name}}. It is not
+counted as words: its time (`coursekit config rules`, `decision_based.minutes`) is taken from the hours of the section.
+
+```markdown
+:::scenario
+id: call
+title: The support call
+skin: phone
+objective: [U1.1, U1.2]
+scored: true
+state: {risk: 0, trust: 2, called: false}
+scenes:
+  begin:
+    background: Marta's desk at ACME
+    characters: [{name: Technician, expression: hurried}]
+    text: |
+      It is 9:10 and your phone rings. Someone from support needs your password
+      "to migrate your mailbox before 10".
+    checkpoint: true
+    choices:
+      - {text: I give it to him, goto: leak, effects: {risk: 3}, score: -2}
+      - {text: I ask for his extension and call him back, goto: safe, set: {called: true}, score: 2}
+      - {text: I check with my manager first, goto: safe, if: "trust >= 2 && !called", score: 1}
+    hotspots:
+      - {label: Sticky note on the monitor, area: [62, 30, 8, 6], goto: note, effects: {risk: 1}}
+  note:
+    text: Your password is written on the sticky note.
+    next: [{if: "risk >= 1", goto: leak}, {goto: safe}]
+  safe:
+    text: The "technician" hangs up.
+    ending: good
+    debriefing: Checking through another channel breaks the trick.
+  leak:
+    text: Three days later your account sends 400 emails to customers.
+    variants: [{if: "risk >= 4", text: "And the sticky note was still on the monitor."}]
+    ending: bad
+    debriefing: Urgency is the usual lever of social engineering.
+:::
+```
+
+| Key | Value |
+|---|---|
+| `id` | unique in the course: lower case, digits, `-`, `_`; the content reads its state as `id.variable` |
+| `title` | title shown to the learner |
+| `skin` | optional: `mail-desktop`, `mail-web`, `chat-workspace`, `messenger`, `phone`, `browser` |
+| `character` | `conversation` only, required: the person the learner talks to |
+| `objective` | `U1.2` or a list: the objectives it practises (every objective of the unit, in decision-based courses) |
+| `scored`, `weight` | counts for the grade (default `false`), and its weight among the scored ones (default 1) |
+| `state` | variables and their initial value (numbers, `true`, `false`) |
+| `start` | first scene (default: the first one) |
+| `scenes.<id>` | `text` (required), `background`, `layers` (`image`, `area`, `if`), `characters` (`name`, `expression`), `variants` (`if`, `text`: extra text when the condition holds), `checkpoint`, and **one** way out: `choices`, `hotspots`, `next` or `ending` |
+| choice / hotspot | `text` (choice) or `label` + `area` `[x, y]` or `[x, y, w, h]` in % (hotspot); `goto`; optional `if`, `effects` (adds to variables), `set` (gives them a value), `score` (points, `+` or `-`), `feedback` |
+| `next` | moves on without a decision: list of `{if, goto}`, the first that holds |
+| `ending` | `good`, `mixed` or `bad`, with its `debriefing` (required) |
+
+- **Conditions** use code syntax, the same in every language: `risk >= 3 && !called || trust < 2`; numbers, `true`, `false`,
+  `+`, `-`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `!`, `&&`, `||` and parentheses. Quote them in YAML.
+- **Points:** each decision adds or subtracts `score`; the grade of a scored simulation is the points of the path over the
+  maximum reachable, which `coursekit verify` computes. A scored simulation needs some path that earns points.
+- **Consequences:** a decision changes the state; later scenes show it with `variants`, `layers` with `if`, conditional
+  choices and `next`. Make the bad consequence appear later, as in real life, and give paths to recover.
+- **Realism:** every option is something a real person would do; none is obviously right; the feedback explains, it does not
+  preach. The debriefing says what happened, what an expert would have done and why.
+- `background`, `layers.image` and the portraits are titles of media placeholders of the unit (as `{{k_image}}:` in
+  `labelled-graphic`).
+- `coursekit verify` walks every path: unknown scenes, unreachable scenes, dead ends (a state with no option left), endings
+  without debriefing, undeclared variables, ids repeated in the course.
+
+### Adaptive blocks
+
+Content after a simulation may change with what the learner decided:
+
+```markdown
+:::if call.risk >= 3
+You gave your password to the "technician". Let us see which levers he used.
+:::else
+You did not fall for it, but many people do. Let us see why.
+:::
+```
+
+`:::else` is required (it is the version for everyone else and the one creator shows). The condition reads variables of
+simulations that come before (`id.variable`). The branches may hold any content and directives; the words of the
+`:::else` branch count.
+
 ## 3. Question directives (practice activities and tests)
 
 The directives with `role: question`: `single-choice`, `multi-select`, `true-false`, `sorting`,

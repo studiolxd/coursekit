@@ -1,0 +1,81 @@
+# Problems of a simulation (:::scenario, :::conversation) and of the adaptive blocks (:::if), found by `coursekit verify`.
+# Each one comes after "<file>:<line> <kind> '<id>':".
+expr_bad_char: {es: "carácter no válido '{char}' en «{text}»", en: "invalid character '{char}' in «{text}»"}
+expr_empty: {es: "condición vacía", en: "empty condition"}
+expr_unexpected: {es: "'{token}' inesperado en «{text}»", en: "unexpected '{token}' in «{text}»"}
+expr_incomplete: {es: "condición incompleta: «{text}»", en: "incomplete condition: «{text}»"}
+expr_parenthesis: {es: "falta cerrar un paréntesis en «{text}»", en: "a parenthesis is not closed in «{text}»"}
+expr_not_text: {es: "la condición debe ser texto (entre comillas), no {value}", en: "the condition must be text (in quotes), not {value}"}
+not_yaml:
+  es: "el cuerpo no es YAML válido (línea {line}): {problem}"
+  en: "the body is not valid YAML (line {line}): {problem}"
+not_mapping: {es: "el cuerpo debe ser un mapa YAML (id, title, scenes…)", en: "the body must be a YAML mapping (id, title, scenes…)"}
+unknown_key: {es: "clave desconocida '{key}' (válidas: {valid})", en: "unknown key '{key}' (valid: {valid})"}
+bad_id:
+  es: "id '{value}' no válido: minúsculas, números, '-' y '_', empezando por una letra"
+  en: "invalid id '{value}': lower case, digits, '-' and '_', starting with a letter"
+missing: {es: "falta '{key}'", en: "missing '{key}'"}
+bad_skin: {es: "piel desconocida '{value}' (válidas: {valid})", en: "unknown skin '{value}' (valid: {valid})"}
+bad_objective: {es: "objetivo '{value}' no válido (UN.M, p. ej. U1.2)", en: "invalid objective '{value}' (UN.M, e.g. U1.2)"}
+not_bool: {es: "'{key}' debe ser true o false", en: "'{key}' must be true or false"}
+bad_weight: {es: "peso '{value}' no válido: un número mayor que 0", en: "invalid weight '{value}': a number above 0"}
+bad_state: {es: "'state' debe ser un mapa de variables con su valor inicial", en: "'state' must map each variable to its initial value"}
+bad_variable:
+  es: "variable '{name}' no válida: minúsculas, números y '_', empezando por una letra"
+  en: "invalid variable '{name}': lower case, digits and '_', starting with a letter"
+bad_initial: {es: "valor inicial de '{name}' no válido ({value}): un número, true o false", en: "invalid initial value of '{name}' ({value}): a number, true or false"}
+no_scenes: {es: "faltan las escenas ('scenes')", en: "no scenes ('scenes')"}
+bad_start: {es: "la escena inicial '{scene}' no existe", en: "the start scene '{scene}' does not exist"}
+bad_scene_id: {es: "id de escena '{value}' no válido", en: "invalid scene id '{value}'"}
+scene_not_mapping: {es: "la escena '{scene}' debe ser un mapa", en: "scene '{scene}' must be a mapping"}
+bad_condition: {es: "{place}: {problem}", en: "{place}: {problem}"}
+undeclared:
+  es: "{place}: la variable '{name}' no está en 'state'"
+  en: "{place}: variable '{name}' is not in 'state'"
+bad_variant: {es: "{place}: cada variante necesita 'if' y 'text'", en: "{place}: every variant needs 'if' and 'text'"}
+bad_layer: {es: "{place}: cada capa necesita 'image'", en: "{place}: every layer needs 'image'"}
+bad_character: {es: "{place}: cada personaje necesita 'name'", en: "{place}: every character needs 'name'"}
+ending_and_more:
+  es: "la escena '{scene}' es un final: no puede tener 'choices', 'hotspots' ni 'next'"
+  en: "scene '{scene}' is an ending: it cannot have 'choices', 'hotspots' or 'next'"
+no_way_out:
+  es: "la escena '{scene}' no tiene salida: 'choices', 'hotspots', 'next' o 'ending'"
+  en: "scene '{scene}' has no way out: 'choices', 'hotspots', 'next' or 'ending'"
+bad_ending: {es: "final '{value}' de la escena '{scene}' no válido (válidos: {valid})", en: "invalid ending '{value}' in scene '{scene}' (valid: {valid})"}
+ending_without_debriefing: {es: "el final '{scene}' no tiene 'debriefing'", en: "ending '{scene}' has no 'debriefing'"}
+debriefing_without_ending: {es: "la escena '{scene}' tiene 'debriefing' pero no es un final", en: "scene '{scene}' has a 'debriefing' but is not an ending"}
+next_and_decisions:
+  es: "la escena '{scene}' tiene 'next' y además decisiones: o avanza sola o se decide"
+  en: "scene '{scene}' has 'next' and decisions too: it either moves on by itself or asks for a decision"
+bad_next: {es: "{place}: cada paso de 'next' tiene 'goto' y, si acaso, 'if'", en: "{place}: every step of 'next' has 'goto' and, optionally, 'if'"}
+bad_area:
+  es: "{place}: zona no válida: [x, y] o [x, y, ancho, alto], en % de 0 a 100"
+  en: "{place}: invalid area: [x, y] or [x, y, width, height], in % from 0 to 100"
+unknown_scene: {es: "{place}: la escena '{scene}' no existe", en: "{place}: scene '{scene}' does not exist"}
+bad_decision: {es: "{place}: cada decisión debe ser un mapa", en: "{place}: every decision must be a mapping"}
+bad_changes: {es: "{place}: debe ser un mapa de variables", en: "{place}: must map variables to values"}
+bad_change_value: {es: "{place}: valor no válido ({value})", en: "{place}: invalid value ({value})"}
+bad_score: {es: "{place}: 'score' debe ser un número ({value})", en: "{place}: 'score' must be a number ({value})"}
+unreachable: {es: "la escena '{scene}' no se alcanza por ningún camino", en: "scene '{scene}' cannot be reached by any path"}
+dead_end:
+  es: "callejón sin salida en la escena '{scene}': con algún estado no queda ninguna opción"
+  en: "dead end in scene '{scene}': with some state no option is left"
+no_ending: {es: "ningún camino llega a un final", en: "no path reaches an ending"}
+no_points:
+  es: "es evaluable pero ningún camino suma puntos ('score' en las decisiones)"
+  en: "it is scored but no path earns points ('score' on the decisions)"
+too_many_states:
+  es: "simulación '{id}': más de {limit} estados posibles; no se han comprobado todos los caminos"
+  en: "simulation '{id}': more than {limit} possible states; not every path was checked"
+# Adaptive blocks
+nested_if: {es: "':::if' dentro de otro ':::if'", en: "':::if' inside another ':::if'"}
+else_without_if: {es: "':::else' sin ':::if'", en: "':::else' without ':::if'"}
+two_else: {es: "dos ':::else' en el mismo ':::if'", en: "two ':::else' in the same ':::if'"}
+close_without_open: {es: "':::' de cierre sin bloque abierto", en: "closing ':::' with no open block"}
+if_without_else:
+  es: "':::if' sin ':::else': la versión neutra es obligatoria (la ve quien no cumple la condición y el montaje en creator)"
+  en: "':::if' without ':::else': the neutral version is required (for whoever does not meet the condition and for creator)"
+if_not_closed: {es: "':::if' sin cerrar", en: "':::if' not closed"}
+if_unknown_simulation:
+  es: "la condición «{condition}» lee '{name}', que no es la variable de ninguna simulación anterior (id.variable)"
+  en: "condition «{condition}» reads '{name}', which is not a variable of an earlier simulation (id.variable)"
