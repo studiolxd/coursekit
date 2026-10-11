@@ -480,12 +480,12 @@ coursekit reviewed PWD 1 --by "Ana Pérez" --note "Revisada con la formadora del
 Firma el diseño instruccional o una unidad, en nombre de la persona que lo ejecuta. Solo personas: las configuraciones de agente generadas lo deniegan y los comandos de barra solo preparan la firma. Quién: personas.
 
 ```
-coursekit approve [--unit UNIT] [--yes] [--no-commit] [--force] {design,content} code
+coursekit approve [--unit UNIT] [--yes] [--no-commit] [--force] {design,content,style} code
 ```
 
 | Argumento | Valores / por defecto | Significado |
 |---|---|---|
-| `gate` | `design` o `content` | Qué firmar: el diseño instruccional o el contenido de una unidad. |
+| `gate` | `design`, `content` o `style` | Qué firmar: el diseño instruccional, el contenido de una unidad o la lámina de estilo de las imágenes de las simulaciones. |
 | `code` | código o carpeta del curso | Curso. |
 | `--unit UNIT` | número de unidad | Unidad que firmar (obligatorio con `content`; sin él el comando termina con código 2). |
 | `--yes` | indicador | Confirma sin preguntar. Hace falta cuando no hay terminal; desde el chat de un agente, escríbelo con el prefijo `!` para que se ejecute como tú. |
@@ -495,6 +495,8 @@ coursekit approve [--unit UNIT] [--yes] [--no-commit] [--force] {design,content}
 Sin `--yes` necesita una terminal interactiva (si no, código de salida 1) y pregunta `[s/N]` tras mostrar un resumen. Quien firma es la identidad de `.env` (`COURSEKIT_USER_NAME`, `COURSEKIT_USER_EMAIL`), nunca la identidad de git; sin ella el comando termina con código 1 (`coursekit setup --identity`).
 
 `design`: necesita `design/matrix.json`; se niega si `design/validation.json` contiene hallazgos de severidad `error`. Ejecuta [`coursekit sync`](#coursekit-sync), añade la aprobación a `course.yaml › approvals` (firmante, fecha y hora, id de la matriz, SHA-256 de `matrix.json`, nombre del Excel), pone el curso en `design_approved` y hace commit de la carpeta del curso como `Design approval <CODE>`. Cualquier cambio posterior de `matrix.json` invalida la firma. En un curso basado en decisiones necesita además la biblia narrativa `design/story.md` con una cabecera válida, registra su SHA-256 (`story_sha256`) y un cambio posterior de ella también invalida la firma (ver [Biblia narrativa](06-content.md#biblia-narrativa)).
+
+`style`: necesita las muestras de la lámina de estilo en `courses/<CODE>/media/style/` (PNG, JPG, WebP o SVG) y un `media › visual` válido. Registra el estilo firmado (el configurado, o `visual.fallback` cuando no hay generador de imágenes) y el SHA-256 de cada muestra, y hace commit de la carpeta del curso como `Style approval <CODE>`. Mientras no está firmada, `coursekit media set … --status produced` (o `uploaded`) rechaza las imágenes de las simulaciones salvo con `--force`; se vuelve a firmar cuando cambia el estilo. Ver [Imágenes de las simulaciones](07-media.md#imágenes-de-las-simulaciones).
 
 `content`: necesita el diseño aprobado y sin cambios, la unidad pasando `verify` sin errores, el estado de la unidad en `reviewed` (o `approved`) y el informe de la revisión con IA, salvo que una persona haya registrado su propia revisión (`coursekit reviewed --by`) o el proyecto omita la revisión con IA (`rules › review › ai: skip`, donde basta una unidad `verified`). Se rechaza si el contenido cambió después de la revisión con IA: la referencia es la huella de cada apartado y actividad que guardó `coursekit reviewed`, y el mensaje nombra las partes que cambiaron (revísalas de nuevo con `coursekit review`, o firma igualmente con `--force`). Registra el SHA-256 de `content.md` y `assessment.md`, mueve la unidad a `approved` y hace commit de `course.yaml`, la carpeta de la unidad y el informe de revisión como `Content approval <CODE> U<N>`.
 

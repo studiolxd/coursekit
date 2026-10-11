@@ -16,6 +16,8 @@ import re
 import shutil
 from pathlib import Path
 
+import yaml
+
 from coursekit import config as configmod
 from coursekit import course as coursemod
 from coursekit import lang
@@ -142,6 +144,71 @@ def scan_characters(course: dict) -> list[dict]:
     return list(found.values())
 
 
+STYLES = ("flat", "pixel-art", "3d", "isometric", "illustration", "photo")
+SIMULATION_KINDS = ("background", "layer", "portrait")  # the images of the simulations (their `kind` in the manifest)
+
+
+def visual(course: dict) -> dict:
+    """The visual style in force for a course (`media › visual`), checked."""
+    value = dict(config(course=course).get("visual") or {})
+    for key in ("style", "fallback"):
+        if value.get(key) not in STYLES:
+            raise MediaError(t("media", "bad_style", key=key, value=value.get(key), valid=", ".join(STYLES)))
+    return value
+
+
+def scan_simulations(course: dict) -> list[dict]:
+    """An image for every background, layer and portrait (with each expression) of the simulations of the course, one per id
+    in the whole course; the first simulation that uses it gives the unit and the section. A portrait carries the `look` of
+    its character in the story bible."""
+    from coursekit import simulation as simmod
+    from coursekit import story as storymod
+    from coursekit.verify import Report, parse_directives
+
+    rules = coursemod.rules(course)["content"]
+    names = tuple(rules.get("simulation_directives") or ())
+    bible, _ = storymod.load(course) if (course["_dir"] / storymod.FILE).exists() else (None, [])
+    looks = {str(p.get("name", "")).strip().casefold(): str(p.get("look") or "") for p in (bible or {}).get("characters") or []
+             if isinstance(p, dict)}
+    tk = coursemod.tokens(course)
+    section_re = re.compile(rf"^## {re.escape(tk['section'])} (\d+)\s*[—-]")
+    found: dict[str, dict] = {}
+    for unit in course.get("units") or []:
+        folder = coursemod.unit_dir(course["_dir"], unit["n"])
+        for name in ("content.md", "assessment.md"):
+            path = folder / name
+            if not path.exists():
+                continue
+            lines = path.read_text(encoding="utf-8").splitlines()
+            for line_no, directive, body in parse_directives(path, lines, rules, Report()):
+                if directive not in names:
+                    continue
+                section = next((int(m.group(1)) for line in reversed(lines[:line_no]) if (m := section_re.match(line))), 0)
+                try:
+                    data = yaml.safe_load("\n".join(body))
+                except yaml.YAMLError:
+                    continue
+                if not isinstance(data, dict):
+                    continue
+                for ref in simmod.media_refs(data):
+                    entry = {"id": ref["id"], "unit": unit["n"], "section": section, "type": "image", "kind": ref["kind"],
+                             "simulation": str(data.get("id") or "")}
+                    if ref["kind"] == "portrait":
+                        look = looks.get(ref["character"].casefold(), "")
+                        entry.update(character=ref["character"], expression=ref["expression"] or None,
+                                     title=t("media", "portrait_title", name=ref["character"],
+                                             expression=f" ({ref['expression']})" if ref["expression"] else ""),
+                                     description=t("media", "portrait_description", name=ref["character"], look=look or "-",
+                                                   expression=ref["expression"] or t("media", "expression_neutral")),
+                                     specs=t("media", "portrait_specs"))
+                    else:
+                        entry.update(title=ref["description"],
+                                     description=t("media", f"{ref['kind']}_description", text=ref["description"]),
+                                     specs=t("media", f"{ref['kind']}_specs"))
+                    found.setdefault(ref["id"], entry)
+    return list(found.values())
+
+
 def load_manifest(course_dir):
     ry = roundtrip_yaml()
     path = course_dir / "media" / "manifest.yaml"
@@ -157,11 +224,13 @@ def extract(course: dict) -> dict[str, int]:
     ry, path, data = load_manifest(course["_dir"])
     existing = {a["id"]: a for a in data["assets"]}
     found = scan(course) + scan_characters(course)
+    known = {a["id"] for a in found}
+    found += [a for a in scan_simulations(course) if a["id"] not in known]  # a dialogue gives the base portrait first
     merged = []
     for asset in found:
         old = existing.pop(asset["id"], None)
         if old is not None:
-            changed = any(old.get(k) != asset.get(k) for k in ("type", "title", "description", "specs"))
+            changed = any(old.get(k) != asset.get(k) for k in ("type", "title", "description", "specs", "kind"))
             for k, v in asset.items():
                 old[k] = v
             if changed and old.get("status") not in (None, "pending"):
@@ -201,6 +270,18 @@ def missing_downloads(asset: dict) -> list[str]:
     return []
 
 
+def style_approval(course: dict) -> dict | None:
+    """The last sign-off of the style sheet of the course (`coursekit approve style`), while the style has not changed since."""
+    approvals = [a for a in course.get("approvals") or [] if a.get("gate") == "style"]
+    if not approvals:
+        return None
+    try:
+        current = visual(course)["style"]
+    except MediaError:
+        return None
+    return approvals[-1] if approvals[-1].get("style") in (current, visual(course)["fallback"]) else None
+
+
 def plan(course: dict) -> tuple[list[str], list[str]]:
     """(warnings, lines): the production options of every pending asset."""
     cfg = config(course=course)
@@ -217,6 +298,16 @@ def plan(course: dict) -> tuple[list[str], list[str]]:
             warnings += [t("media", "theme_changed", asset=a["id"]) for a in uses_theme
                          if a.get("status") in ("produced", "uploaded") and a.get("theme") and a["theme"] != current]
     lines = []
+    simulation_assets = [a for a in data["assets"] if a.get("kind") in SIMULATION_KINDS and a.get("status") != "orphaned"]
+    if simulation_assets:
+        style = visual(course)
+        generator = any(requirement_met(o.get("needs"), root) is not False for o in cfg["types"].get("image", [])
+                        if o.get("id") not in ("agent-svg", "creator-stock"))
+        lines.append(t("media", "style_line", style=style["style"] if generator else style["fallback"]))
+        if not generator:
+            warnings.append(t("media", "no_generator", fallback=style["fallback"]))
+        if not style_approval(course):
+            warnings.append(t("media", "style_not_approved", code=course["code"]))
     for a in (a for a in data["assets"] if a.get("status") in ("pending", "scripted")):
         chain = options_for(a["type"], cfg, root)
         lines.append(f"{a['id']} [{a['type']}] {a.get('title', '')}")
@@ -310,6 +401,9 @@ def set_asset(course: dict, asset_id: str, **values) -> str:
     statuses = cfg["statuses"]
     if values.get("status") and values["status"] not in statuses:
         raise MediaError(t("media", "bad_status", statuses=statuses))
+    if values.get("status") in ("produced", "uploaded") and asset.get("kind") in SIMULATION_KINDS and not values.get("force"):
+        if not style_approval(course):
+            raise MediaError(t("media", "style_not_approved", code=course["code"]))
     if values.get("status") in ("produced", "uploaded") and asset["type"] in (cfg.get("uses_theme") or []):
         found = thememod.status(course["_project"], course)
         if found.state != "derived" and not values.get("force"):

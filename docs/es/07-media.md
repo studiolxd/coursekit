@@ -50,6 +50,21 @@ Los ficheros de la multimedia de un curso están en `courses/PWD/media/`: `manif
 | `downloads` | Los ficheros descargables: `file`, `title`, `asset_path` y `size` de cada uno |
 | `theme` | La huella de los tokens del tema con los que se hizo el recurso ([El control de los recursos](#el-control-de-los-recursos)) |
 
+### Imágenes de las simulaciones
+
+`extract` añade también las imágenes de las simulaciones (`:::scenario`, `:::conversation`), una por id en todo el curso,
+con un `kind`:
+
+| `kind` | Id | Qué es |
+|---|---|---|
+| `background` | `BG-<descripción>` | El fondo de una escena (`background` de la escena), 1920x1080, sin texto dentro |
+| `layer` | `LAYER-<descripción>` | Un objeto sobre un fondo (`layers.image`), PNG transparente |
+| `portrait` | `CHAR-<NOMBRE>` y `CHAR-<NOMBRE>-<EXPRESIÓN>` | Un personaje de la biblia narrativa, base y con cada expresión que usan las simulaciones, transparente, con el `look` de la biblia en su descripción |
+
+Se producen en el estilo visual del curso (`media › visual › style`, ver [Configuración](04-configuration.md#media-opciones-de-producción)), que imprime `coursekit media plan`. Sin generador de imágenes, `plan` avisa y el estilo es `visual.fallback` (`flat`), dibujado en SVG por el rol de **ilustración**: `coursekit run produce-media <CODE> --role illustration`.
+
+**Lámina de estilo.** Antes, el agente de multimedia produce una muestra en `courses/<CODE>/media/style/` (un fondo, un personaje en varias expresiones y algunos objetos) y una persona la firma con [`coursekit approve style <CODE>`](03-commands.md#coursekit-approve). Hasta entonces `coursekit media set … --status produced` rechaza esas imágenes (salvo con `--force`) y `plan` avisa. En modo handoff el agente de multimedia produce la muestra y coursekit la firma como Coursekit Handoff. El montaje toma cada imagen por su id; mientras no está producida, la simulación funciona sin ella (los retratos se sustituyen por iniciales).
+
 ### Retratos de los personajes de un diálogo
 
 `extract` añade además un recurso `image`, con id `CHAR-<NOMBRE>` (`CHAR-DANIEL`), por cada personaje que habla en una directiva `:::dialog`: un personaje tiene un solo retrato en todo el curso, hable donde hable. El agente de multimedia lo produce como cualquier otra imagen (una ilustración plana dibujada como SVG y exportada a PNG, una imagen generada con un proveedor o una fotografía con licencia de una persona), cuadrada, como un busto sobre un fondo liso de un color de la paleta del theme, y nunca deja a un personaje con una inicial. Una vez subido, el montaje lo pone en el diálogo como avatar de ese personaje, con el texto alternativo del recurso; hasta entonces avisa `dialog: el retrato de 'Daniel' aún no está subido`.

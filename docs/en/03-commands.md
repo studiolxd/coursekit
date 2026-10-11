@@ -480,12 +480,12 @@ coursekit reviewed PWD 1 --by "Ana Pérez" --note "Reviewed with the client's tr
 Signs off the instructional design or one unit, in the name of the person who runs it. People only: the generated agent configurations deny it, and the slash commands only prepare the sign-off. Who: people.
 
 ```
-coursekit approve [--unit UNIT] [--yes] [--no-commit] [--force] {design,content} code
+coursekit approve [--unit UNIT] [--yes] [--no-commit] [--force] {design,content,style} code
 ```
 
 | Argument | Values / default | Meaning |
 |---|---|---|
-| `gate` | `design` or `content` | What to sign: the instructional design, or the content of one unit. |
+| `gate` | `design`, `content` or `style` | What to sign: the instructional design, the content of one unit, or the style sheet of the images of the simulations. |
 | `code` | course code or folder | Course. |
 | `--unit UNIT` | unit number | Unit to sign (required with `content`; without it the command exits with code 2). |
 | `--yes` | flag | Confirm without a prompt. Needed when there is no terminal; from an agent chat, type it with the `!` prefix so it runs as you. |
@@ -495,6 +495,8 @@ coursekit approve [--unit UNIT] [--yes] [--no-commit] [--force] {design,content}
 Without `--yes` it needs an interactive terminal (otherwise exit code 1) and asks `[y/N]` after showing a summary. The signer is the identity of `.env` (`COURSEKIT_USER_NAME`, `COURSEKIT_USER_EMAIL`), never the git identity; without it the command exits with code 1 (`coursekit setup --identity`).
 
 `design`: needs `design/matrix.json`; refuses when `design/validation.json` holds findings of severity `error`. Runs [`coursekit sync`](#coursekit-sync), appends the approval to `course.yaml › approvals` (signer, timestamp, matrix id, SHA-256 of `matrix.json`, Excel name), sets the course to `design_approved`, and commits the course folder as `Design approval <CODE>`. Any later change of `matrix.json` invalidates the signature. In a decision-based course it also needs the story bible `design/story.md` with a valid front matter, records its SHA-256 (`story_sha256`), and a later change of it invalidates the signature too (see [Story bible](06-content.md#story-bible)).
+
+`style`: needs the samples of the style sheet in `courses/<CODE>/media/style/` (PNG, JPG, WebP or SVG) and a valid `media › visual`. Records the style signed (the configured one, or `visual.fallback` when there is no image generator) and the SHA-256 of every sample, and commits the course folder as `Style approval <CODE>`. Until it is signed, `coursekit media set … --status produced` (or `uploaded`) refuses the images of the simulations unless `--force` is given; it is signed again when the style changes. See [Images of the simulations](07-media.md#images-of-the-simulations).
 
 `content`: needs the design approved and unchanged, the unit passing `verify` without errors, unit status `reviewed` (or `approved`) and the AI review report, unless a person recorded their own review (`coursekit reviewed --by`) or the project skips the AI review (`rules › review › ai: skip`, where a `verified` unit is enough). It is refused when the content changed after the AI review: the baseline is the fingerprint of each section and activity stored by `coursekit reviewed`, and the message names the parts that changed (review them again with `coursekit review`, or sign anyway with `--force`). Records the SHA-256 of `content.md` and `assessment.md`, moves the unit to `approved`, and commits `course.yaml`, the unit folder and the review report as `Content approval <CODE> U<N>`.
 

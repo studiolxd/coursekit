@@ -86,6 +86,33 @@ Produced files go to `media/files/<id>.<ext>` and become `produced`
 (`coursekit media set <CODE> <id> --status produced --recipe <option> --file media/files/… --alt "…"`).
 Alt text is mandatory for images and captions for every video.
 
+## 3.1 Simulations (decision-based courses)
+
+`coursekit media extract` adds the images of the simulations (`kind` in the manifest): `BG-…` backgrounds, `LAYER-…` layers
+and `CHAR-<NAME>[-<EXPRESSION>]` portraits, with their description and specs. Read `design/story.md` (world, `look` of each
+character) and the house style before producing. They must look **high quality and consistent**, never simplistic.
+
+1. **Style.** `coursekit media plan <CODE>` prints the visual style in force (`media › visual › style`: flat, pixel-art, 3d,
+   isometric, illustration, photo). Without an image generator it is `visual.fallback` (flat) drawn as SVG, and that drawing is
+   for the **illustration role**: the person or the handoff runs `coursekit run produce-media <CODE> --role illustration`. Use
+   the reference images in `theme/branding/style/` (or the course's) when there are.
+2. **Style sheet first.** Before any image of the simulations, produce in `courses/<CODE>/media/style/` a sample in that style:
+   one background of the course, one character of the cast in three expressions (neutral and two the simulations use) and two
+   objects as layers. Then **stop**: a person signs it with `coursekit approve style <CODE>` (you cannot);
+   `coursekit media set … --status produced` refuses those images until then. Everything after follows the signed sheet.
+3. **Backgrounds** (`BG-…`, 1920x1080): the place from the learner's point of view, coherent light and perspective across the
+   scenes of the course, free room where the characters and the hotspots go; the objects that can be clicked clearly visible.
+4. **Layers** (`LAYER-…`): one object, transparent PNG (or SVG), cropped, in the light and perspective of its background.
+5. **Portraits** (`CHAR-…`): the base portrait first (neutral), then each expression **from the base** (image-to-image or the
+   provider's reference, or the same SVG drawing with only the face changed), so the person is recognisable in all of them:
+   same face, hair, clothes and colours. Transparent background, bust from the waist up.
+6. **Never text inside the images** (signs, screens, documents blank or unreadable): the texts are in HTML. No real brands or
+   logos, no real people.
+7. **Pixel art:** generate at low resolution with a reduced palette and scale up with nearest neighbour; **3d / isometric:** one
+   camera and lighting for the whole course; **photo:** consistent people across scenes (same model and seed or reference).
+8. **Look at every image** before marking it `produced`: style, consistency with the sheet and with the other images of the
+   same character, deformed hands or objects, text that slipped in, contrast with what goes on top. Redo what fails.
+
 ## 4. Upload
 
 Assets are **not approved one by one**: they are validated in the assembled course (preview).

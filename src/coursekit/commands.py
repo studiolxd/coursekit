@@ -241,6 +241,8 @@ def cmd_approve(args: argparse.Namespace) -> int:
     confirm = _confirm(args.yes)
     if args.gate == "design":
         print(approve.approve_design(course, confirm, do_commit=not args.no_commit))
+    elif args.gate == "style":
+        print(approve.approve_style(course, confirm, do_commit=not args.no_commit))
     else:
         if args.unit is None:
             print(t("commands", "approve_needs_unit"), file=sys.stderr)
@@ -764,7 +766,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.set_defaults(func=cmd_reviewed)
 
     p = sub.add_parser("approve", help=t("commands", "help_approve"))
-    p.add_argument("gate", choices=("design", "content"))
+    p.add_argument("gate", choices=("design", "content", "style"))
     p.add_argument("code")
     p.add_argument("--unit", type=int, help=t("commands", "help_approve_unit"))
     p.add_argument("--yes", action="store_true", help=t("commands", "help_approve_yes"))

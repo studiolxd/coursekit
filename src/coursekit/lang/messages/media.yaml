@@ -52,3 +52,34 @@ character_description:
 character_specs:
   es: "512x512 px, cuadrada, busto centrado con fondo liso de un color de la paleta del theme; el mismo estilo para todos los personajes del curso (ilustración o fotografía de una persona, nunca iniciales); texto alternativo obligatorio."
   en: "512x512 px, square, a centred bust on a plain background in a colour of the theme palette; the same style for every character of the course (an illustration or a photograph of a person, never initials); alt text is mandatory."
+# Images of the simulations (coursekit media extract) and their style
+bad_style:
+  es: "media › visual › {key} vale '{value}': usa uno de {valid}"
+  en: "media › visual › {key} is '{value}': use one of {valid}"
+portrait_title: {es: "Retrato de {name}{expression}", en: "Portrait of {name}{expression}"}
+portrait_description:
+  es: "{name}, personaje de la biblia narrativa (aspecto: {look}), con expresión {expression}. El mismo personaje en todas sus expresiones: parte de su retrato base."
+  en: "{name}, a character of the story bible (look: {look}), with a {expression} expression. The same person in every expression: start from their base portrait."
+expression_neutral: {es: neutral, en: neutral}
+portrait_specs:
+  es: "PNG 1024x1024 px con fondo transparente, busto de cintura para arriba mirando a cámara, en el estilo visual del curso; sin texto dentro de la imagen; texto alternativo obligatorio."
+  en: "PNG 1024x1024 px with a transparent background, a bust from the waist up looking at the camera, in the visual style of the course; no text inside the image; alt text is mandatory."
+background_description:
+  es: "Fondo de una escena de simulación: {text}. Lo que se ve desde el punto de vista de quien aprende, con sitio libre para los personajes."
+  en: "Background of a simulation scene: {text}. What the learner sees from their point of view, with free room for the characters."
+background_specs:
+  es: "1920x1080 px (16:9), en el estilo visual del curso; sin texto dentro de la imagen (carteles y pantallas, en blanco o ilegibles); los objetos que se pueden pulsar, bien visibles; texto alternativo obligatorio."
+  en: "1920x1080 px (16:9), in the visual style of the course; no text inside the image (signs and screens blank or unreadable); the objects that can be clicked, clearly visible; alt text is mandatory."
+layer_description:
+  es: "Capa de una escena de simulación: {text}. Un objeto suelto que se coloca sobre el fondo y puede aparecer o desaparecer."
+  en: "Layer of a simulation scene: {text}. A single object placed on top of the background that can appear or disappear."
+layer_specs:
+  es: "PNG con fondo transparente, recortado al objeto, en el estilo y la luz del fondo; sin texto dentro de la imagen; texto alternativo obligatorio."
+  en: "PNG with a transparent background, cropped to the object, in the style and light of the background; no text inside the image; alt text is mandatory."
+style_line: {es: "estilo visual de las simulaciones: {style}", en: "visual style of the simulations: {style}"}
+no_generator:
+  es: "no hay generador de imágenes: escenas, capas y retratos se dibujan en SVG en estilo {fallback} (rol illustration: coursekit run produce-media CODE --role illustration)"
+  en: "no image generator: scenes, layers and portraits are drawn as SVG in the {fallback} style (illustration role: coursekit run produce-media CODE --role illustration)"
+style_not_approved:
+  es: "la lámina de estilo de {code} no está firmada: produce antes las muestras en media/style/ y que una persona firme con coursekit approve style {code}"
+  en: "the style sheet of {code} is not signed: produce the samples in media/style/ first and have a person sign with coursekit approve style {code}"

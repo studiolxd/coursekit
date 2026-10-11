@@ -131,6 +131,42 @@ def approve_design(course: dict, confirm: Confirm, do_commit: bool = True, who: 
     return t("approve", "design_approved", who=who)
 
 
+STYLE_FILES = (".png", ".jpg", ".jpeg", ".webp", ".svg")
+
+
+def approve_style(course: dict, confirm: Confirm, do_commit: bool = True, who: identity.Identity | None = None,
+                  via: str | None = None) -> str:
+    """The sign-off of the style sheet: the samples in `media/style/` (a background, a character in several expressions, some
+    objects) in the visual style of the course. The images of the simulations are produced after it, with that look."""
+    from coursekit import media as mediamod
+
+    folder = course["_dir"] / "media" / "style"
+    files = sorted(p for p in folder.glob("*") if p.suffix.lower() in STYLE_FILES) if folder.is_dir() else []
+    if not files:
+        raise ApprovalError(t("approve", "style_no_samples", path=f"{course['code']}/media/style/"))
+    try:
+        style = mediamod.visual(course)
+    except mediamod.MediaError as exc:
+        raise ApprovalError(str(exc)) from exc
+    cfg = mediamod.config(course=course)
+    root = course["_project"].root if course.get("_project") else None
+    generator = any(mediamod.requirement_met(o.get("needs"), root) is not False for o in cfg["types"].get("image", [])
+                    if o.get("id") not in ("agent-svg", "creator-stock"))
+    signed_style = style["style"] if generator else style["fallback"]
+    who = who or signer()
+    summary = t("approve", "style_summary", code=course["code"], style=signed_style, files=", ".join(p.name for p in files))
+    if not confirm(t("approve", "style_confirm", summary=summary, who=who)):
+        raise ApprovalError(t("approve", "cancelled"))
+    entry = {"gate": "style", "by": str(who), "at": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
+             "style": signed_style, "files": [{"name": p.name, "sha256": sha256_file(p)} for p in files]}
+    if via:
+        entry["via"] = via
+    _record(course["_dir"], entry, None, "Style sheet approved")
+    if do_commit and not commit([course["_dir"]], f"Style approval {course['code']}", who, course["_dir"]):
+        return t("approve", "style_approved_uncommitted", who=who, style=signed_style)
+    return t("approve", "style_approved", who=who, style=signed_style)
+
+
 def approve_content(course: dict, n: int, confirm: Confirm, do_commit: bool = True, force: bool = False,
                     who: identity.Identity | None = None, via: str | None = None) -> str:
     problem = coursemod.approval_problem(course)

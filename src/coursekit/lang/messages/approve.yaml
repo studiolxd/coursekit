@@ -18,6 +18,19 @@ design_summary_story:
 story_problems:
   es: "la biblia narrativa no está lista:\n  {problems}"
   en: "the story bible is not ready:\n  {problems}"
+style_no_samples:
+  es: "no hay muestras de estilo en {path}: el agente de multimedia las produce antes (un fondo, un personaje en varias expresiones y algunos objetos)"
+  en: "there are no style samples in {path}: the media agent produces them first (a background, a character in several expressions and some objects)"
+style_summary:
+  es: "{code} — lámina de estilo\n  estilo: {style}\n  muestras: {files}"
+  en: "{code} — style sheet\n  style: {style}\n  samples: {files}"
+style_confirm:
+  es: "{summary}\n¿Apruebas este estilo para las imágenes de las simulaciones? Firmas como {who}"
+  en: "{summary}\nApprove this style for the images of the simulations? You sign as {who}"
+style_approved: {es: "lámina de estilo ({style}) aprobada por {who}", en: "style sheet ({style}) approved by {who}"}
+style_approved_uncommitted:
+  es: "lámina de estilo ({style}) aprobada por {who} (registrado, sin commit)"
+  en: "style sheet ({style}) approved by {who} (recorded, not committed)"
 design_confirm:
   es: "{summary}\n¿Apruebas este diseño instruccional? Firmas como {who}"
   en: "{summary}\nApprove this instructional design? You sign as {who}"

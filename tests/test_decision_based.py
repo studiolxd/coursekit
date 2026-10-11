@@ -412,3 +412,52 @@ def test_screens_of_the_skins_are_checked():
     assert any("unknown key 'screen.channel'" in e for e in errors(["skin: messenger", "screen: {channel: general}"], choice))
     assert any("invalid state 'ringing'" in e for e in errors(["skin: phone", "screen: {state: ringing}"], choice))
     assert any("'screen' needs a 'skin'" in e for e in errors(["screen: {url: x}"], choice))
+
+
+# ── Media of the simulations ────────────────────────────────────────────────────────────────
+
+
+def test_media_extract_adds_the_images_of_the_simulations(decision_course, capsys):
+    section = GOOD_SECTION.replace("  begin:\n", "  begin:\n    background: Puesto de Marta en ACME\n", 1)
+    (decision_course / "content.md").write_text(decision_content(section), encoding="utf-8")
+    assert main(["media", "extract", "DB1"]) == 0
+    manifest = yaml.safe_load((decision_course.parent.parent / "media" / "manifest.yaml").read_text(encoding="utf-8"))
+    by_id = {a["id"]: a for a in manifest["assets"]}
+    assert by_id["BG-PUESTO-DE-MARTA-EN-ACME"]["kind"] == "background" and by_id["BG-PUESTO-DE-MARTA-EN-ACME"]["section"] == 2
+    assert by_id["CHAR-TECNICO"]["kind"] == "portrait"
+    assert by_id["CHAR-TECNICO-CON-PRISA"]["expression"] == "con prisa"
+    assert "con prisa" in by_id["CHAR-TECNICO-CON-PRISA"]["description"]
+    capsys.readouterr()
+    assert main(["media", "plan", "DB1"]) == 0
+    out = capsys.readouterr().out
+    assert "visual style of the simulations: illustration" in out
+    assert "the style sheet of DB1 is not signed" in out
+
+
+def test_the_style_sheet_is_signed_before_the_images(decision_course, capsys):
+    course_dir = decision_course.parent.parent
+    section = GOOD_SECTION.replace("  begin:\n", "  begin:\n    background: Puesto de Marta en ACME\n", 1)
+    (decision_course / "content.md").write_text(decision_content(section), encoding="utf-8")
+    assert main(["media", "extract", "DB1"]) == 0
+    capsys.readouterr()
+    assert main(["media", "set", "DB1", "BG-PUESTO-DE-MARTA-EN-ACME", "--status", "produced"]) == 1
+    assert "style sheet of DB1 is not signed" in capsys.readouterr().err
+    assert main(["approve", "style", "DB1", "--yes", "--no-commit"]) == 1
+    assert "no style samples" in capsys.readouterr().err
+    (course_dir / "media" / "style").mkdir(parents=True)
+    (course_dir / "media" / "style" / "background.png").write_bytes(b"png")
+    assert main(["approve", "style", "DB1", "--yes", "--no-commit"]) == 0
+    approval = yaml.safe_load((course_dir / "course.yaml").read_text(encoding="utf-8"))["approvals"][-1]
+    assert approval["gate"] == "style" and approval["files"][0]["name"] == "background.png"
+    assert main(["media", "set", "DB1", "BG-PUESTO-DE-MARTA-EN-ACME", "--status", "produced"]) == 0
+
+
+def test_an_unknown_visual_style_is_an_error(decision_course, capsys):
+    project = decision_course.parent.parent.parent.parent
+    (project / "config" / "media.yaml").write_text("visual:\n  style: watercolour\n", encoding="utf-8")
+    section = GOOD_SECTION.replace("  begin:\n", "  begin:\n    background: Puesto de Marta en ACME\n", 1)
+    (decision_course / "content.md").write_text(decision_content(section), encoding="utf-8")
+    assert main(["media", "extract", "DB1"]) == 0
+    capsys.readouterr()
+    assert main(["media", "plan", "DB1"]) == 1
+    assert "media › visual › style is 'watercolour'" in capsys.readouterr().err

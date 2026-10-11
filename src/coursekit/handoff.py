@@ -49,6 +49,8 @@ FIX_NOTE = (
     "Result: not ready). Fix every blocking finding in the unit, run `coursekit verify {code} --unit {n}` until it passes, "
     "and finish. Do not write the review: it is done afterwards."
 )
+STYLE_NOTE = ("\n\nHANDOFF MODE: produce ONLY the style sheet now (`media/style/`, see \"Simulations\" in the media-production "
+              "skill); coursekit signs it next, and the images of the simulations follow in another session.")
 RETRY_NOTE = "\n\nHANDOFF MODE: a previous attempt did not finish the unit ({status}). Carry on from where it was."
 DESIGN_EXPORT = '{code} "Handoff mode: the proposal was not exported. Export it (Excel, matrix.json and validation.json)."'
 DESIGN_FIX = (
@@ -337,6 +339,13 @@ def _produce(ctx: Context, course: dict) -> None:
         _agent(ctx, "design", "define-theme", "", "theme", theme_note(ctx.project, coursemod.backend(course)))
         if thememod.status(ctx.project, ctx.course()).state != "derived":
             raise _stuck(ctx, "theme_missing")
+    if any(a.get("kind") in mediamod.SIMULATION_KINDS for a in pending) and not mediamod.style_approval(ctx.course()):
+        # the images of the simulations need a signed style sheet: the media agent makes the samples, coursekit signs them
+        _agent(ctx, "media", "produce-media", ctx.code, "style", STYLE_NOTE)
+        try:
+            ctx.log(t("handoff", "signed_line", text=approve.approve_style(ctx.course(), lambda question: True, who=HANDOFF, via=VIA)))
+        except approve.ApprovalError as exc:
+            raise _stuck(ctx, "style_missing", None, why=str(exc)) from exc
     log = None
     for _ in range(ctx.rounds):
         _, log, summary = _agent(ctx, "media", "produce-media", ctx.code, "media")

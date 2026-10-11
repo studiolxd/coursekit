@@ -45,6 +45,9 @@ unit_not_signable:
 theme_missing:
   es: "{code}: el multimedia necesita el theme y no se pudo definir (/define-theme)"
   en: "{code}: the media needs the theme and it could not be defined (/define-theme)"
+style_missing:
+  es: "{code}: no se ha podido firmar la lámina de estilo de las simulaciones: "
+  en: "{code}: the style sheet of the simulations could not be signed: "
 media_pending:
   es: "{code}: quedan recursos multimedia sin producir tras los intentos: {assets}"
   en: "{code}: media assets are still not produced after the attempts: {assets}"
