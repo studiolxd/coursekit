@@ -2,7 +2,7 @@
 
 The body of a simulation is YAML with a fixed schema in English (the texts are in the language of the course):
 
-    id: call                       # unique in the course; the content refers to its state as `call.risk`
+    id: call                       # unique in the course (a-z, 0-9, _); the content refers to its state as `call.risk`
     title: The support call
     skin: phone                    # optional: the application it happens in (SKINS)
     character: Technician          # conversation: the person you talk to (required)
@@ -48,7 +48,8 @@ from coursekit.i18n import t
 KINDS = ("scenario", "conversation")
 SKINS = ("mail-desktop", "mail-web", "chat-workspace", "messenger", "phone", "browser")
 ENDINGS = ("good", "mixed", "bad")
-ID_RE = re.compile(r"^[a-z][a-z0-9_-]*$")
+ID_RE = re.compile(r"^[a-z][a-z0-9_-]*$")  # scenes
+SIM_ID_RE = re.compile(r"^[a-z][a-z0-9_]*$")  # simulations: the conditions read `id.variable`, so no hyphen
 VAR_RE = re.compile(r"^[a-z_][a-z0-9_]*$")
 OBJECTIVE_RE = re.compile(r"^U\d+\.\d+$")
 MAX_STATES = 20000  # states explored per simulation before giving up (a loop that keeps changing the state)
@@ -290,7 +291,7 @@ def parse(kind: str, body: list[str], where: str, line: int = 0) -> Simulation:
     sim.id = str(data.get("id") or "")
     for key in sorted(set(data) - TOP_KEYS):
         err("unknown_key", key=key, valid=", ".join(sorted(TOP_KEYS)))
-    if not ID_RE.match(sim.id):
+    if not SIM_ID_RE.match(sim.id):
         err("bad_id", value=data.get("id"))
     if not str(data.get("title") or "").strip():
         err("missing", key="title")

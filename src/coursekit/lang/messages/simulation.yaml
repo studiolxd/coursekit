@@ -12,8 +12,8 @@ not_yaml:
 not_mapping: {es: "el cuerpo debe ser un mapa YAML (id, title, scenes…)", en: "the body must be a YAML mapping (id, title, scenes…)"}
 unknown_key: {es: "clave desconocida '{key}' (válidas: {valid})", en: "unknown key '{key}' (valid: {valid})"}
 bad_id:
-  es: "id '{value}' no válido: minúsculas, números, '-' y '_', empezando por una letra"
-  en: "invalid id '{value}': lower case, digits, '-' and '_', starting with a letter"
+  es: "id '{value}' no válido: minúsculas, números y '_', empezando por una letra (sin '-': las condiciones lo leen como id.variable)"
+  en: "invalid id '{value}': lower case, digits and '_', starting with a letter (no '-': the conditions read it as id.variable)"
 missing: {es: "falta '{key}'", en: "missing '{key}'"}
 bad_skin: {es: "piel desconocida '{value}' (válidas: {valid})", en: "unknown skin '{value}' (valid: {valid})"}
 bad_objective: {es: "objetivo '{value}' no válido (UN.M, p. ej. U1.2)", en: "invalid objective '{value}' (UN.M, e.g. U1.2)"}
@@ -26,7 +26,7 @@ bad_variable:
 bad_initial: {es: "valor inicial de '{name}' no válido ({value}): un número, true o false", en: "invalid initial value of '{name}' ({value}): a number, true or false"}
 no_scenes: {es: "faltan las escenas ('scenes')", en: "no scenes ('scenes')"}
 bad_start: {es: "la escena inicial '{scene}' no existe", en: "the start scene '{scene}' does not exist"}
-bad_scene_id: {es: "id de escena '{value}' no válido", en: "invalid scene id '{value}'"}
+bad_scene_id: {es: "id de escena '{value}' no válido: minúsculas, números, '-' y '_'", en: "invalid scene id '{value}': lower case, digits, '-' and '_'"}
 scene_not_mapping: {es: "la escena '{scene}' debe ser un mapa", en: "scene '{scene}' must be a mapping"}
 bad_condition: {es: "{place}: {problem}", en: "{place}: {problem}"}
 undeclared:

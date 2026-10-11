@@ -515,3 +515,25 @@ def test_download_writes_inside_the_project_only(project, monkeypatch, capsys):
     assert main(["download", "https://x.example/export", "--out", "../fuera.xlsx"]) == 1
     assert "outside the project" in capsys.readouterr().err
     assert main(["download", "http://x.example/export", "--out", "courses/b.xlsx"]) == 1
+
+
+def test_simulation_ids_have_no_hyphen():
+    from coursekit import simulation
+
+    sim = simulation.parse("scenario", ["id: sim-u1", "title: T", "scenes:", "  a: {text: A, ending: good, debriefing: D}"], "x")
+    assert any("invalid id 'sim-u1'" in e for e in sim.errors)
+
+
+def test_a_simulation_in_any_part_of_an_assessment_activity_is_assembled(decision_course):
+    from coursekit import assemble, course
+    from coursekit.project import find_project
+
+    final = SCENARIO.replace("id: call", "id: final")
+    assessment = ASSESSMENT.replace("### Banco de preguntas", "### Desarrollo e implementación\n\n" + final + "\n### Banco de preguntas")
+    (decision_course / "assessment.md").write_text(assessment, encoding="utf-8")
+    (decision_course / "content.md").write_text(decision_content(GOOD_SECTION), encoding="utf-8")
+    data = course.load(find_project(decision_course), "DB1")
+    plan, errors, _ = assemble.build_plan(data, data["units"][0], simulations=True)
+    assert not errors
+    test = next(lesson for lesson in plan["lessons"] if lesson["type"] == "evaluation")
+    assert [b["data"]["id"] for b in test["bricks"] if b["type"] == "SIMULATION"] == ["final"]

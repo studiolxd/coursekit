@@ -466,7 +466,7 @@ scenes:
 
 | Clave | Valor |
 |---|---|
-| `id` | Único en el curso: minúsculas, números, `-`, `_`. El contenido lee su estado como `id.variable`. |
+| `id` | Único en el curso: minúsculas, números y `_` (sin `-`). El contenido lee su estado como `id.variable`. |
 | `title` | Título que ve el alumno. |
 | `skin` | Opcional: la aplicación en la que ocurre: `mail-desktop`, `mail-web`, `chat-workspace`, `messenger`, `phone`, `browser` (ver [Pieles](#pieles)). |
 | `screen` | Con una `skin`: lo que muestra la aplicación, para todas las escenas (cada escena puede añadir su propio `screen`). |

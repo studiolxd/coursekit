@@ -118,7 +118,7 @@ scenes:
 
 | Key | Value |
 |---|---|
-| `id` | unique in the course: lower case, digits, `-`, `_`; the content reads its state as `id.variable` |
+| `id` | unique in the course: lower case, digits and `_` (no `-`); the content reads its state as `id.variable` |
 | `title` | title shown to the learner |
 | `skin` | optional: `mail-desktop`, `mail-web`, `chat-workspace`, `messenger`, `phone`, `browser` |
 | `screen` | with a `skin`, what the application shows (each scene may add its own `screen`); keys per skin below |

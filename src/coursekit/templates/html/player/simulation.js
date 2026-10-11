@@ -295,11 +295,12 @@ export function initSimulations(root, ui, tracker) {
   return Array.from(root.querySelectorAll(".ck-sim")).map((node) => initSimulation(node, ui, tracker));
 }
 
-// Adaptive blocks: the `:::if` branch when its condition holds with the state of the simulations it reads, else the neutral one.
+// Adaptive blocks: the `:::if` branch when the simulations it reads have ended and its condition holds, else the neutral one.
 export function updateAdaptive(root, tracker) {
   const env = {};
   Object.entries(tracker.state.sims || {}).forEach(([id, run]) => {
-    Object.entries((run && run.env) || {}).forEach(([key, value]) => {
+    if (!run || !run.done) return;  // only a simulation that reached an ending says what the learner decided
+    Object.entries(run.env || {}).forEach(([key, value]) => {
       env[`${id}.${key}`] = value;
     });
   });

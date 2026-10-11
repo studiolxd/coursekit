@@ -93,7 +93,8 @@ keeps every directive and resource around the simulations. Design it this way, o
 3. **Sections.** Each content section is one challenge: a situation where the objectives of the section are put to the
    test. Its parts follow the cycle {{decision_cycle}}; at least {{min_simulations_per_content_section}} simulation per
    content section. Give the section a title about the situation or the decision, not about the theory.
-4. **Simulation map** (in the story bible): unit, section, simulation (`scenario` or `conversation`, with an id), the
+4. **Simulation map** (in the story bible): unit, section, simulation (`scenario` or `conversation`, with an id of lower
+   case, digits and `_`, no `-`), the
    objectives it practises, what is at stake, the characters, and whether it is scored. Every objective of a unit is
    practised in a simulation before it is assessed.
 5. **Activities in the matrix.** Each simulation is a learning activity (`design_matrix_aa_create`) of the type closest

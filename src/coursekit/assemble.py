@@ -253,6 +253,23 @@ def simulation_brick(name: str, body: list[str], ctx: dict) -> dict:
     return {"type": "SIMULATION", "data": data, "meta": {"directive": name, "simulation": sim.id}}
 
 
+def simulation_blocks(lines: list[str], ctx: dict) -> list[str]:
+    """The lines of the simulation directives among some lines (the other parts of an assessment activity are for people)."""
+    names = {name for name, d in ctx["registry"].items() if d.get("role") == "simulation"}
+    out: list[str] = []
+    inside = False
+    for line in lines:
+        m = DIRECTIVE_OPEN_RE.match(line.strip())
+        if not inside and m and m.group(1) in names:
+            inside = True
+        if inside:
+            out.append(line)
+            if DIRECTIVE_CLOSE_RE.match(line.strip()) and len(out) > 1 and not DIRECTIVE_OPEN_RE.match(line.strip()):
+                inside = False
+                out.append("")
+    return out
+
+
 def conditional_parts(lines: list[str], start: int) -> tuple[str, list[str], list[str], int]:
     """From the `:::if` line at `start`: (condition, lines of the :::if branch, lines of the :::else branch, index of the
     closing line). Directives inside the branches are kept whole."""
@@ -709,7 +726,10 @@ def build_plan(course: dict, unit: dict, assets: dict[str, dict] | None = None,
     if assessment.exists():
         for m, lines in split(assessment.read_text(encoding="utf-8"), syntax.assessment):
             parts = {sm.group(1): sl for sm, sl in split("\n".join(lines), re.compile(r"^### (.+?)\s*$"))}
-            body = parts.get(syntax.t["assessment_instructions"], []) + [""] + parts.get(syntax.t["assessment_bank"], [])
+            # the learner sees the instructions, the simulations wherever the activity has them, and the question bank
+            played = [line for name, part in parts.items() if name not in (syntax.t["assessment_instructions"], syntax.t["assessment_bank"])
+                      for line in simulation_blocks(part, ctx)]
+            body = parts.get(syntax.t["assessment_instructions"], []) + [""] + played + [""] + parts.get(syntax.t["assessment_bank"], [])
             key = f"U{unit['n']}-E{m.group(1)}"
             lessons.append({"key": key, "type": "evaluation", "title": m.group(2), "kind": "assessment",
                             "quiz": quiz_settings(course, unit, m.group(1), m.group(2)),

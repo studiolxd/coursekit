@@ -182,10 +182,10 @@ body:not(.ck-js) .ck-card .ck-back { display: block; margin-top: var(--space-sm)
 .ck-sim-people { display: flex; flex-wrap: wrap; gap: var(--space-md); }
 .ck-sim-person { margin: 0; display: flex; align-items: center; gap: var(--space-sm); font-family: var(--font-family-ui); font-weight: 600; }
 .ck-sim-person img, .ck-sim-initial { width: 4rem; height: 4rem; border-radius: 50%; object-fit: cover; background: var(--color-highlight); }
-.ck-sim-initial { display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--color-accent-strong); }
+.ck-sim-initial { display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--color-text); border: 2px solid var(--color-line); }
 .ck-sim-text { font-size: 1.05rem; }
 .ck-sim-hint { margin: 0; font-size: 0.9rem; color: var(--color-text-soft); font-style: italic; }
-.ck-sim-text:focus, .ck-sim-log:focus { outline: none; }
+.ck-sim-text:focus, .ck-sim-log:focus, .ck-sim-text:focus-visible, .ck-sim-log:focus-visible { outline: none; }
 .ck-sim-log { display: flex; flex-direction: column; gap: var(--space-sm); max-height: 28rem; overflow-y: auto; padding: var(--space-sm); }
 .ck-sim-msg { max-width: 80%; padding: var(--space-sm) var(--space-md); border-radius: var(--radius); background: var(--color-background); border: 1px solid var(--color-line); }
 .ck-sim-msg.is-me { align-self: flex-end; background: var(--color-accent); color: var(--color-on-accent); border-color: var(--color-accent); }
@@ -193,7 +193,8 @@ body:not(.ck-js) .ck-card .ck-back { display: block; margin-top: var(--space-sm)
 .ck-sim-msg > :last-child { margin-bottom: 0; }
 .ck-sim-feedback:not(:empty) { padding: var(--space-md); border-left: 4px solid var(--color-accent); background: var(--color-highlight); border-radius: var(--radius); }
 .ck-sim-choices { display: grid; gap: var(--space-sm); }
-.ck-sim-choice { text-align: left; padding: var(--space-md); font-size: 1rem; }
+.ck-sim-choice { text-align: left; padding: var(--space-md); font-size: 1rem; color: var(--color-text); border-color: var(--color-accent); }
+.ck-sim-choice:hover:not(:disabled) { color: var(--color-text); }
 .ck-sim-end:empty { display: none; }
 .ck-sim-end { padding: var(--space-lg); border-radius: var(--radius); background: var(--color-background); border: 1px solid var(--color-line); }
 .ck-sim-ending { display: inline-block; margin: 0; padding: var(--space-xs) var(--space-md); border-radius: 999px; font-family: var(--font-family-ui); font-weight: 700; color: var(--color-on-accent); background: var(--color-text-soft); }

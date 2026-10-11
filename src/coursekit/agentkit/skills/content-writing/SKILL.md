@@ -72,7 +72,9 @@ simulation format in `.coursekit/docs/content-format.md` (section 2.1).
     of the unit is practised in some simulation.
   - *explanation*: any content (prose, tabs, labelled graphics, timelines, dialogs, media) that **starts from what the
     learner has just lived through**: name the situation, the decision and its consequence, then the principle behind
-    it. Use `:::if` / `:::else` to speak to the path they took (the `:::else` branch must work for everyone).
+    it. Use `:::if` / `:::else` to speak to the path they took. The `:::else` branch is **neutral**: it is what reads
+    whoever did not meet the condition, whoever has not finished the simulation yet and every learner in creator, so it
+    never assumes a decision ("Whether you chose X or Y, …", not "You did not choose X, so …").
   - *practice*: interactive directives and questions on what was explained, as in any course.
   - *decide_again* (optional): a second, shorter simulation or a variant in a new situation; leave it out when the
     section has already practised enough.
