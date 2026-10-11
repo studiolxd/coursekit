@@ -179,6 +179,13 @@ body:not(.ck-js) .ck-card .ck-back { display: block; margin-top: var(--space-sm)
   .ck-sim-hotspot { animation: ck-sim-pulse 2.4s ease-in-out infinite; }
   @keyframes ck-sim-pulse { 50% { box-shadow: 0 0 0 6px var(--color-accent); } }
 }
+.ck-sim-actor { position: absolute; bottom: 0; height: 82%; margin: 0; display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+.ck-sim-actor.is-right { right: 4%; }
+.ck-sim-actor.is-left { left: 4%; }
+.ck-sim-actor.is-center { left: 50%; transform: translateX(-50%); }
+.ck-sim-actor img { height: 100%; width: auto; object-fit: contain; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.25)); }
+.ck-sim-actor figcaption { position: absolute; bottom: var(--space-sm); padding: 2px var(--space-sm); border-radius: 999px; background: rgba(255, 255, 255, 0.9); color: #1a1a1a; font: 600 0.85rem var(--font-family-ui); box-shadow: var(--shadow-soft); }
+@media (prefers-reduced-motion: no-preference) { .ck-sim-actor { animation: ck-sim-enter 0.35s ease-out; } @keyframes ck-sim-enter { from { opacity: 0; transform: translateY(12px); } } }
 .ck-sim-people { display: flex; flex-wrap: wrap; gap: var(--space-md); }
 .ck-sim-person { margin: 0; display: flex; align-items: center; gap: var(--space-sm); font-family: var(--font-family-ui); font-weight: 600; }
 .ck-sim-person img, .ck-sim-initial { width: 4rem; height: 4rem; border-radius: 50%; object-fit: cover; background: var(--color-highlight); }

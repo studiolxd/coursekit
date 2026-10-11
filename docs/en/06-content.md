@@ -475,7 +475,7 @@ scenes:
 | `scored`, `weight` | Whether it counts for the grade (default `false`) and its weight among the scored ones (default 1). |
 | `state` | Variables and their initial value: numbers, `true`, `false`. |
 | `start` | First scene; by default the first one. |
-| `scenes.<id>` | `text` (required), `skin` (another application for this scene), `screen`, `background`, `layers` (`image`, `area`, `if`), `characters` (`name`, `expression`), `variants` (`if`, `text`: extra text when the condition holds), `checkpoint` (the learner may come back here when `decision_based.rewind` is on) and **one** way out: `choices`, `hotspots`, `next` or `ending`. |
+| `scenes.<id>` | `text` (required), `skin` (another application for this scene), `screen`, `background`, `layers` (`image`, `area`, `if`), `characters` (`name`, `expression`, `position`: `left`, `right` or `center` in a scene with a background), `variants` (`if`, `text`: extra text when the condition holds), `checkpoint` (the learner may come back here when `decision_based.rewind` is on) and **one** way out: `choices`, `hotspots`, `next` or `ending`. |
 | A choice or hotspot | `text` (choice) or `label` and either `area` `[x, y]` or `[x, y, w, h]` in % of the scene or `target`, a part of the screen of the skin (hotspot); `goto`; optionally `if`, `effects` (adds to variables), `set` (gives them a value), `score` (points, positive or negative) and `feedback`. |
 | `next` | Moves on without a decision: a list of `{if, goto}`; the first that holds. |
 | `ending` | `good`, `mixed` or `bad`, with its `debriefing` (required). |

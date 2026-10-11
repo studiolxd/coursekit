@@ -113,6 +113,7 @@ function initSimulation(root, ui, tracker) {
   }
 
   const chatSkin = data.kind === "conversation" && CHAT_SKINS.includes(data.skin);
+  let staged = new Set();  // the characters drawn inside the scene
   // where a scene happens: its own skin; else its background (a place); else the skin of the simulation (a screen)
   const skinOf = (scene) => scene.skin || (scene.background ? null : data.skin);
 
@@ -163,14 +164,32 @@ function initSimulation(root, ui, tracker) {
       else node.classList.add("is-full");
       stage.appendChild(node);
     });
+    // On a background, the characters with a portrait stand in the scene (first on the right, then on the left)
+    staged = new Set();
+    if (!background) return;
+    actors(scene).filter((actor) => actor.portrait).slice(0, 3).forEach((actor, i) => {
+      const side = actor.position || (i === 0 ? "right" : "left");
+      const figure = el("figure", { class: `ck-sim-actor is-${side}` });
+      figure.appendChild(el("img", { src: actor.portrait.path, alt: actor.portrait.alt || actor.name }));
+      figure.appendChild(el("figcaption", {}, actor.name));
+      stage.appendChild(figure);
+      staged.add(actor.name);
+    });
+  }
+
+  function actors(scene) {
+    const list = [];
+    if (data.kind === "conversation" && data.character && !chatSkin) {
+      list.push({ name: data.character, portrait: scene._portrait || data._portrait });
+    }
+    (scene.characters || []).forEach((person) => list.push({ name: person.name, portrait: person._portrait, position: person.position }));
+    return list;
   }
 
   function drawPeople(scene) {
     people.replaceChildren();
-    if (data.kind === "conversation" && data.character && !chatSkin) {
-      people.appendChild(portraitFigure(scene._portrait || data._portrait, data.character));
-    }
-    (scene.characters || []).forEach((person) => people.appendChild(portraitFigure(person._portrait, person.name)));
+    actors(scene).filter((actor) => !staged.has(actor.name))
+      .forEach((actor) => people.appendChild(portraitFigure(actor.portrait, actor.name)));
     people.hidden = !people.children.length;
   }
 

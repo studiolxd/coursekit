@@ -477,7 +477,7 @@ scenes:
 | `scored`, `weight` | Si cuenta para la nota (por defecto `false`) y su peso entre las evaluables (por defecto 1). |
 | `state` | Variables y su valor inicial: números, `true`, `false`. |
 | `start` | Escena inicial; por defecto, la primera. |
-| `scenes.<id>` | `text` (obligatorio), `skin` (otra aplicación para esta escena), `screen`, `background`, `layers` (`image`, `area`, `if`), `characters` (`name`, `expression`), `variants` (`if`, `text`: texto añadido cuando se cumple la condición), `checkpoint` (el alumno puede volver aquí si `decision_based.rewind` está activo) y **una** salida: `choices`, `hotspots`, `next` o `ending`. |
+| `scenes.<id>` | `text` (obligatorio), `skin` (otra aplicación para esta escena), `screen`, `background`, `layers` (`image`, `area`, `if`), `characters` (`name`, `expression`, `position`: `left`, `right` o `center` en una escena con fondo), `variants` (`if`, `text`: texto añadido cuando se cumple la condición), `checkpoint` (el alumno puede volver aquí si `decision_based.rewind` está activo) y **una** salida: `choices`, `hotspots`, `next` o `ending`. |
 | Una opción o zona | `text` (opción) o `label` y, o bien `area` `[x, y]` o `[x, y, ancho, alto]` en % de la escena, o bien `target`, una parte de la pantalla de la piel (zona); `goto`; opcionalmente `if`, `effects` (suma a variables), `set` (les da un valor), `score` (puntos, positivos o negativos) y `feedback`. |
 | `next` | Avanza sin decisión: una lista de `{if, goto}`; la primera que se cumple. |
 | `ending` | `good`, `mixed` o `bad`, con su `debriefing` (obligatorio). |

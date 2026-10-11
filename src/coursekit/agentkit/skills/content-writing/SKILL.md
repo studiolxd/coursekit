@@ -101,7 +101,8 @@ simulation format in `.coursekit/docs/content-format.md` (section 2.1).
   - `background` and `layers.image` are **descriptions of the image** (what it shows, from the point of view of the
     learner); the media is produced from them, one image per description in the whole course, so repeat the exact same
     text when a scene reuses an image. Portraits come from the cast of the story bible (`look`) with the `expression` of
-    each scene. Do not add media placeholders for them.
+    each scene. In a scene with a background the characters stand in it, full size: give each one the `position`
+    (`left`, `right`, `center`) that leaves free what matters in the background (the monitor, the sticky note). Do not add media placeholders for them.
   - Time: what is read on the longest path counts as words of the section (plus {{decision_seconds}} s per decision), so
     a simulation fills part of the section minimum, never more than the whole section. The scored simulations of
     `assessment.md` count in the activities section of the unit.

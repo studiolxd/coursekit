@@ -34,6 +34,7 @@ undeclared:
   en: "{place}: variable '{name}' is not in 'state'"
 bad_variant: {es: "{place}: cada variante necesita 'if' y 'text'", en: "{place}: every variant needs 'if' and 'text'"}
 bad_layer: {es: "{place}: cada capa necesita 'image'", en: "{place}: every layer needs 'image'"}
+bad_position: {es: "{place}: posición '{value}' no válida (válidas: {valid})", en: "{place}: invalid position '{value}' (valid: {valid})"}
 bad_character: {es: "{place}: cada personaje necesita 'name'", en: "{place}: every character needs 'name'"}
 ending_and_more:
   es: "la escena '{scene}' es un final: no puede tener 'choices', 'hotspots' ni 'next'"

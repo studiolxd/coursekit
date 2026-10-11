@@ -48,6 +48,7 @@ from coursekit.i18n import t
 KINDS = ("scenario", "conversation")
 SKINS = ("mail-desktop", "mail-web", "chat-workspace", "messenger", "phone", "browser")
 ENDINGS = ("good", "mixed", "bad")
+POSITIONS = ("left", "right", "center")  # where a character stands in a scene with a background
 ID_RE = re.compile(r"^[a-z][a-z0-9_-]*$")  # scenes
 SIM_ID_RE = re.compile(r"^[a-z][a-z0-9_]*$")  # simulations: the conditions read `id.variable`, so no hyphen
 VAR_RE = re.compile(r"^[a-z_][a-z0-9_]*$")
@@ -379,6 +380,8 @@ def _check_scene(sid: str, scene: object, scenes: dict, state: dict, kind: str, 
     for i, person in enumerate(scene.get("characters") or []):
         if not isinstance(person, dict) or not str(person.get("name") or "").strip():
             err("bad_character", place=f"{where}.characters[{i}]")
+        elif person.get("position") is not None and person["position"] not in POSITIONS:
+            err("bad_position", place=f"{where}.characters[{i}].position", value=person["position"], valid=", ".join(POSITIONS))
     ways = [k for k in ("choices", "hotspots", "next", "ending") if scene.get(k)]
     if "ending" in ways and len(ways) > 1:
         err("ending_and_more", scene=sid)

@@ -592,3 +592,13 @@ def test_a_character_of_a_dialogue_and_a_simulation_has_one_portrait(decision_co
     assert main(["media", "extract", "DB1"]) == 0  # extracting again keeps it produced
     again = {a["id"]: a for a in yaml.safe_load(manifest_path.read_text(encoding="utf-8"))["assets"]}
     assert again["CHAR-TECNICO"]["status"] == "produced"
+
+
+def test_the_position_of_a_character_is_checked():
+    from coursekit import simulation
+
+    body = ["id: x", "title: T", "scenes:", "  a:", "    background: Una oficina", "    text: A",
+            "    characters: [{name: Marta, position: arriba}]", "    choices: [{text: Y, goto: b}]",
+            "  b: {text: B, ending: good, debriefing: D}"]
+    assert any("invalid position 'arriba'" in e for e in simulation.parse("scenario", body, "x").errors)
+    assert simulation.parse("scenario", [line.replace("arriba", "left") for line in body], "x").errors == []
