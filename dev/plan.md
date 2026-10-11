@@ -563,7 +563,37 @@ visual:
 | 8.7 | Multimedia: `media extract` añade fondos, capas y retratos (`kind`), con el `look` de la biblia; `media › visual` validado; `media plan` imprime el estilo y avisa sin generador (`flat` en SVG por el rol `illustration`, `run produce-media --role illustration`) y sin lámina; `coursekit approve style` (muestras en `media/style/`) y guardia en `media set`; el handoff produce y firma la lámina; skill `media-production` (lámina, coherencia de personajes, sin texto en imágenes, revisión visual). Voces por personaje: `voice set --character` (mismo proveedor que el curso, en `media.voices`), `tts --character`; con Piper sin voz propia, los locutores se turnan en el orden del reparto. Pendiente: que el reproductor reproduzca audio por escena (después del MVP). | Tests de extract, plan, firma y voces; falta un curso real en dos estilos (8.9). | hecho |
 | 8.8b | Tiempo estricto de las simulaciones (sección 11.2, Duración) y `coursekit download` para que el agente de diseño descargue el Excel sin `curl` (sesiones sin interfaz). | Tests. | hecho |
 | 8.8 | Montaje creator: cada simulación es un EMBED de su paquete (`SIM-<ID>` en el manifest, `media embed` lo construye con `htmlkit/simpackage.py`: reproductor sin empaquetador, pieles, estilos, theme e imágenes); nota y aviso mientras no está subida; rama neutra de los bloques adaptativos con aviso; aviso de piel sin `screen`. Probado el paquete en Chrome sin interfaz. | Tests del plan y del paquete; falta montarlo en un creator real (8.9). | hecho |
-| 8.9 | Curso de prueba genérico (contraseñas seguras en ACME) de extremo a extremo con los dos backends. | Pasa de `new` a `deliver`. | pendiente |
+| 8.9 | Curso de prueba de extremo a extremo (2 h, 2 unidades, 7 simulaciones, backend html) en un proyecto real: diseño con biblia, redacción, revisiones, firmas, lámina de estilo, multimedia con Magnific y paquetes SCORM. | Paquetes v0.1 de las dos unidades (1,8 y 1,2 MB). Pendiente: probarlos en SCORM Cloud o un LMS, la vía creator y la entrega (`delivery add`). | en curso |
 
 Durante el desarrollo de esta fase: commits en local sin push; la herramienta instalada apunta a
 la copia de trabajo (`uv tool install --editable`).
+
+### 11.11 Lo que salió del curso de prueba (8.9)
+
+Corregido en coursekit al hacer el curso, con su test:
+
+- Tiempo estricto: una simulación cuenta lo que se lee en su camino más largo al ritmo del curso, más
+  `decision_seconds`; las evaluables cuentan en un apartado de actividades; aviso por encima de
+  `word_margin_max`.
+- Simulaciones: ids sin `-`; una escena con fondo ocurre en ese lugar; piel por escena; chats que acumulan
+  mensajes; personajes dentro de la escena con `position`; `pass_requires` y coherencia entre final y nota;
+  error con `#` sin comillas en un texto; la evaluación de solo simulaciones se califica sola.
+- Contenido: `:::else` neutro; los bloques adaptativos solo leen simulaciones terminadas; el cierre de la
+  historia va en los finales de la última simulación evaluable; nada de notas para personas en el banco.
+- Montaje html: simulaciones en cualquier parte de una actividad; comprobación de palabras que lee las
+  simulaciones y salta la cabecera de la unidad; SVG como imagen; cada paquete solo con sus recursos y en
+  WebP; contrastes y foco con cualquier theme.
+- Multimedia: un retrato por personaje (nombres de pila, el alumno sin retrato, `neutral` es la base);
+  receta con `model`, `resolution` y `variants`; `media › connectors` para usar Magnific sin interfaz;
+  `media fit` y `media render` en local; `coursekit download` para el Excel del diseño.
+- Herramientas: `coursekit paths` con la tabla de escenas; `setup` instala el empaquetador si un curso usa
+  html; `coursekit run` con todo en un argumento.
+
+Pendiente después de la fase 8:
+
+- Probar los paquetes en SCORM Cloud o un LMS (progreso, nota, interacciones, estado entre sesiones).
+- Vía creator con un curso basado en decisiones (paquetes `SIM-…` subidos como EMBED).
+- axe sobre las pieles y el reproductor; audio por escena; pieles propias del proyecto en `components/`.
+- Mecánicas `inbox`, `investigation`, `allocation`, `diagnosis`.
+- Huecos de creator (sección 9): estado compartido entre bricks y nota de un EMBED.
+
