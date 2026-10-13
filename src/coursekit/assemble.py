@@ -224,6 +224,9 @@ def simulation_brick(name: str, body: list[str], ctx: dict) -> dict:
             for key in ("text", "label", "feedback"):
                 if decision.get(key):
                     decision[key] = inline(str(decision[key]))
+        from coursekit.htmlkit.render import _clean_mechanics
+
+        _clean_mechanics(scene, lambda text: inline(text), lambda text: html(text))
     media: dict[str, dict] = {}
     missing = 0
     for ref in simulation.media_refs(sim.data):

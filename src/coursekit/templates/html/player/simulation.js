@@ -66,7 +66,8 @@ function initSimulation(root, ui, tracker) {
   const choices = el("div", { class: "ck-sim-choices", role: "group", "aria-label": ui.sim_choices });
   const end = el("div", { class: "ck-sim-end" });
   const voice = el("div", { class: "ck-sim-voice" });  // the narration of the scene (`audio: true`): never plays by itself
-  play.append(stage, people, voice, log, text, hint, feedback, choices, end);
+  const mechanics = el("div", { class: "ck-sim-mechanics" });  // symptoms, clues, an inbox or an allocation
+  play.append(stage, people, voice, log, text, mechanics, hint, feedback, choices, end);
   root.querySelector(".ck-sim-static").hidden = true;
   root.appendChild(play);
 
@@ -291,7 +292,11 @@ function initSimulation(root, ui, tracker) {
       if (focus) (data.kind === "conversation" ? end : text).focus?.();
       return;
     }
-    if (scene.next) {
+    drawMechanics(scene);
+    const task = scene.inbox ? ["inbox", scene.inbox] : scene.allocation ? ["allocation", scene.allocation] : null;
+    if (task) {
+      drawTask(scene, task[0], task[1]);
+    } else if (scene.next) {
       const step = scene.next.find((s) => test(s.if, run.env));
       choices.appendChild(button(ui.continue, () => go(step.goto), "ck-btn-primary", { "data-ck-continue": "next" }));
     } else {
@@ -339,8 +344,131 @@ function initSimulation(root, ui, tracker) {
         }
       });
     }
+    gateByClues(scene);
     persist();
     if (focus) (data.kind === "conversation" ? (log.lastElementChild || choices) : text).focus?.();
+  }
+
+  // Diagnosis: the symptoms, listed. Investigation: clues the learner opens; the decisions wait for `min_clues` of them.
+  let opened = new Set();
+  function drawMechanics(scene) {
+    mechanics.replaceChildren();
+    opened = new Set();
+    if (Array.isArray(scene.symptoms) && scene.symptoms.length) {
+      mechanics.appendChild(el("p", { class: "ck-sim-mech-title" }, ui.sim_symptoms));
+      const list = el("ul", { class: "ck-sim-symptoms" });
+      scene.symptoms.forEach((item) => list.appendChild(el("li", {}, item)));
+      mechanics.appendChild(list);
+    }
+    if (Array.isArray(scene.clues) && scene.clues.length) {
+      mechanics.appendChild(el("p", { class: "ck-sim-mech-title" }, ui.sim_clues));
+      scene.clues.forEach((clue, i) => {
+        const box = el("details", { class: "ck-sim-clue", "data-ck-clue": i });
+        box.append(el("summary", {}, clue.label), el("div", { class: "ck-sim-clue-text" }, clue.text));
+        box.addEventListener("toggle", () => {
+          if (box.open) opened.add(i);
+          gateByClues(scene);
+        });
+        mechanics.appendChild(box);
+      });
+    }
+    mechanics.hidden = !mechanics.children.length;
+  }
+
+  function gateByClues(scene) {
+    if (!Array.isArray(scene.clues) || !scene.clues.length || scene.ending) return;
+    const need = scene.min_clues || scene.clues.length;
+    const waiting = opened.size < need;
+    choices.hidden = waiting;
+    stage.querySelectorAll(".ck-sim-target, .ck-sim-hotspot").forEach((node) => { node.hidden = waiting; });
+    hint.hidden = !waiting;
+    if (waiting) hint.textContent = format(ui.sim_open_clues, { n: need - opened.size });
+  }
+
+  // A task: sort the items of an inbox into their categories, or share a total among options. `k` right sets `store`,
+  // adds k × points, and the scene goes on by its `next`.
+  function drawTask(scene, kind, body) {
+    const points = body.points === undefined ? 1 : Number(body.points);
+    const form = el("div", { class: `ck-sim-task ck-sim-${kind}` });
+    const confirm = button(ui.sim_confirm, () => {}, "ck-btn-primary", { "data-ck-task": "" });
+    let size = 0;
+    let right = () => 0;
+    let lock = () => {};
+    if (kind === "inbox") {
+      const items = body.items || [];
+      size = items.length;
+      const rows = items.map((item, i) => {
+        const set = el("fieldset", { class: "ck-sim-item", "data-ck-item": i, "data-ck-answer": item.answer });
+        set.appendChild(el("legend", {}, item.text));
+        (body.categories || []).forEach((category) => {
+          const label = el("label", { class: "ck-sim-category" });
+          const input = el("input", { type: "radio", name: `${data.id}-${run.path.length}-${i}`, value: category });
+          input.addEventListener("change", () => { confirm.disabled = rows.some((row) => !row.querySelector("input:checked")); });
+          label.append(input, document.createTextNode(` ${category}`));
+          set.appendChild(label);
+        });
+        form.appendChild(set);
+        return set;
+      });
+      confirm.disabled = true;
+      right = () => rows.filter((row, i) => (row.querySelector("input:checked") || {}).value === items[i].answer).length;
+      lock = () => rows.forEach((row, i) => {
+        row.querySelectorAll("input").forEach((input) => { input.disabled = true; });
+        row.classList.add((row.querySelector("input:checked") || {}).value === items[i].answer ? "is-right" : "is-wrong");
+      });
+    } else {
+      const options = body.options || [];
+      const total = Number(body.total) || 0;
+      size = options.length;
+      const left = el("p", { class: "ck-sim-left", "aria-live": "polite" });
+      const inputs = options.map((option, i) => {
+        const label = el("label", { class: "ck-sim-option" });
+        const input = el("input", { type: "number", min: 0, max: total, step: 1, value: 0, inputmode: "numeric",
+          "data-ck-option": i, "data-ck-min": option.target[0] });
+        label.append(el("span", {}, option.label), input);
+        form.appendChild(label);
+        return input;
+      });
+      const used = () => inputs.reduce((sum, input) => sum + Math.max(0, Math.floor(Number(input.value) || 0)), 0);
+      const update = () => {
+        left.textContent = format(ui.sim_left, { left: total - used(), total });
+        confirm.disabled = used() > total;
+      };
+      inputs.forEach((input) => input.addEventListener("input", update));
+      form.appendChild(left);
+      update();
+      right = () => options.filter((option, i) => {
+        const value = Math.floor(Number(inputs[i].value) || 0);
+        return value >= option.target[0] && value <= option.target[1];
+      }).length;
+      lock = () => inputs.forEach((input, i) => {
+        input.disabled = true;
+        const value = Math.floor(Number(input.value) || 0);
+        input.closest("label").classList.add(value >= options[i].target[0] && value <= options[i].target[1] ? "is-right" : "is-wrong");
+      });
+    }
+    confirm.addEventListener("click", () => {
+      const k = right();
+      lock();
+      run.env[body.store] = k;
+      run.score += k * points;
+      run.path.push(format(ui.sim_task_result, { k, n: size }));
+      run.decisions = (run.decisions || 0) + 1;
+      tracker.interaction({
+        id: `${data.id}-${run.attempt || 1}-${run.decisions}`, attempt: run.attempt || 1, n: run.decisions, type: "choice",
+        choice: k, description: strip(scene.text).slice(0, 250),
+        result: k === size ? "correct" : k === 0 ? "incorrect" : "neutral", weighting: Math.abs(size * points) || 1,
+      });
+      const step = scene.next.find((s) => test(s.if, run.env));
+      confirm.remove();
+      feedback.textContent = format(ui.sim_task_result, { k, n: size });
+      choices.replaceChildren(button(ui.continue, () => go(step.goto), "ck-btn-primary", { "data-ck-continue": "feedback" }));
+      run.at = step.goto;
+      persist();
+    });
+    mechanics.hidden = false;
+    mechanics.appendChild(form);
+    choices.appendChild(confirm);
   }
 
   if (!run) run = fresh();

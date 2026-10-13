@@ -128,9 +128,10 @@ def _walk_bricks(bricks: list[dict]):
             yield from _walk_bricks(brick["data"].get("else") or [])
 
 
-def decision_steps(sim: simmod.Simulation, path: dict) -> list[int | None] | None:
-    """The positions of the decisions of a path among its scene's choices and hotspots (None: a scene's "continue"), as
-    the player marks them (`data-ck-decision`); None if a step cannot be found."""
+def decision_steps(sim: simmod.Simulation, path: dict) -> list | None:
+    """The positions of the decisions of a path among its scene's choices and hotspots (None: a scene's "continue"; for a
+    task, `{"task": k}`: k things right), as the player marks them (`data-ck-decision`, `data-ck-task`); None if a step
+    cannot be found."""
     scenes = sim.data.get("scenes") or {}
     env = dict(sim.data.get("state") or {})
     steps: list[int | None] = []
@@ -138,6 +139,11 @@ def decision_steps(sim: simmod.Simulation, path: dict) -> list[int | None] | Non
         scene = scenes.get(sid) or {}
         if label is None:
             steps.append(None)
+            continue
+        if label.startswith("task:") and simmod.task_of(scene):
+            k = int(label.split(":", 1)[1])
+            steps.append({"task": k})
+            env = {**env, str(simmod.task_of(scene)[1].get("store")): k}
             continue
         found = None
         for i, decision in enumerate(simmod._decisions(scene)):

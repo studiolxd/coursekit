@@ -42,6 +42,13 @@ def unit_simulations(course: dict, unit: dict) -> UnitPaths:
     return result
 
 
+def _step(label: str) -> str:
+    """A decision of a path as the report shows it; the result of a task (`task:k`) as how many were right."""
+    if label.startswith("task:"):
+        return t("paths", "task_step", k=label.split(":", 1)[1])
+    return _label(label, 50)
+
+
 def _label(text: object, limit: int = 60) -> str:
     """A text for a Mermaid label: one line, no double quotes."""
     value = " ".join(str(text or "").split()).replace('"', "'")
@@ -138,7 +145,7 @@ def section(sim: simmod.Simulation, words_per_hour: float, think: float) -> str:
     out += ["", *scenes_table(sim), "", flowchart(sim), "", f"| # | {t('paths', 'col_decisions')} | {t('paths', 'col_ending')} | "
             f"{t('paths', 'col_points')} | {t('paths', 'col_grade')} | {t('paths', 'col_state')} |", "|---|---|---|---|---|---|"]
     for i, path in enumerate(sorted(sim.paths, key=lambda p: -p["score"]), 1):
-        decisions = " → ".join(_label(label, 50) for _, label in path["steps"] if label is not None) or "-"
+        decisions = " → ".join(_step(label) for _, label in path["steps"] if label is not None) or "-"
         grade = f"{simmod.grade(sim, path['score']):.0f} %" if sim.scored else "-"
         out.append(f"| {i} | {decisions} | {path['ending']} ({path['kind']}) | {path['score']:g} | {grade} | {_state(path['state'])} |")
     return "\n".join(out)

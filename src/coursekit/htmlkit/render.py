@@ -378,7 +378,25 @@ def _clean_simulation(data: dict) -> dict:
             for key in ("text", "label", "feedback"):
                 if decision.get(key):
                     decision[key] = inline(decision[key])
+        _clean_mechanics(scene, inline, block)
     return out
+
+
+def _clean_mechanics(scene: dict, inline_fn, block_fn) -> None:
+    """The texts of the mechanics of a scene (symptoms, clues, the items of an inbox, the options of an allocation)."""
+    if isinstance(scene.get("symptoms"), list):
+        scene["symptoms"] = [inline_fn(str(s)) for s in scene["symptoms"]]
+    for clue in scene.get("clues") or []:
+        if isinstance(clue, dict):
+            clue["label"], clue["text"] = inline_fn(str(clue.get("label") or "")), block_fn(str(clue.get("text") or ""))
+    inbox = scene.get("inbox") if isinstance(scene.get("inbox"), dict) else {}
+    for item in inbox.get("items") or []:
+        if isinstance(item, dict):
+            item["text"] = inline_fn(str(item.get("text") or ""))
+    allocation = scene.get("allocation") if isinstance(scene.get("allocation"), dict) else {}
+    for option in allocation.get("options") or []:
+        if isinstance(option, dict):
+            option["label"] = inline_fn(str(option.get("label") or ""))
 
 
 def simulation(brick: dict, ctx: Ctx) -> str:

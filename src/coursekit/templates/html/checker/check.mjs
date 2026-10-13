@@ -71,10 +71,36 @@ function playPath([id, steps]) {
     const button = root.querySelector('[data-ck-continue="feedback"]');
     if (button) button.click();
   };
+  // a task: exactly k things right (the first k items or options), then confirm
+  const task = (k) => {
+    root.querySelectorAll("details.ck-sim-clue").forEach((box) => { box.open = true; });
+    root.querySelectorAll("[data-ck-item]").forEach((set, i) => {
+      const inputs = Array.from(set.querySelectorAll("input"));
+      const pick = i < k ? inputs.find((input) => input.value === set.dataset.ckAnswer) : inputs.find((input) => input.value !== set.dataset.ckAnswer);
+      if (pick) {
+        pick.checked = true;
+        pick.dispatchEvent(new Event("change"));
+      }
+    });
+    root.querySelectorAll("[data-ck-option]").forEach((input, i) => {
+      input.value = i < k ? input.dataset.ckMin : "0";
+      input.dispatchEvent(new Event("input"));
+    });
+    return root.querySelector("[data-ck-task]");
+  };
+  // the clues of an investigation are opened before deciding
+  const openClues = () => root.querySelectorAll("details.ck-sim-clue").forEach((box) => {
+    if (!box.open) {
+      box.open = true;
+      box.dispatchEvent(new Event("toggle"));
+    }
+  });
   for (let i = 0; i < steps.length; i++) {
     skipFeedback();
+    openClues();
     const step = steps[i];
-    const target = step === null ? root.querySelector('[data-ck-continue="next"]') : root.querySelector(`[data-ck-decision="${step}"]`);
+    const target = step === null ? root.querySelector('[data-ck-continue="next"]')
+      : typeof step === "object" ? task(step.task) : root.querySelector(`[data-ck-decision="${step}"]`);
     if (!target) return { missing: step === null ? "continue" : `decision ${step}`, step: i };
     target.click();
   }

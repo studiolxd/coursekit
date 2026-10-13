@@ -134,6 +134,10 @@ scenes:
 | choice / hotspot | `text` (choice) or `label` + `area` `[x, y]` or `[x, y, w, h]` in % (hotspot); `goto`; optional `if`, `effects` (adds to variables), `set` (gives them a value), `score` (points, `+` or `-`), `feedback`, `error` (the id of the common error of `design/misconceptions.yaml` it represents) |
 | hotspot `target` | instead of `area`, a part of the screen of the skin (keys per skin below) |
 | `next` | moves on without a decision: list of `{if, goto}`, the first that holds |
+| `symptoms` | diagnosis: what the learner observes (a list); the causes are the scene's `choices` |
+| `clues`, `min_clues` | investigation: `{label, text}` the learner opens; the decisions appear after `min_clues` (default all); they change no state |
+| `inbox` | sort messages: `categories`, `items` (`{text, answer}`), `points`, `store` (a `state` variable: how many right); goes on by `next` with conditions on `store`, never `choices` |
+| `allocation` | share up to `total` among `options` (`{label, target: [min, max]}`, 1 to total, minimums ≤ total); `points`, `store` and `next` as an inbox |
 | `ending` | `good`, `mixed` or `bad`, with its `debriefing` (required) |
 
 - **Quote the texts** that hold `#` (a YAML comment after a space: the rest of the text is lost), `: ` or a comma inside
@@ -149,6 +153,9 @@ scenes:
 - `background` and `layers.image` describe the image (one image per description in the whole course: repeat the same
   text to reuse it); portraits come from the cast of the story bible with the `expression` of each scene. They are not
   media placeholders.
+- **Mechanics** beyond choosing, when the situation asks for them: a diagnosis (`symptoms` + choices), an investigation
+  (`clues` before deciding), sorting a full inbox (`inbox`), sharing a limited resource (`allocation`). A task (inbox,
+  allocation) is graded by how many things are right; plan its `next` for few, some and all right.
 - `coursekit verify` walks every path: unknown scenes, unreachable scenes, dead ends (a state with no option left), endings
   without debriefing, undeclared variables, ids repeated in the course.
 

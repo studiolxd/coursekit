@@ -108,3 +108,33 @@ if_other_unit:
 if_unknown_simulation:
   es: "la condición «{condition}» lee '{name}', que no es la variable de ninguna simulación anterior de la unidad (id.variable)"
   en: "condition «{condition}» reads '{name}', which is not a variable of an earlier simulation of the unit (id.variable)"
+bad_symptoms: {es: "{place}: una lista de síntomas (textos)", en: "{place}: a list of symptoms (texts)"}
+bad_clues: {es: "{place}: una lista de pistas, cada una con 'label' y 'text'", en: "{place}: a list of clues, each with 'label' and 'text'"}
+bad_min_clues:
+  es: "{place}: 'min_clues' debe ser un número entre 1 y las pistas de la escena ({count}), no {value}"
+  en: "{place}: 'min_clues' must be a number between 1 and the clues of the scene ({count}), not {value}"
+clues_without_decisions:
+  es: "{place}: las pistas ayudan a decidir: la escena necesita 'choices' o 'hotspots'"
+  en: "{place}: clues help to decide: the scene needs 'choices' or 'hotspots'"
+two_tasks: {es: "{place}: una escena tiene como mucho una tarea ('inbox' o 'allocation')", en: "{place}: a scene has one task at most ('inbox' or 'allocation')"}
+bad_task: {es: "{place}: debe ser un mapa", en: "{place}: must be a mapping"}
+task_store:
+  es: "{place}: 'store' debe ser una variable de 'state' (guarda cuántos aciertos hubo), no '{name}'"
+  en: "{place}: 'store' must be a variable of 'state' (it keeps how many were right), not '{name}'"
+task_needs_next:
+  es: "{place}: una tarea sigue solo por 'next' (con condiciones sobre su 'store'), sin 'choices' ni 'hotspots'"
+  en: "{place}: a task goes on only by 'next' (with conditions on its 'store'), without 'choices' or 'hotspots'"
+bad_categories: {es: "{place}: al menos dos categorías", en: "{place}: at least two categories"}
+bad_items: {es: "{place}: una lista de mensajes que clasificar", en: "{place}: a list of items to sort"}
+bad_item:
+  es: "{place}: cada mensaje necesita 'text' y 'answer', una de las categorías ({valid})"
+  en: "{place}: every item needs 'text' and 'answer', one of the categories ({valid})"
+bad_total: {es: "{place}: 'total' debe ser un número entero mayor que 0, no {value}", en: "{place}: 'total' must be a whole number above 0, not {value}"}
+bad_options: {es: "{place}: al menos dos opciones entre las que repartir", en: "{place}: at least two options to share among"}
+bad_option:
+  es: "{place}: cada opción necesita 'label' y 'target' [mínimo, máximo], enteros entre 1 y {total}"
+  en: "{place}: every option needs 'label' and 'target' [minimum, maximum], whole numbers between 1 and {total}"
+targets_over_total:
+  es: "{place}: los mínimos de las opciones suman {sum} y solo hay {total} para repartir"
+  en: "{place}: the minimums of the options add up to {sum} and there are only {total} to share"
+

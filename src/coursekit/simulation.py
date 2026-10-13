@@ -206,7 +206,15 @@ def test(condition: object, env: dict) -> bool:
 TOP_KEYS = {"id", "title", "skin", "character", "objective", "scored", "weight", "state", "start", "scenes", "screen", "audio",
             "pass_requires"}
 SCENE_KEYS = {"text", "background", "layers", "characters", "variants", "checkpoint", "choices", "hotspots", "next", "ending",
-              "debriefing", "expression", "screen", "skin"}
+              "debriefing", "expression", "screen", "skin", "symptoms", "clues", "min_clues", "inbox", "allocation"}
+# The mechanics of a scene beyond choosing (they all keep the graph of scenes, its paths and its points):
+#   symptoms      diagnosis: what the learner observes, listed; the causes are its choices
+#   clues         investigation: pieces of evidence the learner opens; the choices appear after `min_clues` (default all)
+#   inbox         sort each item into a category; `k` right sets `store` to k and adds k × points; the scene goes on by `next`
+#   allocation    share up to `total` among options with a target range; `k` options in range, like an inbox
+INBOX_KEYS = {"categories", "items", "points", "store"}
+ALLOCATION_KEYS = {"total", "options", "points", "store"}
+TASKS = ("inbox", "allocation")
 CHOICE_KEYS = {"text", "goto", "if", "effects", "set", "score", "feedback", "error"}  # error: the common error it represents
 HOTSPOT_KEYS = CHOICE_KEYS - {"text"} | {"label", "area", "target"}
 
@@ -409,6 +417,7 @@ def _check_scene(sid: str, scene: object, scenes: dict, state: dict, kind: str, 
         err("debriefing_without_ending", scene=sid)
     if scene.get("next") and (scene.get("choices") or scene.get("hotspots")):
         err("next_and_decisions", scene=sid)
+    _check_mechanics(scene, where, state, err)
     for i, choice in enumerate(scene.get("choices") or []):
         _check_decision(choice, f"{where}.choices[{i}]", CHOICE_KEYS, "text", scenes, state, err)
     for i, spot in enumerate(scene.get("hotspots") or []):
@@ -427,6 +436,91 @@ def _check_scene(sid: str, scene: object, scenes: dict, state: dict, kind: str, 
         _check_goto(step.get("goto"), place, scenes, err)
         if "if" in step:
             _check_condition(step["if"], state, err, f"{place}.if")
+
+
+def _number(value: object) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _check_mechanics(scene: dict, where: str, state: dict, err) -> None:
+    """symptoms, clues, inbox and allocation: their shape, and a task (inbox, allocation) goes on only by `next`."""
+    symptoms = scene.get("symptoms")
+    if symptoms is not None and (not isinstance(symptoms, list) or not symptoms or not all(str(s or "").strip() for s in symptoms)):
+        err("bad_symptoms", place=f"{where}.symptoms")
+    clues = scene.get("clues")
+    if clues is not None:
+        if not isinstance(clues, list) or not clues or not all(isinstance(c, dict) and str(c.get("label") or "").strip()
+                                                              and str(c.get("text") or "").strip() for c in clues):
+            err("bad_clues", place=f"{where}.clues")
+        elif "min_clues" in scene and not (isinstance(scene["min_clues"], int) and 1 <= scene["min_clues"] <= len(clues)):
+            err("bad_min_clues", place=f"{where}.min_clues", value=scene["min_clues"], count=len(clues))
+        if not (scene.get("choices") or scene.get("hotspots")):
+            err("clues_without_decisions", place=f"{where}.clues")
+    elif "min_clues" in scene:
+        err("bad_min_clues", place=f"{where}.min_clues", value=scene["min_clues"], count=0)
+    tasks = [k for k in TASKS if scene.get(k) is not None]
+    if len(tasks) > 1:
+        err("two_tasks", place=where)
+    for task in tasks:
+        place = f"{where}.{task}"
+        body = scene[task]
+        if not isinstance(body, dict):
+            err("bad_task", place=place)
+            continue
+        valid = INBOX_KEYS if task == "inbox" else ALLOCATION_KEYS
+        for key in sorted(set(body) - valid):
+            err("unknown_key", key=f"{place}.{key}", valid=", ".join(sorted(valid)))
+        if body.get("store") not in state:
+            err("task_store", place=place, name=body.get("store") or "")
+        if "points" in body and not _number(body["points"]):
+            err("bad_score", place=place, value=body["points"])
+        if not scene.get("next") or scene.get("choices") or scene.get("hotspots"):
+            err("task_needs_next", place=place)
+        if task == "inbox":
+            categories = body.get("categories")
+            if not isinstance(categories, list) or len(categories) < 2 or not all(str(c or "").strip() for c in categories):
+                err("bad_categories", place=f"{place}.categories")
+                categories = []
+            items = body.get("items")
+            if not isinstance(items, list) or not items:
+                err("bad_items", place=f"{place}.items")
+                continue
+            for i, item in enumerate(items):
+                if not isinstance(item, dict) or not str(item.get("text") or "").strip() or item.get("answer") not in categories:
+                    err("bad_item", place=f"{place}.items[{i}]", valid=", ".join(map(str, categories)))
+        else:
+            total, options = body.get("total"), body.get("options")
+            if not (isinstance(total, int) and not isinstance(total, bool) and total > 0):
+                err("bad_total", place=f"{place}.total", value=total)
+                continue
+            if not isinstance(options, list) or len(options) < 2:
+                err("bad_options", place=f"{place}.options")
+                continue
+            lows = 0
+            for i, option in enumerate(options):
+                target = option.get("target") if isinstance(option, dict) else None
+                ok = (isinstance(option, dict) and str(option.get("label") or "").strip() and isinstance(target, list)
+                      and len(target) == 2 and all(isinstance(x, int) and not isinstance(x, bool) for x in target)
+                      and 1 <= target[0] <= target[1] <= total)
+                if not ok:
+                    err("bad_option", place=f"{place}.options[{i}]", total=total)
+                else:
+                    lows += target[0]
+            if lows > total:
+                err("targets_over_total", place=place, total=total, sum=lows)
+
+
+def task_of(scene: dict) -> tuple[str, dict] | None:
+    """The task of a scene (inbox or allocation) and its body, if it has one."""
+    for task in TASKS:
+        if isinstance(scene.get(task), dict):
+            return task, scene[task]
+    return None
+
+
+def task_size(task: str, body: dict) -> int:
+    """How many things a task grades: the items of an inbox, the options of an allocation."""
+    return len(body.get("items") or []) if task == "inbox" else len(body.get("options") or [])
 
 
 def _check_screen(screen: object, skin: object, place: str, err) -> None:
@@ -531,7 +625,20 @@ def options(scene: dict, env: dict) -> list[dict]:
 
 
 def _next_states(scene: dict, env: dict) -> list[tuple[str, dict, float, str | None]] | None:
-    """Where the learner can go from a scene with that state: (scene, state, points, decision); None at a dead end."""
+    """Where the learner can go from a scene with that state: (scene, state, points, decision); None at a dead end. A task
+    (inbox, allocation) has one way out per possible result: `k` things right, from none to all (decision `task:k`)."""
+    found = task_of(scene)
+    if found and scene.get("next"):
+        task, body = found
+        points = float(body.get("points") if body.get("points") is not None else 1)
+        out = []
+        for k in range(task_size(task, body) + 1):
+            after = {**env, str(body.get("store")): k}
+            step = next((s for s in scene["next"] if test(s.get("if"), after)), None)
+            if step is None:
+                return None
+            out.append((step["goto"], after, k * points, f"task:{k}"))
+        return out
     if scene.get("next"):
         for step in scene["next"]:
             if test(step.get("if"), env):
@@ -596,6 +703,13 @@ def _words(text: object) -> int:
 
 def _scene_words(scene: dict, env: dict) -> int:
     count = _words(scene.get("text"))
+    count += sum(_words(s) for s in scene.get("symptoms") or [])
+    count += sum(_words(c.get("label")) + _words(c.get("text")) for c in scene.get("clues") or [] if isinstance(c, dict))
+    found = task_of(scene)
+    if found:
+        task, body = found
+        things = body.get("items") if task == "inbox" else body.get("options")
+        count += sum(_words(x.get("text") or x.get("label")) for x in things or [] if isinstance(x, dict))
     count += sum(_words(v.get("text")) for v in scene.get("variants") or [] if isinstance(v, dict) and _holds(v.get("if"), env))
     return count + _words(scene.get("debriefing"))
 

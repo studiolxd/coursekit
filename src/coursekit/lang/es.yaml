@@ -101,6 +101,12 @@ player:
   sim_finish_first: Termina antes las simulaciones de esta prueba.
   sim_locked: Decide hasta llegar a un final; después sigue el apartado.
   sim_listen: Escuchar la escena
+  sim_symptoms: Lo que observas
+  sim_clues: Pistas
+  sim_open_clues: "Abre {n} pista(s) más antes de decidir."
+  sim_confirm: Confirmar
+  sim_left: "Te quedan {left} de {total}."
+  sim_task_result: "{k} de {n} bien"
   skin_mail_app: Correo
   skin_chat_app: Equipo
   skin_inbox: Bandeja de entrada

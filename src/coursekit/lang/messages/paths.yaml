@@ -28,3 +28,4 @@ background: {es: "fondo: {text}", en: "background: {text}"}
 none: {es: "{code}: ninguna unidad tiene simulaciones", en: "{code}: no unit has simulations"}
 unit_written: {es: "unidad {n}: {count} simulaciones → {path}", en: "unit {n}: {count} simulations → {path}"}
 unit_errors: {es: "unidad {n}: las simulaciones tienen errores (coursekit verify {code} --unit {n}):", en: "unit {n}: the simulations have errors (coursekit verify {code} --unit {n}):"}
+task_step: {es: "tarea: {k} bien", en: "task: {k} right"}
