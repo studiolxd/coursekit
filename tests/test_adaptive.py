@@ -84,8 +84,8 @@ def test_the_result_fields_are_reserved_and_readable():
 
 def test_verify_keeps_the_blocks_within_creators_limits():
     report = verifymod.Report()
-    sims = [(1, "content.md", 1, "call", {"risk"} | set(simmod.RESULT_FIELDS), False),
-            (1, "content.md", 4, "inner", {"x"} | set(simmod.RESULT_FIELDS), True)]
+    sims = [(1, "content.md", 1, "call", simmod.variable_types({"risk": 0}), False),
+            (1, "content.md", 4, "inner", simmod.variable_types({"x": 0}), True)]
     lines = ["sim", ':::if call.kind == "good" && inner.x > 0', "a", "inner sim", ":::else", "b", ":::"]
     assert verifymod.check_adaptive(Path("content.md"), lines, 1, sims, report) == 1
     text = "\n".join(report.errors)
@@ -97,6 +97,21 @@ def test_verify_keeps_the_blocks_within_creators_limits():
     verifymod.check_adaptive(Path("assessment.md"), [long, "a", ":::else", "b", ":::"] + many, 1, sims[:1], report)
     text = "\n".join(report.errors)
     assert "cannot go in a test" in text and "characters; at most 500" in text and "11 branches with a condition; at most 10" in text
+
+
+def test_conditions_follow_creators_grammar_and_types():
+    assert simmod.test("call.risk < 3 == true", {"call.risk": 2})  # equality above the relations
+    assert simmod.test('call.ending == "say \\"no\\""', {"call.ending": 'say "no"'})  # escapes \" and \\
+    with pytest.raises(simmod.ExpressionError):
+        simmod.parse_expression("1 < call.risk < 3")  # comparisons do not chain
+    report = verifymod.Report()
+    sims = [(1, "content.md", 1, "call", simmod.variable_types({"risk": 0, "called": False}), False)]
+    for condition in ('call.kind == 3', '!call.kind', 'call.called + 1', 'call.risk', 'call.grade >= 50 && call.called'):
+        verifymod.check_adaptive(Path("content.md"), ["sim", f":::if {condition}", "a", ":::else", "b", ":::"], 1, sims, report)
+    text = "\n".join(report.errors)
+    assert "'==' compares str with num" in text and "'!' needs bool and gets str" in text
+    assert "'+' needs num and gets bool" in text and "the condition gives num" in text
+    assert len(report.errors) == 4
 
 
 def test_the_package_sends_its_variables_in_state_vars():

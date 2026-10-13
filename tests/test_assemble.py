@@ -112,6 +112,24 @@ def test_directives_check(course, tmp_path, capsys):
     assert "REMOVED TABS (in directive 'tabs')" in out
 
 
+def test_the_structure_category_and_its_conditional_are_not_new_directives(course, tmp_path, capsys):
+    """The catalog gained a category, `structure`, with CONDITIONAL: the assembly builds it from :::if, so it is not reported
+    as a brick to turn into a directive, and a category coursekit does not know is read like any other."""
+    from coursekit import config
+    from coursekit.project import find_project
+
+    registry = config.effective("directives", find_project()).value
+    every = sorted({d["brick"] for d in registry["directives"].values()} | set(registry["not_directives"]))
+    catalog = {"structuredContent": {"categories": [
+        {"category": "collection", "types": [{"type": b, "whenToUse": "x"} for b in every if b != "CONDITIONAL"]},
+        {"category": "structure", "types": [{"type": "CONDITIONAL", "whenToUse": "adaptive content"}]}]}}
+    path = tmp_path / "catalog.json"
+    path.write_text(json.dumps(catalog), encoding="utf-8")
+    capsys.readouterr()
+    assert main(["directives", "check", str(path)]) == 0, capsys.readouterr().out
+    assert "CONDITIONAL" not in capsys.readouterr().out
+
+
 def test_english_course_plan(tmp_path, monkeypatch, capsys):
     monkeypatch.delenv("COURSEKIT_PROJECT", raising=False)
     root = tmp_path / "en"

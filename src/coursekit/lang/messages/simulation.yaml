@@ -2,6 +2,9 @@
 # Each one comes after "<file>:<line> <kind> '<id>':".
 expr_bad_char: {es: "carácter no válido '{char}' en «{text}»", en: "invalid character '{char}' in «{text}»"}
 expr_empty: {es: "condición vacía", en: "empty condition"}
+expr_type: {es: "'{op}' necesita {want} y recibe {got}", en: "'{op}' needs {want} and gets {got}"}
+expr_type_mismatch: {es: "'{op}' compara {left} con {right}: tienen que ser del mismo tipo", en: "'{op}' compares {left} with {right}: they must be of the same type"}
+expr_not_boolean: {es: "la condición da {got}, no verdadero o falso", en: "the condition gives {got}, not true or false"}
 expr_text_compare:
   es: "un texto entre comillas solo se compara con == o != (p. ej. llamada.kind == \"good\"): «{text}»"
   en: "a text in quotes is only compared with == or != (e.g. call.kind == \"good\"): «{text}»"

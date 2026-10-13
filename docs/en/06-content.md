@@ -615,12 +615,15 @@ The learner sees the first branch whose condition holds (`:::if`, then each `:::
 simulations it reads have not reached an ending yet, the `:::else` branch, which is required: it is the version for
 everyone else, and the one creator shows while it cannot adapt content. A condition reads, of each simulation that comes
 before it in the same unit, its variables (`id.variable`) and its result: `id.grade` (0–100), `id.score`, `id.maxScore`,
-`id.ending` (the id of its ending scene) and `id.kind` (`"good"`, `"mixed"` or `"bad"`). Texts go in double quotes and
-are only compared with `==` and `!=`. Those five names are reserved: no variable of a simulation's `state` may be called
+`id.ending` (the id of its ending scene) and `id.kind` (`"good"`, `"mixed"` or `"bad"`). Texts go in double quotes
+(`\"` and `\\` inside) and are only compared with `==` and `!=`. There are no conversions between types: `+`, `-`, `<`,
+`<=`, `>`, `>=` take numbers; `==` and `!=` two values of the same type; `!`, `&&` and `||` booleans; and a condition gives
+true or false (`call.risk` alone is not one; `call.risk > 0` is). Comparisons do not chain (`1 < call.risk < 3` is an
+error), and `==` and `!=` bind less tightly than `<` and the rest. Those five names are reserved: no variable of a simulation's `state` may be called
 like them. Each unit is its own package, with its own saved state, so a block cannot read what was decided in another
 unit. The branches may hold any content and directives; the words of the `:::else` branch count.
 
-`verify` keeps the blocks within creator's limits: at most 10 branches with a condition, 500 characters per condition and
+`verify` checks the types of each condition with the initial values of the `state` and keeps the blocks within creator's limits: at most 10 branches with a condition, 500 characters per condition and
 8 different simulations per block; no block inside another; a condition cannot read a simulation that is inside the block,
 and a simulation inside a branch cannot be scored; never in a test or its question bank.
 

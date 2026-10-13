@@ -271,7 +271,7 @@ def course_simulations(course: dict, rules: dict) -> list[tuple[int, str, int, s
                     continue
                 if isinstance(data, dict) and data.get("id"):
                     state = data.get("state") if isinstance(data.get("state"), dict) else {}
-                    found.append((other["n"], name, line_no, str(data["id"]), set(map(str, state)) | set(simmod.RESULT_FIELDS),
+                    found.append((other["n"], name, line_no, str(data["id"]), simmod.variable_types(state),
                                   data.get("scored") is True))
     return found
 
@@ -353,6 +353,8 @@ def check_adaptive(path: Path, lines: list[str], unit_n: int, sims: list, report
         elsewhere = {f"{sid}.{var}": n for n, name, line, sid, variables, _ in sims for var in variables if n != unit_n}
         inner = {f"{sid}.{var}" for n, name, line, sid, variables, _ in sims for var in variables
                  if (sid, False) in inside or (sid, True) in inside}
+        types = {f"{sid}.{var}": kind for n, name, line, sid, variables, _ in sims for var, kind in variables.items()
+                 if f"{sid}.{var}" in earlier}
         read: set[str] = set()
         for line_no, condition in block.branches:
             here = f"{path.name}:{line_no}: "
@@ -373,6 +375,12 @@ def check_adaptive(path: Path, lines: list[str], unit_n: int, sims: list, report
                     report.error(here + t("simulation", "if_other_unit", condition=condition, name=name, n=elsewhere[name]))
                 else:
                     report.error(here + t("simulation", "if_unknown_simulation", condition=condition, name=name))
+            try:  # creator checks the types before evaluating: a condition that mixes them never holds
+                kind = simmod.check_types(node, types)
+                if kind not in ("bool", "?"):
+                    raise simmod.ExpressionError(t("simulation", "expr_not_boolean", got=kind))
+            except simmod.ExpressionError as exc:
+                report.error(f"{here}{exc}")
         if len(read) > ADAPTIVE_LIMITS["simulations"]:
             report.error(where + t("simulation", "if_too_many_simulations", count=len(read), limit=ADAPTIVE_LIMITS["simulations"]))
     return len(blocks)

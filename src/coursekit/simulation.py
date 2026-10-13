@@ -71,7 +71,7 @@ RESULT_FIELDS = ("grade", "score", "maxScore", "ending", "kind")
 # ── Conditions ──────────────────────────────────────────────────────────────────────────────
 
 TOKEN_RE = re.compile(r"\s*(?:(\d+(?:\.\d+)?)|([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)"
-                      r'|(&&|\|\||==|!=|<=|>=|[<>!()+-])|"([^"\\]*)")')
+                      r'|(&&|\|\||==|!=|<=|>=|[<>!()+-])|"((?:[^"\\\n]|\\["\\])*)")')
 
 
 def _tokens(text: str) -> list[tuple[str, object]]:
@@ -82,8 +82,8 @@ def _tokens(text: str) -> list[tuple[str, object]]:
         if not m or m.end() == pos:
             raise ExpressionError(t("simulation", "expr_bad_char", char=text[pos:].strip()[:1], text=text))
         number, name, op, string = m.groups()
-        if string is not None:  # a text, only compared with == and != (`call.kind == "good"`)
-            out.append(("str", string))
+        if string is not None:  # a text, only compared with == and != (`call.kind == "good"`); escapes \" and \\
+            out.append(("str", re.sub(r'\\(["\\])', r"\1", string)))
         elif number is not None:
             out.append(("num", float(number) if "." in number else int(number)))
         elif name is not None:
@@ -139,13 +139,22 @@ class _Parser:
         return self.compare()
 
     def compare(self) -> tuple:
+        """Equality, above the relations (as creator's grammar: `a < b == true` holds; comparisons do not chain)."""
+        node = self.relation()
+        op = self.take("==", "!=")
+        if op:
+            return (op, node, self.relation())
+        if node[0] == "str":
+            raise ExpressionError(t("simulation", "expr_text_compare", text=self.text))
+        return node
+
+    def relation(self) -> tuple:
         node = self.sum_()
-        op = self.take("==", "!=", "<", "<=", ">", ">=")
+        op = self.take("<", "<=", ">", ">=")
         if op:
             node = (op, node, self.sum_())
-        texts = node[0] == "str" or (node[0] in ("==", "!=", "<", "<=", ">", ">=") and "str" in (node[1][0], node[2][0]))
-        if texts and node[0] not in ("==", "!="):
-            raise ExpressionError(t("simulation", "expr_text_compare", text=self.text))
+            if "str" in (node[1][0], node[2][0]):
+                raise ExpressionError(t("simulation", "expr_text_compare", text=self.text))
         return node
 
     def sum_(self) -> tuple:
@@ -185,6 +194,46 @@ def parse_expression(text: object) -> tuple:
     if not isinstance(text, str):
         raise ExpressionError(t("simulation", "expr_not_text", value=text))
     return _Parser(text).parse()
+
+
+def variable_types(state: dict) -> dict[str, str]:
+    """The type of each variable a condition can read of a simulation: its `state` (by its initial value) and its result."""
+    def kind(value: object) -> str:
+        if isinstance(value, bool):
+            return "bool"
+        return "num" if isinstance(value, (int, float)) else "str" if isinstance(value, str) else "?"
+    types = {str(name): kind(value) for name, value in state.items()}
+    types.update({field: "str" if field in ("ending", "kind") else "num" for field in RESULT_FIELDS})
+    return types
+
+
+def check_types(node: tuple, types: dict[str, str]) -> str:
+    """The type of a condition as creator checks it before evaluating: `num`, `bool`, `str` or `?` (a variable whose type is
+    not known). Without conversions: + - < <= > >= and the unary minus on numbers; == != on two of the same type; ! && ||
+    on booleans. Raises ExpressionError on what can never hold."""
+    kind = node[0]
+    if kind == "num":
+        return "bool" if isinstance(node[1], bool) else "num"
+    if kind == "str":
+        return "str"
+    if kind == "var":
+        return types.get(str(node[1]), "?")
+    if kind in ("!", "neg"):
+        inner = check_types(node[1], types)
+        want = "bool" if kind == "!" else "num"
+        if inner not in (want, "?"):
+            raise ExpressionError(t("simulation", "expr_type", op="!" if kind == "!" else "-", want=want, got=inner))
+        return want
+    left, right = check_types(node[1], types), check_types(node[2], types)
+    if kind in ("&&", "||", "+", "-", "<", "<=", ">", ">="):
+        want = "bool" if kind in ("&&", "||") else "num"
+        for side in (left, right):
+            if side not in (want, "?"):
+                raise ExpressionError(t("simulation", "expr_type", op=kind, want=want, got=side))
+        return "num" if kind in ("+", "-") else "bool"
+    if "?" not in (left, right) and left != right:  # == and !=: the same type on both sides
+        raise ExpressionError(t("simulation", "expr_type_mismatch", op=kind, left=left, right=right))
+    return "bool"
 
 
 def names(node: tuple) -> set[str]:

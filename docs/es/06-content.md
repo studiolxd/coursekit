@@ -618,13 +618,16 @@ El alumno ve la primera rama cuya condición se cumple (`:::if` y después cada 
 o las simulaciones que lee aún no han llegado a un final, la rama `:::else`, que es obligatoria: es la versión para todos
 los demás y la que muestra creator mientras no pueda adaptar contenido. Una condición lee, de cada simulación anterior de
 la misma unidad, sus variables (`id.variable`) y su resultado: `id.grade` (0–100), `id.score`, `id.maxScore`, `id.ending`
-(el id de su escena final) e `id.kind` (`"good"`, `"mixed"` o `"bad"`). Los textos van entre comillas dobles y solo se
-comparan con `==` y `!=`. Esos cinco nombres están reservados: ninguna variable del `state` de una simulación puede
+(el id de su escena final) e `id.kind` (`"good"`, `"mixed"` o `"bad"`). Los textos van entre comillas dobles (dentro,
+`\"` y `\\`) y solo se comparan con `==` y `!=`. No hay conversiones entre tipos: `+`, `-`, `<`, `<=`, `>`, `>=` toman
+números; `==` y `!=`, dos valores del mismo tipo; `!`, `&&` y `||`, booleanos; y una condición da verdadero o falso
+(`call.risk` sola no lo es; `call.risk > 0`, sí). Las comparaciones no se encadenan (`1 < call.risk < 3` es un error), y
+`==` y `!=` agrupan después que `<` y el resto. Esos cinco nombres están reservados: ninguna variable del `state` de una simulación puede
 llamarse así. Cada unidad es su propio paquete, con su propio estado guardado, así que un bloque no puede leer lo que se
 decidió en otra unidad. Las ramas pueden contener cualquier contenido y directivas; cuentan las palabras de la rama
 `:::else`.
 
-`verify` mantiene los bloques dentro de los límites de creator: como mucho 10 ramas con condición, 500 caracteres por
+`verify` comprueba los tipos de cada condición con los valores iniciales del `state` y mantiene los bloques dentro de los límites de creator: como mucho 10 ramas con condición, 500 caracteres por
 condición y 8 simulaciones distintas por bloque; ningún bloque dentro de otro; una condición no puede leer una simulación
 que esté dentro del bloque, y una simulación dentro de una rama no puede ser evaluable; nunca en una prueba ni en su banco
 de preguntas.

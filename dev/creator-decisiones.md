@@ -298,3 +298,16 @@ Contrato de creator del 2026-10-13, fase 2. Lo que hace coursekit (`player/embed
 | Ids estables en los bricks de cada rama | Pendiente de la fase en que se monte el bloque: `applied` guardará los ids de cada rama. |
 | Calendario: montar por MCP → el alumno lo ve → editor | Seguimos con la rama neutra hasta la segunda. |
 
+
+## 14. Brick CONDITIONAL fase 1 de creator (2026-10-13) y categoría `structure`
+
+- El catálogo MCP trae una categoría nueva, `structure`, con `CONDITIONAL`. `directives.py` lee las categorías de forma
+  genérica; `CONDITIONAL` va a `not_directives` (lo construye el montaje desde `:::if`) para que `directives check` no lo
+  dé como NUEVO. `/sync-directives` sabe que un brick `structure` nunca es directiva.
+- Gramática como la de creator: igualdad por encima de las relaciones, comparaciones sin encadenar, escapes `\"` y `\\`
+  en los textos (Python y `expr.js`). `verify` comprueba los tipos sin conversiones (tipos del `state` por su valor
+  inicial; `grade`, `score`, `maxScore` números; `ending`, `kind` textos) y que la condición dé booleano.
+- Seguimos montando la rama neutra en creator hasta su fase 2 (el reproductor evalúa). Cuando llegue: `add_brick`
+  CONDITIONAL con `{branches:[{id?, condition, bricks:[{id?, type, data}]}], else}`; en `for_creator`/`applied`, quitar
+  `meta`/`hash` de los hijos y guardar los ids de los hijos por rama (`get_lesson` los devuelve anidados); actualizar con
+  `move_brick` (`branch`) y `delete_brick` (`keepChildren`).

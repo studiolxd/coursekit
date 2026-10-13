@@ -71,6 +71,7 @@ not_directives:
   ATTACHMENT: "not used for now"
   PUZZLE: "image game: not used for now"
   SLIDING_PUZZLE: "image game: not used for now"
+  CONDITIONAL: "adaptive blocks :::if / :::elif / :::else (the assembly builds it; category `structure` of the catalog)"
 
 # Common e-learning components that are NOT creator bricks, and what to use instead.
 component_equivalents:

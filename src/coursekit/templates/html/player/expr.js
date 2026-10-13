@@ -2,7 +2,7 @@
 // numbers, true, false, texts in double quotes (only with == and !=), variables (`risk`, `call.risk`),
 // + - == != < <= > >= ! && || and parentheses.
 
-const TOKEN = /\s*(?:(\d+(?:\.\d+)?)|([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)|(&&|\|\||==|!=|<=|>=|[<>!()+-])|"([^"\\]*)")/y;
+const TOKEN = /\s*(?:(\d+(?:\.\d+)?)|([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)|(&&|\|\||==|!=|<=|>=|[<>!()+-])|"((?:[^"\\\n]|\\["\\])*)")/y;
 
 function tokens(text) {
   const out = [];
@@ -12,7 +12,7 @@ function tokens(text) {
     const start = TOKEN.lastIndex;
     const m = TOKEN.exec(source);
     if (!m || TOKEN.lastIndex === start) throw new Error(`invalid condition: ${source}`);
-    if (m[4] !== undefined) out.push(["str", m[4]]);
+    if (m[4] !== undefined) out.push(["str", m[4].replace(/\\(["\\])/g, "$1")]);
     else if (m[1] !== undefined) out.push(["num", Number(m[1])]);
     else if (m[2] !== undefined) out.push(m[2] === "true" || m[2] === "false" ? ["num", m[2] === "true"] : ["var", m[2]]);
     else out.push(["op", m[3]]);
@@ -58,16 +58,16 @@ export function parse(text) {
     }
     return node;
   };
-  const compare = () => {
+  // equality above the relations, as creator's grammar (comparisons do not chain)
+  const relation = () => {
     const node = sum();
-    const op = take("==", "!=", "<", "<=", ">", ">=");
-    if (!op) return textOnly(node);
-    const right = sum();
-    if (op !== "==" && op !== "!=") {
-      textOnly(node);
-      textOnly(right);
-    }
-    return [op, node, right];
+    const op = take("<", "<=", ">", ">=");
+    return op ? [op, textOnly(node), textOnly(sum())] : node;
+  };
+  const compare = () => {
+    const node = relation();
+    const op = take("==", "!=");
+    return op ? [op, node, relation()] : textOnly(node);
   };
   const not = () => (take("!") ? ["!", not()] : compare());
   const and = () => {

@@ -221,8 +221,8 @@ def test_a_condition_cannot_read_another_unit():
     from coursekit.verify import Report
 
     report = Report()
-    sims = [(1, "content.md", 1, "call", {"risk"}, False), (2, "content.md", 5, "later", {"x"}, False),
-            (1, "content.md", 40, "after", {"y"}, False)]
+    sims = [(1, "content.md", 1, "call", {"risk": "num"}, False), (2, "content.md", 5, "later", {"x": "num"}, False),
+            (1, "content.md", 40, "after", {"y": "bool"}, False)]
     lines = ["intro", ":::if call.risk >= 3 && later.x > 0 && after.y", "a", ":::else", "b", ":::"]
     assert verifymod.check_adaptive(Path("content.md"), lines, 1, sims, report) == 1
     text = "\n".join(report.errors)

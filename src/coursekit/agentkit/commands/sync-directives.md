@@ -13,6 +13,9 @@ Update the directive registry with the current creator catalog.
    - If so: add it to `directives` in `config/directives.yaml` with a kebab-case name, `brick`,
      `role` (`interactive`, `question` or `static`) and `use` in {{ui_language_name}}.
    - If not: add it to `not_directives` with the reason.
+   - A brick of category `structure` holds other bricks (as `CONDITIONAL`, built from the `:::if` blocks):
+     it is never a directive; it goes to `not_directives` saying which syntax of the content builds it, or
+     that coursekit does not build it yet.
 5. For each `REMOVED`: remove it from the registry. If it was a directive, find its uses in
    `courses/*/content/**/*.md` and list the affected files (do not change them).
 6. Update `synced_with_creator`, run step 2 again until it says `ok` and summarise the changes.
