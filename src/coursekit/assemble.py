@@ -676,13 +676,15 @@ def walk(bricks: list[dict]):
             yield from walk((brick["data"].get("then") or []) + (brick["data"].get("else") or []))
 
 
-def for_creator(bricks: list[dict], ctx: dict, key: str) -> list[dict]:
+def for_creator(bricks: list[dict], ctx: dict, key: str, opens: bool = False) -> list[dict]:
     """Creator has no adaptive content (its neutral branch is assembled) and takes a simulation as an EMBED of its package
-    (`SIM-<id>` in the manifest, built with `coursekit media embed` and uploaded); until it is uploaded, a note stands for it."""
+    (`SIM-<id>` in the manifest, built with `coursekit media embed` and uploaded); until it is uploaded, a note stands for it.
+    `opens`: the first brick is the simulation that opens a section of a decision-based course; its EMBED blocks the lesson
+    until the simulation reaches an ending (the package says `complete`), so the learner decides before reading."""
     from coursekit.htmlkit.simpackage import asset_id
 
     out: list[dict] = []
-    for brick in bricks:
+    for n, brick in enumerate(bricks):
         if brick["type"] == "CONDITIONAL":
             ctx["warnings"].append(t("assemble", "adaptive_neutral", key=key, condition=brick["data"].get("condition", "")))
             out += for_creator(brick["data"].get("else") or [], ctx, key)
@@ -692,8 +694,10 @@ def for_creator(bricks: list[dict], ctx: dict, key: str) -> list[dict]:
             title = re.sub(r"<[^>]+>", "", str(brick["data"].get("title") or sid))
             meta = {**brick["meta"], "asset": asset_id(sid)}
             if asset.get("asset_path") and asset.get("status") == "uploaded":
-                out.append({"type": "EMBED", "data": {"properties": {"embedFolderPrefix": asset["asset_path"], "embedTitle": title}},
-                            "meta": meta})
+                properties = {"embedFolderPrefix": asset["asset_path"], "embedTitle": title}
+                if opens and n == 0:
+                    properties["blocker_enabled"] = True
+                out.append({"type": "EMBED", "data": {"properties": properties}, "meta": meta})
             else:
                 ctx["warnings"].append(t("assemble", "simulation_not_uploaded", key=key, id=sid, asset=asset_id(sid)))
                 out.append({"type": "NOTE", "data": {"content": {"title": inline(f"{title}"),
@@ -747,9 +751,11 @@ def build_plan(course: dict, unit: dict, assets: dict[str, dict] | None = None,
                             "quiz": quiz_settings(course, unit, m.group(1), m.group(2)),
                             "bricks": parse_blocks(body, ctx, key)})
 
+    decision_based = (course.get("design") or {}).get("approach") == "decision-based"
     if coursemod.backend(course) == "creator" and not simulations and course.get("_project"):
         for lesson in lessons:
-            lesson["bricks"] = for_creator(lesson["bricks"], ctx, lesson["key"])
+            opens = decision_based and lesson["type"] == "content"
+            lesson["bricks"] = for_creator(lesson["bricks"], ctx, lesson["key"], opens)
     for lesson in lessons:
         for brick in lesson["bricks"]:
             brick["hash"] = brick_hash(brick)

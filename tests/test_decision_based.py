@@ -528,6 +528,9 @@ def test_a_simulation_becomes_an_embed_package_for_creator(decision_course, caps
     creator_plan, errors, _, _ = assemble.write_plan(data, data["units"][0])
     embed = creator_plan["lessons"][1]["bricks"][0]
     assert embed["type"] == "EMBED" and embed["data"]["properties"]["embedFolderPrefix"] == "embeds/sim-call"
+    assert embed["data"]["properties"]["blocker_enabled"] is True  # it opens the section: decide before reading
+    assert not [b for lesson in creator_plan["lessons"] for b in lesson["bricks"][1:]
+                if b["type"] == "EMBED" and b["data"]["properties"].get("blocker_enabled")]
 
 
 def test_download_writes_inside_the_project_only(project, monkeypatch, capsys):

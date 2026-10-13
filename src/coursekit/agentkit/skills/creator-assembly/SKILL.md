@@ -64,7 +64,9 @@ the contents follow a theme that was changed and imported again.
   when the folder is written in the brick and fills `properties.embedPackage` (`capabilities`: `complete` and `resize` for
   a simulation, `resize` for an SVG). Never send `embedPackage` yourself (the MCP refuses it). After `add_brick` /
   `update_brick`, `get_lesson` must show it: if it is empty, the manifest was not uploaded with the folder; upload the whole
-  package again (a new folder) and update the brick. A warning that "this EMBED cannot block" means the same.
+  package again (a new folder) and update the brick. A warning that "this EMBED cannot block" means the same. In a
+  decision-based course the plan turns on `blocker_enabled` in the EMBED of the simulation that opens each section: the
+  lesson waits until the simulation reaches an ending. Apply it as the plan says.
 - After each lesson: `get_lesson`, take the brick IDs **in order** and record
   `coursekit assemble applied <CODE> --unit N --lesson <key> --lesson-id <id> --brick-ids id1,id2,…`.
   If the count does not match the plan, something was not applied: check before going on.

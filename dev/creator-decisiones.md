@@ -260,6 +260,6 @@ fase atiende `complete` y `resize`, y `ready` no hace nada aún). Lo que hace co
   `embedPackage` y, tras `add_brick`, comprueban en `get_lesson` que creator lo ha rellenado.
 - No se declaran aún `state`, `result` ni `interaction` (reservadas): se añadirán cuando creator las atienda (fase 2),
   junto con `restore` y `reset` y la nota en SCORM.
-- Bloqueo: apagado por defecto en creator (decisión del 2026-10-13). coursekit no lo enciende por su cuenta; queda
-  pendiente decidir si el montaje lo activa en las simulaciones que abren un apartado de un curso basado en decisiones.
+- Bloqueo: apagado por defecto en creator (decisión del 2026-10-13). En un curso basado en decisiones, el montaje lo
+  activa (`blocker_enabled: true`) en el EMBED de la simulación que abre cada apartado de contenido; las demás no bloquean.
 
