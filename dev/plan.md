@@ -598,7 +598,7 @@ Pendiente después de la fase 8:
 - Vía creator con un curso basado en decisiones (paquetes `SIM-…` subidos como EMBED).
 - axe sobre las pieles y el reproductor; audio por escena; pieles propias del proyecto en `components/`.
 - Mecánicas `inbox`, `investigation`, `allocation`, `diagnosis`.
-- Huecos de creator (sección 9): estado compartido entre bricks y nota de un EMBED.
+- Huecos de creator (sección 9): estado compartido entre bricks y nota de un EMBED. Creator ha respondido (`dev/creator-decisiones.md`, sección 10): protocolo y manifiesto suyos, y por fases (terminado, bloqueo y altura; estado, nota e interacciones; `CONDITIONAL`). Ya hecho en coursekit: condiciones solo de la misma unidad, ids `<simulación>-<intento>-<n>`, aviso de evaluables fuera de la prueba. Pendiente del contrato: `simpackage.py` y `for_creator`.
 
 ## 12. Verificación y calidad para los dos enfoques (fase 9)
 

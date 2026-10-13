@@ -69,8 +69,9 @@ function initSimulation(root, ui, tracker) {
   root.querySelector(".ck-sim-static").hidden = true;
   root.appendChild(play);
 
-  const fresh = () => ({ at: start, env: { ...(data.state || {}) }, score: 0, path: [], done: false, ending: null,
-    checkpoints: [], transcript: [], feed: [], fed: [] });
+  // `attempt`: each start from the beginning is a new one (it numbers the interactions: `<id>-<attempt>-<n>`)
+  const fresh = (attempt = 1) => ({ at: start, env: { ...(data.state || {}) }, score: 0, path: [], done: false, ending: null,
+    checkpoints: [], transcript: [], feed: [], fed: [], attempt, decisions: 0 });
   const saved = tracker.simulation(data.id);  // only where it was, the state, the points and whether it ended
   let run = saved && scenes[saved.at] ? { ...fresh(), ...saved } : null;
   const persist = () => {
@@ -97,8 +98,9 @@ function initSimulation(root, ui, tracker) {
     run.path.push(strip(label));
     if (data.kind === "conversation") run.transcript.push({ me: true, html: label });
     const points = run.score - before;
+    run.decisions = (run.decisions || 0) + 1;  // kept on resuming and going back: an interaction id is never repeated
     tracker.interaction({
-      id: `${data.id}-${run.path.length}`,
+      id: `${data.id}-${run.attempt || 1}-${run.decisions}`,
       type: "choice",
       choice: index,
       description: strip(label).slice(0, 250),
@@ -235,7 +237,7 @@ function initSimulation(root, ui, tracker) {
       render(true);
     }));
     actions.appendChild(button(ui.sim_restart, () => {
-      run = fresh();
+      run = fresh((run.attempt || 1) + 1);
       persist();
       render(true);
     }, "", { "data-ck-restart": "" }));
@@ -349,7 +351,7 @@ function initSimulation(root, ui, tracker) {
     grade,
     onChange: (fn) => listeners.push(fn),
     reset: () => {
-      run = fresh();
+      run = fresh((run.attempt || 1) + 1);
       persist();
       render(false);
     },

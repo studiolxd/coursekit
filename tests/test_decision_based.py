@@ -213,7 +213,28 @@ def test_adaptive_blocks_need_else_and_known_variables(decision_course, capsys):
     assert code == 1
     assert "':::if' without ':::else'" in out
     code, out = verify(decision_course, GOOD_SECTION.replace(":::if call.risk >= 3", ":::if other.risk >= 3"), capsys)
-    assert "reads 'other.risk', which is not a variable of an earlier simulation" in out
+    assert "reads 'other.risk', which is not a variable of an earlier simulation of the unit" in out
+
+
+def test_a_condition_cannot_read_another_unit():
+    from coursekit import verify as verifymod
+    from coursekit.verify import Report
+
+    report = Report()
+    sims = [(1, "content.md", 1, "call", {"risk"}), (2, "content.md", 5, "later", {"x"}), (1, "content.md", 40, "after", {"y"})]
+    lines = ["intro", ":::if call.risk >= 3 && later.x > 0 && after.y", "a", ":::else", "b", ":::"]
+    assert verifymod.check_adaptive(Path("content.md"), lines, 1, sims, report) == 1
+    text = "\n".join(report.errors)
+    assert "reads 'later.x', of a simulation of unit 2" in text
+    assert "reads 'after.y', which is not a variable of an earlier simulation of the unit" in text
+    assert "reads 'call.risk'" not in text
+
+
+def test_a_scored_simulation_in_the_content_of_a_unit_with_a_test_does_not_count(decision_course, capsys):
+    code, out = verify(decision_course, GOOD_SECTION, capsys)
+    assert code == 0 and "the scored simulation 'call' is in the content of a unit with a test" in out
+    code, out = verify(decision_course, GOOD_SECTION.replace("scored: true\n", ""), capsys)
+    assert "is in the content of a unit with a test" not in out
 
 
 def test_simulation_ids_are_unique_in_the_course(decision_course, capsys):

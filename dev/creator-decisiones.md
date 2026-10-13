@@ -227,3 +227,19 @@ MCP, coursekit no lo toca.
 **¿Basta con guardar el estado solo en SCORM?** Sí. `suspend_data` es la única persistencia, como en el backend html,
 con el presupuesto de 2 (4.096 caracteres en SCORM 1.2). Sin almacenamiento propio de creator; en la vista previa de
 creator (sin LMS) basta con que el estado dure lo que la sesión.
+
+## 10. Respuesta de creator y lo que cambia
+
+Creator ha respondido a la sección 9. Lo que acuerda, y qué hace coursekit con cada punto:
+
+| # | Creator | coursekit |
+|---|---|---|
+| 1 | El EMBED y la lección hablan con un **protocolo propio de creator**, versionado, para cualquier paquete subido (también para bloquear el avance hasta que el paquete diga que ha terminado). Sustituye a los `ck:*` de la sección 1; pasarán el contrato. | La sección 1 queda como la lista de lo que el protocolo debe cubrir (preparado, estado, resultado, interacción, altura, restaurar, reiniciar). `htmlkit/simpackage.py` hablará ese protocolo cuando llegue el contrato. Pendiente. |
+| 2 | Cada paquete declara en un **manifiesto** la versión del protocolo y lo que sabe hacer (avisar de que ha terminado, nota, estado); el MCP lo lee al subirlo y avisa si se le pide al EMBED algo que el paquete no declara. | `simpackage.py` escribirá el manifiesto; una simulación declara terminar, nota (solo si es evaluable), estado e interacciones. Pendiente del contrato. |
+| 3 | Solo paquetes subidos: se ignoran los mensajes de un EMBED con URL externa. | Sin cambios: coursekit siempre sube el paquete (`coursekit media embed`). |
+| 4 | Las condiciones solo leen simulaciones **del mismo contenido**; el `simulationId` basta con que sea único en el contenido y el MCP lo comprueba. | Hecho, y para los dos backends (en html cada unidad también es su propio SCORM): `verify` da error si un `:::if` lee una simulación de otra unidad. Los ids siguen siendo únicos en todo el curso (más estricto, compatible). |
+| 5 | Id de las interacciones: `<simulación>-<intento>-<n>`. | Hecho también en el backend html: cada vuelta al principio es un intento nuevo, y el contador de decisiones se guarda, así que un id no se repite ni al reanudar. |
+| 6 | SCORM 1.2 no tiene `description`: el texto de la decisión solo en 2004; en 1.2 queda el id de la opción. El vocabulario es `correct`, `incorrect`, `neutral`, y creator lo traduce a cada versión. | Ya es así: coursekit manda la letra de la opción y el texto como descripción; el backend html traduce igual (`wrong` en 1.2). |
+| 7 | Simulaciones evaluables sueltas en un contenido con pruebas: proponen que **no cuenten**; la nota sale de las pruebas. | **Sí, nos vale**: es lo que ya hace el backend html. `verify` avisa de una simulación evaluable en el contenido de una unidad con prueba (que la mueva a `assessment.md` o quite `scored`). |
+| 8 | En la forma anidada del `CONDITIONAL` cada brick hijo lleva su id: con id se actualiza, sin id se crea, y `get_lesson` devuelve la misma forma. | De acuerdo. `assemble applied` guardará los ids de los hijos de cada rama y `diff` los comparará como los de la lección. Pendiente del brick. |
+| 9 | Calendario: primero el protocolo con «he terminado», el bloqueo del avance y la altura; después estado, nota e interacciones; lo último, el `CONDITIONAL`. Hasta entonces, la rama neutra. | Seguimos montando la rama neutra. En coursekit, por el mismo orden: (1) protocolo, manifiesto y «terminado» en `simpackage.py` y `for_creator`; (2) estado, nota e interacciones; (3) `CONDITIONAL` en el plan, `diff` y `applied`. |

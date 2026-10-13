@@ -99,6 +99,9 @@ if_without_else:
   es: "':::if' sin ':::else': la versión neutra es obligatoria (la ve quien no cumple la condición y el montaje en creator)"
   en: "':::if' without ':::else': the neutral version is required (for whoever does not meet the condition and for creator)"
 if_not_closed: {es: "':::if' sin cerrar", en: "':::if' not closed"}
+if_other_unit:
+  es: "la condición «{condition}» lee '{name}', de una simulación de la unidad {n}: cada unidad es un paquete con su propio estado y solo puede leer las suyas"
+  en: "condition «{condition}» reads '{name}', of a simulation of unit {n}: each unit is a package with its own state and can only read its own"
 if_unknown_simulation:
-  es: "la condición «{condition}» lee '{name}', que no es la variable de ninguna simulación anterior (id.variable)"
-  en: "condition «{condition}» reads '{name}', which is not a variable of an earlier simulation (id.variable)"
+  es: "la condición «{condition}» lee '{name}', que no es la variable de ninguna simulación anterior de la unidad (id.variable)"
+  en: "condition «{condition}» reads '{name}', which is not a variable of an earlier simulation of the unit (id.variable)"

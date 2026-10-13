@@ -549,8 +549,14 @@ No caíste, pero mucha gente sí. Veamos por qué.
 ```
 
 `:::else` es obligatorio: es la versión para todos los demás y la que muestra creator mientras no pueda adaptar contenido. La
-condición lee variables de simulaciones anteriores (`id.variable`, de unidades anteriores o de antes en la misma unidad).
+condición lee variables de simulaciones anteriores de la misma unidad (`id.variable`): cada unidad es su propio
+paquete, con su propio estado guardado, así que no puede leer lo que se decidió en otra unidad (`verify` lo da como
+error).
 Las ramas pueden contener cualquier contenido y directivas; cuentan las palabras de la rama `:::else`.
+
+En una unidad con prueba, la nota es la de la prueba: una simulación evaluable (`scored: true`) puesta en `content.md` no
+cuenta para ella, y `verify` avisa. Las simulaciones evaluables van en `assessment.md`; en el contenido sirven para
+practicar.
 
 ## `coursekit sync` y `coursekit outline`
 

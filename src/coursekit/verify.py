@@ -56,6 +56,7 @@ class Syntax:
     placeholder_fields: tuple[str, ...]
     question_key: str
     media_types: dict[str, str]  # how each resource type is written in the language -> its id
+    activity: re.Pattern  # the heading of an assessment activity (a test)
 
     @classmethod
     def for_tokens(cls, tokens: dict) -> Syntax:
@@ -66,6 +67,7 @@ class Syntax:
             placeholder_fields=tuple(tokens["placeholder_fields"]),
             question_key=tokens["question_objective_key"],
             media_types={written.casefold(): type_id for type_id, written in tokens["media_types"].items()},
+            activity=re.compile(rf"^## {re.escape(tokens['assessment_activity'])}\s+[\d.]+\s*[—-]"),
         )
 
     def media_type(self, written: str) -> str | None:
@@ -270,21 +272,28 @@ def course_simulations(course: dict, rules: dict) -> list[tuple[int, str, int, s
 
 
 def check_adaptive(path: Path, lines: list[str], unit_n: int, sims: list, report: Report) -> int:
-    """The `:::if` blocks of a file: well formed, with `:::else`, reading variables of simulations that come before."""
+    """The `:::if` blocks of a file: well formed, with `:::else`, reading variables of simulations that come before in the
+    same unit (each unit is its own package, with its own saved state: it cannot read what was decided in another)."""
     blocks, problems = simmod.scan_conditionals(lines)
     for line, key in problems:
         report.error(f"{path.name}:{line}: " + t("simulation", key))
     for block in blocks:
         earlier = {f"{sid}.{var}" for n, name, line, sid, variables in sims for var in variables
-                   if n < unit_n or (n == unit_n and name == path.name and line < block.line)
+                   if (n == unit_n and name == path.name and line < block.line)
                    or (n == unit_n and name == "content.md" and path.name == "assessment.md")}
+        elsewhere = {f"{sid}.{var}": n for n, name, line, sid, variables in sims for var in variables if n != unit_n}
         try:
             node = simmod.parse_expression(block.condition)
         except simmod.ExpressionError as exc:
             report.error(f"{path.name}:{block.line}: {exc}")
             continue
         for name in sorted(simmod.names(node) - earlier):
-            report.error(f"{path.name}:{block.line}: " + t("simulation", "if_unknown_simulation", condition=block.condition, name=name))
+            if name in elsewhere:
+                report.error(f"{path.name}:{block.line}: " + t("simulation", "if_other_unit", condition=block.condition, name=name,
+                                                                 n=elsewhere[name]))
+            else:
+                report.error(f"{path.name}:{block.line}: " + t("simulation", "if_unknown_simulation", condition=block.condition,
+                                                                 name=name))
     return len(blocks)
 
 
@@ -442,6 +451,11 @@ def verify_unit(course: dict, unit: dict) -> Report:
         directives = list(parse_directives(assessment_path, a_text.splitlines(), rules, report))
         questions = check_questions(assessment_path, directives, rules, syntax, report)
         passing = float(((course.get("design") or {}).get("grading") or {}).get("passing_score") or 50)
+        # with a test, the grade is the test's: a scored simulation of the content does not count (in any backend)
+        if any(syntax.activity.match(line) for line in a_text.splitlines()):
+            for sim in unit_sims:
+                if sim.scored:
+                    report.warn(t("verify", "scored_outside_test", id=sim.id))
         unit_sims += parse_simulations(assessment_path, directives, rules, report, passing)
         adaptive += check_adaptive(assessment_path, a_text.splitlines(), unit["n"], sims, report)
         quizzes = [a for a in (unit.get("activities") or {}).get("assessment", []) if a.get("instrument") == "cuestionario"]

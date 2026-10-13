@@ -30,10 +30,10 @@ export function createTracker(config) {
 
   const save = () => {
     if (!api) return;
-    // SCORM 1.2 keeps 4096 characters: of each simulation only where it is, its state, its points and whether it ended
+    // SCORM 1.2 keeps 4096 characters: of each simulation only where it is, its state, its points, whether it ended and its attempt
     const sims = {};
     Object.entries(state.sims).forEach(([id, run]) => {
-      sims[id] = { a: run.at, e: run.env, s: run.score, d: run.done ? 1 : 0 };
+      sims[id] = { a: run.at, e: run.env, s: run.score, d: run.done ? 1 : 0, t: run.attempt || 1, n: run.decisions || 0 };
     });
     safe(() => api.setSuspendData(JSON.stringify({ v: state.visited, a: state.attempts, b: state.best, s: sims, n: state.interactions })));
     safe(() => api.commit());
@@ -49,7 +49,8 @@ export function createTracker(config) {
       state.best = typeof saved.b === "number" ? saved.b : null;
       state.interactions = Number.isInteger(saved.n) ? saved.n : 0;
       Object.entries(saved.s && typeof saved.s === "object" ? saved.s : {}).forEach(([id, run]) => {
-        state.sims[id] = { at: run.a, env: run.e || {}, score: Number(run.s) || 0, done: run.d === 1, path: [] };
+        state.sims[id] = { at: run.a, env: run.e || {}, score: Number(run.s) || 0, done: run.d === 1, path: [], attempt: Number(run.t) || 1,
+          decisions: Number(run.n) || 0 };
       });
     } catch (error) {
       /* an unreadable record starts from scratch */

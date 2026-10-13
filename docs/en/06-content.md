@@ -547,8 +547,12 @@ You did not fall for it, but many people do. Let us see why.
 ```
 
 `:::else` is required: it is the version for everyone else, and the one creator shows while it cannot adapt content. The
-condition reads variables of simulations that come before it (`id.variable`, from earlier units or earlier in the same
-unit). The branches may hold any content and directives; the words of the `:::else` branch count.
+condition reads variables of simulations that come before it in the same unit (`id.variable`): each unit is its own
+package, with its own saved state, so it cannot read what was decided in another unit (`verify` reports it as an error).
+The branches may hold any content and directives; the words of the `:::else` branch count.
+
+In a unit with a test, the grade is the test's: a scored simulation (`scored: true`) placed in `content.md` does not
+count for it, and `verify` warns. Scored simulations go in `assessment.md`; in the content they practise.
 
 ## `coursekit sync` and `coursekit outline`
 

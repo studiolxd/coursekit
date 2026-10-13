@@ -95,3 +95,6 @@ review_skipped:
 status_change_course:
   es: "estado: unidad {current} -> {target} · curso {old} -> {new}"
   en: "status: unit {current} -> {target} · course {old} -> {new}"
+scored_outside_test:
+  es: "la simulación evaluable '{id}' está en el contenido de una unidad con prueba: no cuenta para la nota (la nota es la de la prueba); muévela a assessment.md o quita scored"
+  en: "the scored simulation '{id}' is in the content of a unit with a test: it does not count for the grade (the grade is the test's); move it to assessment.md or drop scored"
