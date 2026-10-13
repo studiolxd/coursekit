@@ -138,7 +138,7 @@ Con el backend creator los recursos se suben al contenido de su unidad, que crea
 Creator solo admite PNG, JPEG, WebP y GIF como imagen, así que un SVG no puede ser un bloque de imagen:
 
 - Una infografía o un diagrama estático: el agente conserva el SVG como fuente y sube un PNG exportado de él.
-- Un SVG animado (`agent-svg-animated`): `coursekit media embed CODE ID` envuelve el SVG en `media/src/<id>/index.html`, el agente sube ese fichero como paquete EMBED, y el montaje pone un bloque EMBED donde el fichero del recurso es un `.svg`. La animación se conserva.
+- Un SVG animado (`agent-svg-animated`): `coursekit media embed CODE ID` envuelve el SVG en `media/src/<id>/index.html`, con el manifiesto de creator `slxd-embed.json` (toma el alto del dibujo), el agente sube los dos ficheros como paquete EMBED, y el montaje pone un bloque EMBED donde el fichero del recurso es un `.svg`. La animación se conserva.
 
 ## Proveedores de voz
 

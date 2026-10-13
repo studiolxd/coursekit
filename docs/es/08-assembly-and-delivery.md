@@ -134,10 +134,11 @@ Un cambio solo en la calificación de un test (tras firmar de nuevo el diseño y
 
 Creator no tiene un bloque para una simulación ni comparte estado entre bloques, así que en su plan:
 
-- Una **simulación** es un `EMBED` de su propio paquete: `coursekit media extract` añade el recurso `SIM-<ID>` (kind `package`), `coursekit media embed <CODE> SIM-<ID>` construye `media/src/SIM-<ID>/` (`index.html` con el reproductor de las simulaciones, las pieles, los estilos y el theme, y las imágenes producidas en `media/`), y el agente de multimedia sube esa carpeta con `request_embed_upload` y la registra (`media set … --status uploaded --asset-path <embedFolderPrefix>`). Mientras, una nota ocupa su lugar y `plan` avisa. La simulación se juega dentro del embed; su estado dura mientras la página está abierta y su puntuación no llega al SCORM de creator.
+- Una **simulación** es un `EMBED` de su propio paquete: `coursekit media extract` añade el recurso `SIM-<ID>` (kind `package`), `coursekit media embed <CODE> SIM-<ID>` construye `media/src/SIM-<ID>/` (`index.html` con el reproductor de las simulaciones, las pieles, los estilos y el theme, y las imágenes producidas en `media/`, además del manifiesto de creator `slxd-embed.json`), y el agente de multimedia sube esa carpeta con `request_embed_upload` y la registra (`media set … --status uploaded --asset-path <embedFolderPrefix>`). Mientras, una nota ocupa su lugar y `plan` avisa. La simulación se juega dentro del embed; su estado dura mientras la página está abierta y su puntuación aún no llega al SCORM de creator.
+- El paquete habla el protocolo `slxd-embed` de creator (versión 1): declara `complete` y `resize` en `slxd-embed.json`, dice `complete` cuando la simulación llega a un final (creator completa el bloque y, si el autor activó su bloqueo, deja seguir al alumno) e informa del alto de su contenido, que el iframe toma sin barra de desplazamiento propia. creator lee el manifiesto al escribir la carpeta en el bloque y muestra lo que ha entendido en `properties.embedPackage`. Un SVG envuelto declara solo `resize`.
 - Un **bloque adaptativo** se monta con su rama neutra (`:::else`), y `plan` avisa.
 
-Las dos cosas son huecos de creator anotados en el plan de coursekit: estado compartido entre bloques y la puntuación de un embed.
+El estado, la nota y las interacciones de un embed, y el bloque adaptativo, son las fases siguientes del protocolo de creator (`dev/creator-decisiones.md`, en el repositorio de coursekit, recoge el acuerdo).
 
 ### `diff`
 

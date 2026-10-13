@@ -520,6 +520,9 @@ def test_a_simulation_becomes_an_embed_package_for_creator(decision_course, caps
     page = (course_dir / "media" / "src" / "SIM-CALL" / "index.html").read_text(encoding="utf-8")
     assert 'data-sim="call"' in page and "const __expr = (() =>" in page and "__simulation.initSimulations" in page
     assert "import " not in page.split("<script>")[1] and "export " not in page.split("<script>")[1]
+    assert "if (ended()) __bridge.complete();" in page and 'channel: "slxd-embed"' in page
+    bridge = json.loads((course_dir / "media" / "src" / "SIM-CALL" / "slxd-embed.json").read_text(encoding="utf-8"))
+    assert bridge == {"protocol": "slxd-embed", "version": 1, "capabilities": ["complete", "resize"]}
     assert main(["media", "set", "DB1", "SIM-CALL", "--status", "uploaded", "--asset-path", "embeds/sim-call", "--force"]) == 0
     data = course.load(find_project(decision_course), "DB1")
     creator_plan, errors, _, _ = assemble.write_plan(data, data["units"][0])

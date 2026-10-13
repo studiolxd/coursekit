@@ -60,6 +60,11 @@ the contents follow a theme that was changed and imported again.
 - Assessment lessons: `update_quiz_settings` with the plan's `quiz` as its `config` (`passingGrade`,
   `maxAttempts`, where 0 is unlimited, and `courseWeight`, the weight of the quiz among the quizzes of the unit).
 - `delete`: **ask the person** before `delete_lesson`.
+- EMBED packages built by coursekit (simulations, wrapped SVG) carry `slxd-embed.json`, creator's manifest: creator reads it
+  when the folder is written in the brick and fills `properties.embedPackage` (`capabilities`: `complete` and `resize` for
+  a simulation, `resize` for an SVG). Never send `embedPackage` yourself (the MCP refuses it). After `add_brick` /
+  `update_brick`, `get_lesson` must show it: if it is empty, the manifest was not uploaded with the folder; upload the whole
+  package again (a new folder) and update the brick. A warning that "this EMBED cannot block" means the same.
 - After each lesson: `get_lesson`, take the brick IDs **in order** and record
   `coursekit assemble applied <CODE> --unit N --lesson <key> --lesson-id <id> --brick-ids id1,id2,…`.
   If the count does not match the plan, something was not applied: check before going on.

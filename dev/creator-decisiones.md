@@ -243,3 +243,23 @@ Creator ha respondido a la sección 9. Lo que acuerda, y qué hace coursekit con
 | 7 | Simulaciones evaluables sueltas en un contenido con pruebas: proponen que **no cuenten**; la nota sale de las pruebas. | **Sí, nos vale**: es lo que ya hace el backend html. `verify` avisa de una simulación evaluable en el contenido de una unidad con prueba (que la mueva a `assessment.md` o quite `scored`). |
 | 8 | En la forma anidada del `CONDITIONAL` cada brick hijo lleva su id: con id se actualiza, sin id se crea, y `get_lesson` devuelve la misma forma. | De acuerdo. `assemble applied` guardará los ids de los hijos de cada rama y `diff` los comparará como los de la lección. Pendiente del brick. |
 | 9 | Calendario: primero el protocolo con «he terminado», el bloqueo del avance y la altura; después estado, nota e interacciones; lo último, el `CONDITIONAL`. Hasta entonces, la rama neutra. | Seguimos montando la rama neutra. En coursekit, por el mismo orden: (1) protocolo, manifiesto y «terminado» en `simpackage.py` y `for_creator`; (2) estado, nota e interacciones; (3) `CONDITIONAL` en el plan, `diff` y `applied`. |
+
+## 11. Fase 1 del protocolo de creator (contrato del 2026-10-13), aplicada
+
+Creator ha publicado el contrato `slxd-embed`, versión 1 (manifiesto `slxd-embed.json` en la raíz del paquete; mensajes
+`{channel: "slxd-embed", version: 1, type}` con `postMessage(…, "*")` desde un iframe sin `allow-same-origin`; en esta
+fase atiende `complete` y `resize`, y `ready` no hace nada aún). Lo que hace coursekit (`htmlkit/embedbridge.py`):
+
+| Paquete | Manifiesto | Mensajes |
+|---|---|---|
+| Simulación (`SIM-<ID>`, `simpackage.py`) | `complete`, `resize` | `ready` al cargar; `resize` con el alto del contenido cada vez que cambia; `complete` una vez, cuando la simulación llega a un final |
+| SVG envuelto (`coursekit media embed`) | `resize` | `ready` y `resize` |
+
+- El paquete no usa almacenamiento (el iframe tiene origen opaco): el estado sigue en memoria mientras la página está abierta.
+- Las skills suben `slxd-embed.json` con el resto de la carpeta antes de escribirla en el brick, nunca mandan
+  `embedPackage` y, tras `add_brick`, comprueban en `get_lesson` que creator lo ha rellenado.
+- No se declaran aún `state`, `result` ni `interaction` (reservadas): se añadirán cuando creator las atienda (fase 2),
+  junto con `restore` y `reset` y la nota en SCORM.
+- Bloqueo: apagado por defecto en creator (decisión del 2026-10-13). coursekit no lo enciende por su cuenta; queda
+  pendiente decidir si el montaje lo activa en las simulaciones que abren un apartado de un curso basado en decisiones.
+

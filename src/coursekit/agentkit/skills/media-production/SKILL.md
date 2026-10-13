@@ -133,14 +133,16 @@ Assets are **not approved one by one**: they are validated in the assembled cour
    requested with); do not use `curl`, a session without an interface cannot run it. Keep the `path` / `embedFolderPrefix`:
    `coursekit media set <CODE> <id> --status uploaded --asset-path <path>`.
    An SVG (animated, or any one you cannot export to PNG) goes up as an EMBED package:
-   `coursekit media embed <CODE> <id>` wraps it in `media/src/<id>/index.html`; upload that file with
-   `request_embed_upload` (`folderId` = the asset id, `relativePath` = `index.html`, `text/html`) and
-   `coursekit media upload`, and record the `embedFolderPrefix` as the `--asset-path`. Keep the `.svg` as the
+   `coursekit media embed <CODE> <id>` wraps it in `media/src/<id>/index.html` with creator's manifest
+   `slxd-embed.json` next to it; upload **both files** with `request_embed_upload` (`folderId` = the asset id,
+   `relativePath` = `index.html`, `text/html`, and `slxd-embed.json`, `application/json`) and `coursekit media upload`,
+   and record the `embedFolderPrefix` as the `--asset-path`. Keep the `.svg` as the
    asset `--file`: the assembly puts an EMBED block where it sees an SVG.
    **A simulation in creator** (`SIM-<id>`, kind `package`, only with the creator backend): once its images are produced,
-   `coursekit media embed <CODE> SIM-<id>` builds `media/src/SIM-<id>/` (`index.html` and `media/` with its images). Upload
-   **every file of the folder** with `request_embed_upload` (`folderId` = the asset id, `relativePath` = the path inside the
-   folder: `index.html`, `media/<file>`), then `coursekit media set <CODE> SIM-<id> --status uploaded --asset-path
+   `coursekit media embed <CODE> SIM-<id>` builds `media/src/SIM-<id>/` (`index.html`, creator's manifest
+   `slxd-embed.json` and `media/` with its images). Upload **every file of the folder** with `request_embed_upload`
+   (`folderId` = the asset id, `relativePath` = the path inside the folder: `index.html`, `slxd-embed.json`,
+   `media/<file>`), all of them before the folder is written in a brick (creator reads the manifest then), then `coursekit media set <CODE> SIM-<id> --status uploaded --asset-path
    <embedFolderPrefix> --file media/src/SIM-<id>/index.html`. Build and upload it again whenever the simulation or its images
    change.
 2. `/assemble <CODE> <N>` replaces each placeholder with its media block.

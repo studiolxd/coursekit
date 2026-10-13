@@ -212,6 +212,9 @@ def test_an_svg_asset_becomes_an_embed_block_and_gets_its_package(course, capsys
     assert main(["media", "embed", "PWD", first]) == 0
     page = (course / "media" / "src" / first / "index.html").read_text(encoding="utf-8")
     assert "<svg" in page and "<?xml" not in page and "prefers-reduced-motion" in page
+    assert 'channel: "slxd-embed"' in page and "complete()" in page
+    bridge = json.loads((course / "media" / "src" / first / "slxd-embed.json").read_text(encoding="utf-8"))
+    assert bridge == {"protocol": "slxd-embed", "version": 1, "capabilities": ["resize"]}
     assert main(["media", "embed", "PWD", "NOPE"]) == 1
 
 

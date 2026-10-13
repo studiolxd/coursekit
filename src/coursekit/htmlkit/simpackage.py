@@ -1,7 +1,8 @@
 """One simulation as a self-contained package (`index.html` and its images) for the backends that take it as an embed: creator
 puts it in an EMBED brick. The player of the simulations (`player/expr.js`, `skins.js`, `simulation.js`) goes inline, without a
 bundler: each module is wrapped in a function that returns what it exports. Without SCORM inside the embed, its state lives
-in the page while it is open.
+in the page while it is open. It talks to its lesson with creator's protocol (`embedbridge`): it declares `complete` and
+`resize` in `slxd-embed.json`, says `complete` when the simulation reaches an ending and reports the height of its content.
 """
 
 from __future__ import annotations
@@ -13,7 +14,7 @@ from pathlib import Path
 
 from coursekit import course as coursemod
 from coursekit import simulation as simmod
-from coursekit.htmlkit import render
+from coursekit.htmlkit import embedbridge, render
 from coursekit.htmlkit.build import project_css, template_dir
 
 MODULES = ("expr", "skins", "simulation")  # in the order they import each other
@@ -92,9 +93,12 @@ def build(course: dict, brick: dict, out_dir: Path) -> Path:
     boot = ("const state = { sims: {} };\n"
             "const tracker = { state, simulation(id, run) { if (run === undefined) return state.sims[id] || null; "
             "state.sims[id] = run; return run; }, interaction() {} };\n"
-            f"__simulation.initSimulations(document, {json.dumps(ui, ensure_ascii=False)}, tracker);\n")
+            f"const sims = __simulation.initSimulations(document, {json.dumps(ui, ensure_ascii=False)}, tracker);\n"
+            "const ended = () => sims.length > 0 && sims.every((sim) => sim.finished());\n"
+            "sims.forEach((sim) => sim.onChange(() => { if (ended()) __bridge.complete(); }));\n"
+            "if (ended()) __bridge.complete();\n")
     title = re.sub(r"<[^>]+>", "", str(data.get("title") or ""))
-    script = inline_player().replace("</script", "<\\/script")
+    script = (embedbridge.script() + inline_player()).replace("</script", "<\\/script")
     page = (f'<!doctype html>\n<html lang="{coursemod.language(course)}">\n<head>\n<meta charset="utf-8">\n'
             '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
             f"<title>{render.a(title)}</title>\n<style>\n{css}\n.ck-embed-sim .ck-main {{ padding: 0; max-width: none; }}\n"
@@ -102,4 +106,5 @@ def build(course: dict, brick: dict, out_dir: Path) -> Path:
             f'<body class="ck-js ck-embed-sim">\n<main class="ck-main">{markup}</main>\n'
             f"<script>\n{script}\n{boot}</script>\n</body>\n</html>\n")
     (out_dir / "index.html").write_text(page, encoding="utf-8", newline="\n")
+    embedbridge.write_manifest(out_dir, ["complete", "resize"])
     return out_dir / "index.html"

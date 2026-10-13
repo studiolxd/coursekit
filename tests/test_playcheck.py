@@ -237,3 +237,31 @@ console.log(JSON.stringify({ codes: cases.map(([s, n, v]) => check(s, n, v)),
     assert out["flow"] == ["false", "301", "true", "ab-initio", "true", "false", "405", "true", "1", "true", "true", "true", "false", 3]
     assert out["again"] == ["true", "resume", "U1-S2", "true", "true"]
     assert out["fresh"] == ["true", "ab-initio", ""]  # after a normal exit, a new attempt from scratch
+
+
+def test_the_bridge_of_an_embed_speaks_creators_protocol(tmp_path):
+    from coursekit.htmlkit import embedbridge
+
+    (tmp_path / "bridge.js").write_text(embedbridge.script(), encoding="utf-8")
+    out = run_node(tmp_path, {}, """
+import { readFileSync } from 'node:fs';
+const sent = [];
+let height = 500;
+let observed = null;
+globalThis.window = {
+  parent: { postMessage: (message, target) => sent.push([message, target]) },
+  addEventListener() {},
+  getComputedStyle: () => ({ marginTop: '8px', marginBottom: '8.5px' }),
+  ResizeObserver: class { constructor(fn) { observed = fn; } observe() {} },
+};
+globalThis.document = { body: { getBoundingClientRect: () => ({ height }) } };
+const __bridge = new Function(readFileSync('bridge.js', 'utf-8') + '; return __bridge;')();
+observed(); height = 640.2; observed();
+__bridge.complete(); __bridge.complete();
+console.log(JSON.stringify(sent));
+""")
+    messages = [m for m, _ in out]
+    assert all(target == "*" for _, target in out)
+    assert all(m["channel"] == "slxd-embed" and m["version"] == 1 for m in messages)
+    assert [m["type"] for m in messages] == ["ready", "resize", "resize", "complete"]
+    assert [m.get("height") for m in messages if m["type"] == "resize"] == [517, 657]

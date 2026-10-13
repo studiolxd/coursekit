@@ -358,6 +358,8 @@ def embed(course: dict, asset_id: str) -> str:
     asset = next((a for a in data["assets"] if a["id"] == asset_id), None)
     if asset is None:
         raise MediaError(t("media", "asset_not_found", asset_id=asset_id))
+    from coursekit.htmlkit import embedbridge
+
     if asset.get("kind") == "package":
         from coursekit import assemble as assemblemod
         from coursekit.htmlkit import simpackage
@@ -379,10 +381,11 @@ def embed(course: dict, asset_id: str) -> str:
             '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
             f"<title>{title}</title>\n<style>html,body{{margin:0;background:transparent}}svg{{display:block;width:100%;height:auto}}\n"
             "@media (prefers-reduced-motion: reduce){svg *{animation-play-state:paused !important}}</style>\n</head>\n"
-            f"<body>\n{svg}\n</body>\n</html>\n")
+            f"<body>\n{svg}\n<script>\n{embedbridge.script()}</script>\n</body>\n</html>\n")
     folder = course["_dir"] / "media" / "src" / asset_id
     folder.mkdir(parents=True, exist_ok=True)
     (folder / "index.html").write_text(page, encoding="utf-8", newline="\n")
+    embedbridge.write_manifest(folder, ["resize"])  # it takes the height of the drawing; nothing to finish
     return t("media", "embed_written", path=(folder / "index.html").as_posix(), asset=asset_id)
 
 

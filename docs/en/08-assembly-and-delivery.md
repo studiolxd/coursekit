@@ -134,10 +134,11 @@ A change only in the grading of a test (after signing the design again and runni
 
 Creator has no brick for a simulation and does not share state between bricks, so in its plan:
 
-- A **simulation** is an `EMBED` of its own package: `coursekit media extract` adds the asset `SIM-<ID>` (kind `package`), `coursekit media embed <CODE> SIM-<ID>` builds `media/src/SIM-<ID>/` (`index.html` with the player of the simulations, the skins, the styles and the theme, and the produced images in `media/`), and the media agent uploads that folder with `request_embed_upload` and records it (`media set … --status uploaded --asset-path <embedFolderPrefix>`). Until then a note stands for it and `plan` warns. The simulation plays inside the embed; its state lives while the page is open and its score does not reach the SCORM of creator.
+- A **simulation** is an `EMBED` of its own package: `coursekit media extract` adds the asset `SIM-<ID>` (kind `package`), `coursekit media embed <CODE> SIM-<ID>` builds `media/src/SIM-<ID>/` (`index.html` with the player of the simulations, the skins, the styles and the theme, and the produced images in `media/`, plus creator's manifest `slxd-embed.json`), and the media agent uploads that folder with `request_embed_upload` and records it (`media set … --status uploaded --asset-path <embedFolderPrefix>`). Until then a note stands for it and `plan` warns. The simulation plays inside the embed; its state lives while the page is open and its score does not reach the SCORM of creator yet.
+- The package speaks creator's `slxd-embed` protocol (version 1): it declares `complete` and `resize` in `slxd-embed.json`, says `complete` when the simulation reaches an ending (creator completes the brick and, if the author turned on its blocking, lets the learner go on) and reports the height of its content, which the iframe takes without a scroll bar of its own. creator reads the manifest when the folder is written in the brick and shows what it understood in `properties.embedPackage`. A wrapped SVG declares only `resize`.
 - An **adaptive block** is assembled with its neutral branch (`:::else`), and `plan` warns.
 
-Both are gaps of creator listed in the plan of coursekit: shared state between bricks and the score of an embed.
+State, score and interactions of an embed, and the adaptive block, are the next phases of creator's protocol (`dev/creator-decisiones.md` in the coursekit repository keeps the agreement).
 
 ### `diff`
 

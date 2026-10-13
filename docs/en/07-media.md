@@ -138,7 +138,7 @@ With the creator backend the assets are uploaded to the content of their unit, w
 Creator takes only PNG, JPEG, WebP and GIF as an image, so an SVG cannot be an image block:
 
 - A static infographic or diagram: the agent keeps the SVG as the source and uploads a PNG exported from it.
-- An animated SVG (`agent-svg-animated`): `coursekit media embed CODE ID` wraps the SVG in `media/src/<id>/index.html`, the agent uploads that file as an EMBED package, and the assembly puts an EMBED block where the asset's file is an `.svg`. The animation is kept.
+- An animated SVG (`agent-svg-animated`): `coursekit media embed CODE ID` wraps the SVG in `media/src/<id>/index.html`, with creator's manifest `slxd-embed.json` (it takes the height of the drawing), the agent uploads both files as an EMBED package, and the assembly puts an EMBED block where the asset's file is an `.svg`. The animation is kept.
 
 ## Voice providers
 
