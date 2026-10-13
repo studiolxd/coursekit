@@ -137,4 +137,12 @@ bad_option:
 targets_over_total:
   es: "{place}: los mínimos de las opciones suman {sum} y solo hay {total} para repartir"
   en: "{place}: the minimums of the options add up to {sum} and there are only {total} to share"
+skin_not_yaml: {es: "{path}: no es YAML válido: {problem}", en: "{path}: not valid YAML: {problem}"}
+skin_bad_name:
+  es: "{path}: el nombre de la piel es el del fichero, en minúsculas, números y '-', y distinto de las de serie ({builtin})"
+  en: "{path}: the name of the skin is the file's, in lower case, digits and '-', and none of the built-in ones ({builtin})"
+skin_bad_file:
+  es: "{path}: una piel declara 'screen' (sus claves), 'targets' (sus partes; 'parte:' cuenta desde 1) y, si acaso, 'chat'"
+  en: "{path}: a skin declares 'screen' (its keys), 'targets' (its parts; 'part:' counts from 1) and, optionally, 'chat'"
+skin_without_js: {es: "{path}: falta {js}, que la dibuja", en: "{path}: {js}, which draws it, is missing"}
 

@@ -384,6 +384,7 @@ Con el backend html (`project.yaml › assembly.backend: html`, o `assembly.back
 | `courses/<CODE>/theme/maqueta.css` | sí | Lo mismo para un curso: se añade después de la del proyecto, solo en los paquetes de ese curso. `coursekit theme import courses/<CODE>/theme/maqueta.css --course CODE` deriva los tokens propios de ese curso. |
 | `components/*.css` | sí | Estilos adicionales, añadidos al paquete después de las hojas anteriores, por orden alfabético. |
 | `components/*.js` | sí | Comportamiento adicional, empaquetado con esbuild en el reproductor (`assets/player.js`) de cada paquete, antes del código del reproductor. |
+| `components/skins/<nombre>.yaml` y `.js` | sí | Una piel de las simulaciones del proyecto: su declaración y cómo se dibuja (ver [Pieles del proyecto](06-content.md#pieles-del-proyecto)). |
 | `courses/<CODE>/assembly/html/unit-NN/` | no (`.gitignore`) | El paquete de una unidad, que rehace `coursekit assemble build` y se puede abrir desde el disco. |
 | `courses/<CODE>/delivery/<nombre>.zip` | no (`.gitignore`) | El zip de una unidad, que escribe `coursekit assemble build --version X.Y`. |
 

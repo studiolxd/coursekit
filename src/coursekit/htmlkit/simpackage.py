@@ -97,7 +97,9 @@ def build(course: dict, brick: dict, out_dir: Path) -> Path:
     boot = (template_dir() / "player" / "embedsim.js").read_text(encoding="utf-8").replace(
         "__CK_UI__", json.dumps(ui, ensure_ascii=False))
     title = re.sub(r"<[^>]+>", "", str(data.get("title") or ""))
-    script = (embedbridge.script() + inline_player()).replace("</script", "<\\/script")
+    skins_dir = course["_project"].root / "components" / "skins"  # the project's skins register themselves before the player
+    own_skins = "".join(f"\n{p.read_text(encoding='utf-8')}\n" for p in sorted(skins_dir.glob("*.js")))
+    script = (embedbridge.script() + own_skins + inline_player()).replace("</script", "<\\/script")
     page = (f'<!doctype html>\n<html lang="{coursemod.language(course)}">\n<head>\n<meta charset="utf-8">\n'
             '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
             f"<title>{render.a(title)}</title>\n<style>\n{css}\n.ck-embed-sim .ck-main {{ padding: 0; max-width: none; }}\n"

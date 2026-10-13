@@ -170,7 +170,21 @@ def context(project: Project) -> dict[str, str]:
         **readability_tokens(rules.get("readability") or {}),
         "reflections_per_unit": str(int((rules.get("content") or {}).get("reflections_per_unit") or 0)),
         "brief_large_words": str((rules.get("brief") or {}).get("large_words", "")),
+        "project_skins": project_skins(project),
     }
+
+
+def project_skins(project: Project) -> str:
+    """The skins of the project (components/skins/), as the content format lists them for the writer."""
+    from coursekit import simulation as simmod
+
+    simmod.use_project_skins(project.root)
+    own = [name for name in simmod.SKINS if name not in simmod.BUILTIN_SKINS]
+    if not own:
+        return "none"
+    return "; ".join(f"`{name}` (screen: {', '.join(sorted(simmod.SCREEN_KEYS[name])) or '-'}; targets: "
+                     f"{', '.join(x + 'N' if x.endswith(':') else x for x in simmod.TARGETS[name]) or '-'}"
+                     f"{'; chat' if name in simmod.CHAT_SKINS else ''})" for name in own)
 
 
 def readability_tokens(cfg: dict) -> dict[str, str]:

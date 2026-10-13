@@ -568,6 +568,35 @@ scenes:
       - {label: The link, target: "link:1", goto: clicked, score: -2}
 ```
 
+#### Skins of the project
+
+A project can add its own skins (a ticket desk, an internal tool, a till) without changing coursekit: two files in
+`components/skins/`, named after the skin (lower case, digits and `-`, none of the built-in names).
+
+```yaml
+# components/skins/ticket-desk.yaml
+screen: [queue, ticket]               # the keys its `screen` may have
+targets: [requester, priority, "ticket:"]   # the parts a hotspot can point at ("part:" counts from 1)
+chat: false                           # true: the messages of the scenes add up, as in the chat skins
+```
+
+```js
+// components/skins/ticket-desk.js: it registers itself before the player starts
+window.coursekitSkins = window.coursekitSkins || {};
+window.coursekitSkins["ticket-desk"] = {
+  chat: false,
+  draw(screen, ui, messages, h) {           // h: el, icon, numberLinks, avatar, chatLines (the built-in skins' helpers)
+    const app = h.el("div", { class: "ck-td" });
+    app.appendChild(h.el("p", { "data-target": "requester" }, screen.ticket.requester));
+    return app;
+  },
+};
+```
+
+`coursekit verify` checks the `screen` and the `target` of the simulations against the YAML, and reports a file badly
+declared or without its `.js`; the skills tell the writer which skins the project has. The `.js` goes into the player of the
+html backend and into the EMBED package of each simulation in creator; its styles, in `components/*.css`.
+
 ### Adaptive blocks
 
 Content may change with what the learner decided in an earlier simulation:

@@ -109,6 +109,8 @@ def _screen(sim: simmod.Simulation, scene: dict) -> str:
         parts.append(f"URL: {_label(screen['url'], 60)}{' (' + t('paths', 'not_secure') + ')' if screen.get('secure') is False else ''}")
     if screen.get("caller"):
         parts.append(f"{t('paths', 'screen_caller')}: {_label(screen['caller'], 30)} {_label(screen.get('number'), 20)}")
+    if skin not in simmod.BUILTIN_SKINS:  # a skin of the project: what its screen says, as it is
+        parts += [f"{key}: {_label(value, 40)}" for key, value in screen.items() if isinstance(value, (str, int, float))]
     own = (scene.get("screen") or {}).get("messages") or []
     if own:
         parts.append(t("paths", "screen_messages", n=len(own)) + ": "

@@ -40,13 +40,15 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from pathlib import Path
 
 import yaml
 
 from coursekit.i18n import t
 
 KINDS = ("scenario", "conversation")
-SKINS = ("mail-desktop", "mail-web", "chat-workspace", "messenger", "phone", "browser")
+BUILTIN_SKINS = ("mail-desktop", "mail-web", "chat-workspace", "messenger", "phone", "browser")
+SKINS = list(BUILTIN_SKINS)  # and the project's own (`components/skins/<name>.yaml`, see use_project_skins)
 ENDINGS = ("good", "mixed", "bad")
 POSITIONS = ("left", "right", "center")  # where a character stands in a scene with a background
 ID_RE = re.compile(r"^[a-z][a-z0-9_-]*$")  # scenes
@@ -239,6 +241,50 @@ TARGETS = {
     "phone": ("caller", "number", "message:", "link:"),
     "browser": ("url", "lock", "link:"),
 }
+
+
+BUILTIN_SCREEN_KEYS = dict(SCREEN_KEYS)
+BUILTIN_TARGETS = dict(TARGETS)
+CHAT_SKINS = {"chat-workspace", "messenger", "phone"}
+BUILTIN_CHAT = set(CHAT_SKINS)
+SKIN_NAME_RE = re.compile(r"^[a-z][a-z0-9-]*$")
+SKIN_KEYS = {"screen", "targets", "chat"}
+
+
+def use_project_skins(root: Path) -> list[str]:
+    """The skins of a project (`components/skins/<name>.yaml`, drawn by `<name>.js`) join the built-in ones: their name,
+    the keys of their `screen`, the parts a hotspot can point at and whether the messages of the scenes add up (`chat`).
+    Returns the problems of the files that could not be used."""
+    SKINS[:] = list(BUILTIN_SKINS)
+    SCREEN_KEYS.clear()
+    SCREEN_KEYS.update(BUILTIN_SCREEN_KEYS)
+    TARGETS.clear()
+    TARGETS.update(BUILTIN_TARGETS)
+    CHAT_SKINS.clear()
+    CHAT_SKINS.update(BUILTIN_CHAT)
+    problems: list[str] = []
+    folder = root / "components" / "skins"
+    for path in sorted(folder.glob("*.yaml")) if folder.is_dir() else []:
+        name, where = path.stem, path.relative_to(root).as_posix()
+        try:
+            data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except yaml.YAMLError as exc:
+            problems.append(t("simulation", "skin_not_yaml", path=where, problem=getattr(exc, "problem", None) or exc))
+            continue
+        screen, targets = data.get("screen") if isinstance(data, dict) else None, data.get("targets") if isinstance(data, dict) else None
+        if not SKIN_NAME_RE.match(name) or name in BUILTIN_SKINS:
+            problems.append(t("simulation", "skin_bad_name", path=where, builtin=", ".join(BUILTIN_SKINS)))
+        elif not isinstance(data, dict) or set(data) - SKIN_KEYS or not isinstance(screen, list) or not isinstance(targets or [], list):
+            problems.append(t("simulation", "skin_bad_file", path=where))
+        elif not path.with_suffix(".js").exists():
+            problems.append(t("simulation", "skin_without_js", path=where, js=path.with_suffix(".js").name))
+        else:
+            SKINS.append(name)
+            SCREEN_KEYS[name] = {str(k) for k in screen}
+            TARGETS[name] = tuple(str(x) for x in targets or [])
+            if data.get("chat") is True:
+                CHAT_SKINS.add(name)
+    return problems
 
 
 @dataclass

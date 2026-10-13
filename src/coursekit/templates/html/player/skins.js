@@ -260,11 +260,21 @@ function browser(screen, ui) {
 const SKINS = { "mail-desktop": mailDesktop, "mail-web": mailWeb, "chat-workspace": chatWorkspace, messenger, phone, browser };
 
 // The screen of a scene: the simulation's `screen` completed by the scene's; `messages` adds the lines of a conversation.
+// The skins of the project (`components/skins/<name>.js`) register themselves before the player starts:
+//   window.coursekitSkins["<name>"] = { chat: false, draw(screen, ui, messages, helpers) { return node; } };
+// `helpers` are the ones the built-in skins use: el(tag, attrs, html), icon(name, label), numberLinks(root), avatar(name)
+// and chatLines(messages, className, label). Parts a hotspot can point at carry `data-target`.
+const HELPERS = { el, icon, numberLinks, avatar, chatLines };
+const projectSkin = (skin) => (typeof window !== "undefined" && window.coursekitSkins && window.coursekitSkins[skin]) || null;
+
 export function drawSkin(skin, screen, ui, transcript = []) {
-  const draw = SKINS[skin];
+  const own = projectSkin(skin);
+  const draw = SKINS[skin] || (own && ((screen_, ui_, messages) => own.draw(screen_, ui_, messages, HELPERS)));
   if (!draw) return null;
   const messages = (screen.messages || []).concat(transcript);
   return draw(screen, ui, messages);
 }
 
 export const CHAT_SKINS = ["chat-workspace", "messenger", "phone"];
+// the messages of the scenes add up along the path (a chat)
+export const isChat = (skin) => CHAT_SKINS.includes(skin) || Boolean(projectSkin(skin) && projectSkin(skin).chat);

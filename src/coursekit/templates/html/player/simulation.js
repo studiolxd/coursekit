@@ -3,7 +3,7 @@
 // back to a checkpoint. The data come in the page (`.ck-sim-data`, from coursekit/htmlkit/render.py); the state of every
 // simulation is kept by the tracker, so the adaptive blocks can read it and a learner who comes back finds it.
 import { test } from "./expr.js";
-import { CHAT_SKINS, drawSkin } from "./skins.js";
+import { drawSkin, isChat } from "./skins.js";
 
 const el = (tag, attrs = {}, html = "") => {
   const node = document.createElement(tag);
@@ -130,7 +130,7 @@ function initSimulation(root, ui, tracker) {
     render(true);
   }
 
-  const chatSkin = data.kind === "conversation" && CHAT_SKINS.includes(data.skin);
+  const chatSkin = data.kind === "conversation" && isChat(data.skin);
   let staged = new Set();  // the characters drawn inside the scene
   // where a scene happens: its own skin; else its background (a place); else the skin of the simulation (a screen)
   const skinOf = (scene) => scene.skin || (scene.background ? null : data.skin);
@@ -139,7 +139,7 @@ function initSimulation(root, ui, tracker) {
   // the real application; any other screen shows what its scene says.
   function feedScene(scene) {
     const key = `${run.at}:${run.path.length}`;
-    if (!CHAT_SKINS.includes(skinOf(scene)) || !(scene.screen && scene.screen.messages) || run.fed.includes(key)) return;
+    if (!isChat(skinOf(scene)) || !(scene.screen && scene.screen.messages) || run.fed.includes(key)) return;
     run.fed.push(key);
     run.feed = run.feed.concat(scene.screen.messages.map((m) => ({ ...m, skin: skinOf(scene) })));
   }
@@ -152,7 +152,7 @@ function initSimulation(root, ui, tracker) {
       // the simulation's screen belongs to its own skin; a scene in another application shows only its own screen
       const base = skin === data.skin ? (data.screen || {}) : {};
       const screen = { ...base, ...(scene.screen || {}) };
-      if (CHAT_SKINS.includes(skin)) {
+      if (isChat(skin)) {
         screen.messages = (base.messages || []).concat(run.feed.filter((m) => m.skin === skin));
       }
       const lines = chatSkin ? run.transcript.map((line) => ({ me: line.me === true, from: line.me ? "" : data.character,

@@ -570,6 +570,36 @@ scenes:
       - {label: El enlace, target: "link:1", goto: pulsado, score: -2}
 ```
 
+#### Pieles del proyecto
+
+Un proyecto puede añadir sus propias pieles (un gestor de incidencias, una herramienta interna, una caja registradora) sin
+tocar coursekit: dos ficheros en `components/skins/`, con el nombre de la piel (minúsculas, números y `-`, distinto de las
+de serie).
+
+```yaml
+# components/skins/ticket-desk.yaml
+screen: [queue, ticket]               # las claves que admite su `screen`
+targets: [requester, priority, "ticket:"]   # las partes a las que puede apuntar una zona ("parte:" cuenta desde 1)
+chat: false                           # true: los mensajes de las escenas se acumulan, como en las pieles de chat
+```
+
+```js
+// components/skins/ticket-desk.js: se registra antes de que arranque el reproductor
+window.coursekitSkins = window.coursekitSkins || {};
+window.coursekitSkins["ticket-desk"] = {
+  chat: false,
+  draw(screen, ui, messages, h) {           // h: el, icon, numberLinks, avatar, chatLines (las ayudas de las pieles de serie)
+    const app = h.el("div", { class: "ck-td" });
+    app.appendChild(h.el("p", { "data-target": "requester" }, screen.ticket.requester));
+    return app;
+  },
+};
+```
+
+`coursekit verify` comprueba el `screen` y los `target` de las simulaciones con el YAML, e informa de un fichero mal
+declarado o sin su `.js`; las skills le dicen al redactor qué pieles tiene el proyecto. El `.js` entra en el reproductor
+del backend html y en el paquete EMBED de cada simulación en creator; sus estilos, en `components/*.css`.
+
 ### Bloques adaptativos
 
 El contenido puede cambiar según lo que el alumno decidió en una simulación anterior:

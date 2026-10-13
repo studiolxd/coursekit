@@ -378,6 +378,9 @@ def opens_with_simulation(sec: Section, simulations: tuple[str, ...]) -> bool:
 
 def verify_unit(course: dict, unit: dict) -> Report:
     report = Report()
+    if course.get("_project"):  # the skins of the project, checked (and joined to the built-in ones) before the simulations
+        for problem in simmod.use_project_skins(course["_project"].root):
+            report.error(problem)
     language = coursemod.language(course)
     tokens = coursemod.tokens(course)
     syntax = Syntax.for_tokens(tokens)

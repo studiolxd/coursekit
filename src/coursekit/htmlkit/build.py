@@ -170,7 +170,8 @@ def bundle_player(project, out_file: Path, say: Say) -> None:
     sources = workspace / "player"
     shutil.rmtree(sources, ignore_errors=True)
     shutil.copytree(template / "player", sources)
-    extra = sorted((project.root / "components").glob("*.js"))
+    # the project's components, and its skins of the simulations (they register themselves: player/skins.js)
+    extra = sorted((project.root / "components").glob("*.js")) + sorted((project.root / "components" / "skins").glob("*.js"))
     entry = workspace / "bundle-entry.js"
     entry.write_text("".join(f'import "{p.resolve().as_posix()}";\n' for p in extra) + 'import "./player/entry.js";\n', encoding="utf-8")
     binary = workspace / "node_modules" / ".bin" / ("esbuild.cmd" if os.name == "nt" else "esbuild")

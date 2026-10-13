@@ -41,6 +41,9 @@ def load(project: Project, code_or_path: str) -> dict:
     course = load_yaml(folder / "course.yaml")
     course["_dir"] = folder
     course["_project"] = project
+    from coursekit import simulation as simmod  # the skins of the project join the built-in ones
+
+    simmod.use_project_skins(project.root)
     return course
 
 
