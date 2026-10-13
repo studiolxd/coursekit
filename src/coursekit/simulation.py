@@ -203,7 +203,7 @@ def test(condition: object, env: dict) -> bool:
 
 # ── Schema ──────────────────────────────────────────────────────────────────────────────────
 
-TOP_KEYS = {"id", "title", "skin", "character", "objective", "scored", "weight", "state", "start", "scenes", "screen",
+TOP_KEYS = {"id", "title", "skin", "character", "objective", "scored", "weight", "state", "start", "scenes", "screen", "audio",
             "pass_requires"}
 SCENE_KEYS = {"text", "background", "layers", "characters", "variants", "checkpoint", "choices", "hotspots", "next", "ending",
               "debriefing", "expression", "screen", "skin"}
@@ -316,6 +316,8 @@ def parse(kind: str, body: list[str], where: str, line: int = 0) -> Simulation:
             err("bad_objective", value=objective)
     if "scored" in data and not isinstance(data["scored"], bool):
         err("not_bool", key="scored")
+    if "audio" in data and not isinstance(data["audio"], bool):
+        err("not_bool", key="audio")
     if "pass_requires" in data:
         if data.get("scored") is not True:
             err("pass_requires_unscored")
@@ -765,6 +767,20 @@ def portrait_id(name: str, expression: object = None) -> str:
     return base if neutral else f"{base}-{slugify(str(expression), 24).upper()}"
 
 
+def voice_id(sim_id: str, scene_id: str) -> str:
+    """`VO-<SIMULATION>-<SCENE>`: the narration of a scene of a simulation with `audio: true`."""
+    from coursekit.util import slugify
+
+    return f"VO-{slugify(sim_id).upper()}-{slugify(scene_id).upper()}"
+
+
+def narration(scene: dict) -> str:
+    """What the audio of a scene says: its text (the variants depend on the path and are not narrated), as plain text."""
+    text = re.sub(r"<[^>]+>", " ", str(scene.get("text") or ""))
+    text = re.sub(r"[*_`#>]+|\[([^\]]*)\]\([^)]*\)", lambda m: m.group(1) or "", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
 def media_refs(data: dict) -> list[dict]:
     """The images a simulation uses, with the id of their asset in the manifest (one per image in the whole course):
     backgrounds `BG-<description>`, layers `LAYER-<description>`, portraits `CHAR-<NAME>` and, with an expression,
@@ -797,4 +813,8 @@ def media_refs(data: dict) -> list[dict]:
                 portrait(person.get("name"), person.get("expression"))
         if data.get("character") and scene.get("expression"):
             portrait(data["character"], scene["expression"])
+    if data.get("audio") is True:  # the narration of each scene: the character of a conversation, else the narrator
+        for sid, scene in (data.get("scenes") or {}).items():
+            if isinstance(scene, dict) and narration(scene):
+                add(voice_id(str(data.get("id") or ""), str(sid)), "voice", narration(scene), str(data.get("character") or ""))
     return list(found.values())

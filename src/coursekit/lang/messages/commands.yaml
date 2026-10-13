@@ -359,4 +359,5 @@ brief_find_title:
   es: "# {count} fragmento(s) del material para «{query}» (de {total})"
   en: "# {count} passage(s) of the material for «{query}» (of {total})"
 brief_find_nothing: {es: "ningún fragmento del material contiene esas palabras", en: "no passage of the material holds those words"}
+media_narrated: {es: "{count} narración(es) de escena producidas", en: "{count} scene narration(s) produced"}
 

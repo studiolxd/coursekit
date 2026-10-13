@@ -502,6 +502,7 @@ scenes:
 | `character` | `conversation` only, required: the person the learner talks to. |
 | `objective` | `U1.2` or a list: the objectives it practises. |
 | `scored`, `weight` | Whether it counts for the grade (default `false`) and its weight among the scored ones (default 1). |
+| `audio` | `true`: each scene has its narration (its `text`; the variants are not narrated), in the voice of the character of a conversation or of the course; `coursekit media narrate` produces it and the player offers it under the scene, without playing it by itself (default `false`). |
 | `pass_requires` | Scored only: a condition every passing path must meet, for the behaviour without which nobody should pass (e.g. `"reported"`). `coursekit verify` fails when a path passes without it, and warns when a path reaches a `good` ending and fails, or a `bad` one and passes (pass mark: `design.grading.passing_score`). |
 | `state` | Variables and their initial value: numbers, `true`, `false`. |
 | `start` | First scene; by default the first one. |

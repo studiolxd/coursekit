@@ -65,7 +65,8 @@ function initSimulation(root, ui, tracker) {
   const feedback = el("div", { class: "ck-sim-feedback", "aria-live": "polite" });
   const choices = el("div", { class: "ck-sim-choices", role: "group", "aria-label": ui.sim_choices });
   const end = el("div", { class: "ck-sim-end" });
-  play.append(stage, people, log, text, hint, feedback, choices, end);
+  const voice = el("div", { class: "ck-sim-voice" });  // the narration of the scene (`audio: true`): never plays by itself
+  play.append(stage, people, voice, log, text, hint, feedback, choices, end);
   root.querySelector(".ck-sim-static").hidden = true;
   root.appendChild(play);
 
@@ -256,6 +257,11 @@ function initSimulation(root, ui, tracker) {
     feedScene(scene);
     drawStage(scene);
     drawPeople(scene);
+    voice.replaceChildren();
+    voice.hidden = !(scene._audio && scene._audio.path);
+    if (!voice.hidden) {
+      voice.appendChild(el("audio", { controls: true, preload: "none", src: scene._audio.path, "aria-label": ui.sim_listen }));
+    }
     const body = sceneText(scene);
     if (data.kind === "conversation") {
       const last = run.transcript[run.transcript.length - 1];

@@ -205,6 +205,11 @@ def scan_simulations(course: dict) -> list[dict]:
                                      description=t("media", "portrait_description", name=ref["character"], look=look or "-",
                                                    expression=ref["expression"] or t("media", "expression_neutral")),
                                      specs=t("media", "portrait_specs"))
+                    elif ref["kind"] == "voice":  # the narration of a scene: `coursekit media narrate` produces it
+                        speaker = ref["character"] or t("media", "voice_narrator")
+                        entry.update(type="audio", title=t("media", "voice_title", simulation=data.get("id"), id=ref["id"]),
+                                     description=t("media", "voice_description", speaker=speaker), narration=ref["description"],
+                                     character=ref["character"] or None, specs=t("media", "voice_specs"))
                     else:
                         entry.update(title=ref["description"],
                                      description=t("media", f"{ref['kind']}_description", text=ref["description"]),
@@ -243,7 +248,7 @@ def extract(course: dict) -> dict[str, int]:
     for asset in found:
         old = existing.pop(asset["id"], None)
         if old is not None:
-            changed = any(old.get(k) != asset.get(k) for k in ("type", "title", "description", "specs", "kind"))
+            changed = any(old.get(k) != asset.get(k) for k in ("type", "title", "description", "specs", "kind", "narration"))
             for k, v in asset.items():
                 old[k] = v
             if changed and old.get("status") not in (None, "pending"):
@@ -387,6 +392,32 @@ def embed(course: dict, asset_id: str) -> str:
     (folder / "index.html").write_text(page, encoding="utf-8", newline="\n")
     embedbridge.write_manifest(folder, ["resize"])  # it takes the height of the drawing; nothing to finish
     return t("media", "embed_written", path=(folder / "index.html").as_posix(), asset=asset_id)
+
+
+def narrate(course: dict, ids: list[str] | None = None, again: bool = False, say=print) -> int:
+    """Produce the narration of the scenes (`VO-…`, simulations with `audio: true`) with the configured voices: the character
+    of a conversation with its own voice (`coursekit voice set --character`), the rest with the voice of the course. Only the
+    ones still pending, unless they are named or `again`. Returns how many were produced."""
+    import tempfile
+
+    from coursekit import mediatools
+
+    ry, path, data = load_manifest(course["_dir"])
+    todo = [a for a in data["assets"] if a.get("kind") == "voice" and a.get("narration")
+            and ((ids and a["id"] in ids) or (not ids and (again or a.get("status") in (None, "pending", "scripted"))))]
+    done = 0
+    for asset in todo:
+        out = course["_dir"] / "media" / "files" / f"{asset['id']}.mp3"
+        with tempfile.TemporaryDirectory() as tmp:
+            text = Path(tmp) / "scene.txt"
+            text.write_text(str(asset["narration"]), encoding="utf-8")
+            say(mediatools.tts(course, None, text, out, character=asset.get("character") or None))
+        asset.update(status="produced", file=f"media/files/{out.name}", transcript=str(asset["narration"]),
+                     recipe="coursekit media narrate", note=None)
+        done += 1
+        with path.open("w", encoding="utf-8", newline="\n") as fh:  # after each one: a provider that fails halfway keeps what was made
+            ry.dump(data, fh)
+    return done
 
 
 def image_tool(course: dict, asset_id: str, action: str, size: str | None = None) -> str:

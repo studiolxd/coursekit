@@ -126,6 +126,7 @@ scenes:
 | `character` | `conversation` only, required: the person the learner talks to |
 | `objective` | `U1.2` or a list: the objectives it practises (every objective of the unit, in decision-based courses) |
 | `scored`, `weight` | counts for the grade (default `false`), and its weight among the scored ones (default 1) |
+| `audio` | `true`: each scene is narrated (its `text`) in the voice of the character of a conversation or of the course; use it when listening adds something (a call, a conversation) |
 | `pass_requires` | scored only: the condition every passing path meets (the key behaviour, e.g. `"reported"`); verify fails otherwise and warns when a good ending fails or a bad one passes |
 | `state` | variables and their initial value (numbers, `true`, `false`) |
 | `start` | first scene (default: the first one) |

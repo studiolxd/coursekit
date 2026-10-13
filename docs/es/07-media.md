@@ -63,6 +63,8 @@ con un `kind`:
 
 Se producen en el estilo visual del curso (`media › visual › style`, ver [Configuración](04-configuration.md#media-opciones-de-producción)), que imprime `coursekit media plan`. Sin generador de imágenes, `plan` avisa y el estilo es `visual.fallback` (`flat`), dibujado en SVG por el rol de **ilustración**: `coursekit run produce-media <CODE> --role illustration`.
 
+Una simulación con `audio: true` añade un `VO-<SIMULACIÓN>-<ESCENA>` por escena (tipo `audio`, kind `voice`): su texto en `narration` y, en una conversación, el `character` que lo dice. `coursekit media narrate <CODE>` los produce todos con las voces configuradas (no hace falta ningún agente), y una escena cuyo texto cambia vuelve a `pending`.
+
 Con el backend **creator** `extract` añade también `SIM-<ID>` (kind `package`, tipo `simulation`): el paquete de cada simulación, que se construye con `coursekit media embed <CODE> SIM-<ID>` cuando sus imágenes están producidas (ver [Simulaciones en creator](08-assembly-and-delivery.md#simulaciones-en-creator)).
 
 **Lámina de estilo.** Antes, el agente de multimedia produce una muestra en `courses/<CODE>/media/style/` (un fondo, un personaje en varias expresiones y algunos objetos) y una persona la firma con [`coursekit approve style <CODE>`](03-commands.md#coursekit-approve). Hasta entonces `coursekit media set … --status produced` rechaza esas imágenes (salvo con `--force`) y `plan` avisa. En modo handoff el agente de multimedia produce la muestra y coursekit la firma como Coursekit Handoff. El montaje toma cada imagen por su id; mientras no está producida, la simulación funciona sin ella (los retratos se sustituyen por iniciales).

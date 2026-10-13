@@ -122,6 +122,9 @@ character) and the house style before producing. They must look **high quality a
 9. **Look at every image** before marking it `produced`: style, consistency with the sheet and with the other images of the
    same character, deformed hands or objects, text that slipped in, contrast with what goes on top. Redo what fails.
 
+**Narration of the scenes** (`VO-…`, simulations with `audio: true`): do not produce them one by one; run
+`coursekit media narrate <CODE>` once the voices are set (`coursekit voice`), and it produces and records all of them.
+
 ## 4. Upload
 
 Assets are **not approved one by one**: they are validated in the assembled course (preview).

@@ -100,6 +100,7 @@ player:
   sim_restart: Empezar de nuevo
   sim_finish_first: Termina antes las simulaciones de esta prueba.
   sim_locked: Decide hasta llegar a un final; después sigue el apartado.
+  sim_listen: Escuchar la escena
   skin_mail_app: Correo
   skin_chat_app: Equipo
   skin_inbox: Bandeja de entrada

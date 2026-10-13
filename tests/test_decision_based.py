@@ -718,3 +718,53 @@ def test_the_simulation_that_opens_a_section_holds_the_rest_of_the_lesson(decisi
     entry = (Path(str(resources.files("coursekit.templates.html"))) / "player" / "entry.js").read_text(encoding="utf-8")
     assert 'root.hasAttribute("data-blocks")' in entry and "lockedLessons.has(lessons[current])" in entry
 
+
+
+def test_scenes_can_be_narrated_with_the_voice_of_who_speaks(decision_course, monkeypatch, capsys):
+    import yaml as yamlmod
+
+    from coursekit import assemble, course, mediatools, simulation
+    from coursekit.project import find_project
+
+    bad = simulation.parse("scenario", SCENARIO.splitlines()[1:-1] + ["audio: yes please"], "x")
+    assert any("'audio' must be true or false" in e for e in bad.errors)
+    narrated = GOOD_SECTION.replace("scored: true\n", "scored: true\naudio: true\n", 1)
+    (decision_course / "content.md").write_text(decision_content(narrated), encoding="utf-8")
+    course_dir = decision_course.parent.parent
+    assert main(["media", "extract", "DB1"]) == 0
+    manifest = yamlmod.safe_load((course_dir / "media" / "manifest.yaml").read_text(encoding="utf-8"))
+    voices = {a["id"]: a for a in manifest["assets"] if a.get("kind") == "voice"}
+    assert set(voices) == {"VO-CALL-BEGIN", "VO-CALL-NOTE", "VO-CALL-SAFE", "VO-CALL-LEAK"}
+    begin = voices["VO-CALL-BEGIN"]
+    assert begin["type"] == "audio" and begin["status"] == "pending" and begin["character"] is None
+    assert begin["narration"] == "Suena el teléfono. Alguien de soporte te pide tu contraseña."
+
+    spoken = []
+
+    def fake_tts(course, engine, input_path, out, voice=None, speaker=None, character=None):
+        spoken.append((input_path.read_text(encoding="utf-8"), character))
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_bytes(b"mp3")
+        return f"wrote {out.name}"
+
+    monkeypatch.setattr(mediatools, "tts", fake_tts)
+    capsys.readouterr()
+    assert main(["media", "narrate", "DB1"]) == 0
+    assert "4 scene narration(s) produced" in capsys.readouterr().out
+    assert ("Suena el teléfono. Alguien de soporte te pide tu contraseña.", None) in spoken
+    manifest = yamlmod.safe_load((course_dir / "media" / "manifest.yaml").read_text(encoding="utf-8"))
+    begin = next(a for a in manifest["assets"] if a["id"] == "VO-CALL-BEGIN")
+    assert begin["status"] == "produced" and begin["file"] == "media/files/VO-CALL-BEGIN.mp3" and begin["transcript"]
+    assert main(["media", "narrate", "DB1"]) == 0 and "0 scene narration" in capsys.readouterr().out  # nothing pending
+
+    data = course.load(find_project(decision_course), "DB1")
+    plan, _, _ = assemble.build_plan(data, data["units"][0], assets={
+        a["id"]: {**a, "asset_path": f"media/{a['id']}.mp3", "status": "uploaded"} for a in manifest["assets"]}, simulations=True)
+    sim = next(b for lesson in plan["lessons"] for b in lesson["bricks"] if b["type"] == "SIMULATION")
+    assert sim["data"]["scenes"]["begin"]["_audio"]["path"] == "media/VO-CALL-BEGIN.mp3"
+
+    (decision_course / "content.md").write_text(decision_content(narrated.replace("Suena el teléfono.", "Vibra el móvil.")),
+                                                encoding="utf-8")
+    assert main(["media", "extract", "DB1"]) == 0
+    manifest = yamlmod.safe_load((course_dir / "media" / "manifest.yaml").read_text(encoding="utf-8"))
+    assert next(a for a in manifest["assets"] if a["id"] == "VO-CALL-BEGIN")["status"] == "pending"  # its text changed

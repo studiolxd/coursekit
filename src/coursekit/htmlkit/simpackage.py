@@ -80,7 +80,9 @@ def build(course: dict, brick: dict, out_dir: Path) -> Path:
     character = str(data.get("character") or "")
     if character:
         data["_portrait"] = portrait(character)
-    for scene in (data.get("scenes") or {}).values():
+    for sid, scene in (data.get("scenes") or {}).items():
+        if data.get("audio") is True:
+            scene["_audio"] = image(simmod.voice_id(str(data.get("id") or ""), str(sid)), "")
         if scene.get("background"):
             scene["_background"] = image(simmod.background_id(str(scene["background"])), str(scene["background"]))
         for layer in scene.get("layers") or []:

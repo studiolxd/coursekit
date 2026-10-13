@@ -165,6 +165,8 @@ body:not(.ck-js) .ck-card .ck-back { display: block; margin-top: var(--space-sm)
 .ck-sim { margin: var(--space-xl) 0; border: 1px solid var(--color-line); border-radius: var(--radius); background: var(--color-surface); overflow: hidden; }
 .ck-sim-title { margin: 0; padding: var(--space-md) var(--space-lg); font-size: 1.15rem; border-bottom: 1px solid var(--color-line); background: var(--color-background); }
 .ck-sim-static { padding: var(--space-md) var(--space-lg); }
+.ck-sim-voice { padding: var(--space-sm) var(--space-lg) 0; }
+.ck-sim-voice audio { width: 100%; max-width: 28rem; }
 .ck-sim-locked { margin: var(--space-sm) 0 0; color: var(--color-text-soft); font-style: italic; }
 .ck-sim-play { display: grid; gap: var(--space-md); padding: var(--space-lg); }
 .ck-sim-stage { position: relative; aspect-ratio: 16 / 9; border-radius: var(--radius); overflow: hidden; background: var(--color-line); box-shadow: var(--shadow-soft); }

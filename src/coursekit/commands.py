@@ -620,6 +620,16 @@ def cmd_media(args: argparse.Namespace) -> int:
             return 2
         print(mediamod.embed(course, args.id))
         return 0
+    if args.action == "narrate":
+        statesmod.ensure_active(course)
+        try:
+            count = mediamod.narrate(course, [args.id, *args.more] if args.id else None, args.all)
+        except (mediamod.MediaError, mediatools.ToolError) as exc:
+            print(t("commands", "error_line", text=exc), file=sys.stderr)
+            return 1
+        print(t("commands", "media_narrated", count=count))
+        _mirror(course["_project"], course["code"])
+        return 0
     if args.action in ("fit", "render"):
         if not args.id or (args.action == "fit" and not args.size):
             print(t("commands", "media_fit_needs"), file=sys.stderr)
@@ -953,7 +963,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.set_defaults(func=cmd_directives)
 
     p = sub.add_parser("media", help=t("commands", "help_media"))
-    p.add_argument("action", choices=("extract", "plan", "providers", "set", "upload", "redo", "embed", "fit", "render"))
+    p.add_argument("action", choices=("extract", "plan", "providers", "set", "upload", "redo", "embed", "fit", "render", "narrate"))
     p.add_argument("code", nargs="?")
     p.add_argument("id", nargs="?")
     p.add_argument("more", nargs="*", help=t("commands", "help_media_more"))

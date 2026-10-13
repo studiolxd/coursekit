@@ -241,7 +241,9 @@ def simulation_brick(name: str, body: list[str], ctx: dict) -> dict:
     character = str(data.get("character") or "")
     if character:
         data["_portrait"] = portrait(character)
-    for scene in (data.get("scenes") or {}).values():  # the images of each scene, resolved for the player (`_` keys)
+    for sid, scene in (data.get("scenes") or {}).items():  # the media of each scene, resolved for the player (`_` keys)
+        if data.get("audio") is True:
+            scene["_audio"] = media.get(simulation.voice_id(sim.id, str(sid)))
         if scene.get("background"):
             scene["_background"] = media.get(simulation.background_id(str(scene["background"])))
         for layer in scene.get("layers") or []:

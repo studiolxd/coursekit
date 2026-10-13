@@ -688,12 +688,12 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
                 [--made-with MADE_WITH] [--download DOWNLOAD] [--download-title DOWNLOAD_TITLE]
                 [--download-asset-path DOWNLOAD_ASSET_PATH] [--force]
                 [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all] [--size SIZE]
-                {extract,plan,providers,set,upload,redo,embed,fit,render} [code] [id] [more ...]
+                {extract,plan,providers,set,upload,redo,embed,fit,render,narrate} [code] [id] [more ...]
 ```
 
 | Argumento | Valores / por defecto | Significado |
 |---|---|---|
-| `action` | `extract`, `plan`, `providers`, `set`, `upload`, `redo`, `embed`, `fit`, `render` | Ver más abajo. |
+| `action` | `extract`, `plan`, `providers`, `set`, `upload`, `redo`, `embed`, `fit`, `render`, `narrate` | Ver más abajo. |
 | `code` | código o carpeta del curso | Obligatorio en todas las acciones salvo `providers` (código de salida 2 si falta). |
 | `id` | id de recurso como `U1-S2-M1` | Obligatorio en `set` (código de salida 2 si falta). |
 | `--status STATUS` | `pending`, `scripted`, `produced`, `uploaded` | Nuevo estado del recurso (se comprueba con `coursekit config media`). |
@@ -724,6 +724,7 @@ Acciones:
 - `embed`: envuelve el `.svg` que el recurso `id` tiene como `--file` en `media/src/<id>/index.html` (el SVG en línea, adaptable, en el idioma del curso, con las animaciones en pausa si se pide `prefers-reduced-motion`) y dice cómo subirlo: creator no admite el SVG como imagen, así que un SVG se sube como paquete EMBED, y el montaje pone un bloque EMBED donde el fichero del recurso es un `.svg`. Código de salida 1 si el recurso no tiene un fichero `.svg`.
 - `fit`: lleva el fichero del recurso `id` a `--size ANCHOxALTO` (obligatorio), escalado para cubrirlo y recortado desde el centro, conservando la transparencia de un PNG; en local, sin gastar créditos de un proveedor. Imprime `<fichero>: <antes> → <después>`.
 - `render`: dibuja el `.svg` del recurso `id` como un PNG a su lado (`<nombre>.png`), con el Chrome, Chromium o Edge de la máquina y sin interfaz, al tamaño de su `viewBox` o de `--size`: para mirarlo antes de marcarlo producido, y el PNG que necesita creator. Código de salida 1 si el fichero no es un SVG o no hay ese navegador.
+- `narrate`: produce la narración de las escenas de las simulaciones con `audio: true` (los recursos `VO-…`) con las voces configuradas: el personaje de una conversación con su propia voz (`coursekit voice set --character`), el resto con la voz del curso. Por defecto las pendientes; con ids, esas; con `--all`, todas de nuevo. Cada una va a `media/files/<id>.mp3`, con el texto como transcripción, y queda `produced`. Escribe `N narración(es) de escena producidas`; código de salida 1 si falla el proveedor de voz (lo producido antes se conserva).
 - `redo`: marca recursos para producirlos de nuevo e imprime sus ids. Con uno o más ids (`redo CODE U1-S3-M1 U1-S5-M4`), esos; sin ellos, los recursos producidos o subidos de los tipos que usan el tema (`uses_theme`) cuya huella difiere de los tokens actuales (todos con `--all`). Vuelven a `scripted` y olvidan su huella y su ruta subida; su guion y su fichero se conservan. Después `/produce-media` (o `coursekit handoff`) los produce otra vez. Mira [Cambiar el theme después de producir el multimedia](07-media.md#cambiar-el-theme-después-de-producir-el-multimedia). Se niega mientras el curso está en pausa.
 
 Los tipos que usan los tokens del tema figuran en `media.yaml › uses_theme` (por defecto `infographic`, `diagram`, `animated_gif`, `simulation`, `video` y `terminal_demo`). Para ellos:
