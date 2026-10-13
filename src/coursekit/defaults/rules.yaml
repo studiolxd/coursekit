@@ -56,6 +56,13 @@ design:
   objectives_per_unit: "2–4"
   intro_summary_hours: "0.2–0.3"
 
+# Common errors (misconceptions): what the audience gets wrong today, and why, per objective. The design lists them in
+# courses/<CODE>/design/misconceptions.yaml, signed with the design; the content puts each one in front of the learner (a
+# distractor that ends with ‹id›, a simulation decision with `error: id`) and its feedback or debriefing explains it.
+misconceptions:
+  per_objective: 2             # common errors the design lists for each objective (`coursekit approve design` asks for them);
+                               # 0: the course does without them (verify then checks the file only if there is one)
+
 # Assembly in creator: its code block takes only the languages of its `codeLanguage` list (`get_brick_type_schema` CODE). When it
 # adds some, list them here and coursekit uses them: `plaintext` for the blocks that show output, `shell` ("Terminal") for those
 # made of commands and for `console`/`terminal` fences, `powershell` for PowerShell, `diff`, `dockerfile`, `http`.

@@ -173,6 +173,7 @@ def test_mirror_flags_without_a_terminal(tmp_path):
     assert f"MIRROR_DIR={synced}" in (root / ".env").read_text(encoding="utf-8")
 
 
+@pytest.mark.real_defaults
 def test_config_examples_are_the_complete_package_defaults(tmp_path):
     from coursekit import config
 

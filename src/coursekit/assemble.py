@@ -35,6 +35,7 @@ from coursekit import config, lang, simulation
 from coursekit import course as coursemod
 from coursekit import story as storymod
 from coursekit.i18n import t
+from coursekit.misconceptions import strip_tag
 from coursekit.states import history_entry
 from coursekit.util import character_asset_id, edit_yaml, load_yaml, save_yaml
 
@@ -380,7 +381,8 @@ def directive_brick(name: str, body: list[str], ctx: dict) -> dict:
         author = lines.pop()[2:].strip() if lines and lines[-1].startswith("— ") else ""
         data = {"content": {"content": html("\n".join(lines)), "author": inline(author) if author else ""}}
     elif brick_type in ("SINGLE_CHOICE", "MULTI_SELECT"):
-        options = [(m.group(1).lower() == "x", m.group(2)) for m in map(OPTION_RE.match, rest) if m]
+        # the `‹id›` of a distractor (the common error it represents) is for the course, not for the learner
+        options = [(m.group(1).lower() == "x", strip_tag(m.group(2))[0]) for m in map(OPTION_RE.match, rest) if m]
         if brick_type == "SINGLE_CHOICE" and sum(c for c, _ in options) != 1:
             raise PlanError(t("assemble", "one_correct_option", name=name))
         data = {"content": question_content(values, syntax), "items": [{"content": inline(text), "isCorrect": c} for c, text in options]}
@@ -436,7 +438,8 @@ def directive_brick(name: str, body: list[str], ctx: dict) -> dict:
             for block in content.split("\n\n"):
                 q_values, q_rest = key_values(block.splitlines())
                 syntax.check_keys(q_values)
-                options = [{"text": m.group(2), "isCorrect": m.group(1).lower() == "x"} for m in map(OPTION_RE.match, q_rest) if m]
+                options = [{"text": strip_tag(m.group(2))[0], "isCorrect": m.group(1).lower() == "x"}
+                           for m in map(OPTION_RE.match, q_rest) if m]
                 if q_values.get(syntax.key("question")):
                     items.append({"categoryId": category, "content": inline(q_values[syntax.key("question")]), "options": options})
         data = {"properties": {"categories": categories}, "items": items}

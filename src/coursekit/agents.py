@@ -166,6 +166,7 @@ def context(project: Project) -> dict[str, str]:
         "objectives_per_unit": str(design.get("objectives_per_unit", "2–4")),
         "intro_summary_hours": str(design.get("intro_summary_hours", "0.2–0.3")),
         **decision_tokens(rules.get("decision_based") or {}),
+        "misconceptions_per_objective": str(int((rules.get("misconceptions") or {}).get("per_objective") or 0)),
     }
 
 

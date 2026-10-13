@@ -10,6 +10,9 @@ matrix_missing: {es: "falta design/matrix.json", en: "design/matrix.json is miss
 story_changed:
   es: "design/story.md cambió después de la aprobación: hay que aprobar el diseño de nuevo"
   en: "design/story.md changed after the approval: the design must be approved again"
+misconceptions_changed:
+  es: "design/misconceptions.yaml cambió después de la aprobación: hay que aprobar el diseño de nuevo"
+  en: "design/misconceptions.yaml changed after the approval: the design must be approved again"
 matrix_changed:
   es: "design/matrix.json cambió después de la aprobación: hay que aprobar el diseño de nuevo"
   en: "design/matrix.json changed after the approval: the design must be approved again"

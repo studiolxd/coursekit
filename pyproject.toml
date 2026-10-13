@@ -44,3 +44,4 @@ select = ["E", "F", "I", "UP", "B"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = ["real_defaults: the rules of the package as shipped (no suite adjustments)"]

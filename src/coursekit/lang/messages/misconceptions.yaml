@@ -1,0 +1,34 @@
+# The common errors of a course (design/misconceptions.yaml) and where the content shows them.
+missing:
+  es: "falta {path}: los errores típicos de cada objetivo (al menos {n} por objetivo; misconceptions.per_objective)"
+  en: "{path} is missing: the common errors of each objective (at least {n} per objective; misconceptions.per_objective)"
+not_yaml: {es: "no es YAML válido: {problem}", en: "not valid YAML: {problem}"}
+not_mapping: {es: "debe ser un mapa de objetivos (U1.1: …)", en: "must map objectives (U1.1: …)"}
+unknown_objective: {es: "el objetivo {objective} no existe en el diseño", en: "objective {objective} is not in the design"}
+objective_not_mapping:
+  es: "{objective} debe ser un mapa de errores (id: texto)"
+  en: "{objective} must map errors (id: text)"
+bad_id: {es: "id de error '{id}' no válido: minúsculas, números y _", en: "invalid error id '{id}': lower case, digits and _"}
+duplicate: {es: "el error '{id}' está en {first} y en {second}: cada id una sola vez", en: "error '{id}' is in {first} and in {second}: each id only once"}
+no_text: {es: "el error '{id}' no tiene texto", en: "error '{id}' has no text"}
+too_few:
+  es: "{objective} tiene {count} error(es) típico(s) y el diseño pide al menos {n}"
+  en: "{objective} has {count} common error(s) and the design asks for at least {n}"
+right_option_tagged:
+  es: "{place}: la opción correcta lleva el error ‹{id}›: un error típico va en un distractor"
+  en: "{place}: the right option carries the error ‹{id}›: a common error goes in a distractor"
+untagged_distractors:
+  es: "{place}: {count} distractor(es) sin el error típico que representan (‹id› al final de la opción)"
+  en: "{place}: {count} distractor(s) without the common error they represent (‹id› at the end of the option)"
+untagged_decisions:
+  es: "simulación '{id}': {count} decisión(es) que restan puntos sin el error típico que representan (error: id)"
+  en: "simulation '{id}': {count} decision(s) that lose points without the common error they represent (error: id)"
+unknown_id:
+  es: "el error ‹{id}› no está en design/misconceptions.yaml ({places})"
+  en: "error ‹{id}› is not in design/misconceptions.yaml ({places})"
+not_shown:
+  es: "el error típico ‹{id}› de {objective} («{text}») no aparece en ningún distractor ni decisión de la unidad"
+  en: "the common error ‹{id}› of {objective} («{text}») is not in any distractor or decision of the unit"
+no_file:
+  es: "el diseño no recoge los errores típicos (design/misconceptions.yaml): no se comprueban distractores ni decisiones"
+  en: "the design lists no common errors (design/misconceptions.yaml): distractors and decisions are not checked"

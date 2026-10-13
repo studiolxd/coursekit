@@ -27,7 +27,9 @@ from pathlib import Path
 
 import yaml
 
+from coursekit import config
 from coursekit import course as coursemod
+from coursekit import misconceptions as misconmod
 from coursekit import simulation as simmod
 from coursekit import story as storymod
 from coursekit.fingerprint import changed_since_review
@@ -188,7 +190,7 @@ def learner_words(lines: list[str], syntax: Syntax, skip: tuple[str, ...] = ()) 
             in_placeholder = False
         if DIRECTIVE_OPEN_RE.match(line) or DIRECTIVE_CLOSE_RE.match(line) or syntax.objective_tag.match(line):
             continue
-        kept.append(line)
+        kept.append(misconmod.strip_tag(line)[0] if misconmod.OPTION_RE.match(line) else line)
     return len(" ".join(kept).split())
 
 
@@ -269,6 +271,33 @@ def course_simulations(course: dict, rules: dict) -> list[tuple[int, str, int, s
                     state = data.get("state") if isinstance(data.get("state"), dict) else {}
                     found.append((other["n"], name, line_no, str(data["id"]), set(map(str, state))))
     return found
+
+
+CHOICE_BRICKS = ("SINGLE_CHOICE", "MULTI_SELECT", "TRIVIAL")
+
+
+def check_misconceptions(course: dict, unit: dict, files: list[tuple[str, list]], sims: list, report: Report) -> None:
+    """The common errors of the unit's objectives (design/misconceptions.yaml) are in front of the learner: in a distractor
+    of a choice question (`‹id›`) or in a decision of a simulation (`error: id`)."""
+    per_objective = int((coursemod.rules(course).get("misconceptions") or {}).get("per_objective") or 0)
+    errors, _ = misconmod.load(course)
+    if errors is None:
+        if per_objective > 0:
+            report.warn(t("misconceptions", "no_file"))
+        return
+    registry = config.effective("directives", course.get("_project"), course).value.get("directives") or {}
+    choice = tuple(name for name, d in registry.items() if (d or {}).get("brick") in CHOICE_BRICKS)
+    uses = misconmod.Uses()
+    for name, directives in files:
+        misconmod.question_uses(name, directives, choice, uses)
+    for sim in sims:
+        misconmod.simulation_uses(sim, uses)
+    objectives = {str(o.get("id")) for o in unit.get("objectives") or [] if isinstance(o, dict)}
+    problems, notes = misconmod.check_unit(errors, objectives, uses)
+    for problem in problems:
+        report.error(problem)
+    for note in notes:
+        report.warn(note)
 
 
 def check_adaptive(path: Path, lines: list[str], unit_n: int, sims: list, report: Report) -> int:
@@ -445,10 +474,12 @@ def verify_unit(course: dict, unit: dict) -> Report:
     adaptive = check_adaptive(content_path, text.splitlines(), unit["n"], sims, report)
 
     questions = 0
+    assessment_directives: list = []
     if assessment_path.exists():
         a_text = assessment_path.read_text(encoding="utf-8")
         check_pictographs(assessment_path, a_text, rules["allowed_symbols"], report)
         directives = list(parse_directives(assessment_path, a_text.splitlines(), rules, report))
+        assessment_directives = directives
         questions = check_questions(assessment_path, directives, rules, syntax, report)
         passing = float(((course.get("design") or {}).get("grading") or {}).get("passing_score") or 50)
         # with a test, the grade is the test's: a scored simulation of the content does not count (in any backend)
@@ -474,6 +505,7 @@ def verify_unit(course: dict, unit: dict) -> Report:
     for sid in sorted({sim.id for sim in unit_sims if sim.id}):
         if len(places.get(sid, [])) > 1:
             report.error(t("verify", "duplicate_simulation", id=sid, places=", ".join(places[sid])))
+    check_misconceptions(course, unit, [(content_path.name, quiet), (assessment_path.name, assessment_directives)], unit_sims, report)
     if decision_based and unit_sims:
         bible, problems = storymod.load(course)
         for problem in problems:

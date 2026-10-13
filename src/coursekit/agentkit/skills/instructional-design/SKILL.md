@@ -64,16 +64,27 @@ sections the course needs, and justify it.
    *create*). Grading: give each assessment activity its `peso` (weight in the unit's score; 1 when the tests count
    the same), `notaAprobado` and `intentosMax` (0 = unlimited) in `design_matrix_ae_create` / `_ae_update`; what you
    leave empty takes `design.grading` of `course.yaml` (`passing_score`, `attempts`) and weight 1 when assembling.
-7. **Hours, last.** With the content defined, split the hours **by real load**: breadth, Bloom
+7. **Common errors** in `courses/<CODE>/design/misconceptions.yaml`, written in {{language_name}}: for each objective,
+   at least {{misconceptions_per_objective}} things the audience gets wrong today and why (habits, pressure, beliefs),
+   from the material and the person's notes; never invented as foils. They are signed with the design, and the content
+   puts every one in front of the learner (a distractor, a wrong decision) and explains it. Format (the objective ids are
+   those `coursekit sync <CODE> --check` prints; error ids in lower case, digits and `_`, unique in the course):
+
+   ```yaml
+   U1.1:
+     reuse: <the error, as the learner would think it>
+     year: <…>
+   ```
+8. **Hours, last.** With the content defined, split the hours **by real load**: breadth, Bloom
    level (apply/analyse/evaluate need more time than remember), practice and activities. Never
    split evenly. `design_matrix_node_update_horas` on sections and units; the total must be
    exactly `design.hours`. Introduction and summary usually take {{intro_summary_hours}} h per
    unit. Each hour means {{words_per_hour}} minimum words.
-8. **Validation.** `design_matrix_validate` until **0 errors**. Review every warning.
-9. **Own pedagogical review** (without spending slxd credits): apply the "Self-review" rubric
+9. **Validation.** `design_matrix_validate` until **0 errors**. Review every warning.
+10. **Own pedagogical review** (without spending slxd credits): apply the "Self-review" rubric
    below and fix what you find before presenting the proposal.
-10. **Export** (see "Export").
-11. **Proposal notes** in `courses/<CODE>/design/proposal-notes.md` ({{ui_language_name}}):
+11. **Export** (see "Export").
+12. **Proposal notes** in `courses/<CODE>/design/proposal-notes.md` ({{ui_language_name}}):
     structure and why, hour split and criterion, assumptions (syllabus, audience, level),
     questions for the person, accepted validation warnings and why. In a decision-based course, also the action map
     and the story bible (see "Decision-based courses").
@@ -87,7 +98,8 @@ keeps every directive and resource around the simulations. Design it this way, o
 1. **Action map, before the units.** From the material: the goal of the organisation → what people must **do** (observable
    decisions and actions, not what they must know) → why they get it wrong today (habits, pressure, misconceptions) →
    which situations put those decisions to the test → the minimum information needed to decide well. Write it in
-   `proposal-notes.md`; objectives come from the actions (apply, analyse, evaluate are the usual levels).
+   `proposal-notes.md`; objectives come from the actions (apply, analyse, evaluate are the usual levels). The reasons
+   people get it wrong become the common errors of each objective (`design/misconceptions.yaml`).
 2. **Story bible** in `courses/<CODE>/design/story.md` (format below), written in {{language_name}}: one story for the
    whole course. Read the *Story* section of `brief/notes.md` (course and project) first.
 3. **Sections.** Each content section is one challenge: a situation where the objectives of the section are put to the
@@ -148,7 +160,8 @@ characters:
 2. Apply exactly what was asked; if a change forces others (hours, links, activities), make
    them and explain them.
 3. Validate again, self-review, export and update `proposal-notes.md` (a dated "Changes"
-   section). In a decision-based course, update `design/story.md` too when the change touches it.
+   section). Update `design/misconceptions.yaml` when the objectives change, and in a decision-based course
+   `design/story.md` when the change touches it.
 4. If the design was signed, say that the signature is no longer valid.
 
 ## Export (always the three together, so they match the same version)
@@ -175,6 +188,8 @@ For each element, if there is a problem, fix it and note it in `proposal-notes.m
   easier nor harder); the criterion measures it; the evidence is recorded.
 - **Objective ↔ learning activity:** the activity lets the learner practise the behaviour
   (nothing passive for apply/analyse/evaluate/create).
+- **Common errors:** real (from the material, the audience, the sector), specific to the objective, written as the
+  learner would think them, and each one different; at least {{misconceptions_per_objective}} per objective.
 
 ## Fixed rules
 

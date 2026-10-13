@@ -28,6 +28,25 @@ def isolated_environment(tmp_path_factory):
     os.environ.update(saved)
 
 
+@pytest.fixture(autouse=True)
+def no_misconceptions(request, monkeypatch):
+    """The sample courses of the suite predate the common errors (design/misconceptions.yaml): the suite starts without them
+    (`misconceptions.per_objective: 0`); the tests of the feature set the rule in their course."""
+    from coursekit import config
+
+    if request.node.get_closest_marker("real_defaults"):
+        return
+    real = config.package_defaults
+
+    def defaults(name):
+        data = real(name)
+        if name == "rules":
+            data.setdefault("misconceptions", {})["per_objective"] = 0
+        return data
+
+    monkeypatch.setattr(config, "package_defaults", defaults)
+
+
 @pytest.fixture
 def agent_tool(monkeypatch):
     """The AI tools are found on the machine (CI has none): for the tests that build the command line of a session."""

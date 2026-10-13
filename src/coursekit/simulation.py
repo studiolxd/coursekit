@@ -207,7 +207,7 @@ TOP_KEYS = {"id", "title", "skin", "character", "objective", "scored", "weight",
             "pass_requires"}
 SCENE_KEYS = {"text", "background", "layers", "characters", "variants", "checkpoint", "choices", "hotspots", "next", "ending",
               "debriefing", "expression", "screen", "skin"}
-CHOICE_KEYS = {"text", "goto", "if", "effects", "set", "score", "feedback"}
+CHOICE_KEYS = {"text", "goto", "if", "effects", "set", "score", "feedback", "error"}  # error: the common error it represents
 HOTSPOT_KEYS = CHOICE_KEYS - {"text"} | {"label", "area", "target"}
 
 # What the screen of each skin shows (`screen` of the simulation, completed by the `screen` of each scene), and the parts of
@@ -509,6 +509,8 @@ def _check_decision(item: object, place: str, keys: set, label: str, scenes: dic
                 err("bad_change_value", place=f"{place}.{key}.{var}", value=value)
     if "score" in item and (isinstance(item["score"], bool) or not isinstance(item["score"], (int, float))):
         err("bad_score", place=place, value=item["score"])
+    if "error" in item and not re.match(r"^[a-z][a-z0-9_]*$", str(item["error"] or "")):
+        err("bad_error", place=place, value=item["error"])
 
 
 # ── Paths ───────────────────────────────────────────────────────────────────────────────────

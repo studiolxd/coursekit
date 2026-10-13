@@ -24,6 +24,7 @@ from pathlib import Path
 
 from coursekit import course as coursemod
 from coursekit import identity
+from coursekit import misconceptions as misconmod
 from coursekit import story as storymod
 from coursekit.fingerprint import changed_since_review
 from coursekit.i18n import t
@@ -100,6 +101,12 @@ def approve_design(course: dict, confirm: Confirm, do_commit: bool = True, who: 
     graph = json.loads(matrix.read_text(encoding="utf-8"))
     meta = graph.get("matrix") or {}
     check = sync(course, check_only=True)
+    # the common errors of each objective are signed with the design
+    per_objective = int((coursemod.rules(course).get("misconceptions") or {}).get("per_objective") or 0)
+    objectives = {str(o.get("id")): u.get("n") for u in check.units for o in u.get("objectives") or [] if isinstance(o, dict)}
+    errors, problems = misconmod.load(course, objectives, per_objective)
+    if problems:
+        raise ApprovalError(t("approve", "misconceptions_problems", problems="\n  ".join(problems)))
     who = who or signer()
     summary = t(
         "approve", "design_summary",
@@ -109,6 +116,8 @@ def approve_design(course: dict, confirm: Confirm, do_commit: bool = True, who: 
     )
     if decision_based:
         summary += "\n" + t("approve", "design_summary_story", path=storymod.FILE.as_posix())
+    if errors is not None:
+        summary += "\n" + t("approve", "design_summary_misconceptions", path=misconmod.FILE.as_posix(), count=len(errors.by_id))
     if not confirm(t("approve", "design_confirm", summary=summary, who=who)):
         raise ApprovalError(t("approve", "cancelled"))
     sync(course)
@@ -123,6 +132,8 @@ def approve_design(course: dict, confirm: Confirm, do_commit: bool = True, who: 
     }
     if decision_based:
         entry["story_sha256"] = sha256_file(storymod.path(course))
+    if errors is not None:
+        entry["misconceptions_sha256"] = sha256_file(misconmod.path(course))
     if via:
         entry["via"] = via
     _record(course_dir, entry, "design_approved", "Instructional design approved")

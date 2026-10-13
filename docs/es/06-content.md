@@ -14,6 +14,7 @@ courses/PWD/
 │   ├── matrix.json              diseño instruccional, tal como se exporta de la plataforma
 │   ├── PWD-instructional-design.xlsx   el fichero que revisan las personas
 │   ├── proposal-notes.md        notas del agente de diseño
+│   ├── misconceptions.yaml      errores típicos por objetivo, firmados con el diseño
 │   └── validation.json          hallazgos de la validación (opcional)
 ├── content/
 │   └── unit-01/
@@ -333,6 +334,32 @@ Cada clave va en una sola línea. Los nombres de clave dentro de las directivas 
 
 `pregunta:` es obligatoria, pero `verify` solo avisa cuando falta `objetivo:`. Una pregunta sin `pregunta:`, un `multi-select` sin ningún `- [x]`, un `match` sin ningún par `::` o un `short-answer` sin `respuestas:` pasa `verify` y se publica vacía o rota, así que revísalas a mano. `objetivo:` lleva el identificador de un objetivo de la unidad (`U1.1`); su valor no se valida. Toda pregunta debería llevar además retroalimentación (`feedback-correcto:`, `feedback-incorrecto:` o `feedback:`); es una norma editorial que `verify` no comprueba.
 
+### Errores típicos
+
+Lo que el público hace mal hoy, y por qué, forma parte del diseño: `design/misconceptions.yaml` recoge, por objetivo, al
+menos `misconceptions.per_objective` errores típicos (2 por defecto), escritos por el agente de diseño en el idioma del
+curso y firmados con el diseño. El contenido pone delante del alumno cada error de los objetivos de una unidad y lo
+explica:
+
+```yaml
+U1.1:
+  corta: Pensar que ocho caracteres bastan si llevan símbolos
+  anio: Cambiar solo el año de la contraseña de siempre
+U1.2:
+  mascota: Usar el nombre de la mascota porque nadie lo sabe
+```
+
+- En `single-choice` y `multi-select`, cada distractor es uno de esos errores y termina con su id entre `‹ ›`:
+  `- [ ] Verano2024! ‹anio›`. El alumno nunca lo ve (se quita al montar) y la retroalimentación dice por qué la opción
+  es incorrecta.
+- En una simulación, una decisión que representa uno lo dice con `error: anio`; su `feedback` o el debriefing lo
+  explican. `coursekit paths` lo muestra junto a la decisión.
+
+`coursekit verify` falla cuando un error de los objetivos de la unidad no aparece en ningún distractor ni decisión de la
+unidad, cuando un `‹id›` o un `error:` no está en el fichero y cuando la opción correcta lleva uno; avisa de los
+distractores y de las decisiones que restan puntos sin él. Sin el fichero solo avisa (un curso firmado antes de que
+existiera); `coursekit approve design` lo pide cuando `misconceptions.per_objective` es mayor que 0.
+
 ### Componentes que no son directivas
 
 Si el nombre de una directiva no está en el registro, `verify` falla y sugiere el equivalente:
@@ -479,7 +506,7 @@ scenes:
 | `state` | Variables y su valor inicial: números, `true`, `false`. |
 | `start` | Escena inicial; por defecto, la primera. |
 | `scenes.<id>` | `text` (obligatorio), `skin` (otra aplicación para esta escena), `screen`, `background`, `layers` (`image`, `area`, `if`), `characters` (`name`, `expression`, `position`: `left`, `right` o `center` en una escena con fondo), `variants` (`if`, `text`: texto añadido cuando se cumple la condición), `checkpoint` (el alumno puede volver aquí si `decision_based.rewind` está activo) y **una** salida: `choices`, `hotspots`, `next` o `ending`. |
-| Una opción o zona | `text` (opción) o `label` y, o bien `area` `[x, y]` o `[x, y, ancho, alto]` en % de la escena, o bien `target`, una parte de la pantalla de la piel (zona); `goto`; opcionalmente `if`, `effects` (suma a variables), `set` (les da un valor), `score` (puntos, positivos o negativos) y `feedback`. |
+| Una opción o zona | `text` (opción) o `label` y, o bien `area` `[x, y]` o `[x, y, ancho, alto]` en % de la escena, o bien `target`, una parte de la pantalla de la piel (zona); `goto`; opcionalmente `if`, `effects` (suma a variables), `set` (les da un valor), `score` (puntos, positivos o negativos), `feedback` y `error` (el [error típico](#errores-típicos) que representa). |
 | `next` | Avanza sin decisión: una lista de `{if, goto}`; la primera que se cumple. |
 | `ending` | `good`, `mixed` o `bad`, con su `debriefing` (obligatorio). |
 
@@ -609,6 +636,7 @@ Las cifras son los valores por defecto del paquete (`src/coursekit/defaults/rule
 | Forma del recurso | Tipo conocido (una palabra del idioma del curso) y los cuatro campos presentes | 8 tipos | error |
 | Directivas | Nombre conocido, cerrada y sin anidar | — | error |
 | Objetivo de la pregunta | Toda directiva de pregunta lleva la clave de objetivo (`objetivo:` / `objective:`) | — | aviso |
+| Errores típicos | Cada error de `design/misconceptions.yaml` de los objetivos de la unidad está en un distractor (`‹id›`) o una decisión (`error:`); cada id existe; ninguna opción correcta lleva uno | — | error (un distractor o una decisión que resta puntos sin él: aviso) |
 | Banco de preguntas | `questions_per_objective` × número de objetivos distintos evaluados por una actividad cuyo instrumento es `cuestionario` (el valor del campo de instrumento del diseño, sea cual sea el idioma del curso) | 5 por objetivo | aviso |
 | Símbolos | Ningún emoji ni pictograma fuera de `allowed_symbols` | `★ ✔ ✘ · — ‹ ›` | error |
 | Montaje | El Markdown se convierte en bricks (mismo análisis que `assemble plan`). Con el backend html informa además de las directivas que aún no están disponibles | — | error |

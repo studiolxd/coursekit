@@ -129,7 +129,7 @@ scenes:
 | `state` | variables and their initial value (numbers, `true`, `false`) |
 | `start` | first scene (default: the first one) |
 | `scenes.<id>` | `skin` (optional: the scene happens in another application, e.g. from the chat to the email; it shows only its own `screen`; a scene with `background` happens in that place instead of on the screen), `text` (required), `background`, `layers` (`image`, `area`, `if`), `characters` (`name`, `expression`, `position`: `left`, `right` or `center`), `variants` (`if`, `text`: extra text when the condition holds), `checkpoint`, and **one** way out: `choices`, `hotspots`, `next` or `ending` |
-| choice / hotspot | `text` (choice) or `label` + `area` `[x, y]` or `[x, y, w, h]` in % (hotspot); `goto`; optional `if`, `effects` (adds to variables), `set` (gives them a value), `score` (points, `+` or `-`), `feedback` |
+| choice / hotspot | `text` (choice) or `label` + `area` `[x, y]` or `[x, y, w, h]` in % (hotspot); `goto`; optional `if`, `effects` (adds to variables), `set` (gives them a value), `score` (points, `+` or `-`), `feedback`, `error` (the id of the common error of `design/misconceptions.yaml` it represents) |
 | hotspot `target` | instead of `area`, a part of the screen of the skin (keys per skin below) |
 | `next` | moves on without a decision: list of `{if, goto}`, the first that holds |
 | `ending` | `good`, `mixed` or `bad`, with its `debriefing` (required) |
@@ -192,15 +192,16 @@ The directives with `role: question`: `single-choice`, `multi-select`, `true-fal
 :::single-choice
 {{t_question_key}} U1.2
 {{k_question}}: <question>
-- [ ] <distractor>
+- [ ] <distractor> ‹<error id>›
 - [x] <correct answer>
-- [ ] <distractor>
+- [ ] <distractor> ‹<error id>›
 {{k_feedback_correct}}: <why it is right>
 {{k_feedback_incorrect}}: <which section to review>
 :::
 ```
 
-- `single-choice` (exactly one `- [x]`) and `multi-select`: options `- [x]` / `- [ ]`.
+- `single-choice` (exactly one `- [x]`) and `multi-select`: options `- [x]` / `- [ ]`. Each distractor ends with the id
+  of the common error it represents, between `‹ ›` (`design/misconceptions.yaml`); the learner does not see it.
 - `match`: lines `- term :: definition`. `sorting`: list in the right order. `order-words`:
   `- full sentence` per sentence. `sorting-groups`: `#### Category` + list of items.
   `true-false`: `{{k_answer}}: {{w_true}}|{{w_false}}`. `fill-in-the-blank`: blanks in `{{k_question}}:` as

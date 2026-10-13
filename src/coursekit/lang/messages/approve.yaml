@@ -18,6 +18,12 @@ design_summary_story:
 story_problems:
   es: "la biblia narrativa no está lista:\n  {problems}"
   en: "the story bible is not ready:\n  {problems}"
+design_summary_misconceptions:
+  es: "  errores típicos: {path}, {count} (se firman con el diseño)"
+  en: "  common errors: {path}, {count} (signed with the design)"
+misconceptions_problems:
+  es: "los errores típicos del diseño no están listos:\n  {problems}"
+  en: "the common errors of the design are not ready:\n  {problems}"
 style_no_samples:
   es: "no hay muestras de estilo en {path}: el agente de multimedia las produce antes (un fondo, un personaje en varias expresiones y algunos objetos)"
   en: "there are no style samples in {path}: the media agent produces them first (a background, a character in several expressions and some objects)"

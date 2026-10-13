@@ -14,6 +14,7 @@ courses/PWD/
 │   ├── matrix.json              instructional design, exactly as exported from the platform
 │   ├── PWD-instructional-design.xlsx   the file people review
 │   ├── proposal-notes.md        notes of the design agent
+│   ├── misconceptions.yaml      common errors per objective, signed with the design
 │   └── validation.json          validation findings (optional)
 ├── content/
 │   └── unit-01/
@@ -333,6 +334,32 @@ Each key goes on one line. The key names inside directives (`question:`, `answer
 
 `question:` is required, but `verify` only warns when `objective:` is missing. A question without `question:`, a `multi-select` with no `- [x]`, a `match` with no `::` pair or a `short-answer` without `answers:` passes `verify` and is published empty or broken, so check them by hand. `objective:` takes a unit objective id (`U1.1`); its value is not validated. Every question should also carry feedback (`feedback-correct:`, `feedback-incorrect:` or `feedback:`); that is an editorial rule that `verify` does not check.
 
+### Common errors
+
+What the audience gets wrong today, and why, is part of the design: `design/misconceptions.yaml` lists, per objective,
+at least `misconceptions.per_objective` common errors (2 by default), written by the design agent in the course
+language and signed with the design. The content puts every error of a unit's objectives in front of the learner and
+explains it:
+
+```yaml
+U1.1:
+  short: Thinking eight characters are enough if they have symbols
+  year: Changing only the year of the usual password
+U1.2:
+  pet: Using the pet's name because nobody knows it
+```
+
+- In `single-choice` and `multi-select`, each distractor is one of those errors and ends with its id between `‹ ›`:
+  `- [ ] Summer2024! ‹year›`. The learner never sees it (it is removed when assembling) and the feedback says why the
+  option is wrong.
+- In a simulation, a decision that represents one says so with `error: year`; its `feedback` or the debriefing
+  explains it. `coursekit paths` shows it next to the decision.
+
+`coursekit verify` fails when an error of the unit's objectives appears in no distractor or decision of the unit, when a
+`‹id›` or `error:` is not in the file, and when the right option carries one; it warns of distractors and of decisions
+that lose points without one. Without the file it only warns (a course signed before it existed); `coursekit approve
+design` asks for it when `misconceptions.per_objective` is above 0.
+
 ### Components that are not directives
 
 If a directive name is not in the registry, `verify` fails and suggests the equivalent:
@@ -477,7 +504,7 @@ scenes:
 | `state` | Variables and their initial value: numbers, `true`, `false`. |
 | `start` | First scene; by default the first one. |
 | `scenes.<id>` | `text` (required), `skin` (another application for this scene), `screen`, `background`, `layers` (`image`, `area`, `if`), `characters` (`name`, `expression`, `position`: `left`, `right` or `center` in a scene with a background), `variants` (`if`, `text`: extra text when the condition holds), `checkpoint` (the learner may come back here when `decision_based.rewind` is on) and **one** way out: `choices`, `hotspots`, `next` or `ending`. |
-| A choice or hotspot | `text` (choice) or `label` and either `area` `[x, y]` or `[x, y, w, h]` in % of the scene or `target`, a part of the screen of the skin (hotspot); `goto`; optionally `if`, `effects` (adds to variables), `set` (gives them a value), `score` (points, positive or negative) and `feedback`. |
+| A choice or hotspot | `text` (choice) or `label` and either `area` `[x, y]` or `[x, y, w, h]` in % of the scene or `target`, a part of the screen of the skin (hotspot); `goto`; optionally `if`, `effects` (adds to variables), `set` (gives them a value), `score` (points, positive or negative), `feedback` and `error` (the [common error](#common-errors) it represents). |
 | `next` | Moves on without a decision: a list of `{if, goto}`; the first that holds. |
 | `ending` | `good`, `mixed` or `bad`, with its `debriefing` (required). |
 
@@ -605,6 +632,7 @@ The numbers are the package defaults (`src/coursekit/defaults/rules.yaml`). A pr
 | Placeholder form | Known type (a word of the course language) and the four fields present | 8 types | error |
 | Directives | Known name, closed, not nested | — | error |
 | Question objective | Every question directive has the objective key (`objective:` / `objetivo:`) | — | warning |
+| Common errors | Every error of `design/misconceptions.yaml` of the unit's objectives is in a distractor (`‹id›`) or a decision (`error:`); every id exists; no right option carries one | — | error (a distractor or a decision that loses points without one: warning) |
 | Question bank | `questions_per_objective` × number of distinct objectives assessed by an activity whose instrument is `cuestionario` (the value of the instrument field of the design, whatever the course language) | 5 per objective | warning |
 | Symbols | No emoji or pictograph outside `allowed_symbols` | `★ ✔ ✘ · — ‹ ›` | error |
 | Assembly | The Markdown converts to bricks (same parse as `assemble plan`). With the html backend it also reports the directives that are not available yet | — | error |

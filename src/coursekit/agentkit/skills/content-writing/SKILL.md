@@ -61,6 +61,12 @@ Mandatory format: `.coursekit/docs/content-format.md`. Write in {{language_name}
   learner sees **only** the instructions, its simulations and its question bank, exactly as written: they are for the
   learner, never notes for people ("this activity has no question bank…"). An activity that is only a scored simulation
   leaves its bank empty; the other subsections (objectives, development, marking, attempts) are for people.
+- **Common errors** (`courses/<CODE>/design/misconceptions.yaml`, signed with the design): every error of the unit's
+  objectives is put in front of the learner at least once in the unit, and explained. In `single-choice` and
+  `multi-select`, each distractor is one of those errors and ends with its id, `- [ ] <option> ‹reuse›` (the learner
+  never sees it), and the feedback says why it is wrong; in a simulation, a decision that represents one says so with
+  `error: reuse` and its `feedback` or the debriefing explains it. `coursekit verify` fails when an error of the unit
+  appears nowhere or an id is not in the file, and warns of distractors and decisions that lose points without one.
 - **No emojis.** Only `{{allowed_symbols}}`.
 
 ## Decision-based courses

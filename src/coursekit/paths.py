@@ -53,6 +53,8 @@ def _changes(decision: dict) -> str:
     parts += [f"{var} = {str(value).lower() if isinstance(value, bool) else value}" for var, value in (decision.get("set") or {}).items()]
     if decision.get("score"):
         parts.append(f"score {float(decision['score']):+g}")
+    if decision.get("error"):
+        parts.append(f"‹{decision['error']}›")  # the common error it represents
     return ", ".join(parts)
 
 

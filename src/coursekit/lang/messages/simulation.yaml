@@ -60,6 +60,9 @@ bad_decision: {es: "{place}: cada decisión debe ser un mapa", en: "{place}: eve
 bad_changes: {es: "{place}: debe ser un mapa de variables", en: "{place}: must map variables to values"}
 bad_change_value: {es: "{place}: valor no válido ({value})", en: "{place}: invalid value ({value})"}
 bad_score: {es: "{place}: 'score' debe ser un número ({value})", en: "{place}: 'score' must be a number ({value})"}
+bad_error:
+  es: "{place}: 'error' debe ser el id de un error típico de design/misconceptions.yaml ({value})"
+  en: "{place}: 'error' must be the id of a common error of design/misconceptions.yaml ({value})"
 screen_without_skin: {es: "{place}: 'screen' necesita una 'skin'", en: "{place}: 'screen' needs a 'skin'"}
 bad_screen: {es: "{place}: debe ser un mapa", en: "{place}: must be a mapping"}
 screen_not_list: {es: "{place}: debe ser una lista", en: "{place}: must be a list"}

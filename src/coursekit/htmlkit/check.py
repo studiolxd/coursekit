@@ -17,6 +17,7 @@ import yaml
 
 from coursekit import course as coursemod
 from coursekit import lang
+from coursekit.misconceptions import strip_tag
 
 WORD = re.compile(r"\w+", re.UNICODE)
 FENCE = re.compile(r"^\s*(```|~~~)")
@@ -137,7 +138,8 @@ def learner_text(path: Path, tokens: dict, assessment: bool) -> str:
                 continue
             if match.group(1) in lang.directive_keys(tokens):
                 line = match.group(2)
-        line = re.sub(r"^\s*[-*]\s+\[[ xX]\]\s+", "", line)
+        if re.match(r"^\s*[-*]\s+\[[ xX]\]\s+", line):
+            line = strip_tag(re.sub(r"^\s*[-*]\s+\[[ xX]\]\s+", "", line))[0]
         line = re.sub(r"^\s*\d+[.)]\s+", "", line)  # the number of a numbered list is drawn by the list
         kept.append(line)
     out = "\n".join(kept)

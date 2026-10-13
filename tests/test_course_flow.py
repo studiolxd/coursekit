@@ -14,6 +14,7 @@ FIXTURES = Path(__file__).parent / "fixtures"
 COURSE_RULES = """
 rules:
   words_per_page: 20
+  misconceptions: {per_objective: 0}
   content:
     placeholders_per_hour: 1
     min_placeholder_types: 1
