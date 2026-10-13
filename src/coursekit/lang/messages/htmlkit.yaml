@@ -1,7 +1,7 @@
 # Errors and output of the html backend (`coursekit assemble build`).
 unsupported:
-  es: "{brick}: este componente aún no está disponible en el backend html (los juegos llegarán en una entrega posterior)"
-  en: "{brick}: this component is not available in the html backend yet (the games come in a later delivery)"
+  es: "{brick}: este componente no está disponible en el backend html"
+  en: "{brick}: this component is not available in the html backend"
 asset_without_file:
   es: "el recurso {asset} está producido pero su fichero no existe (coursekit media set … --file): se deja el marcador"
   en: "the asset {asset} is produced but its file does not exist (coursekit media set … --file): the placeholder stays"

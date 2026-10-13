@@ -255,15 +255,59 @@ def test_a_line_the_format_does_not_render_is_reported_as_missing_words(html_cou
     assert not (html_course / "delivery").exists() or not list((html_course / "delivery").glob("*.zip"))
 
 
-def test_the_games_are_not_available_yet_and_verify_says_so(html_course, capsys):
+GAMES = """:::word-search
+- PHISHING
+- CLAVE
+:::
+
+:::wordle
+- CLAVE
+:::
+
+:::hangman
+- GESTOR
+:::
+
+:::pasapalabra
+- P (empieza): Engaño por correo :: PHISHING/FISHING
+- V (contiene): Lo que haces antes de pulsar :: VERIFICAR
+:::
+
+:::memory
+- Frase larga
+- Doble factor
+:::
+
+:::trivial
+#### Contraseñas
+pregunta: ¿Qué es más robusto?
+- [ ] Verano2024!
+- [x] Cuatro palabras al azar
+
+#### Phishing
+pregunta: ¿Qué haces con un enlace urgente?
+- [x] Comprobar por otro canal
+- [ ] Pulsar
+:::
+
+:::dialog"""
+
+
+def test_the_games_are_built_with_their_data_and_what_they_are_about(html_course, capsys):
     path = html_course / "content" / "unit-01" / "content.md"
-    game = ":::memory\n- Gestor\n- Clave\n:::\n\n:::dialog"
-    path.write_text(path.read_text(encoding="utf-8").replace(":::dialog", game), encoding="utf-8")
+    path.write_text(path.read_text(encoding="utf-8").replace(":::dialog", GAMES), encoding="utf-8")
     capsys.readouterr()
-    assert main(["assemble", "build", "PWD", "--unit", "1"]) == 1
-    assert "MEMORY: this component is not available in the html backend yet" in capsys.readouterr().err
-    assert main(["verify", "PWD", "--no-update"]) == 1
-    assert "not available in the html backend yet" in capsys.readouterr().out
+    assert main(["assemble", "build", "PWD", "--unit", "1"]) == 0, capsys.readouterr().err
+    page = (html_course / "assembly" / "html" / "unit-01" / "index.html").read_text(encoding="utf-8")
+    for kind in ("word-search", "wordle", "hangman", "pasapalabra", "memory", "trivial"):
+        assert f'data-widget="{kind}"' in page
+    assert "Comprobar por otro canal" in page and "Verano2024!" in page  # every question of the trivia, every option
+    assert "<li><strong>P</strong> (empieza) Engaño por correo: PHISHING/FISHING</li>" in page
+    trivia = json.loads(page.split('data-widget="trivial"')[1].split('class="ck-game-data">')[1].split("</script>")[0])
+    assert [i["categoryId"] for i in trivia["items"]] == ["Contraseñas", "Phishing"]
+    assert [o["isCorrect"] for o in trivia["items"][0]["options"]] == [False, True]
+    assert main(["verify", "PWD", "--no-update"]) == 0
+    assert "not available in the html backend" not in capsys.readouterr().out
 
 
 def test_only_the_published_subsections_of_an_activity_are_compared(tmp_path):
@@ -388,3 +432,14 @@ def test_the_package_keeps_only_its_media_and_lighter_images(tmp_path):
     htmlbuild._to_webp(portrait, tmp_path / "portrait.webp")
     copy = Image.open(tmp_path / "portrait.webp")
     assert copy.mode == "RGBA" and copy.size == (900, 900)
+
+
+def test_the_scripts_of_the_player_are_valid_javascript():
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("node is not installed")
+    import subprocess
+
+    player = htmlbuild.template_dir() / "player"
+    for name in ("games.js", "embedsim.js"):
+        assert subprocess.run([node, "--check", str(player / name)], capture_output=True, text=True).returncode == 0, name

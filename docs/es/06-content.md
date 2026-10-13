@@ -257,12 +257,12 @@ No reutilices nunca una contraseña.
 | `labelled-graphic` | `LABELLED_GRAPHIC` | interactive | Imagen con puntos calientes que explican sus partes (diagramas) | ✔ |
 | `timeline` | `TIMELINE` | interactive | Hechos o pasos cronológicos o secuenciales | ✔ |
 | `dialog` | `DIALOG` | interactive | Conversación guionizada entre personajes (roleplay, ejemplos resueltos) | ✔ |
-| `word-search` | `WORD_SEARCH` | interactive | Sopa de letras; refuerzo de vocabulario | aún no disponible |
-| `wordle` | `WORDLE` | interactive | Adivinar la palabra; vocabulario | aún no disponible |
-| `hangman` | `HANGMAN` | interactive | Ahorcado; vocabulario | aún no disponible |
-| `pasapalabra` | `PASAPALABRA` | interactive | Rosco con una pista por letra; repaso amplio de un tema | aún no disponible |
-| `memory` | `MEMORY` | interactive | Parejas de memoria; recuerdo y asociación | aún no disponible |
-| `trivial` | `TRIVIAL` | interactive | Trivial por categorías; repaso gamificado | aún no disponible |
+| `word-search` | `WORD_SEARCH` | interactive | Sopa de letras; refuerzo de vocabulario | ✔ |
+| `wordle` | `WORDLE` | interactive | Adivinar la palabra; vocabulario | ✔ |
+| `hangman` | `HANGMAN` | interactive | Ahorcado; vocabulario | ✔ |
+| `pasapalabra` | `PASAPALABRA` | interactive | Rosco con una pista por letra; repaso amplio de un tema | ✔ |
+| `memory` | `MEMORY` | interactive | Parejas de memoria; recuerdo y asociación | ✔ |
+| `trivial` | `TRIVIAL` | interactive | Trivial por categorías; repaso gamificado | ✔ |
 | `single-choice` | `SINGLE_CHOICE` | question | Comprobar la comprensión con una única opción correcta | ✔ |
 | `multi-select` | `MULTI_SELECT` | question | Evaluar cuando varias opciones pueden ser correctas | ✔ |
 | `true-false` | `TRUE_FALSE` | question | Comprobación rápida de una afirmación | ✔ |
@@ -277,7 +277,7 @@ No reutilices nunca una contraseña.
 | `quote` | `QUOTE` | static | Cita de una persona experta o fuente, con atribución | ✔ |
 | `reflection` | `NOTE` | static | Reflexión de cierre de una unidad: preguntas abiertas sobre lo que hizo el alumno, qué cambiaría y cómo lo aplicará | ✔ |
 
-Los juegos (`word-search` a `trivial`) cuentan como interactivos; úsalos con moderación, para repasar o premiar. Son las únicas directivas que el backend html aún no renderiza (última columna): `coursekit assemble build` rechaza una unidad que use alguna, y `coursekit verify` la informa con el backend html (`MEMORY: este componente aún no está disponible en el backend html…`). Todo lo demás se construye como se describe en [Componentes](08-assembly-and-delivery.md#componentes). Una cita Markdown simple (`> texto`) que no sea un recurso multimedia se convierte en un brick `HIGHLIGHT`.
+Los juegos (`word-search` a `trivial`) cuentan como interactivos; úsalos con moderación, para repasar o premiar. Son práctica: no se califican ni se mandan al LMS. Todas las directivas, juegos incluidos, se construyen como se describe en [Componentes](08-assembly-and-delivery.md#componentes). Una cita Markdown simple (`> texto`) que no sea un recurso multimedia se convierte en un brick `HIGHLIGHT`.
 
 El resto del Markdown se convierte en bricks sin directiva: los párrafos en `TEXT`, los encabezados `###`–`######` en `HEADING`, las listas en `LIST`, las tablas en `TABLE` y los bloques de código en `CODE`. Los recursos multimedia se explican en [07-media.md](07-media.md).
 
@@ -689,7 +689,7 @@ Las cifras son los valores por defecto del paquete (`src/coursekit/defaults/rule
 | Reflexión | El apartado de resumen (o el último, si no lo hay) tiene al menos `reflections_per_unit` `:::reflection` | 1 | aviso |
 | Legibilidad | Por apartado, la proporción de frases de más de `readability.long_sentence_words` palabras y el índice de legibilidad del idioma (Szigriszt-Pazos en español, Flesch en inglés), según el público `readability.audience`; un apartado con menos de `readability.min_sentences` frases de prosa no se mide | público general: 30 palabras, como mucho un 20 % largas, índice 55 | aviso |
 | Símbolos | Ningún emoji ni pictograma fuera de `allowed_symbols` | `★ ✔ ✘ · — ‹ ›` | error |
-| Montaje | El Markdown se convierte en bricks (mismo análisis que `assemble plan`). Con el backend html informa además de las directivas que aún no están disponibles | — | error |
+| Montaje | El Markdown se convierte en bricks (mismo análisis que `assemble plan`). Con el backend html informa además de una directiva que no sabe dibujar | — | error |
 | Ficheros | Existen `content.md` y `assessment.md` | — | error |
 
 Notas: el mínimo de interactivas cuenta nombres de directiva **distintos**, así que repetir `tabs` tres veces cuenta una; `note`, `highlight`, `quote` y las directivas de pregunta no cuentan. Solo los apartados `content` necesitan etiquetas y directivas interactivas; los apartados `intro`, `summary` y `activities` solo necesitan sus palabras. Las preguntas se cuentan en `content.md` (formativas) y en `assessment.md` (banco); solo el banco se compara con el número esperado, y solo como total: `verify` no comprueba cómo se reparten las preguntas entre los objetivos ni el valor de su `objetivo:`.

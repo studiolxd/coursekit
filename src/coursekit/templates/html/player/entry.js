@@ -1,5 +1,6 @@
 // The player of a unit: lesson navigation, the components and the tracking. Everything it needs is in the page
 // (`#ck-config`: the standard, the lessons and the texts of the interface).
+import { initGames } from "./games.js";
 import { initQuestion } from "./questions.js";
 import { createTracker } from "./scorm.js";
 import { initSimulations, updateAdaptive } from "./simulation.js";
@@ -18,6 +19,7 @@ let current = 0;
 
 document.body.classList.add("ck-js");
 initWidgets(document, ui);
+initGames(document, ui);
 const simulations = initSimulations(document, ui, tracker);
 const adapt = () => updateAdaptive(document, tracker);
 simulations.forEach((sim) => sim.onChange(adapt));

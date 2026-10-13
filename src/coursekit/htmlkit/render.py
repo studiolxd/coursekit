@@ -16,7 +16,7 @@ from coursekit.htmlkit.sanitize import clean, unwrap
 
 QUESTIONS = {"SINGLE_CHOICE", "MULTI_SELECT", "TRUE_FALSE", "SORTING", "MATCH", "SORTING_GROUPS", "FILL_IN_THE_BLANK", "ORDER_WORDS",
              "SHORT_ANSWER"}
-UNSUPPORTED = {"WORD_SEARCH", "WORDLE", "HANGMAN", "PASAPALABRA", "MEMORY", "TRIVIAL"}  # the games: a later delivery
+UNSUPPORTED: set[str] = set()  # bricks this backend cannot render (none: the games are in player/games.js)
 BLANK = re.compile(r"\{([^{}]+)\}")
 
 
@@ -425,6 +425,41 @@ def conditional(brick: dict, ctx: Ctx) -> str:
     return f'<div class="ck-adaptive">{branches}<div class="ck-else">{other}</div></div>'
 
 
+GAMES = {"WORD_SEARCH": "word-search", "WORDLE": "wordle", "HANGMAN": "hangman", "PASAPALABRA": "pasapalabra",
+         "MEMORY": "memory", "TRIVIAL": "trivial"}
+
+
+def game(brick: dict, ctx: Ctx) -> str:
+    """A game: its data for the player (`player/games.js`), and without JavaScript what it is about, as a list (hidden once
+    the game is drawn)."""
+    kind = GAMES[brick["type"]]
+    data = json.loads(json.dumps(brick["data"]))
+    rows = items(brick)
+    if brick["type"] in ("WORD_SEARCH", "WORDLE", "HANGMAN"):
+        static = "".join(f"<li>{a(i.get('word'))}</li>" for i in rows)
+    elif brick["type"] == "MEMORY":
+        for i in rows:
+            i["content"] = inline(i.get("content"))
+        static = "".join(f"<li>{i['content']}</li>" for i in rows)
+    elif brick["type"] == "PASAPALABRA":
+        for i in rows:
+            i["definition"], i["answer"] = inline(i.get("definition")), a(i.get("answer"))
+        mode = {"starts": ctx.say("game_starts"), "contains": ctx.say("game_contains")}
+        static = "".join(f"<li><strong>{a(i.get('letter'))}</strong> ({a(mode.get(i.get('mode'), ''))}) "
+                         f"{i['definition']}: {i['answer']}</li>" for i in rows)
+    else:
+        for i in rows:
+            i["content"] = inline(i.get("content"))
+            for option in i.get("options") or []:
+                option["text"] = inline(option.get("text"))
+        static = "".join(f"<li><strong>{a(i.get('categoryId'))}</strong> {i['content']} "
+                         + " / ".join(o["text"] for o in i.get("options") or []) + "</li>" for i in rows)
+    payload = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
+    return (f'<div class="ck-game ck-game-{kind}" data-widget="{kind}" data-id="{a(ctx.next_id())}">'
+            f'<ul class="ck-game-static">{static}</ul>'
+            f'<script type="application/json" class="ck-game-data">{payload}</script></div>')
+
+
 RENDERERS: dict[str, Callable[[dict, Ctx], str]] = {
     "TEXT": text, "HEADING": heading, "CODE": code, "LIST": bullets, "TABLE": table, "HIGHLIGHT": highlight, "NOTE": note, "QUOTE": quote,
     "ACCORDION": accordion, "TABS": tabs, "CAROUSEL": carousel, "CAROUSEL_QUOTES": carousel_quotes, "TIMELINE": timeline,
@@ -432,7 +467,7 @@ RENDERERS: dict[str, Callable[[dict, Ctx], str]] = {
     "IMAGE": image, "VIDEO": video, "AUDIO": audio, "EMBED": embed, "ATTACHMENT": attachment,
     "SINGLE_CHOICE": single_choice, "MULTI_SELECT": multi_select, "TRUE_FALSE": true_false, "SORTING": sorting, "MATCH": match,
     "SORTING_GROUPS": sorting_groups, "FILL_IN_THE_BLANK": fill_in_the_blank, "ORDER_WORDS": order_words, "SHORT_ANSWER": short_answer,
-    "SIMULATION": simulation, "CONDITIONAL": conditional,
+    "SIMULATION": simulation, "CONDITIONAL": conditional, **{brick: game for brick in GAMES},
 }
 
 

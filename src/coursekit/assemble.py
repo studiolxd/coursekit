@@ -443,7 +443,7 @@ def directive_brick(name: str, body: list[str], ctx: dict) -> dict:
         data = {"items": items}
     elif brick_type == "TRIVIAL":
         categories, items = [], []
-        for category, content in panels(rest):
+        for category, content in panels(body):  # the whole body: each question keeps its own `question:` line
             categories.append({"name": category})
             for block in content.split("\n\n"):
                 q_values, q_rest = key_values(block.splitlines())

@@ -101,6 +101,56 @@ player:
   sim_finish_first: Termina antes las simulaciones de esta prueba.
   sim_locked: Decide hasta llegar a un final; después sigue el apartado.
   sim_listen: Escuchar la escena
+  game_words: Palabras que buscar
+  game_ws_grid: Sopa de letras
+  game_ws_cell: "{letter}, fila {row}, columna {col}"
+  game_ws_help: "Pulsa la primera letra de una palabra y después la última. Las flechas mueven por la sopa."
+  game_ws_from: "Desde la {letter}: ahora pulsa la última letra."
+  game_ws_miss: Ahí no hay ninguna palabra de la lista.
+  game_ws_found: "¡{word}! Quedan {left}."
+  game_done: ¡Completado!
+  game_next_word: Siguiente palabra
+  game_word_of: "Palabra {n} de {total}"
+  game_try: Probar
+  game_wd_tries: Intentos
+  game_wd_input: "Escribe una palabra de {n} letras"
+  game_wd_help: "Adivina la palabra de {n} letras en {tries} intentos: verde, letra en su sitio; amarillo, está en otra posición; gris, no está."
+  game_wd_length: "La palabra tiene {n} letras."
+  game_wd_right: en su sitio
+  game_wd_present: en otra posición
+  game_wd_absent: no está
+  game_wd_won: "¡Bien! Era {word}."
+  game_reveal: "La palabra era {word}."
+  game_tries_left: "Te quedan {n} intentos."
+  game_letters: Letras
+  game_blank: hueco
+  game_hm_word: "La palabra: {word}"
+  game_hm_misses: "Fallos: {n} de {max}"
+  game_hm_yes: "Sí, hay {letter}."
+  game_hm_no: "No hay {letter}."
+  game_hm_won: "¡Bien! Era {word}."
+  game_answer: Responder
+  game_pp_pass: Pasapalabra
+  game_starts: empieza            # the words of pasapalabra (as in directive_words)
+  game_contains: contiene
+  game_pp_starts: "Empieza por {letter}:"
+  game_pp_contains: "Contiene la {letter}:"
+  game_pp_score: "Aciertos: {right} · Fallos: {wrong} · Pendientes: {left}"
+  game_pp_was: "No: era {word}."
+  game_pp_over: "Rosco terminado: {right} de {total}."
+  game_right: ¡Correcto!
+  game_cards: Cartas
+  game_mm_help: Destapa las cartas de dos en dos y encuentra las parejas.
+  game_mm_hidden: "Carta {n}, boca abajo"
+  game_mm_shown: "Carta {n}: {text}"
+  game_mm_pair: "¡Pareja! {text}"
+  game_mm_no: No son pareja.
+  game_mm_won: "¡Todas las parejas en {moves} jugadas!"
+  game_mm_status: "Parejas: {pairs} de {total} · Jugadas: {moves}"
+  game_categories: Categorías
+  game_tv_choose: Elige una categoría
+  game_tv_won: "¡Correcto! Ganas {category}."
+  game_tv_wrong: No es esa. Prueba otra pregunta.
   sim_symptoms: Lo que observas
   sim_clues: Pistas
   sim_open_clues: "Abre {n} pista(s) más antes de decidir."

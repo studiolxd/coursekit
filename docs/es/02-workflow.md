@@ -310,7 +310,7 @@ El agente de multimedia extrae los recursos del contenido a un manifiesto (`cour
 
 **Backend creator.** El agente de montaje construye un plan por unidad (`coursekit assemble plan`), lo compara con lo que ya hay en Creator (`coursekit assemble diff`), aplica solo las diferencias y registra cada lección (`coursekit assemble applied`). Cuando todas las unidades están en Creator exactamente como se planificó, el curso pasa de `media` a `assembly`. El agente crea los enlaces de cada unidad (cada unidad es un contenido propio de creator): una vista previa en vivo, sin comentarios, y un enlace de revisión donde comenta el cliente; los anota con `coursekit assemble link` y te los da. También aplica el theme del curso a cada contenido (`set_content_theme`, con el id que da `coursekit theme show --course PWD`).
 
-**Backend html.** El agente ejecuta `coursekit assemble build PWD --unit N` para cada unidad (sin `--unit`, todas). Escribe una carpeta de vista previa, `courses/PWD/assembly/html/unit-NN/`, que se abre desde el disco en un navegador, y rechaza el contenido que no puede representar (una directiva de los juegos, una clave en el idioma equivocado...); la carpeta es generada y no se versiona. Con `--version X.Y` escribe además el zip de la unidad en `courses/PWD/delivery/`. El agente te dice qué comprobar en la vista previa (la navegación, un componente de cada tipo, las preguntas y el test).
+**Backend html.** El agente ejecuta `coursekit assemble build PWD --unit N` para cada unidad (sin `--unit`, todas). Escribe una carpeta de vista previa, `courses/PWD/assembly/html/unit-NN/`, que se abre desde el disco en un navegador, y rechaza el contenido que no puede representar (una clave en el idioma equivocado, una pregunta sin sus opciones...); la carpeta es generada y no se versiona. Con `--version X.Y` escribe además el zip de la unidad en `courses/PWD/delivery/`. El agente te dice qué comprobar en la vista previa (la navegación, un componente de cada tipo, las preguntas y el test).
 
 Mira [Montaje y entrega](08-assembly-and-delivery.md).
 
@@ -348,7 +348,6 @@ Un curso se monta o en **slxd creator** o con el **backend html**. La elección 
 | Cómo revisa el cliente | enlaces de vista previa y de revisión de creator, anotados con `coursekit assemble link`; los comentarios se hacen en el enlace | alojas tú el zip o la vista previa y envías el enlace con `coursekit client CODE send --where URL`; los comentarios te llegan por tu propio medio |
 | Qué registra la entrega | `coursekit delivery add` con el `--job` y el `--snapshot` de la exportación | `coursekit delivery add` sin ellos |
 | Theme | un theme de la plataforma, tokens derivados con `coursekit theme import <get_theme.json>` | la hoja de estilos `theme/maqueta.css`, tokens derivados con `coursekit theme import theme/maqueta.css` |
-| No disponible | | los juegos (`word-search`, `wordle`, `hangman`, `pasapalabra`, `memory`, `trivial`) |
 
 Los comandos de un backend se rechazan en el otro, con un mensaje que señala el correcto (mira [Solución de problemas](09-troubleshooting.md#el-backend-html)). El backend html no necesita la plataforma para montar, pero el paquete debe probarse en el LMS al que se va a entregar (o en SCORM Cloud) antes de dárselo a nadie. Los detalles están en [Montaje y entrega](08-assembly-and-delivery.md).
 

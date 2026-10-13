@@ -18,7 +18,7 @@ The backend is chosen when the project is created (`coursekit init --backend cre
 | Backend | What it does | Where the unit ends up |
 |---|---|---|
 | `creator` | Converts `content.md` and `assessment.md` into creator bricks (`coursekit assemble plan`, `diff`, `applied`, `link`), loads them incrementally through the slxd MCP server, and exports the SCORM package from the platform | A content in creator, with preview and review links |
-| `html` | Builds each unit as a web page with its own player (`coursekit assemble build`) and packages it as SCORM 1.2 or 2004 by itself. Same directives and same format as `creator`; the games are not available yet (see [Limits](#limits)) | A folder `courses/PWD/assembly/html/unit-01/` that opens in a browser, and a zip in `delivery/` |
+| `html` | Builds each unit as a web page with its own player (`coursekit assemble build`) and packages it as SCORM 1.2 or 2004 by itself. Same directives and same format as `creator` | A folder `courses/PWD/assembly/html/unit-01/` that opens in a browser, and a zip in `delivery/` |
 
 Each backend refuses the commands of the other for a course: `plan`, `diff`, `applied` and `link` fail for an html course (they point to `build`), and `build` fails for a creator course. `coursekit verify` converts the content in both cases: with `html` it also reports the directives that are not available yet.
 
@@ -215,7 +215,7 @@ Without `--version` the last line is `preview: coursekit preview PWD (with a sim
 Each build starts from scratch: the unit's folder is deleted and written again. The standard (SCORM 1.2 or 2004 4th edition) is `export.standard` of the delivery configuration ([SCORM export settings](#scorm-export-settings)). The command fails, with exit code 1 and the list of problems, when:
 
 - the plan has errors (an unknown directive, a question without its correct option, a key written in the other language…: the same messages as `verify`);
-- the unit uses a directive that is not available yet (the games);
+- the unit uses a directive of the project's registry that the backend cannot render;
 - the package does not carry every word of the content (see [The check of the words](#the-check-of-the-words));
 - the builder cannot be prepared (Node, npm or the install failed: `coursekit doctor`).
 
@@ -265,7 +265,7 @@ The page is built with progressive enhancement. The lessons (one per section of 
 | `order-words` | `ORDER_WORDS` | Word buttons that are clicked into the sentence in order, one line per sentence |
 | `short-answer` | `SHORT_ANSWER` | A text box compared with the accepted answers |
 
-Text answers (`fill-in-the-blank`, `short-answer`) are compared ignoring case, accents and extra spaces. A multiple-selection question is right only when every option is as the key says. Feedback follows the directive: `feedback-correct:` after a right answer, `feedback-incorrect:` after a wrong one, `feedback:` always. Directives are explained in [06-content.md](06-content.md#directives); the games are not in this table because they are not available yet.
+Text answers (`fill-in-the-blank`, `short-answer`) are compared ignoring case, accents and extra spaces. A multiple-selection question is right only when every option is as the key says. Feedback follows the directive: `feedback-correct:` after a right answer, `feedback-incorrect:` after a wrong one, `feedback:` always. Directives are explained in [06-content.md](06-content.md#directives); the games are below, in [Games](#games).
 
 ### The player
 
@@ -279,6 +279,21 @@ With JavaScript the page becomes a small course player:
 - **The simulation that opens a section** of a decision-based course holds the rest of the lesson until it reaches an ending: what follows it is hidden, with a line that says so, and **Next** is off. The learner decides before reading the explanation, as in creator, where its EMBED blocks the lesson. A learner who comes back to a simulation already ended finds the lesson open.
 - The interface texts (button labels and messages) are in the language of the course.
 - The page is responsive (the lesson list is a side column on wide screens), respects reduced motion and forced colours, and prints with every lesson.
+
+### Games
+
+The games are practice: nothing is graded nor sent to the LMS. They work with the keyboard and a screen reader (what happens
+is said in a live region under the game), and the order of letters and cards depends only on the id of the game, so every
+learner sees the same board. Without JavaScript the page lists what each game is about.
+
+| Directive | In the player |
+|---|---|
+| `word-search` | A grid with the words placed across, down or diagonally: press the first letter of a word and then the last one; the arrow keys move across the grid; the words found are crossed out |
+| `wordle` | One word after another: six tries; each letter says whether it is in place, elsewhere or not in the word (in colour and in words) |
+| `hangman` | One word after another: a key per letter (Ñ included); six misses at most |
+| `pasapalabra` | The letters of the wheel; for each, its definition ("Starts with" or "Contains"), an answer field and **Pass**; alternatives with `/` count, and accents and case do not |
+| `memory` | Each line is a pair of cards; turn them two at a time; it counts pairs and moves |
+| `trivial` | The learner chooses a category and answers one of its questions; a category is won with a right answer |
 
 ### SCORM tracking
 
@@ -377,7 +392,6 @@ The typical cause is a line that the format does not render, for example a quest
 
 ### Limits
 
-- **The games are not available yet**: `word-search`, `wordle`, `hangman`, `pasapalabra`, `memory` and `trivial`. `coursekit assemble build` refuses a unit that uses them (`MEMORY: this component is not available in the html backend yet…`) and `coursekit verify` reports them as `assembly: …`. Use another directive, or the creator backend.
 - **It has not been tested in a real LMS.** Try the package in the target LMS (or in SCORM Cloud) before you deliver it: check that the location is resumed, the score and the status are recorded, and the test behaves as you expect.
 - The package is one SCO per unit. A course of several units gives several packages.
 - `export.reporting` and `export.scoreSource` do not apply: the status and the score are those of [SCORM tracking](#scorm-tracking).

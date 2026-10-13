@@ -24,8 +24,7 @@ and a zip per unit (`delivery/`), not blocks in a platform. `coursekit status <C
 
 For each unit, in order: `coursekit assemble build <CODE> --unit N` (without `--unit`, every unit). It prints the folder of the preview.
 
-- Errors name the lesson and the directive (a key written in the wrong language, a directive that is not available yet — the games
-  are not in the html backend, a question without options…). Fix them in the `.md`, never in the output, and build again.
+- Errors name the lesson and the directive (a key written in the wrong language, a question without options…). Fix them in the `.md`, never in the output, and build again.
 - The build also checks that the package carries every word of the content: a line of the `.md` that the format does not render
   (for example a question without its `pregunta:`/`question:` key) is reported as missing words.
 - Warnings (a labelled-graphic whose image is not produced, a produced asset without a file) are shown to the person.

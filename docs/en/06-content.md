@@ -257,12 +257,12 @@ Never reuse a password.
 | `labelled-graphic` | `LABELLED_GRAPHIC` | interactive | Image with hotspots that explain its parts (diagrams) | ✔ |
 | `timeline` | `TIMELINE` | interactive | Chronological or sequential facts or steps | ✔ |
 | `dialog` | `DIALOG` | interactive | Scripted conversation between characters (role play, worked examples) | ✔ |
-| `word-search` | `WORD_SEARCH` | interactive | Word search; vocabulary reinforcement | not available yet |
-| `wordle` | `WORDLE` | interactive | Guess the word; vocabulary | not available yet |
-| `hangman` | `HANGMAN` | interactive | Hangman; vocabulary | not available yet |
-| `pasapalabra` | `PASAPALABRA` | interactive | Letter wheel with one clue per letter; broad review of a topic | not available yet |
-| `memory` | `MEMORY` | interactive | Matching pairs; recall and association | not available yet |
-| `trivial` | `TRIVIAL` | interactive | Trivia by category; gamified review | not available yet |
+| `word-search` | `WORD_SEARCH` | interactive | Word search; vocabulary reinforcement | ✔ |
+| `wordle` | `WORDLE` | interactive | Guess the word; vocabulary | ✔ |
+| `hangman` | `HANGMAN` | interactive | Hangman; vocabulary | ✔ |
+| `pasapalabra` | `PASAPALABRA` | interactive | Letter wheel with one clue per letter; broad review of a topic | ✔ |
+| `memory` | `MEMORY` | interactive | Matching pairs; recall and association | ✔ |
+| `trivial` | `TRIVIAL` | interactive | Trivia by category; gamified review | ✔ |
 | `single-choice` | `SINGLE_CHOICE` | question | Check understanding with a single correct option | ✔ |
 | `multi-select` | `MULTI_SELECT` | question | Assess when several options can be correct | ✔ |
 | `true-false` | `TRUE_FALSE` | question | Quick check of a statement | ✔ |
@@ -277,7 +277,7 @@ Never reuse a password.
 | `quote` | `QUOTE` | static | Quote from an expert or source, with attribution | ✔ |
 | `reflection` | `NOTE` | static | Closing reflection of a unit: open questions on what the learner did, what they would change and how they will apply it | ✔ |
 
-The games (`word-search` to `trivial`) count as interactive; use them sparingly, for review or reward. They are the only directives the html backend does not render yet (last column): `coursekit assemble build` refuses a unit that uses one, and `coursekit verify` reports it with the html backend (`MEMORY: this component is not available in the html backend yet…`). Everything else is built as described in [Components](08-assembly-and-delivery.md#components). A plain blockquote (`> text`) that is not a placeholder becomes a `HIGHLIGHT` brick.
+The games (`word-search` to `trivial`) count as interactive; use them sparingly, for review or reward. They are practice: nothing is graded nor sent to the LMS. Every directive, games included, is built as described in [Components](08-assembly-and-delivery.md#components). A plain blockquote (`> text`) that is not a placeholder becomes a `HIGHLIGHT` brick.
 
 Everything else in Markdown maps to a brick without a directive: paragraphs to `TEXT`, `###`–`######` headings to `HEADING`, lists to `LIST`, tables to `TABLE`, code fences to `CODE`. Media placeholders are explained in [07-media.md](07-media.md).
 
@@ -683,7 +683,7 @@ The numbers are the package defaults (`src/coursekit/defaults/rules.yaml`). A pr
 | Reflection | The summary section (the last one without it) has at least `reflections_per_unit` `:::reflection` | 1 | warning |
 | Readability | Per section, the share of sentences longer than `readability.long_sentence_words` and the readability index of the language (Szigriszt-Pazos in Spanish, Flesch in English), by the audience `readability.audience`; a section with fewer than `readability.min_sentences` sentences of prose is not measured | general audience: 30 words, at most 20 % long, index 55 | warning |
 | Symbols | No emoji or pictograph outside `allowed_symbols` | `★ ✔ ✘ · — ‹ ›` | error |
-| Assembly | The Markdown converts to bricks (same parse as `assemble plan`). With the html backend it also reports the directives that are not available yet | — | error |
+| Assembly | The Markdown converts to bricks (same parse as `assemble plan`). With the html backend it also reports a directive it cannot render | — | error |
 | Files | `content.md` and `assessment.md` exist | — | error |
 
 Notes: the interactive minimum counts **distinct** directive names, so repeating `tabs` three times counts once; `note`, `highlight`, `quote` and question directives do not count. Only `content` sections need tags and interactive directives; `intro`, `summary` and `activities` sections only need their words. Questions are counted in `content.md` (formative questions) and `assessment.md` (bank); only the bank is compared with the expected number, and only as a total: `verify` does not check how the questions are spread among the objectives, nor the value of their `objective:`.

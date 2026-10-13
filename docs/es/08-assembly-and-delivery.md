@@ -18,7 +18,7 @@ El backend se elige al crear el proyecto (`coursekit init --backend creator|html
 | Backend | Qué hace | Dónde acaba la unidad |
 |---|---|---|
 | `creator` | Convierte `content.md` y `assessment.md` en bricks de creator (`coursekit assemble plan`, `diff`, `applied`, `link`), los carga de forma incremental mediante el servidor MCP de slxd y exporta el paquete SCORM desde la plataforma | Un contenido en creator, con enlaces de vista previa y de revisión |
-| `html` | Construye cada unidad como una página web con su propio reproductor (`coursekit assemble build`) y la empaqueta por sí mismo como SCORM 1.2 o 2004. Mismas directivas y mismo formato que `creator`; los juegos aún no están disponibles (mira [Límites](#límites)) | Una carpeta `courses/PWD/assembly/html/unit-01/` que se abre en un navegador, y un zip en `delivery/` |
+| `html` | Construye cada unidad como una página web con su propio reproductor (`coursekit assemble build`) y la empaqueta por sí mismo como SCORM 1.2 o 2004. Mismas directivas y mismo formato que `creator` | Una carpeta `courses/PWD/assembly/html/unit-01/` que se abre en un navegador, y un zip en `delivery/` |
 
 Cada backend rechaza los comandos del otro para un curso: `plan`, `diff`, `applied` y `link` fallan en un curso html (indican `build`), y `build` falla en un curso creator. `coursekit verify` convierte el contenido en ambos casos: con `html` informa además de las directivas que aún no están disponibles.
 
@@ -215,7 +215,7 @@ Sin `--version` la última línea es `vista previa: coursekit preview PWD (con L
 Cada construcción empieza de cero: la carpeta de la unidad se borra y se escribe de nuevo. El estándar (SCORM 1.2 o 2004 4.ª edición) es `export.standard` de la configuración de entrega ([Ajustes de exportación SCORM](#ajustes-de-exportación-scorm)). El comando falla, con código de salida 1 y la lista de problemas, cuando:
 
 - el plan tiene errores (una directiva desconocida, una pregunta sin su opción correcta, una clave escrita en el otro idioma…: los mismos mensajes que `verify`);
-- la unidad usa una directiva que aún no está disponible (los juegos);
+- la unidad usa una directiva del registro del proyecto que el backend no sabe dibujar;
 - el paquete no lleva todas las palabras del contenido (mira [La comprobación de las palabras](#la-comprobación-de-las-palabras));
 - no se puede preparar el constructor (Node, npm o la instalación han fallado: `coursekit doctor`).
 
@@ -265,7 +265,7 @@ La página se construye con mejora progresiva. Las lecciones (una por apartado d
 | `order-words` | `ORDER_WORDS` | Botones con palabras que se pulsan para colocarlas en la frase por orden, una línea por frase |
 | `short-answer` | `SHORT_ANSWER` | Un cuadro de texto que se compara con las respuestas admitidas |
 
-Las respuestas de texto (`fill-in-the-blank`, `short-answer`) se comparan sin tener en cuenta mayúsculas, tildes ni espacios sobrantes. Una pregunta de selección múltiple es correcta solo cuando cada opción está como dice la clave. La retroalimentación sigue a la directiva: `feedback-correcto:` tras una respuesta correcta, `feedback-incorrecto:` tras una incorrecta y `feedback:` siempre. Las directivas se explican en [06-content.md](06-content.md#directivas); los juegos no están en esta tabla porque aún no están disponibles.
+Las respuestas de texto (`fill-in-the-blank`, `short-answer`) se comparan sin tener en cuenta mayúsculas, tildes ni espacios sobrantes. Una pregunta de selección múltiple es correcta solo cuando cada opción está como dice la clave. La retroalimentación sigue a la directiva: `feedback-correcto:` tras una respuesta correcta, `feedback-incorrecto:` tras una incorrecta y `feedback:` siempre. Las directivas se explican en [06-content.md](06-content.md#directivas); los juegos están más abajo, en [Juegos](#juegos).
 
 ### El reproductor
 
@@ -279,6 +279,21 @@ Con JavaScript la página se convierte en un pequeño reproductor de curso:
 - **La simulación que abre un apartado** de un curso basado en decisiones retiene el resto de la lección hasta llegar a un final: lo que la sigue queda oculto, con una línea que lo dice, y **Siguiente** se desactiva. El alumno decide antes de leer la explicación, como en creator, donde su EMBED bloquea la lección. Quien vuelve a una simulación ya terminada encuentra la lección abierta.
 - Los textos de la interfaz (etiquetas de botones y mensajes) están en el idioma del curso.
 - La página es adaptable (la lista de lecciones es una columna lateral en pantallas anchas), respeta el movimiento reducido y los colores forzados, y se imprime con todas las lecciones.
+
+### Juegos
+
+Los juegos son práctica: no se califican ni se mandan al LMS. Funcionan con teclado y con lector de pantalla (lo que
+pasa se dice en una región en vivo bajo el juego), y el orden de letras y cartas depende solo del id del juego, así que
+todos ven el mismo tablero. Sin JavaScript la página lista de qué trata cada juego.
+
+| Directiva | En el reproductor |
+|---|---|
+| `word-search` | Una cuadrícula con las palabras en horizontal, vertical o diagonal: se pulsa la primera letra de una palabra y después la última; las flechas mueven por la cuadrícula; las palabras encontradas se tachan |
+| `wordle` | Una palabra detrás de otra: seis intentos; cada letra dice si está en su sitio, en otra posición o no está (con color y con palabras) |
+| `hangman` | Una palabra detrás de otra: una tecla por letra (con la Ñ); seis fallos como mucho |
+| `pasapalabra` | Las letras del rosco; para cada una, su definición («Empieza por» o «Contiene la»), un campo de respuesta y **Pasapalabra**; valen las alternativas con `/`, y no cuentan tildes ni mayúsculas |
+| `memory` | Cada línea es una pareja de cartas; se destapan de dos en dos; cuenta parejas y jugadas |
+| `trivial` | El alumno elige una categoría y responde una de sus preguntas; una categoría se gana con un acierto |
 
 ### Seguimiento SCORM
 
@@ -379,7 +394,6 @@ La causa típica es una línea que el formato no renderiza, por ejemplo una preg
 
 ### Límites
 
-- **Los juegos aún no están disponibles**: `word-search`, `wordle`, `hangman`, `pasapalabra`, `memory` y `trivial`. `coursekit assemble build` rechaza una unidad que los use (`MEMORY: este componente aún no está disponible en el backend html…`) y `coursekit verify` los informa como `assembly: …`. Usa otra directiva, o el backend creator.
 - **No se ha probado en un LMS real.** Prueba el paquete en el LMS de destino (o en SCORM Cloud) antes de entregarlo: comprueba que se reanuda la ubicación, que se registran la puntuación y el estado, y que el test se comporta como esperas.
 - El paquete es un SCO por unidad. Un curso de varias unidades da varios paquetes.
 - `export.reporting` y `export.scoreSource` no se aplican: el estado y la puntuación son los de [Seguimiento SCORM](#seguimiento-scorm).

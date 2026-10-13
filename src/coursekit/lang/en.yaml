@@ -101,6 +101,56 @@ player:
   sim_finish_first: Finish the simulations of this test first.
   sim_locked: Decide until you reach an ending; then the section goes on.
   sim_listen: Listen to the scene
+  game_words: Words to find
+  game_ws_grid: Word search
+  game_ws_cell: "{letter}, row {row}, column {col}"
+  game_ws_help: "Press the first letter of a word, then the last one. The arrow keys move across the grid."
+  game_ws_from: "From {letter}: now press the last letter."
+  game_ws_miss: There is no word of the list there.
+  game_ws_found: "{word}! {left} to go."
+  game_done: Completed!
+  game_next_word: Next word
+  game_word_of: "Word {n} of {total}"
+  game_try: Try
+  game_wd_tries: Tries
+  game_wd_input: "Type a word of {n} letters"
+  game_wd_help: "Guess the word of {n} letters in {tries} tries: green, the letter is in place; yellow, it is elsewhere; grey, it is not in the word."
+  game_wd_length: "The word has {n} letters."
+  game_wd_right: in place
+  game_wd_present: elsewhere
+  game_wd_absent: not in the word
+  game_wd_won: "Well done! It was {word}."
+  game_reveal: "The word was {word}."
+  game_tries_left: "{n} tries left."
+  game_letters: Letters
+  game_blank: blank
+  game_hm_word: "The word: {word}"
+  game_hm_misses: "Misses: {n} of {max}"
+  game_hm_yes: "Yes, there is {letter}."
+  game_hm_no: "There is no {letter}."
+  game_hm_won: "Well done! It was {word}."
+  game_answer: Answer
+  game_pp_pass: Pass
+  game_starts: starts            # the words of pasapalabra (as in directive_words)
+  game_contains: contains
+  game_pp_starts: "Starts with {letter}:"
+  game_pp_contains: "Contains {letter}:"
+  game_pp_score: "Right: {right} · Wrong: {wrong} · Left: {left}"
+  game_pp_was: "No: it was {word}."
+  game_pp_over: "Wheel finished: {right} of {total}."
+  game_right: Right!
+  game_cards: Cards
+  game_mm_help: Turn the cards two at a time and find the pairs.
+  game_mm_hidden: "Card {n}, face down"
+  game_mm_shown: "Card {n}: {text}"
+  game_mm_pair: "A pair! {text}"
+  game_mm_no: Not a pair.
+  game_mm_won: "Every pair in {moves} moves!"
+  game_mm_status: "Pairs: {pairs} of {total} · Moves: {moves}"
+  game_categories: Categories
+  game_tv_choose: Choose a category
+  game_tv_won: "Right! You win {category}."
+  game_tv_wrong: Not that one. Try another question.
   sim_symptoms: What you observe
   sim_clues: Clues
   sim_open_clues: "Open {n} more clue(s) before deciding."

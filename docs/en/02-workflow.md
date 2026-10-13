@@ -310,7 +310,7 @@ The media agent extracts the placeholders of the content into a manifest (`cours
 
 **Creator backend.** The assembly agent builds a plan per unit (`coursekit assemble plan`), compares it with what is already in Creator (`coursekit assemble diff`), applies only the differences and records every lesson (`coursekit assemble applied`). When every unit is in Creator exactly as planned, the course moves from `media` to `assembly`. The agent creates the links of each unit (each unit is its own content in creator): a live preview, without comments, and a review link where the client comments; it records them with `coursekit assemble link` and gives them to you. It also applies the theme of the course to each content (`set_content_theme`, with the id that `coursekit theme show --course PWD` gives).
 
-**html backend.** The agent runs `coursekit assemble build PWD --unit N` for each unit (without `--unit`, every unit). It writes a preview folder, `courses/PWD/assembly/html/unit-NN/`, that opens from the disk in a browser, and refuses the content that cannot be rendered (a directive of the games, a key in the wrong language...); the folder is generated and is not versioned. With `--version X.Y` it also writes the zip of the unit in `courses/PWD/delivery/`. The agent tells you what to check in the preview (navigation, one component of each kind, the questions and the test).
+**html backend.** The agent runs `coursekit assemble build PWD --unit N` for each unit (without `--unit`, every unit). It writes a preview folder, `courses/PWD/assembly/html/unit-NN/`, that opens from the disk in a browser, and refuses the content that cannot be rendered (a key in the wrong language, a question without its options...); the folder is generated and is not versioned. With `--version X.Y` it also writes the zip of the unit in `courses/PWD/delivery/`. The agent tells you what to check in the preview (navigation, one component of each kind, the questions and the test).
 
 See [Assembly and delivery](08-assembly-and-delivery.md).
 
@@ -348,7 +348,6 @@ A course is assembled either in **slxd creator** or with the **html backend**. T
 | How the client reviews | preview and review links of creator, recorded with `coursekit assemble link`; comments on the link | you host the zip or the preview and send the link with `coursekit client CODE send --where URL`; the comments reach you your own way |
 | What registers the delivery | `coursekit delivery add` with `--job` and `--snapshot` of the export | `coursekit delivery add` without them |
 | Theme | a theme of the platform, tokens derived with `coursekit theme import <get_theme.json>` | the stylesheet `theme/maqueta.css`, tokens derived with `coursekit theme import theme/maqueta.css` |
-| Not available | | the games (`word-search`, `wordle`, `hangman`, `pasapalabra`, `memory`, `trivial`) |
 
 Commands of one backend are refused in the other, with a message that points to the right one (see [Troubleshooting](09-troubleshooting.md#the-html-backend)). The html backend does not need the platform to assemble, but the package must be tried in the LMS it will be delivered to (or in SCORM Cloud) before it is handed over. The details are in [Assembly and delivery](08-assembly-and-delivery.md).
 
