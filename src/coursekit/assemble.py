@@ -695,7 +695,10 @@ def for_creator(bricks: list[dict], ctx: dict, key: str, opens: bool = False) ->
             title = re.sub(r"<[^>]+>", "", str(brick["data"].get("title") or sid))
             meta = {**brick["meta"], "asset": asset_id(sid)}
             if asset.get("asset_path") and asset.get("status") == "uploaded":
-                properties = {"embedFolderPrefix": asset["asset_path"], "embedTitle": title}
+                # creator keeps its state and counts its grade by `simulationId` (unique in the content: coursekit's ids are
+                # unique in the course); `scored` and `weight` as the simulation says
+                properties = {"embedFolderPrefix": asset["asset_path"], "embedTitle": title, "simulationId": sid,
+                              "scored": brick["data"].get("scored") is True, "weight": float(brick["data"].get("weight") or 1)}
                 if opens and n == 0:
                     properties["blocker_enabled"] = True
                 out.append({"type": "EMBED", "data": {"properties": properties}, "meta": meta})

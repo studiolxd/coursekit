@@ -263,3 +263,25 @@ fase atiende `complete` y `resize`, y `ready` no hace nada aún). Lo que hace co
 - Bloqueo: apagado por defecto en creator (decisión del 2026-10-13). En un curso basado en decisiones, el montaje lo
   activa (`blocker_enabled: true`) en el EMBED de la simulación que abre cada apartado de contenido; las demás no bloquean.
 
+## 12. Fase 2 del protocolo (simulaciones: estado, nota y decisiones), aplicada
+
+Contrato de creator del 2026-10-13, fase 2. Lo que hace coursekit (`player/embedsim.js`, `simpackage.py`, `for_creator`):
+
+| Creator pide | coursekit |
+|---|---|
+| Manifiesto con `state`, `result`, `interaction` | El paquete de una simulación declara `complete`, `resize`, `state`, `result` e `interaction`. |
+| `ready` → `restore` | Al cargar espera `restore` (1,5 s; sin lección que conteste, empieza de cero) y arranca donde estaba. |
+| `state` (objeto plano ≤ 1.024 caracteres, `done`) | Después de cada paso: `{a: escena, e: variables, s: puntos, d: 0/1, t: intento, n: decisiones}`. |
+| `result` (score, maxScore, grade, ending, kind) | Al llegar a un final, antes de cerrar; `ending` normalizado a `[a-z][a-z0-9_]*` (los ids de escena admiten `-`). |
+| Cierre (D5): `complete` o `state` con `done` | Orden al final: `result` → `state` con `done` → `complete`. |
+| `interaction` (attempt, n, response, description, result, weighting) | Tras cada decisión; `response` = la letra de la opción en su escena (`a`, `b`…, como pide SCORM 1.2 para una `choice`). |
+| `reset` | Vuelve a empezar con otro intento (las interacciones no repiten id). |
+| Propiedades del brick `simulationId`, `scored`, `weight` | El plan de montaje las pone en el EMBED de cada simulación. |
+| Bloqueo solo con `complete` (D1) | Sin cambios: el montaje lo activa en la simulación que abre cada apartado de un curso basado en decisiones. |
+
+- Un EMBED escrito antes de la fase 2 conserva solo `complete` y `resize`: hay que volver a construir el paquete,
+  subirlo y escribir de nuevo su carpeta en el brick (la skill de montaje lo dice).
+- Probado en Chrome con una lección simulada en un iframe `sandbox="allow-scripts"`: decisiones, nota al final, reanudar
+  con `restore` y `reset` con un intento nuevo.
+- Pendiente (fase 3): `CONDITIONAL`. Hasta entonces se sigue montando la rama neutra.
+

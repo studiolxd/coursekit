@@ -101,6 +101,8 @@ function initSimulation(root, ui, tracker) {
     run.decisions = (run.decisions || 0) + 1;  // kept on resuming and going back: an interaction id is never repeated
     tracker.interaction({
       id: `${data.id}-${run.attempt || 1}-${run.decisions}`,
+      attempt: run.attempt || 1,
+      n: run.decisions,
       type: "choice",
       choice: index,
       description: strip(label).slice(0, 250),

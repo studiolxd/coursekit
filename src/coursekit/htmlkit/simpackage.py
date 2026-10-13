@@ -1,8 +1,9 @@
 """One simulation as a self-contained package (`index.html` and its images) for the backends that take it as an embed: creator
 puts it in an EMBED brick. The player of the simulations (`player/expr.js`, `skins.js`, `simulation.js`) goes inline, without a
 bundler: each module is wrapped in a function that returns what it exports. Without SCORM inside the embed, its state lives
-in the page while it is open. It talks to its lesson with creator's protocol (`embedbridge`): it declares `complete` and
-`resize` in `slxd-embed.json`, says `complete` when the simulation reaches an ending and reports the height of its content.
+in the page while it is open. It talks to its lesson with creator's `slxd-embed` protocol (`embedbridge`, and
+`player/embedsim.js` for the simulation): it declares `complete`, `resize`, `state`, `result` and `interaction` in
+`slxd-embed.json`, so creator keeps its state (in SCORM, between sessions), counts its grade and records its decisions.
 """
 
 from __future__ import annotations
@@ -18,6 +19,7 @@ from coursekit.htmlkit import embedbridge, render
 from coursekit.htmlkit.build import project_css, template_dir
 
 MODULES = ("expr", "skins", "simulation")  # in the order they import each other
+CAPABILITIES = ["complete", "resize", "state", "result", "interaction"]  # what the package tells creator (slxd-embed.json)
 IMPORT_RE = re.compile(r'^import \{([^}]+)\} from "\./(\w+)\.js";\s*$', re.M)
 EXPORT_RE = re.compile(r"^export (?:function|const) (\w+)", re.M)
 
@@ -90,13 +92,8 @@ def build(course: dict, brick: dict, out_dir: Path) -> Path:
     ui = coursemod.tokens(course)["player"]
     markup = render.simulation({"type": "SIMULATION", "data": data, "meta": {}}, render.Ctx(ui, "sim"))
     css = project_css(course["_project"], course)
-    boot = ("const state = { sims: {} };\n"
-            "const tracker = { state, simulation(id, run) { if (run === undefined) return state.sims[id] || null; "
-            "state.sims[id] = run; return run; }, interaction() {} };\n"
-            f"const sims = __simulation.initSimulations(document, {json.dumps(ui, ensure_ascii=False)}, tracker);\n"
-            "const ended = () => sims.length > 0 && sims.every((sim) => sim.finished());\n"
-            "sims.forEach((sim) => sim.onChange(() => { if (ended()) __bridge.complete(); }));\n"
-            "if (ended()) __bridge.complete();\n")
+    boot = (template_dir() / "player" / "embedsim.js").read_text(encoding="utf-8").replace(
+        "__CK_UI__", json.dumps(ui, ensure_ascii=False))
     title = re.sub(r"<[^>]+>", "", str(data.get("title") or ""))
     script = (embedbridge.script() + inline_player()).replace("</script", "<\\/script")
     page = (f'<!doctype html>\n<html lang="{coursemod.language(course)}">\n<head>\n<meta charset="utf-8">\n'
@@ -106,5 +103,5 @@ def build(course: dict, brick: dict, out_dir: Path) -> Path:
             f'<body class="ck-js ck-embed-sim">\n<main class="ck-main">{markup}</main>\n'
             f"<script>\n{script}\n{boot}</script>\n</body>\n</html>\n")
     (out_dir / "index.html").write_text(page, encoding="utf-8", newline="\n")
-    embedbridge.write_manifest(out_dir, ["complete", "resize"])
+    embedbridge.write_manifest(out_dir, CAPABILITIES)
     return out_dir / "index.html"

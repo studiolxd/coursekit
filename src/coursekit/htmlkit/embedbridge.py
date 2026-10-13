@@ -10,8 +10,10 @@ The package declares what it can do in `slxd-embed.json`, at its root next to `i
 - `complete` once, when the learner has finished it (capability `complete`: a simulation that reaches an ending). Creator
   completes the brick and, if the author asked for it, lets the learner go on.
 
-State, result and interactions are reserved by the protocol for a later phase: coursekit declares them when creator
-handles them.
+A simulation also declares `state`, `result` and `interaction` (phase 2 of the protocol): it asks for its saved state
+when it loads (the lesson answers `restore`), reports its state after each step (`state`, with `done` at an ending), its
+grade at an ending (`result`, before closing), each decision (`interaction`), and starts again on `reset`. That part is in
+`player/embedsim.js`; this module is the envelope both kinds of package share.
 """
 
 from __future__ import annotations
@@ -59,10 +61,19 @@ def script() -> str:
   send("ready");
   measure();
   return {{
+    send,
     complete() {{
       if (done) return;
       done = true;
       send("complete");
+    }},
+    // what the lesson says to the package (`restore`, `reset`): only its own window, with the protocol's envelope
+    listen(handler) {{
+      window.addEventListener("message", (event) => {{
+        const message = event.data;
+        if (event.source !== window.parent || !message || message.channel !== "{PROTOCOL}" || message.version !== {VERSION}) return;
+        handler(message);
+      }});
     }},
   }};
 }})();

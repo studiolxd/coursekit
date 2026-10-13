@@ -520,15 +520,25 @@ def test_a_simulation_becomes_an_embed_package_for_creator(decision_course, caps
     page = (course_dir / "media" / "src" / "SIM-CALL" / "index.html").read_text(encoding="utf-8")
     assert 'data-sim="call"' in page and "const __expr = (() =>" in page and "__simulation.initSimulations" in page
     assert "import " not in page.split("<script>")[1] and "export " not in page.split("<script>")[1]
-    assert "if (ended()) __bridge.complete();" in page and 'channel: "slxd-embed"' in page
+    assert 'channel: "slxd-embed"' in page and '__bridge.send("result"' in page and "__CK_UI__" not in page
+    node = shutil.which("node")
+    if node:  # the script of the package is valid JavaScript
+        import subprocess
+
+        script = course_dir / "media" / "src" / "SIM-CALL" / "check.js"
+        script.write_text(page.split("<script>")[1].split("</script>")[0], encoding="utf-8")
+        assert subprocess.run([node, "--check", str(script)], capture_output=True, text=True).returncode == 0
+        script.unlink()
     bridge = json.loads((course_dir / "media" / "src" / "SIM-CALL" / "slxd-embed.json").read_text(encoding="utf-8"))
-    assert bridge == {"protocol": "slxd-embed", "version": 1, "capabilities": ["complete", "resize"]}
+    assert bridge == {"protocol": "slxd-embed", "version": 1, "capabilities": ["complete", "resize", "state", "result", "interaction"]}
     assert main(["media", "set", "DB1", "SIM-CALL", "--status", "uploaded", "--asset-path", "embeds/sim-call", "--force"]) == 0
     data = course.load(find_project(decision_course), "DB1")
     creator_plan, errors, _, _ = assemble.write_plan(data, data["units"][0])
     embed = creator_plan["lessons"][1]["bricks"][0]
     assert embed["type"] == "EMBED" and embed["data"]["properties"]["embedFolderPrefix"] == "embeds/sim-call"
     assert embed["data"]["properties"]["blocker_enabled"] is True  # it opens the section: decide before reading
+    assert {k: embed["data"]["properties"][k] for k in ("simulationId", "scored", "weight")} == {
+        "simulationId": "call", "scored": True, "weight": 1.0}
     assert not [b for lesson in creator_plan["lessons"] for b in lesson["bricks"][1:]
                 if b["type"] == "EMBED" and b["data"]["properties"].get("blocker_enabled")]
 

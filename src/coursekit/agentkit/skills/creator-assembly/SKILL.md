@@ -61,8 +61,13 @@ the contents follow a theme that was changed and imported again.
   `maxAttempts`, where 0 is unlimited, and `courseWeight`, the weight of the quiz among the quizzes of the unit).
 - `delete`: **ask the person** before `delete_lesson`.
 - EMBED packages built by coursekit (simulations, wrapped SVG) carry `slxd-embed.json`, creator's manifest: creator reads it
-  when the folder is written in the brick and fills `properties.embedPackage` (`capabilities`: `complete` and `resize` for
-  a simulation, `resize` for an SVG). Never send `embedPackage` yourself (the MCP refuses it). After `add_brick` /
+  when the folder is written in the brick and fills `properties.embedPackage` (`capabilities`: `complete`, `resize`,
+  `state`, `result` and `interaction` for a simulation, `resize` for an SVG). Never send `embedPackage` yourself (the MCP
+  refuses it). The plan gives each simulation's EMBED its `simulationId`, `scored` and `weight`: apply them as they are
+  (creator keeps its state and counts its grade by `simulationId`, and refuses one already used in the content). An EMBED
+  written before creator understood `state`, `result` and `interaction` keeps only `complete` and `resize`: write its
+  folder again (`update_brick` with the same `embedFolderPrefix`) after uploading a package rebuilt with
+  `coursekit media embed`. After `add_brick` /
   `update_brick`, `get_lesson` must show it: if it is empty, the manifest was not uploaded with the folder; upload the whole
   package again (a new folder) and update the brick. A warning that "this EMBED cannot block" means the same. In a
   decision-based course the plan turns on `blocker_enabled` in the EMBED of the simulation that opens each section: the
