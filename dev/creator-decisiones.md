@@ -190,3 +190,38 @@ Con el curso de prueba montado en creator:
    los intentos; la nota del SCORM coincide con la del backend html para el mismo camino.
 4. Cada decisión aparece en `cmi.interactions` con su texto, su resultado y su peso.
 5. Las simulaciones se ven enteras, sin barras de desplazamiento, en la vista del alumno y en la compartida.
+
+## 9. Respuestas a las preguntas de creator
+
+**¿Qué es una unidad al montar en creator?** Un contenido. Cada unidad del curso es su propio contenido de creator y su
+propio paquete SCORM (`units[].content_id` en `course.yaml`); sus apartados son las lecciones de ese contenido. La nota
+de la unidad es la nota del contenido. No hay nota de curso: si hace falta, la combina el LMS a partir de las de cada
+paquete.
+
+**¿Identificador corto más descripción en las interacciones?** Sí. coursekit da a cada opción de una decisión un id
+estable (`[a-z][a-z0-9_]*`, único en su escena). La interacción queda así:
+
+| Campo | Valor |
+|---|---|
+| `id` | `<simulación>-<n>` (`n`, el número de la decisión en el intento) |
+| `type` | `choice` |
+| `learner_response` | el id de la opción elegida |
+| `description` | el texto de la decisión (máx. 250 caracteres) |
+| `result` | `correct`, `incorrect` o `neutral` |
+| `weighting` | los puntos en valor absoluto (1 si 0) |
+
+`ck:interaction` lleva entonces `response` (el id) y `description` (el texto); sustituye a la definición de 1.1.
+
+**¿Ramas guardadas en plano dentro del `CONDITIONAL`?** Sí, la representación interna es cosa de creator, con tres
+condiciones: el MCP acepta y devuelve la forma anidada `{condition, then: [...], else: [...]}`; el orden de los bricks
+de cada rama se conserva; y los ids de los bricks hijos son estables entre lecturas (el montaje compara lo que hay con lo
+que quiere y solo cambia lo distinto).
+
+**Pesos: ¿cuál manda si una pregunta tiene peso distinto de 1?** El de creator. coursekit no da peso a las preguntas
+(todas pesan 1); si el ajuste de una pregunta en creator tiene otro peso, ese es el que cuenta en la fórmula de 4.2 (en
+lugar del 1 de la pregunta). El de una simulación es el `weight` de su EMBED. Mientras creator no exponga el peso por
+MCP, coursekit no lo toca.
+
+**¿Basta con guardar el estado solo en SCORM?** Sí. `suspend_data` es la única persistencia, como en el backend html,
+con el presupuesto de 2 (4.096 caracteres en SCORM 1.2). Sin almacenamiento propio de creator; en la vista previa de
+creator (sin LMS) basta con que el estado dure lo que la sesión.

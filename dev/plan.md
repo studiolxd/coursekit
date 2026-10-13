@@ -325,6 +325,7 @@ Cada fase termina con algo comprobable. No se pasa a la siguiente con la anterio
 | 6 | **Backend html.** Maqueta base y componentes genéricos, registro de directivas con columna `html`, builder con `@studiolxd/scorm`, verificador de volcado completo, entrega del zip. | Un curso de prueba genérico se genera con `coursekit assemble --backend html` y funciona en un LMS de prueba (SCORM Cloud). |
 | 7 | Opcional: diseño instruccional local (sin slxd, con Excel generado); más idiomas. | — |
 | 8 | **Enfoque basado en decisiones** (sección 11): simulaciones `scenario` y `conversation`, biblia narrativa, contenido adaptativo, pieles de aplicación y escenas por capas de alta fidelidad. | Un curso de prueba genérico con `design.approach: decision-based` recorre el flujo de `new` a `deliver` con el backend html, y con creator salvo lo que creator aún no soporta (sección 9). |
+| 9 | **Verificación y calidad para los dos enfoques** (sección 12): vista previa con LMS simulado, verificación del paquete construido, errores típicos, legibilidad, reflexión, bucle de corrección y recuperación de fuentes. | Un curso de cada enfoque se previsualiza con su SCORM simulado y su paquete pasa la verificación automática (accesibilidad, caminos, nota). |
 
 ### 7.1 Pasos de la fase 1
 
@@ -598,4 +599,18 @@ Pendiente después de la fase 8:
 - axe sobre las pieles y el reproductor; audio por escena; pieles propias del proyecto en `components/`.
 - Mecánicas `inbox`, `investigation`, `allocation`, `diagnosis`.
 - Huecos de creator (sección 9): estado compartido entre bricks y nota de un EMBED.
+
+## 12. Verificación y calidad para los dos enfoques (fase 9)
+
+Mejoras que valen para el enfoque expositivo y para el basado en decisiones; algunas tienen además una parte
+propia de las simulaciones.
+
+| Paso | Qué | Expositivo | Decisiones | Comprobación | Estado |
+|---|---|---|---|---|---|
+| 9.1 | **Vista previa con LMS simulado** (`coursekit preview CODE [--unit N]`): servidor local con la API SCORM 1.2 / 2004 simulada (la de `@studiolxd/scorm`), estado guardado en el navegador para probar el reanudar, y un panel con `completion`, `success`, `score`, `suspend_data`, `location` y las interacciones en vivo; recarga al reconstruir. | ✔ | ✔ | Jugar un curso de cada enfoque viendo la nota y las interacciones; reabrir y que siga donde estaba. | pendiente |
+| 9.2 | **Verificación del paquete construido** (`coursekit assemble check`, también al final de `build`): sin errores de consola ni rutas rotas, axe sin errores, los tests respondidos solos dan la nota esperada en el SCORM; en decisiones, cada simulación jugada por todos sus caminos (los de `paths`) deja en el SCORM la nota que calcula `verify`. | ✔ | ✔ (caminos) | Detecta los fallos de 8.9 (SVG como EMBED, textos cortados, contraste) sin revisión manual. | pendiente |
+| 9.3 | **Errores típicos**: el diseño los recoge (mapa de acciones en decisiones, una lista por objetivo en expositivo); cada opción mala de una simulación y cada distractor de una pregunta declara cuál representa; `verify` comprueba que todos aparecen y que el feedback o el debriefing los explica. | ✔ (distractores) | ✔ (opciones) | Tests; un curso de prueba con errores típicos sin cubrir falla. | pendiente |
+| 9.4 | **Legibilidad** (aviso de `verify`: frases largas para el nivel del público, calibrado por idioma) y **reflexión final** (cada unidad cierra con una pregunta de reflexión metacognitiva). Reglas configurables en `rules.yaml`. | ✔ | ✔ | Tests por idioma. | pendiente |
+| 9.5 | **Bucle de corrección dirigido en el handoff**: cuando `verify`, la revisión o 9.2 fallan, un informe determinista «corrige solo esto» con los hallazgos y sus pruebas; se relanza solo lo que falló y se para si dos rondas dan los mismos fallos. | ✔ | ✔ | Test con agentes simulados. | pendiente |
+| 9.6 | **Recuperación de fuentes** para briefs grandes (BM25 local, sin servicios externos): a cada apartado solo los fragmentos relevantes del material, citados. | ✔ | ✔ | Un brief grande de prueba: cada apartado recibe sus fragmentos. | pendiente |
 
