@@ -78,7 +78,7 @@ While a course is `on_hold`, the commands that change its work are refused with 
 | Phase | Commands |
 |---|---|
 | Project and machine | `coursekit help`, `coursekit init`, `coursekit config`, `coursekit rules`, `coursekit agents`, `coursekit setup`, `coursekit doctor`, `coursekit uninstall`, `coursekit roles` |
-| Courses and design | `coursekit new`, `coursekit handoff`, `coursekit status`, `coursekit sync`, `coursekit outline`, `coursekit brief`, `coursekit download` |
+| Courses and design | `coursekit new`, `coursekit handoff`, `coursekit status`, `coursekit design`, `coursekit sync`, `coursekit outline`, `coursekit brief`, `coursekit download` |
 | Verification and sign-off | `coursekit verify`, `coursekit paths`, `coursekit reviewed`, `coursekit approve` |
 | Course state and client review | `coursekit hold`, `coursekit resume`, `coursekit client` |
 | Launching agents | `coursekit write`, `coursekit review`, `coursekit run` |
@@ -120,9 +120,10 @@ coursekit init [folder] [--update] [--name NAME] [--client CLIENT]
 | `--tone TONE` | free text | Tone of voice for the content. |
 | `--address ADDRESS` | `tu` or `usted` (`es`); `you` (`en`) | How the content addresses the learner. An invalid value without a terminal exits with code 1. |
 | `--backend {creator,html}` | default `creator` | Assembly backend, saved in `project.yaml › assembly.backend`: `creator` loads the units into slxd creator; `html` builds each unit as a SCORM package with coursekit (see [`coursekit assemble`](#coursekit-assemble)). A course can use the other one: [04-configuration.md](04-configuration.md#projectyaml). |
+| `--design-tool {local,slxd}` | default `slxd` with `--backend creator`, `local` with `html` | Where the instructional design of new courses is made: `local` (`design/design.yaml`, [`coursekit design`](#coursekit-design); no slxd needed) or `slxd` (the design matrix of slxd). `local` is saved in `project.yaml › rules › defaults.design_tool`. |
 | `--theme-source {tenant_default,branding}` | default `tenant_default` | Creator backend only: where the theme comes from, saved in `project.yaml › theme.source`. `tenant_default`: the default theme of the organization in creator. `branding`: a theme made by `/define-theme` from the material in `theme/branding/`. |
 | `--mirror PROVIDER` | `sharepoint`, `onedrive`, `google-drive`, `nextcloud`, `folder`, `none`; default `none` | Provider of the shared mirror folder. |
-| `--mcp-url MCP_URL` | URL | Address of the slxd MCP server; saved in `project.yaml › platform.slxd.mcp_url`. Asked with either backend, because the instructional design is always done in creator. An invalid URL exits with code 1. |
+| `--mcp-url MCP_URL` | URL | Address of the slxd MCP server; saved in `project.yaml › platform.slxd.mcp_url`. Asked with the creator backend or a design made in slxd. An invalid URL exits with code 1. |
 | `--mirror-dir MIRROR_DIR` | local path | Path of the synced mirror folder; saved in `.env` as `MIRROR_DIR`. |
 | `--mirror-url MIRROR_URL` | URL | Web address of the mirror folder; saved in `project.yaml › mirror.url`. |
 | `--yes`, `-y` | flag | Do not ask: use the options and defaults. Without a terminal it never asks either. |
@@ -130,9 +131,9 @@ coursekit init [folder] [--update] [--name NAME] [--client CLIENT]
 
 What it does:
 
-- With a terminal and without `--yes` it asks for every value above (the slxd MCP URL with either backend), then offers to create the first course with the design agent, only when the URL was given and the design tool is installed (it asks the title and the hours, then whether to run the whole process in handoff mode with [`coursekit handoff`](#coursekit-handoff), which waits for the material itself; otherwise it asks whether you have reference material, waits while you drop it in `brief/` and launches `/new-course`).
+- With a terminal and without `--yes` it asks for every value above (the slxd MCP URL only with the creator backend or a design made in slxd), then offers to create the first course with the design agent, only when slxd is not needed or its URL was given, and the design tool is installed (it asks the title and the hours, then whether to run the whole process in handoff mode with [`coursekit handoff`](#coursekit-handoff), which waits for the material itself; otherwise it asks whether you have reference material, waits while you drop it in `brief/` and launches `/new-course`).
 - Creates the folders `courses/`, `brief/sources/`, `config/`, `theme/`, `.agents/`; seeds `project.yaml`, `brief/notes.md` and `brief/links.md`; writes the managed files `AGENTS.md`, `CLAUDE.md`, `.env.example`, `.gitignore`, `config/<name>.example.yaml` (rules, directives, media, delivery) and `.githooks/post-merge`, `.githooks/post-checkout`; runs `git init` unless `--no-git`.
-- Then runs the same steps as [`coursekit setup`](#coursekit-setup) (`.env`, `COURSEKIT_LANG` in `.env`, signing identity, git hooks, roles, agents, the html builder with the html backend, diagnosis) and prints the next steps. When the MCP URL is empty, with either backend, the next steps warn that the design cannot connect to creator until `project.yaml › platform.slxd.mcp_url` is set and `coursekit agents` is run.
+- Then runs the same steps as [`coursekit setup`](#coursekit-setup) (`.env`, `COURSEKIT_LANG` in `.env`, signing identity, git hooks, roles, agents, the html builder with the html backend, diagnosis) and prints the next steps. When the MCP URL is empty and slxd is needed (creator backend, or a design made in slxd), the next steps warn that the agents cannot connect to creator until `project.yaml › platform.slxd.mcp_url` is set and `coursekit agents` is run.
 - `--update` writes nothing outside the managed files (it only recreates the project folders if they are missing) and prints `created`, `updated`, `unchanged` or `kept` for each.
 - Exit code 1 when the folder already is a project (without `--update`) or is not one (with `--update`).
 
@@ -295,7 +296,7 @@ coursekit roles
 Creates a course from its title and duration. Use it to start a course; the design agent then proposes the instructional design. Who: both (`/new-course` runs it).
 
 ```
-coursekit new [--code CODE] [--language LANGUAGE] [--no-intro] [--no-summary] [--notes NOTES] [--approach {expository,decision-based}] title hours
+coursekit new [--code CODE] [--language LANGUAGE] [--no-intro] [--no-summary] [--notes NOTES] [--approach {expository,decision-based}] [--design-tool {slxd,local}] title hours
 ```
 
 | Argument | Values / default | Meaning |
@@ -308,8 +309,9 @@ coursekit new [--code CODE] [--language LANGUAGE] [--no-intro] [--no-summary] [-
 | `--no-summary` | flag | Units without the closing summary section. |
 | `--notes NOTES` | text | Extra instructions for the instructional design. |
 | `--approach APPROACH` | `expository` or `decision-based`; default: `rules › defaults.approach` | How the course teaches: `expository` explains, then practises and assesses; `decision-based` opens every content section with a simulation and explains afterwards (see [Decision-based courses](06-content.md#decision-based-courses)). |
+| `--design-tool TOOL` | `slxd` or `local`; default: `rules › defaults.design_tool` | Where the instructional design is made, saved in `course.yaml › design.tool`: `slxd` (the design matrix of slxd) or `local` (`design/design.yaml`, checked and exported by [`coursekit design`](#coursekit-design); no slxd needed). |
 
-Creates `courses/<CODE>/` with `course.yaml` (status `design`), the folders `brief/sources/`, `design/`, `content/`, `media/`, `reviews/`, `brief/links.md`, `brief/notes.md` and `media/manifest.yaml`. Units and sections are not created here: they come from the approved design with [`coursekit sync`](#coursekit-sync). Exit code 1 if the course folder already exists.
+Creates `courses/<CODE>/` with `course.yaml` (status `design`), the folders `brief/sources/`, `design/`, `content/`, `media/`, `reviews/`, `brief/links.md`, `brief/notes.md` and `media/manifest.yaml`, and, with a local design, the template `design/design.yaml` for the design agent to fill in. Units and sections are not created here: they come from the approved design with [`coursekit sync`](#coursekit-sync). Exit code 1 if the course folder already exists.
 
 ```
 coursekit new "Strong passwords" 2 --code PWD --notes "Focus on office staff"
@@ -354,6 +356,27 @@ coursekit status [code]
 
 ```
 coursekit status PWD
+```
+
+### `coursekit design`
+
+Checks the instructional design of a course made in the project (`course.yaml › design.tool: local`), `design/design.yaml`, and exports it. Use it every time that file changes: the design agent runs it while it designs, and the sign-off needs its export. Who: both (the design agent, `/approve-design`).
+
+```
+coursekit design [--check] code
+```
+
+| Argument | Values / default | Meaning |
+|---|---|---|
+| `code` | course code or folder | Course whose design is checked. |
+| `--check` | flag | Only check and print the findings; write nothing. |
+
+It applies the checks of a design matrix: references and structure (ids, objectives and competencies that exist, modules only with `con_modulos`), coverage (every objective developed in a section, sections and competencies without objectives), evidence (every objective with an assessment activity), practice before assessment, the instrument against the Bloom level (a quiz evidences up to *apply*, a case study up to *evaluate*, a portfolio or a rubric up to *create*), hours (sections without them, parts that do not add up to their unit or module, a total other than `design.hours`), verbs (an objective that starts with a verb that cannot be observed, or with a verb of another Bloom level, from the lists of the course language) and progression (a unit that reaches *evaluate* or *create* with no earlier unit at *apply* or above). Each finding is printed with `✘` (error) or `·` (warning), then `N errors · M warnings`.
+
+Without `--check` it writes `design/matrix.json` (the design in the shape of slxd's design matrix, with ids that do not change from one export to the next, so exporting again does not break a signature), `design/validation.json` (the findings) and `design/<CODE>-instructional-design.xlsx` (profile, competencies, objectives, structure, activities and validation, for the person to review), and refreshes the mirror folder. Exit code 1 when there are errors (the files are written anyway, so the person sees them) or when the course designs in slxd. The format of the file is in [Local design](02-workflow.md#local-design).
+
+```
+coursekit design PWD --check
 ```
 
 ### `coursekit sync`
@@ -520,7 +543,7 @@ coursekit approve [--unit UNIT] [--yes] [--no-commit] [--force] {design,content,
 
 Without `--yes` it needs an interactive terminal (otherwise exit code 1) and asks `[y/N]` after showing a summary. The signer is the identity of `.env` (`COURSEKIT_USER_NAME`, `COURSEKIT_USER_EMAIL`), never the git identity; without it the command exits with code 1 (`coursekit setup --identity`).
 
-`design`: needs `design/matrix.json`; refuses when `design/validation.json` holds findings of severity `error`. Runs [`coursekit sync`](#coursekit-sync), appends the approval to `course.yaml › approvals` (signer, timestamp, matrix id, SHA-256 of `matrix.json`, Excel name), sets the course to `design_approved`, and commits the course folder as `Design approval <CODE>`. Any later change of `matrix.json` invalidates the signature. In a decision-based course it also needs the story bible `design/story.md` with a valid front matter, records its SHA-256 (`story_sha256`), and a later change of it invalidates the signature too (see [Story bible](06-content.md#story-bible)). When `misconceptions.per_objective` is above 0 (2 by default) it also needs `design/misconceptions.yaml`, with at least that many common errors for each objective of the design and valid ids, records its SHA-256 (`misconceptions_sha256`, also when the rule is 0 and the file exists), and a later change of it invalidates the signature (see [Common errors](06-content.md#common-errors)).
+`design`: needs `design/matrix.json`; with a local design, also that `design/design.yaml` says the same as that export (otherwise run [`coursekit design`](#coursekit-design)); refuses when `design/validation.json` holds findings of severity `error`. Runs [`coursekit sync`](#coursekit-sync), appends the approval to `course.yaml › approvals` (signer, timestamp, matrix id, SHA-256 of `matrix.json`, Excel name), sets the course to `design_approved`, and commits the course folder as `Design approval <CODE>`. Any later change of `matrix.json` invalidates the signature. In a decision-based course it also needs the story bible `design/story.md` with a valid front matter, records its SHA-256 (`story_sha256`), and a later change of it invalidates the signature too (see [Story bible](06-content.md#story-bible)). When `misconceptions.per_objective` is above 0 (2 by default) it also needs `design/misconceptions.yaml`, with at least that many common errors for each objective of the design and valid ids, records its SHA-256 (`misconceptions_sha256`, also when the rule is 0 and the file exists), and a later change of it invalidates the signature (see [Common errors](06-content.md#common-errors)).
 
 `style`: needs the samples of the style sheet in `courses/<CODE>/media/style/` (PNG, JPG, WebP or SVG) and a valid `media › visual`. Records the style signed (the configured one, or `visual.fallback` when there is no image generator) and the SHA-256 of every sample, and commits the course folder as `Style approval <CODE>`. Until it is signed, `coursekit media set … --status produced` (or `uploaded`) refuses the images of the simulations unless `--force` is given; it is signed again when the style changes. See [Images of the simulations](07-media.md#images-of-the-simulations).
 
@@ -1044,8 +1067,8 @@ The slash commands live in `src/coursekit/agentkit/commands/` and are generated 
 | Slash command | CLI it uses | Role | Who may run it |
 |---|---|---|---|
 | `/new-course "<title>" <hours> [--code ABC101] [--no-intro] [--no-summary] [--no-material] [notes]` | `coursekit new`, `coursekit brief`, `coursekit theme show` | `design` | People, from the AI tool or `coursekit run new-course`. The agent never signs or commits. If the course already exists (handoff creates it first), it skips `coursekit new` and designs on it. When the project has no theme tokens, its summary tells the person to run `/define-theme`. If there is no material the agent asks before designing (unless `--no-material`) and, if you go on without it, marks the syllabus as an assumption. |
-| `/design-change <CODE> <changes>` | `coursekit brief`, `coursekit publish` | `design` | People. The design is applied in slxd; a signed design must be signed again. |
-| `/approve-design <CODE>` | `coursekit sync --check`, `coursekit publish`; the person then runs `coursekit approve design <CODE> --yes` | `design` | The agent prepares it; only a person signs. |
+| `/design-change <CODE> <changes>` | `coursekit brief`, `coursekit design`, `coursekit publish` | `design` | People. The design is applied in slxd or in `design/design.yaml` (local design); a signed design must be signed again. |
+| `/approve-design <CODE>` | `coursekit design` (local design), `coursekit sync --check`, `coursekit publish`; the person then runs `coursekit approve design <CODE> --yes` | `design` | The agent prepares it; only a person signs. |
 | `/define-theme [CODE]` | `coursekit theme show`, `coursekit theme import` | `design` | People, or the design agent. With the creator backend it chooses or adapts the theme in the platform, saves `get_theme` to `.cache/theme/get_theme.json` and derives the tokens. With the html backend there is no platform theme: it writes or adapts `theme/maqueta.css` and runs `coursekit theme import theme/maqueta.css`. Without a code it defines the project theme; with one, the own theme of that course. Never edits `tokens.json` by hand. |
 | `/write-unit <CODE> [N]` | `coursekit status`, `coursekit verify`, `coursekit outline`; launched by `coursekit write` | `writer` | People (`coursekit write`) or the agent of that role. Never `coursekit approve`. |
 | `/review-unit <CODE> <N>` | `coursekit verify`, `coursekit brief`, `coursekit outline`, `coursekit reviewed`; launched by `coursekit review` | `reviewer` | People (`coursekit review`) or the agent of that role. |

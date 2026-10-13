@@ -145,7 +145,7 @@ def html_course(tmp_path, monkeypatch):
     for key in ("COURSEKIT_PROJECT", "COURSEKIT_USER_NAME", "COURSEKIT_USER_EMAIL"):
         monkeypatch.delenv(key, raising=False)
     root = tmp_path / "demo"
-    assert main(["init", str(root), "--yes", "--no-git", "--backend", "html"]) == 0
+    assert main(["init", str(root), "--yes", "--no-git", "--backend", "html", "--design-tool", "slxd"]) == 0
     monkeypatch.chdir(root)
     (root / ".env").write_text("COURSEKIT_USER_NAME=Ana\nCOURSEKIT_USER_EMAIL=ana@example.com\n", encoding="utf-8")
     assert main(["new", "Contraseñas seguras", "1", "--code", "PWD"]) == 0

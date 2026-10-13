@@ -24,7 +24,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from coursekit import approve, clientreview, config, fixes, identity, launch, new, verify
+from coursekit import approve, clientreview, config, fixes, identity, launch, localdesign, new, verify
 from coursekit import assemble as assemblemod
 from coursekit import course as coursemod
 from coursekit import media as mediamod
@@ -174,9 +174,15 @@ def _stuck(ctx: Context, key: str, log: Path | None = None, why: str = "", **val
 # ── stages ────────────────────────────────────────────────────────────────────────────────
 
 def _propose(ctx: Context, course: dict) -> None:
-    """The design proposal has to exist in slxd and be exported to design/. When the matrix was never created the design agent
-    designs the course (`/new-course` works on the existing one); when it exists and only the export is missing it exports it."""
-    if not (course.get("slxd") or {}).get("matrix_id"):
+    """The design proposal has to exist (in slxd, or in design/design.yaml for a local design) and be exported to design/. When
+    it was never made the design agent designs the course (`/new-course` works on the existing one); when it exists and only
+    the export is missing it exports it."""
+    if localdesign.is_local(course):
+        made = localdesign.path(course).exists() and \
+            localdesign.path(course).read_text(encoding="utf-8") != localdesign.template(course["code"])
+    else:
+        made = bool((course.get("slxd") or {}).get("matrix_id"))
+    if not made:
         hours = course["design"]["hours"]
         hours = int(hours) if float(hours).is_integer() else hours
         arguments = f'"{course["title"]}" {hours} --code {ctx.code} --no-material'

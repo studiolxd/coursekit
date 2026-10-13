@@ -124,6 +124,9 @@ next_branding_html:
 next_branding_branding:
   es: "  · Marca: elegiste crear el theme con el material de branding. Déjalo en theme/branding/ (logos, tipografías, guía, colores); sin material se usa el theme del tenant."
   en: "  · Brand: you chose to make the theme from the branding material. Put it in theme/branding/ (logos, fonts, guidelines, colours); without material the tenant's default theme is used."
+help_design_tool:
+  es: "dónde se hace el diseño de los cursos nuevos: local (design/design.yaml) o slxd; por defecto, slxd con el backend creator y local con html"
+  en: "where the design of new courses is made: local (design/design.yaml) or slxd; by default, slxd with the creator backend and local with html"
 help_mcp_url:
   es: "URL del servidor MCP de slxd (project.yaml › platform.slxd.mcp_url)"
   en: "slxd MCP server URL (project.yaml › platform.slxd.mcp_url)"

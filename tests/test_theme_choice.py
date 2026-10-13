@@ -41,14 +41,14 @@ def wizard(tmp_path, monkeypatch, answers):
 
 
 def test_the_wizard_asks_for_the_theme_with_creator(tmp_path, monkeypatch):
-    answers = iter(["en", "", "Demo", "ACME", "", "", "creator", "", "branding", "none", "Ana Pérez", "ana@example.com", "", "n"])
+    answers = iter(["en", "", "Demo", "ACME", "", "", "creator", "", "", "branding", "none", "Ana Pérez", "ana@example.com", "", "n"])
     root, prompts = wizard(tmp_path, monkeypatch, answers)
     assert any(p.startswith("Theme of the course in creator") for p in prompts)
     assert project_data(root)["theme"]["source"] == "branding"
 
 
 def test_the_wizard_does_not_ask_for_the_theme_with_html(tmp_path, monkeypatch):
-    answers = iter(["en", "", "Demo", "ACME", "", "", "html", "", "none", "Ana Pérez", "ana@example.com", "", "n"])
+    answers = iter(["en", "", "Demo", "ACME", "", "", "html", "", "none", "Ana Pérez", "ana@example.com", "", "n", "n"])
     root, prompts = wizard(tmp_path, monkeypatch, answers)
     assert not any(p.startswith("Theme of the course in creator") for p in prompts)
 

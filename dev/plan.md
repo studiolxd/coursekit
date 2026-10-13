@@ -323,7 +323,7 @@ Cada fase termina con algo comprobable. No se pasa a la siguiente con la anterio
 | 4 | **Espejo multi-proveedor.** `mirror.provider`, enlaces por proveedor, `rclone` opcional. | Publicación probada en SharePoint, Nextcloud y Google Drive. |
 | 5 | **`brief/` general del proyecto** con notas por fase en los dos niveles. | Una nota general de redacción se aplica en diseño, redacción y revisión; una nota del curso que la contradice manda. |
 | 6 | **Backend html.** Maqueta base y componentes genéricos, registro de directivas con columna `html`, builder con `@studiolxd/scorm`, verificador de volcado completo, entrega del zip. | Un curso de prueba genérico se genera con `coursekit assemble --backend html` y funciona en un LMS de prueba (SCORM Cloud). |
-| 7 | Opcional: diseño instruccional local (sin slxd, con Excel generado); más idiomas. | — |
+| 7 | Diseño instruccional local (sin slxd ni creator, con Excel generado; sección 14); más idiomas (opcional). | Un curso se diseña, exporta, firma y monta con el backend html sin conexión a slxd. |
 | 8 | **Enfoque basado en decisiones** (sección 11): simulaciones `scenario` y `conversation`, biblia narrativa, contenido adaptativo, pieles de aplicación y escenas por capas de alta fidelidad. | Un curso de prueba genérico con `design.approach: decision-based` recorre el flujo de `new` a `deliver` con el backend html, y con creator salvo lo que creator aún no soporta (sección 9). |
 | 9 | **Verificación y calidad para los dos enfoques** (sección 12): vista previa con LMS simulado, verificación del paquete construido, errores típicos, legibilidad, reflexión, bucle de corrección y recuperación de fuentes. | Un curso de cada enfoque se previsualiza con su SCORM simulado y su paquete pasa la verificación automática (accesibilidad, caminos, nota). |
 
@@ -392,7 +392,6 @@ Pendientes de que creator los resuelva; mientras tanto, el pipeline los esquiva 
 
 - Cuándo publicar en PyPI (`slxd-coursekit`).
 - Si los componentes html se publican también como paquete npm propio.
-- Si el diseño instruccional local (fase 7) es necesario para clientes sin slxd.
 
 ## 11. Enfoque basado en decisiones (fase 8)
 
@@ -623,4 +622,29 @@ propia de las simulaciones.
 | 10.3 | **Mecánicas nuevas** de simulación: `inbox` (clasificar una bandeja de mensajes), `investigation` (reunir pistas antes de decidir), `allocation` (repartir un recurso limitado), `diagnosis` (elegir la causa a partir de síntomas). Mismo esquema YAML, caminos y nota. | `paths` y `verify` las recorren; `assemble check` las juega. | hecho: `symptoms`, `clues`/`min_clues`, `inbox` y `allocation` sobre el mismo grafo (una tarea da una salida por cada número de aciertos, `task:k`); validación, tiempo, caminos, reproductor, paquete EMBED y `assemble check`, que las juega. Probado con una simulación de prueba: 25 caminos sin diferencias y axe limpio |
 | 10.4 | **Pieles propias del proyecto** en `components/` (una piel más sin tocar coursekit), con su lista de `target`. | Una piel de prueba en un proyecto. | hecho: `components/skins/<nombre>.yaml` (screen, targets, chat) y `.js` (registro en `window.coursekitSkins`, con las ayudas de las de serie); `verify`, `paths`, reproductor html, paquete EMBED y token `{{project_skins}}` para las skills. Probado con una piel de prueba y `assemble check` |
 | 10.5 | **Juegos en el backend html**: `word-search`, `wordle`, `hangman`, `pasapalabra`, `memory`, `trivial`. | `assemble check` sin errores de accesibilidad. | hecho: `player/games.js` (sopa de letras, wordle, ahorcado, pasapalabra, memoria y trivial), con teclado, región en vivo y tablero fijado por el id; marcado con versión estática en `render.py`; corregido de paso el trivial, que perdía sus preguntas en el plan (también en creator). Probado en la vista previa y con `assemble check` (axe limpio) |
+
+## 14. Diseño instruccional local (fase 7)
+
+Decidido el 2026-10-14: hace falta poder hacer el diseño sin creator y sin slxd. Con el backend html y diseño local,
+coursekit no necesita slxd para nada.
+
+- **Dónde se elige.** `rules › defaults.design_tool: slxd | local` (por defecto `slxd`, para no cambiar los proyectos que
+  ya existen); `course.yaml › design.tool` por curso (sin la clave, `slxd`); `coursekit new --design-tool`. `coursekit init`
+  pregunta (por defecto `slxd` con creator y `local` con html) y escribe `local` en `project.yaml › rules`; la URL del MCP
+  solo se pide cuando hace falta (backend creator o diseño en slxd).
+- **Fuente.** `courses/<CODE>/design/design.yaml` (claves en inglés, textos en el idioma del curso): `profile`, `passing`,
+  `competencies`, `objectives` del curso (ids libres, `bloom` en inglés), `units` (o `modules` con `con_modulos`) con
+  `sections`/`subsections`, horas y objetivos, `learning_activities` (`type`) y `assessment_activities` (`instrument`,
+  `weight`, `passing_score`, `attempts`). `coursekit new` deja una plantilla comentada.
+- **`coursekit design CODE [--check]`** (`localdesign.py`): comprueba como el validador de slxd (estructura y referencias,
+  cobertura, evidencia, práctica antes de evaluar, techo del instrumento por Bloom, horas, verbos vagos o de otro nivel
+  con listas por idioma en `lang/<código>.yaml › bloom_verbs/vague_verbs`, progresión) y exporta los mismos tres ficheros
+  que el flujo de slxd: `matrix.json` con la forma de `design_matrix_get` (ids uuid5 del código y de las claves, estables
+  entre exportaciones; `origen: local`), `validation.json` (`hallazgos`) y el Excel propio. `sync`, `approve` y el montaje
+  no cambian.
+- **Firma.** `approve design` y `approval_problem` rechazan un `design.yaml` distinto de lo exportado.
+- **Agentes.** `instructional-design` con la sección *Local design* (paso a paso equivalente); `/approve-design` exporta con
+  `coursekit design`; `creator-assembly` crea los contenidos con `create_content` cuando no hay matriz; el handoff decide
+  por `design.yaml` (no por `slxd.matrix_id`).
+- Pendiente: probarlo con un agente real de principio a fin (diseño local + html) y con el backend creator.
 

@@ -11,13 +11,14 @@ import json
 from importlib import resources
 from pathlib import Path
 
-from coursekit import config, course, identity
+from coursekit import config, course, identity, localdesign
 from coursekit.i18n import t
 from coursekit.project import Project
 from coursekit.util import render, slugify
 
 COURSE_FOLDERS = ("brief/sources", "design", "content", "media", "reviews")
 APPROACHES = ("expository", "decision-based")
+DESIGN_TOOLS = ("slxd", "local")
 
 
 def _template(*parts: str) -> str:
@@ -48,6 +49,7 @@ def create(
     notes: str = "",
     language: str | None = None,
     approach: str | None = None,
+    design_tool: str | None = None,
 ) -> Path:
     code = code.upper() if code else slugify(title).upper()
     course_dir = project.courses_dir / code
@@ -59,6 +61,9 @@ def create(
     approach = approach or str(defaults.get("approach") or "expository")
     if approach not in APPROACHES:
         raise course.RuleError(t("new", "bad_approach", approach=approach, valid=", ".join(APPROACHES)))
+    design_tool = design_tool or str(defaults.get("design_tool") or "slxd")
+    if design_tool not in DESIGN_TOOLS:
+        raise course.RuleError(t("new", "bad_design_tool", tool=design_tool, valid=", ".join(DESIGN_TOOLS)))
     grading = defaults.get("grading") or {}
     q = lambda v: json.dumps(v, ensure_ascii=False)  # noqa: E731 — YAML-safe scalar
     hours_value = int(hours) if float(hours).is_integer() else hours
@@ -71,6 +76,7 @@ def create(
         language=language or data.get("content_language") or "es",
         hours=hours_value,
         approach=approach,
+        design_tool=design_tool,
         structure=defaults.get("structure", "sin_modulos"),
         intro=str(bool(defaults.get("intro_section", True)) and intro).lower(),
         summary=str(bool(defaults.get("summary_section", True)) and summary).lower(),
@@ -85,6 +91,8 @@ def create(
         (course_dir / sub).mkdir(parents=True, exist_ok=True)
     (course_dir / "course.yaml").write_text(text, encoding="utf-8", newline="\n")
     ensure_brief(course_dir)
+    if design_tool == "local":  # the design agent fills it in
+        (course_dir / localdesign.FILE).write_text(localdesign.template(code), encoding="utf-8", newline="\n")
     (course_dir / "media" / "manifest.yaml").write_text(
         "# Generated from the content placeholders.\nassets: []\n", encoding="utf-8", newline="\n"
     )

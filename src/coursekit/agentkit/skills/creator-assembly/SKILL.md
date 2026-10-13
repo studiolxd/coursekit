@@ -14,11 +14,11 @@ and reload it.
 
 - Signed design (`coursekit status <CODE>`) and signed units (`approved`). Assemble unsigned
   units only if the person asks explicitly (e.g. for a preview).
-- `course.yaml › slxd.matrix_id` and, if any, `slxd.theme_id`.
+- With a design made in slxd, `course.yaml › slxd.matrix_id` and, if any, `slxd.theme_id`.
 
 ## 1. Skeleton (first time only)
 
-If a unit has no `content_id`:
+If a unit has no `content_id`, and the design was made in slxd (`course.yaml › design.tool: slxd`):
 1. `design_matrix_generate_course` with `alcance: {tipo: "curso"}` (or `{tipo: "modulo"}`). It
    creates one content per unit and one lesson per section, with skeleton bricks. Follow
    `design_matrix_redaccion_status` until it finishes.
@@ -28,6 +28,11 @@ If a unit has no `content_id`:
    `origin:` line, with its id: `set_content_theme` with that id on each content of the course. Without
    tokens from the platform there is no theme to apply: leave the default and tell the person about
    `/define-theme`.
+
+With a local design (`design.tool: local`) there is no matrix in slxd to generate from: for each unit without a
+`content_id`, `create_content` with the title the plan gives (`content_title`), `coursekit assemble link <CODE> --unit N
+--content-id <id>`, and then step 3. Its lessons are made in section 3 below (`create_lesson`, one per lesson of the plan,
+in order).
 
 The generator names each content after its **unit**. The plan gives the title it must have
 (`content_title`): the course title when it has a single unit, otherwise

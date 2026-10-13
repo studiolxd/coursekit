@@ -24,6 +24,17 @@ stopwords:                           # words left out when searching the materia
    will, with, would, you, your]
 reflection: Think it over         # title of a :::reflection without its own
 
+# Verbs an objective starts with, by revised Bloom level (`coursekit design` warns when the verb and the level differ),
+# and verbs that cannot be observed (it warns when an objective starts with one).
+bloom_verbs:
+  remember: [recall, name, list, identify, recognize, recognise, define, state, locate, memorize, memorise]
+  understand: [explain, describe, summarize, summarise, interpret, classify, compare, exemplify, paraphrase, distinguish, infer]
+  apply: [apply, use, execute, implement, employ, solve, calculate, configure, perform, demonstrate, manage, carry]
+  analyze: [analyze, analyse, differentiate, examine, organize, organise, relate, contrast, detect, diagnose, break, investigate]
+  evaluate: [evaluate, assess, judge, justify, decide, prioritize, prioritise, critique, argue, verify, select, choose]
+  create: [create, design, devise, plan, produce, build, write, compose, develop, propose, generate]
+vague_verbs: [understand, know, learn, appreciate, grasp, master, become, be, familiarize, familiarise]
+
 # Resource types of the media placeholders: the id (configuration, manifest) -> what is written in the content.
 media_types:
   image: Image

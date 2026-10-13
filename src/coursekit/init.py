@@ -60,6 +60,16 @@ FOLDERS = ("courses", "brief/sources", "config", "theme", "theme/branding", ".ag
 LANGUAGES = ("es", "en")
 BACKENDS = ("creator", "html")
 BACKEND_LABELS = {"creator": "SLXD Creator", "html": "HTML"}
+DESIGN_TOOLS = ("local", "slxd")
+DESIGN_TOOL_LABELS = {"local": "local", "slxd": "slxd"}
+# project.yaml, when the design is not made in slxd (the package default)
+DESIGN_RULES = """
+rules:
+  defaults:
+    # Where the instructional design of new courses is made: local (design/design.yaml in the course, checked and exported
+    # by `coursekit design`; no slxd needed) | slxd (the design matrix of slxd, through its MCP server).
+    design_tool: {tool}
+"""
 THEME_SOURCES = ("tenant_default", "branding")
 THEME_SOURCE_LABELS = {"tenant_default": "tenant default", "branding": "branding"}
 LANGUAGE_PROMPT = "Idioma / Language"
@@ -77,6 +87,7 @@ class Answers:
     tone: str = ""
     address: str = ""
     backend: str = "creator"
+    design_tool: str = "slxd"  # where the instructional design is made: slxd (its design matrix) or local (design/design.yaml)
     theme_source: str = "tenant_default"  # creator backend: the default theme of the tenant, or one made from theme/branding/
     mirror: str = "none"
     mirror_url: str = ""
@@ -93,6 +104,8 @@ class Answers:
             "tone": self.tone,
             "address": address,
             "backend": self.backend,
+            "design_tool": self.design_tool,
+            "design_rules": DESIGN_RULES.format(tool=self.design_tool) if self.design_tool != "slxd" else "",
             "theme_source": self.theme_source,
             "mirror": self.mirror,
             "mirror_url": self.mirror_url,
@@ -168,6 +181,7 @@ def values_from_project(root: Path) -> dict[str, str]:
         tone=str(data.get("tone") or ""),
         address=str(data.get("address") or ""),
         backend=(data.get("assembly") or {}).get("backend") or "creator",
+        design_tool=str(((data.get("rules") or {}).get("defaults") or {}).get("design_tool") or "slxd"),
         theme_source=str((data.get("theme") or {}).get("source") or "tenant_default"),
         mirror=(data.get("mirror") or {}).get("provider") or "none",
         mirror_url=str((data.get("mirror") or {}).get("url") or ""),

@@ -8,7 +8,22 @@ import sys
 from pathlib import Path
 
 from coursekit import agents as agentsmod
-from coursekit import approve, clientreview, config, directives, doctor, envfile, launch, mediatools, new, outline, status, verify, voices
+from coursekit import (
+    approve,
+    clientreview,
+    config,
+    directives,
+    doctor,
+    envfile,
+    launch,
+    localdesign,
+    mediatools,
+    new,
+    outline,
+    status,
+    verify,
+    voices,
+)
 from coursekit import assemble as assemblemod
 from coursekit import brief as briefmod
 from coursekit import catalog as catalogmod
@@ -59,7 +74,7 @@ def cmd_new(args: argparse.Namespace) -> int:
     project = _project()
     folder = new.create(
         project, args.title, args.hours, code=args.code, intro=not args.no_intro, summary=not args.no_summary,
-        notes=args.notes, language=args.language, approach=args.approach,
+        notes=args.notes, language=args.language, approach=args.approach, design_tool=args.design_tool,
     )
     print(t("commands", "new_created", path=folder.relative_to(project.root).as_posix(), hours=args.hours))
     _mirror(project, folder.name)
@@ -131,6 +146,26 @@ def cmd_sync(args: argparse.Namespace) -> int:
     if not args.check:
         _mirror(course["_project"], course["code"])
     return 0
+
+
+def cmd_design(args: argparse.Namespace) -> int:
+    course = coursemod.load(_project(), args.code)
+    if not localdesign.is_local(course):
+        print(t("design", "not_local", code=course["code"]), file=sys.stderr)
+        return 1
+    if args.check:
+        _, findings = localdesign.build(course)
+    else:
+        statesmod.ensure_active(course)
+        findings, files = localdesign.export(course)
+    for finding in findings:
+        print(finding.line())
+    errors = sum(1 for f in findings if f.severity == "error")
+    print(t("design", "summary", errors=errors, warnings=len(findings) - errors) if findings else t("design", "ok"))
+    if not args.check:
+        print(t("design", "exported", files=", ".join(f.relative_to(course["_dir"]).as_posix() for f in files)))
+        _mirror(course["_project"], course["code"])
+    return 1 if errors else 0
 
 
 def cmd_outline(args: argparse.Namespace) -> int:
@@ -851,6 +886,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--no-summary", action="store_true", help=t("commands", "help_new_no_summary"))
     p.add_argument("--notes", default="", help=t("commands", "help_new_notes"))
     p.add_argument("--approach", choices=new.APPROACHES, help=t("commands", "help_new_approach"))
+    p.add_argument("--design-tool", choices=new.DESIGN_TOOLS, help=t("commands", "help_new_design_tool"))
     p.set_defaults(func=cmd_new)
 
     p = sub.add_parser("handoff", help=t("commands", "help_handoff"))
@@ -874,6 +910,11 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("code")
     p.add_argument("--check", action="store_true", help=t("commands", "help_sync_check"))
     p.set_defaults(func=cmd_sync)
+
+    p = sub.add_parser("design", help=t("commands", "help_design"))
+    p.add_argument("code")
+    p.add_argument("--check", action="store_true", help=t("commands", "help_design_check"))
+    p.set_defaults(func=cmd_design)
 
     p = sub.add_parser("outline", help=t("commands", "help_outline"))
     p.add_argument("code")
@@ -1084,4 +1125,4 @@ def register(sub: argparse._SubParsersAction) -> None:
 ERRORS = (handoffmod.HandoffError, coursemod.CourseNotFound, coursemod.RuleError, approve.ApprovalError, FileExistsError,
           launch.LaunchError, assemblemod.AssembleError, directives.CatalogError, mediamod.MediaError, voices.VoiceError,
           mediatools.ToolError, deliverymod.DeliveryError, publishmod.PublishError, thememod.ThemeError, statesmod.StateError,
-          clientreview.ClientReviewError, HtmlBuildError)
+          clientreview.ClientReviewError, HtmlBuildError, localdesign.DesignError)

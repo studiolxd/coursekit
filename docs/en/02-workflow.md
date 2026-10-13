@@ -74,7 +74,7 @@ The only pause is at the start: once the course folders exist, in a terminal, it
 | Status of the course | What handoff does |
 |---|---|
 | (new) | coursekit creates the course folders and waits for the reference material (see above); then the design agent proposes the design (`/new-course` on the existing course; it does not ask for material). |
-| `design` | If `design/matrix.json` does not exist yet, the design agent exports the proposal (`/design-change`). Then it refreshes and validates the export (`/approve-design`); coursekit signs the design as **Coursekit Handoff**. If it cannot be signed, the design agent fixes it and it tries again. |
+| `design` | If `design/matrix.json` does not exist yet, the design agent exports the proposal (`/design-change`; with a local design, `coursekit design`). Then it refreshes and validates the export (`/approve-design`); coursekit signs the design as **Coursekit Handoff**. If it cannot be signed, the design agent fixes it and it tries again. |
 | `design_approved`, `writing` | The writer agent writes each unit until it verifies. When an attempt leaves errors, the next one gets them in `reviews/unit-NN-fix.md` (see *Fix only this* below). |
 | `ai_review` | The reviewer agent reviews each unit. If the `<!-- result: ... -->` line of its report says `not_ready` (see [AI review](#4-ai-review)), the writer fixes only what `reviews/unit-NN-fix.md` lists (the errors of `verify` and the blocking findings the review did not apply) and it is reviewed again. With `review.ai: skip` this stage does not happen: the units are already `reviewed`. |
 | `editorial_review` | coursekit signs each unit as Coursekit Handoff. |
@@ -88,7 +88,7 @@ The only pause is at the start: once the course folders exist, in a terminal, it
 - **Carry on.** `coursekit handoff <CODE>` continues from the current status, without repeating what is signed. If the course is `on_hold` (the message says to run `coursekit resume <CODE>` first) or in `client_review` it stops: handoff does not handle either. `coursekit handoff "<title>" <hours>` refuses a course code that already exists and points to `coursekit handoff <CODE>`.
 - **What it refuses.** If the project requires the client review (`delivery › client_review › required`) it refuses to start, before creating the course, and to carry on while that review is not approved or skipped: handoff does not do it. Both end with exit code 1.
 - **How it runs.** Every agent runs headless, with the limits in [Agents](05-agents.md#headless---headless). The sessions are logged in `.cache/logs/` (`<CODE>-<step>-handoff-<date>-<time>.log`, and `<CODE>-uNN-write-…` or `-review-…` for the units). After each step the mirror folder and the catalog are refreshed, if the project has them. At the end it prints `handoff finished`, with the status of the course.
-- **What it needs.** The roles of the `.env` and the slxd MCP URL, like the normal flow, with creator already authorized (a session without an interface cannot sign in; see [MCP server problems](09-troubleshooting.md#mcp-server-problems)), and the providers of the media you want produced. It cannot ask: doubts are left written in the units (`<!-- VERIFICAR -->`) and in the reports.
+- **What it needs.** The roles of the `.env` and, when the course uses slxd (creator backend, or a design made in slxd), the slxd MCP URL, like the normal flow, with creator already authorized (a session without an interface cannot sign in; see [MCP server problems](09-troubleshooting.md#mcp-server-problems)), and the providers of the media you want produced. It cannot ask: doubts are left written in the units (`<!-- VERIFICAR -->`) and in the reports.
 
 ## Statuses
 
@@ -224,7 +224,7 @@ This writes `brief/index.md` and the converted text in `brief/text/`, which is w
 /new-course "Strong passwords" 2 --code PWD
 ```
 
-The design agent creates the course, reads the brief and builds a **proposal** in SLXD Creator: competencies, units, objectives, sections, activities and hours. It exports the design to `courses/PWD/design/` and ends with a summary. Review it, then ask for changes in plain words:
+The design agent creates the course, reads the brief and builds a **proposal**: competencies, units, objectives, sections, activities and hours. Where depends on `course.yaml › design.tool`: in the design matrix of SLXD Creator (`slxd`) or in `courses/PWD/design/design.yaml` (`local`, see [Local design](#local-design)). Either way it exports the design to `courses/PWD/design/` (`matrix.json`, `validation.json` and the Excel you review) and ends with a summary. Review it, then ask for changes in plain words:
 
 ```text
 /design-change PWD Add a unit on password managers and move 0.5 hours to it
@@ -236,13 +236,44 @@ When you are happy:
 /approve-design PWD
 ```
 
-The agent refreshes the export if you edited in Creator, validates the design, runs `coursekit sync PWD --check` and summarises what you are about to sign. It cannot sign. Then you do:
+The agent refreshes the export if you edited in Creator (or in `design.yaml`), validates the design, runs `coursekit sync PWD --check` and summarises what you are about to sign. It cannot sign. Then you do:
 
 ```bash
 coursekit approve design PWD
 ```
 
 The sign-off requires `design/matrix.json` and no validation errors in `design/validation.json` (and, in a decision-based course, the [story bible](06-content.md#story-bible)). It writes the units and their sections into `course.yaml` (progress already recorded is kept: status, review record and links), creates a skeleton `content.md` and `assessment.md` per unit in `content/unit-NN/`, records the approval, sets the course to `design_approved` and commits.
+
+#### Local design
+
+A course with `design.tool: local` (the choice of `coursekit init`, `rules › defaults.design_tool` or `coursekit new --design-tool local`) needs no slxd: its design is `courses/<CODE>/design/design.yaml`, which the design agent writes (`coursekit new` leaves a commented template) and you may edit too. Keys in English, texts in the language of the course:
+
+```yaml
+profile: {audience: Office staff, level: Basic, prerequisites: "", context: "", tone: ""}
+passing: all_tests                  # or course_score, with course_passing_score: 0-100
+competencies:
+  - {id: C1, text: Protect the work accounts in daily office work}
+objectives:                         # the course's, in order
+  - {id: O1, text: Apply the criteria of a strong password to a new account, bloom: apply, competencies: [C1]}
+  - {id: O2, text: Analyse why a password is weak, bloom: analyze, competencies: [C1]}
+units:                              # with design.structure con_modulos: modules: [{title, hours, general_objective, units}]
+  - title: Passwords that protect
+    sections:
+      - {title: Introduction and objectives, hours: 0.2}
+      - {title: What a strong password looks like, hours: 0.6, objectives: [O1, O2]}
+      - {title: Summary, hours: 0.2}
+    learning_activities:
+      - {title: Sort the passwords, type: classification, objectives: [O1, O2]}
+    assessment_activities:
+      - {title: Unit test, instrument: case_study, criterion: Half right, weight: 1, passing_score: 50,
+         attempts: 2, objectives: [O1, O2]}
+```
+
+- `bloom`: `remember`, `understand`, `apply`, `analyze`, `evaluate`, `create`. Learning activity `type`: `self_assessed`, `classification`, `interactive_decision`, `branching_scenario`, `hotspot_analysis`, `guided_simulation`, `template_practice`. Assessment `instrument`: `quiz`, `case_study`, `portfolio`, `rubric`. `weight`, `passing_score` and `attempts` are optional (the course's `design.grading` applies).
+- A section may be split into `subsections` (each with its hours and objectives); a unit or a module without `hours` takes the sum of its parts, and with them they must add up. The total is `course.yaml › design.hours`.
+- The ids of objectives and competencies are free and unique (`O1`, `C1`...). The content names the objectives of each unit `U1.1`, `U1.2`... as `coursekit sync --check` prints them. Give a unit or a section an `id` of its own if you move it around a design that was already synced.
+
+[`coursekit design PWD`](03-commands.md#coursekit-design) checks it with the rules of a design matrix (coverage, evidence, practice before assessment, instrument and Bloom level, hours, verbs, progression) and exports `matrix.json`, `validation.json` and `PWD-instructional-design.xlsx`; from there the flow is the same as with slxd. The sign-off refuses a `design.yaml` that was not exported, and a later export that changes the design invalidates the signature (exporting again without changes does not).
 
 ### 3. Writing
 

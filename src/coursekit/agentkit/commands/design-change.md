@@ -1,5 +1,5 @@
 ---
-description: Apply in slxd the changes the person asks for on a course's instructional design proposal.
+description: Apply the changes the person asks for on a course's instructional design proposal (in slxd or in design/design.yaml).
 argument-hint: "<CODE> <changes>"
 ---
 

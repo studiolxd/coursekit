@@ -1,5 +1,5 @@
 ---
-description: Create a course from its title and hours and build the instructional design proposal in slxd for human review.
+description: Create a course from its title and hours and build the instructional design proposal (in slxd or in the project) for human review.
 argument-hint: "\"<title>\" <hours> [--code ABC101] [--approach expository|decision-based] [--no-intro] [--no-summary] [--no-material] [indications]"
 ---
 

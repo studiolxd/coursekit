@@ -1,11 +1,22 @@
 ---
 name: instructional-design
-description: Proposal and changes of a course's instructional design in the slxd design matrix (MCP design_matrix_*), from its title and hours. Use with /new-course, /design-change and /approve-design, or to create, change, validate or export the design of courses/<CODE>.
+description: Proposal and changes of a course's instructional design, in the slxd design matrix (MCP design_matrix_*) or locally in design/design.yaml, from its title and hours. Use with /new-course, /design-change and /approve-design, or to create, change, validate or export the design of courses/<CODE>.
 ---
 
-# Instructional design in slxd
+# Instructional design
 
-Tools: `.coursekit/docs/slxd-mcp.md`. Only `design_matrix_create`, `_get`, `_list`, `_validate`
+## Where the design lives
+
+`course.yaml › design.tool` says it:
+- `slxd`: the design matrix of slxd, built with its MCP tools (this page, step by step);
+- `local`: `courses/<CODE>/design/design.yaml`, written by you in the project; no slxd at all. Follow the same steps and
+  the same rubric with the file instead of the tools: see **Local design** below for the format and where each step
+  goes. Never call `design_matrix_*` for a local course.
+
+Either way the export leaves the same files in `design/` (`matrix.json`, `validation.json`, the Excel), and `coursekit
+sync`, `approve` and the assembly read them without caring where the design was made.
+
+Tools (slxd): `.coursekit/docs/slxd-mcp.md`. Only `design_matrix_create`, `_get`, `_list`, `_validate`
 and `_generate_course` are direct; the rest of `design_matrix_*` (competencies, objectives,
 nodes, activities, `_export`…) go through `find_tools` → `tool_schema` → `run_tool`.
 
@@ -27,7 +38,7 @@ Never sign (`coursekit approve` is forbidden to you) and never present the propo
 
 ## Before starting: directive registry up to date
 
-Call `list_brick_types`, save the JSON in `.cache/list_brick_types.json` and run
+Only when the project assembles in creator (`project.yaml › assembly.backend: creator`). Call `list_brick_types`, save the JSON in `.cache/list_brick_types.json` and run
 `coursekit directives check .cache/list_brick_types.json`. If it is not `ok`, tell the person
 that creator changed its catalog and that `/sync-directives` should run before writing (it does
 not block the design proposal).
@@ -177,6 +188,50 @@ characters:
    downloading the files is not a `coursekit` command that could do it by itself (every other command that
    changes the course updates the mirror).
 
+## Local design (`design.tool: local`)
+
+Write `courses/<CODE>/design/design.yaml` (`coursekit new` leaves a template with comments). Keys in English, texts in
+{{language_name}}:
+
+```yaml
+profile: {audience: "", level: "", prerequisites: "", context: "", tone: ""}
+passing: all_tests                 # or course_score, with course_passing_score: 0-100
+competencies:
+  - {id: C1, text: <verb + object + context>}
+objectives:                        # the course's, in order
+  - {id: O1, text: <one observable verb + object>, bloom: apply, competencies: [C1]}
+units:                             # with design.structure con_modulos: modules: [{title, hours, general_objective, units}]
+  - title: <unit title>
+    hours: 1                       # optional: taken from its sections, and checked against them when given
+    sections:
+      - {title: "{{t_intro_title}}", hours: 0.1}
+      - {title: <section>, hours: 0.5, objectives: [O1]}
+      - title: <section split in parts>
+        subsections: [{title: <part>, hours: 0.2, objectives: [O1]}]
+      - {title: "{{t_summary_title}}", hours: 0.1}
+    learning_activities:
+      - {title: <activity>, type: classification, description: <what the learner does>, objectives: [O1]}
+    assessment_activities:
+      - {title: <activity>, instrument: quiz, criterion: <how it is graded>, description: <the task>,
+         weight: 1, passing_score: 50, attempts: 2, objectives: [O1]}
+```
+
+- `bloom`: remember, understand, apply, analyze, evaluate, create. Learning activity `type`: self_assessed,
+  classification, interactive_decision, branching_scenario, hotspot_analysis, guided_simulation, template_practice.
+  Assessment `instrument` (and the highest level it evidences): quiz (apply), case_study (evaluate), portfolio and rubric
+  (create). `weight`, `passing_score` and `attempts` (0 = unlimited) are optional, as in the steps above.
+- Ids of objectives and competencies are yours (`O1`, `C1`...), unique in the course; the content later names the
+  objectives `U1.1`, `U1.2`... (what `coursekit sync <CODE> --check` prints). A unit or a section may have an `id` of its
+  own: give it one when you move units or sections around a design that was already synced, so they keep their identity.
+- The steps of the proposal map one to one: 1 → `profile` and `passing` (the hours and the structure are those of
+  `course.yaml`); 2 → `competencies`; 3 → `objectives`; 4 and 5 → `sections` with their `objectives`; 6 → the activities;
+  7 → `misconceptions.yaml` as above; 8 → `hours`; 9 → `coursekit design <CODE> --check` until it says 0 errors (review
+  every warning: the same checks as slxd's validator); 11 → **export** with `coursekit design <CODE>`, which writes
+  `matrix.json`, `validation.json` and `<CODE>-instructional-design.xlsx` (nothing to download), then
+  `coursekit sync <CODE> --check` and `coursekit publish <CODE>`.
+- Changes: edit `design.yaml` and export again. Never write `matrix.json` or `validation.json` by hand: `coursekit design`
+  writes them, and `coursekit approve design` refuses a `design.yaml` that was not exported.
+
 ## Self-review (rubric)
 
 For each element, if there is a problem, fix it and note it in `proposal-notes.md`:
@@ -194,5 +249,5 @@ For each element, if there is a problem, fix it and note it in `proposal-notes.m
 ## Fixed rules
 
 - No emojis. Course language: {{language_name}}.
-- Always keep the slxd IDs in `course.yaml › slxd`.
+- In slxd, always keep the slxd IDs in `course.yaml › slxd`.
 - Never edit `course.yaml › units` by hand: `coursekit sync` writes it after the approval.

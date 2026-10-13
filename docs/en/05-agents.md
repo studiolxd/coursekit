@@ -83,7 +83,7 @@ How coursekit treats files:
 
 | Skill | Used when |
 |---|---|
-| `instructional-design` | Proposing and changing a course's instructional design in slxd (`/new-course`, `/design-change`, `/approve-design`). |
+| `instructional-design` | Proposing and changing a course's instructional design, in slxd or locally in `design/design.yaml` (`/new-course`, `/design-change`, `/approve-design`). |
 | `content-writing` | Writing a unit's `content.md` and `assessment.md` (`/write-unit`). |
 | `content-review` | Reviewing a unit written by another model and writing the report in `reviews/` (`/review-unit`). |
 | `theme-definition` | Choosing or creating the theme of the project (or of one course) in slxd creator, adapting it to the brand and deriving the design tokens from it with `coursekit theme import` (`/define-theme`). |
@@ -101,8 +101,8 @@ Skills and commands read the production numbers from your configuration: words p
 
 | Command | Arguments | What it does |
 |---|---|---|
-| `/new-course` | `"<title>" <hours> [--code ABC101] [--no-intro] [--no-summary] [--no-material] [indications]` | Creates the course and builds the instructional design proposal in slxd for human review. It runs `coursekit theme show` and, if the project has no design tokens, tells you in its summary to run `/define-theme` before producing media. If there is no material the agent asks before designing (unless `--no-material`) and, if you go on without it, marks the syllabus as an assumption. |
-| `/design-change` | `<CODE> <changes>` | Applies in slxd the changes you ask for on the design proposal. |
+| `/new-course` | `"<title>" <hours> [--code ABC101] [--no-intro] [--no-summary] [--no-material] [indications]` | Creates the course and builds the instructional design proposal (in slxd, or in `design/design.yaml` with a local design) for human review. It runs `coursekit theme show` and, if the project has no design tokens, tells you in its summary to run `/define-theme` before producing media. If there is no material the agent asks before designing (unless `--no-material`) and, if you go on without it, marks the syllabus as an assumption. |
+| `/design-change` | `<CODE> <changes>` | Applies the changes you ask for on the design proposal (in slxd, or in `design/design.yaml` and exported again). |
 | `/approve-design` | `<CODE>` | Prepares the sign-off of the design and tells you how to sign it. |
 | `/define-theme` | `[CODE]` | Defines the theme in slxd creator and derives the design tokens of the media from it. With the html backend there is no platform theme: it writes or adapts the stylesheet `theme/maqueta.css` with the brand in its CSS variables and runs `coursekit theme import theme/maqueta.css`. Without a code it works on the theme of the project, which every course inherits; with a code, on the own theme of that course (`courses/<CODE>/theme/`, recorded in `slxd.theme_id`), which wins for it. It lists the platform's themes, you choose or create one (from nothing, from a preset or as a copy), it adapts it with the brand colours and fonts, saves the `get_theme` result to `.cache/theme/get_theme.json` and runs `coursekit theme import`. It never writes `tokens.json` by hand. You validate the theme as you validate the design. See [Theme and design tokens](02-workflow.md#theme-and-design-tokens). |
 | `/course-status` | `[CODE]` | Runs `coursekit status` and explains the state of the courses (or of one) and the next step in two or three lines. Not tied to a phase: use it at any point. |
@@ -121,7 +121,7 @@ For Codex, the same commands are plain files. Ask Codex for the command ("run /a
 
 ## The slxd MCP server
 
-Agents talk to slxd creator through an MCP server configured in `project.yaml`. It is needed with both assembly backends, because the instructional design (matrix, Excel) is always done in creator; with the html backend the assembly itself does not use it:
+Agents talk to slxd creator through an MCP server configured in `project.yaml`. It is needed when the project assembles in creator or makes its designs in slxd (`rules › defaults.design_tool`, `course.yaml › design.tool`); a project with the html backend and local designs does not use it:
 
 ```yaml
 platform:

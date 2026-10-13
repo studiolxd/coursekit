@@ -1,0 +1,200 @@
+# Messages of `coursekit design` (the instructional design made in the project, design/design.yaml) and of its Excel.
+missing:
+  es: "no existe {path}: el diseño local aún no está escrito (lanza /new-course)"
+  en: "{path} does not exist: the local design is not written yet (run /new-course)"
+bad_yaml:
+  es: "{path} no es YAML válido: {error}"
+  en: "{path} is not valid YAML: {error}"
+not_a_mapping:
+  es: "{path} tiene que ser un diccionario (profile, competencies, objectives, units…)"
+  en: "{path} must be a mapping (profile, competencies, objectives, units...)"
+not_local:
+  es: "{code} hace el diseño en slxd (course.yaml › design.tool: slxd): lo exporta el agente de diseño con las herramientas design_matrix_*"
+  en: "{code} designs in slxd (course.yaml › design.tool: slxd): the design agent exports it with the design_matrix_* tools"
+exported:
+  es: "exportado: {files}"
+  en: "exported: {files}"
+summary:
+  es: "{errors} errores · {warnings} avisos"
+  en: "{errors} errors · {warnings} warnings"
+ok:
+  es: "diseño sin errores ni avisos"
+  en: "design without errors or warnings"
+not_exported:
+  es: "el diseño local (design/design.yaml) aún no está exportado: ejecuta `coursekit design {code}`"
+  en: "the local design (design/design.yaml) is not exported yet: run `coursekit design {code}`"
+stale:
+  es: "design/design.yaml cambió desde la última exportación: ejecuta `coursekit design {code}`"
+  en: "design/design.yaml changed since the last export: run `coursekit design {code}`"
+bad_value:
+  es: "'{field}': '{value}' no es válido ({valid})"
+  en: "'{field}': '{value}' is not valid ({valid})"
+bad_number:
+  es: "'{field}': '{value}' tiene que ser un entero entre 0 y {top}"
+  en: "'{field}': '{value}' must be a whole number from 0 to {top}"
+course_score_needed:
+  es: "con passing: course_score hace falta course_passing_score (0-100)"
+  en: "passing: course_score needs course_passing_score (0-100)"
+units_need_modules:
+  es: "design.structure es con_modulos: las unidades van dentro de modules, no en units"
+  en: "design.structure is con_modulos: units go inside modules, not in units"
+modules_not_allowed:
+  es: "design.structure es sin_modulos: no hay modules, las unidades van en units"
+  en: "design.structure is sin_modulos: there are no modules, units go in units"
+no_modules:
+  es: "el diseño no tiene módulos"
+  en: "the design has no modules"
+no_units:
+  es: "el diseño no tiene unidades"
+  en: "the design has no units"
+module_without_title:
+  es: "el módulo {n} no tiene title"
+  en: "module {n} has no title"
+module_without_units:
+  es: "el módulo '{title}' no tiene unidades"
+  en: "module '{title}' has no units"
+unit_without_title:
+  es: "{unit} {n}: sin title"
+  en: "{unit} {n}: no title"
+unit_without_sections:
+  es: "{unit} {n}: sin apartados"
+  en: "{unit} {n}: no sections"
+section_without_title:
+  es: "{unit} {n}, apartado {s}: sin title"
+  en: "{unit} {n}, section {s}: no title"
+activity_without_title:
+  es: "{unit} {n}, {which} {i}: sin title"
+  en: "{unit} {n}, {which} {i}: no title"
+competency_without_text:
+  es: "la competencia {n} no tiene text"
+  en: "competency {n} has no text"
+objective_not_mapping:
+  es: "el objetivo {n} tiene que ser un diccionario (id, text, bloom, competencies)"
+  en: "objective {n} must be a mapping (id, text, bloom, competencies)"
+objective_bad_id:
+  es: "el objetivo {n} necesita un id (letras, cifras, '.', '_' o '-'; empieza por una letra): '{id}'"
+  en: "objective {n} needs an id (letters, digits, '.', '_' or '-'; starting with a letter): '{id}'"
+objective_without_text:
+  es: "el objetivo {id} no tiene text"
+  en: "objective {id} has no text"
+duplicate_id:
+  es: "el id '{id}' está repetido"
+  en: "the id '{id}' is repeated"
+unknown_competency:
+  es: "el objetivo {id} sirve a una competencia que no existe: '{name}'"
+  en: "objective {id} serves a competency that does not exist: '{name}'"
+unknown_objective:
+  es: "'{where}' nombra un objetivo que no existe: '{name}'"
+  en: "'{where}' names an objective that does not exist: '{name}'"
+objectives_on_parent:
+  es: "'{title}' tiene subapartados: los objetivos van en ellos, no en el apartado"
+  en: "'{title}' has subsections: the objectives go on them, not on the section"
+orphan_content:
+  es: "'{title}' no desarrolla ningún objetivo"
+  en: "'{title}' develops no objective"
+section_without_hours:
+  es: "'{title}' no tiene horas"
+  en: "'{title}' has no hours"
+hours_children:
+  es: "'{title}' declara {declared} h y sus partes suman {children} h"
+  en: "'{title}' declares {declared} h and its parts add up to {children} h"
+hours_total:
+  es: "el diseño suma {total} h y el curso tiene {hours} h (course.yaml › design.hours)"
+  en: "the design adds up to {total} h and the course has {hours} h (course.yaml › design.hours)"
+competency_without_objective:
+  es: "la competencia {id} no tiene ningún objetivo"
+  en: "competency {id} has no objective"
+objective_without_competency:
+  es: "el objetivo {id} no sirve a ninguna competencia"
+  en: "objective {id} serves no competency"
+objective_without_content:
+  es: "el objetivo {id} no se desarrolla en ningún apartado"
+  en: "objective {id} is developed in no section"
+objective_without_assessment:
+  es: "el objetivo {id} no tiene actividad de evaluación que lo evidencie"
+  en: "objective {id} has no assessment activity that gives evidence of it"
+assessed_without_practice:
+  es: "el objetivo {id} se evalúa sin una actividad de aprendizaje que lo practique antes"
+  en: "objective {id} is assessed without a learning activity that practises it first"
+instrument_ceiling:
+  es: "el objetivo {id} es de nivel {bloom} y lo evidencia {instruments}, que no llega a ese nivel (cuestionario hasta apply, caso práctico hasta evaluate, portfolio y rúbrica hasta create)"
+  en: "objective {id} is at level {bloom} and its evidence is {instruments}, which does not reach that level (quiz up to apply, case study up to evaluate, portfolio and rubric up to create)"
+vague_verb:
+  es: "el objetivo {id} empieza por '{verb}', un verbo que no se puede observar"
+  en: "objective {id} starts with '{verb}', a verb that cannot be observed"
+bloom_mismatch:
+  es: "el objetivo {id} empieza por '{verb}', un verbo de nivel {level}, pero declara {bloom}"
+  en: "objective {id} starts with '{verb}', a verb of level {level}, but declares {bloom}"
+jump_without_base:
+  es: "'{title}' llega a evaluate o create sin que las unidades anteriores pasen de apply"
+  en: "'{title}' reaches evaluate or create with no earlier unit at apply or above"
+unit_without_objectives:
+  es: "'{title}' no desarrolla ningún objetivo"
+  en: "'{title}' develops no objective"
+# the Excel
+sheet_profile: {es: "Ficha", en: "Profile"}
+sheet_competencies: {es: "Competencias", en: "Competencies"}
+sheet_objectives: {es: "Objetivos", en: "Objectives"}
+sheet_structure: {es: "Estructura", en: "Structure"}
+sheet_learning: {es: "Actividades de aprendizaje", en: "Learning activities"}
+sheet_assessment: {es: "Actividades de evaluación", en: "Assessment activities"}
+sheet_validation: {es: "Validación", en: "Validation"}
+col_field: {es: "Campo", en: "Field"}
+col_value: {es: "Valor", en: "Value"}
+col_id: {es: "Id", en: "Id"}
+col_text: {es: "Texto", en: "Text"}
+col_bloom: {es: "Nivel de Bloom", en: "Bloom level"}
+col_competencies: {es: "Competencias", en: "Competencies"}
+col_level: {es: "Nivel", en: "Level"}
+col_title: {es: "Título", en: "Title"}
+col_hours: {es: "Horas", en: "Hours"}
+col_objectives: {es: "Objetivos", en: "Objectives"}
+col_unit: {es: "Unidad", en: "Unit"}
+col_type: {es: "Tipo", en: "Type"}
+col_description: {es: "Descripción", en: "Description"}
+col_instrument: {es: "Instrumento", en: "Instrument"}
+col_criterion: {es: "Criterio", en: "Criterion"}
+col_weight: {es: "Peso", en: "Weight"}
+col_passing: {es: "Aprobado", en: "Pass mark"}
+col_attempts: {es: "Intentos", en: "Attempts"}
+col_severity: {es: "Gravedad", en: "Severity"}
+col_check: {es: "Comprobación", en: "Check"}
+col_message: {es: "Mensaje", en: "Message"}
+field_title: {es: "Título", en: "Title"}
+field_code: {es: "Código", en: "Code"}
+field_hours: {es: "Horas", en: "Hours"}
+field_structure: {es: "Estructura", en: "Structure"}
+field_words_per_hour: {es: "Palabras por hora", en: "Words per hour"}
+field_audience: {es: "Público", en: "Audience"}
+field_level: {es: "Nivel", en: "Level"}
+field_prerequisites: {es: "Conocimientos previos", en: "Prerequisites"}
+field_context: {es: "Contexto", en: "Context"}
+field_tone: {es: "Tono", en: "Tone"}
+field_passing: {es: "Cómo se aprueba", en: "How it is passed"}
+field_course_score: {es: "Nota para aprobar el curso", en: "Course score to pass"}
+passing_all_tests: {es: "Aprobando todos los tests", en: "Passing every test"}
+passing_course_score: {es: "Con la nota del curso", en: "With the course score"}
+node_modulo: {es: "Módulo", en: "Module"}
+node_unidad: {es: "Unidad", en: "Unit"}
+node_apartado: {es: "Apartado", en: "Section"}
+node_subapartado: {es: "Subapartado", en: "Subsection"}
+bloom_remember: {es: "Recordar", en: "Remember"}
+bloom_understand: {es: "Comprender", en: "Understand"}
+bloom_apply: {es: "Aplicar", en: "Apply"}
+bloom_analyze: {es: "Analizar", en: "Analyze"}
+bloom_evaluate: {es: "Evaluar", en: "Evaluate"}
+bloom_create: {es: "Crear", en: "Create"}
+type_self_assessed: {es: "Autoevaluable", en: "Self-assessed"}
+type_classification: {es: "Clasificación", en: "Classification"}
+type_interactive_decision: {es: "Decisión interactiva", en: "Interactive decision"}
+type_branching_scenario: {es: "Escenario ramificado", en: "Branching scenario"}
+type_hotspot_analysis: {es: "Análisis de zonas", en: "Hotspot analysis"}
+type_guided_simulation: {es: "Simulación guiada", en: "Guided simulation"}
+type_template_practice: {es: "Práctica con plantilla", en: "Template practice"}
+instrument_quiz: {es: "Cuestionario", en: "Quiz"}
+instrument_case_study: {es: "Caso práctico", en: "Case study"}
+instrument_portfolio: {es: "Entrega o portfolio", en: "Deliverable or portfolio"}
+instrument_rubric: {es: "Rúbrica", en: "Rubric"}
+severity_error: {es: "Error", en: "Error"}
+severity_warning: {es: "Aviso", en: "Warning"}
+no_findings: {es: "Sin errores ni avisos", en: "No errors or warnings"}

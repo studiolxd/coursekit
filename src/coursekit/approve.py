@@ -23,7 +23,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from coursekit import course as coursemod
-from coursekit import identity
+from coursekit import identity, localdesign
 from coursekit import misconceptions as misconmod
 from coursekit import story as storymod
 from coursekit.fingerprint import changed_since_review
@@ -83,6 +83,9 @@ def approve_design(course: dict, confirm: Confirm, do_commit: bool = True, who: 
     course_dir: Path = course["_dir"]
     design = course_dir / "design"
     matrix = design / "matrix.json"
+    problem = localdesign.export_problem(course)  # signed is what was exported, and it must say what design.yaml says
+    if problem:
+        raise ApprovalError(problem)
     if not matrix.exists():
         raise ApprovalError(t("approve", "matrix_missing"))
     validation_path = design / "validation.json"

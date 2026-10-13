@@ -83,7 +83,7 @@ Cómo trata coursekit los ficheros:
 
 | Skill | Se usa cuando |
 |---|---|
-| `instructional-design` | Se propone y se cambia el diseño instruccional de un curso en slxd (`/new-course`, `/design-change`, `/approve-design`). |
+| `instructional-design` | Se propone y se cambia el diseño instruccional de un curso, en slxd o en local en `design/design.yaml` (`/new-course`, `/design-change`, `/approve-design`). |
 | `content-writing` | Se redactan el `content.md` y el `assessment.md` de una unidad (`/write-unit`). |
 | `content-review` | Se revisa una unidad redactada por otro modelo y se escribe el informe en `reviews/` (`/review-unit`). |
 | `theme-definition` | Se elige o se crea el theme del proyecto (o de un curso) en slxd creator, se adapta a la marca y se derivan de él los tokens de diseño con `coursekit theme import` (`/define-theme`). |
@@ -101,8 +101,8 @@ Las skills y los comandos leen los números de producción de tu configuración:
 
 | Comando | Argumentos | Qué hace |
 |---|---|---|
-| `/new-course` | `"<title>" <hours> [--code ABC101] [--no-intro] [--no-summary] [--no-material] [indications]` | Crea el curso y construye en slxd la propuesta de diseño instruccional para revisión humana. Ejecuta `coursekit theme show` y, si el proyecto no tiene tokens de diseño, te avisa en su resumen de que ejecutes `/define-theme` antes de producir multimedia. Si no hay material, el agente pregunta antes de diseñar (salvo con `--no-material`) y, si sigues sin él, marca el temario como suposición. |
-| `/design-change` | `<CODE> <changes>` | Aplica en slxd los cambios que pidas sobre la propuesta de diseño. |
+| `/new-course` | `"<title>" <hours> [--code ABC101] [--no-intro] [--no-summary] [--no-material] [indications]` | Crea el curso y construye la propuesta de diseño instruccional (en slxd, o en `design/design.yaml` con un diseño local) para revisión humana. Ejecuta `coursekit theme show` y, si el proyecto no tiene tokens de diseño, te avisa en su resumen de que ejecutes `/define-theme` antes de producir multimedia. Si no hay material, el agente pregunta antes de diseñar (salvo con `--no-material`) y, si sigues sin él, marca el temario como suposición. |
+| `/design-change` | `<CODE> <changes>` | Aplica los cambios que pidas sobre la propuesta de diseño (en slxd, o en `design/design.yaml` y la vuelve a exportar). |
 | `/approve-design` | `<CODE>` | Prepara la firma del diseño y te dice cómo firmarlo. |
 | `/define-theme` | `[CODE]` | Define el theme en slxd creator y deriva de él los tokens de diseño de la multimedia. Con el backend html no hay theme de plataforma: escribe o adapta la hoja de estilos `theme/maqueta.css` con la marca en sus variables CSS y ejecuta `coursekit theme import theme/maqueta.css`. Sin código trabaja sobre el theme del proyecto, que heredan todos los cursos; con código, sobre el theme propio de ese curso (`courses/<CODE>/theme/`, anotado en `slxd.theme_id`), que gana para él. Lista los themes de la plataforma, eliges o creas uno (desde cero, desde un preset o como copia), lo adapta con los colores y las fuentes de la marca, guarda el resultado de `get_theme` en `.cache/theme/get_theme.json` y ejecuta `coursekit theme import`. Nunca escribe `tokens.json` a mano. El theme lo validas tú, como validas el diseño. Mira [Theme y tokens de diseño](02-workflow.md#theme-y-tokens-de-diseño). |
 | `/course-status` | `[CODE]` | Ejecuta `coursekit status` y explica el estado de los cursos (o de uno) y el siguiente paso en dos o tres líneas. No está ligado a una fase: úsalo en cualquier momento. |
@@ -121,7 +121,7 @@ En Codex, esos mismos comandos son ficheros normales. Pídele el comando («ejec
 
 ## El servidor MCP de slxd
 
-Los agentes hablan con slxd creator mediante un servidor MCP configurado en `project.yaml`. Hace falta con los dos backends de montaje, porque el diseño instruccional (matriz, Excel) se hace siempre en creator; con el backend html, el montaje en sí no lo usa:
+Los agentes hablan con slxd creator mediante un servidor MCP configurado en `project.yaml`. Hace falta cuando el proyecto monta en creator o hace sus diseños en slxd (`rules › defaults.design_tool`, `course.yaml › design.tool`); un proyecto con el backend html y diseños locales no lo usa:
 
 ```yaml
 platform:

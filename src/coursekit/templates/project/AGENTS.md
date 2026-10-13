@@ -20,7 +20,7 @@ and follow it. Content format: `.coursekit/docs/content-format.md`.
 
 | Skill | When |
 |---|---|
-| `instructional-design` | proposal and changes of the instructional design (slxd) |
+| `instructional-design` | proposal and changes of the instructional design (in slxd, or locally in `design/design.yaml`) |
 | `content-writing` | writing a unit |
 | `content-review` | reviewing a unit written by another model |
 | `media-production` | producing and uploading the media assets |

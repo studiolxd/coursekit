@@ -124,6 +124,7 @@ def cmd_init(args: argparse.Namespace) -> int:
     answers.tone = args.tone or ""
     answers.address = args.address or ""
     answers.backend = args.backend
+    answers.design_tool = args.design_tool or ("slxd" if args.backend == "creator" else "local")
     answers.theme_source = args.theme_source
     answers.mirror = args.mirror
     answers.mcp_url = args.mcp_url or ""
@@ -140,7 +141,10 @@ def cmd_init(args: argparse.Namespace) -> int:
         options = initmod.ADDRESS[answers.content_language]
         answers.address = initmod.ask(t("init", "address"), answers.address or options[0], options)
         answers.backend = initmod.ask(t("init", "backend"), answers.backend, initmod.BACKENDS, labels=initmod.BACKEND_LABELS)
-        answers.mcp_url = initmod.ask_url(t("init", "mcp_url"), answers.mcp_url)  # the design is done in creator with either backend
+        default_tool = args.design_tool or ("slxd" if answers.backend == "creator" else "local")
+        answers.design_tool = initmod.ask(t("init", "design_tool"), default_tool, initmod.DESIGN_TOOLS, labels=initmod.DESIGN_TOOL_LABELS)
+        if answers.backend == "creator" or answers.design_tool == "slxd":  # only then is slxd needed
+            answers.mcp_url = initmod.ask_url(t("init", "mcp_url"), answers.mcp_url)
         if answers.backend == "creator":  # with html the look is a stylesheet, not a theme of the platform
             answers.theme_source = initmod.ask(t("init", "theme_source"), answers.theme_source, initmod.THEME_SOURCES,
                                                labels=initmod.THEME_SOURCE_LABELS)
@@ -174,7 +178,7 @@ def cmd_init(args: argparse.Namespace) -> int:
                         secret=initmod.ask_secret if interactive else None)
     if code != 0:
         return code
-    mcp_missing = not answers.mcp_url
+    mcp_missing = not answers.mcp_url and (answers.backend == "creator" or answers.design_tool == "slxd")
     _print_next_steps(root, mcp_missing, branding=_branding_hint(answers))
     if interactive and not mcp_missing:
         return _offer_first_course(root)
@@ -249,6 +253,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--tone")
     p.add_argument("--address", help=t("cli", "init_address"))
     p.add_argument("--backend", choices=initmod.BACKENDS, default="creator")
+    p.add_argument("--design-tool", choices=initmod.DESIGN_TOOLS, help=t("cli", "help_design_tool"))
     p.add_argument("--theme-source", choices=initmod.THEME_SOURCES, default="tenant_default", help=t("cli", "help_theme_source"))
     p.add_argument("--mirror", choices=initmod.MIRRORS, default="none")
     p.add_argument("--mcp-url", help=t("cli", "help_mcp_url"))

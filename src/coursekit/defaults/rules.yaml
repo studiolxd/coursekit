@@ -13,6 +13,9 @@ defaults:
   intro_section: true          # first section of every unit: introduction and objectives
   summary_section: true        # last section of every unit: summary
   structure: sin_modulos       # slxd patronEstructural: sin_modulos | con_modulos
+  design_tool: slxd            # where the instructional design is made: slxd (the design matrix of slxd, by MCP) |
+                               # local (design/design.yaml in the project, checked and exported by `coursekit design`;
+                               # no slxd needed)
   grading:
     passing_score: 50
     attempts: 2

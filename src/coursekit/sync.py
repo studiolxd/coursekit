@@ -21,6 +21,7 @@ from importlib import resources
 from pathlib import Path
 
 from coursekit import course as coursemod
+from coursekit import localdesign
 from coursekit.i18n import t
 from coursekit.lang import format_number
 from coursekit.util import edit_yaml, render, save_yaml
@@ -221,6 +222,8 @@ def sync(course: dict, check_only: bool = False) -> SyncResult:
     language = coursemod.language(course)
     tokens = coursemod.tokens(course)
     cfg = coursemod.rules(course)
+    if localdesign.is_local(course) and not (course_dir / "design" / "matrix.json").is_file():
+        raise DesignError(localdesign.export_problem(course))  # the local design was never exported
     graph = load_graph(course_dir / "design" / "matrix.json")
     units, problems = build_units(graph, course, cfg, tokens)
     result = SyncResult(units=units, warnings=list(problems))

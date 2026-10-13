@@ -104,7 +104,7 @@ def test_free_text_is_yaml_safe(tmp_path):
 
 def test_the_language_of_the_interface_comes_first_and_the_courses_default_to_it(tmp_path, monkeypatch):
     prompts = []
-    answers = iter(["es", "en", "Demo", "ACME", "", "", "slxd creator", "", "", "", "Ana Pérez", "ana@example.com", "", "n"])
+    answers = iter(["es", "en", "Demo", "ACME", "", "", "slxd creator", "", "", "", "", "Ana Pérez", "ana@example.com", "", "n"])
     monkeypatch.setattr("sys.stdin.isatty", lambda: True, raising=False)
     monkeypatch.setattr("builtins.input", lambda prompt: prompts.append(prompt) or next(answers))
     root = tmp_path / "demo"
@@ -119,7 +119,7 @@ def test_the_language_of_the_interface_comes_first_and_the_courses_default_to_it
 
 def test_interactive_wizard_asks_language_first_and_speaks_it(tmp_path, monkeypatch):
     prompts = []
-    answers = iter(["en", "", "Demo", "ACME", "friendly", "", "slxd creator", "", "", "", "Ana Pérez", "ana@example.com", "", "n"])
+    answers = iter(["en", "", "Demo", "ACME", "friendly", "", "slxd creator", "", "", "", "", "Ana Pérez", "ana@example.com", "", "n"])
 
     def fake_input(prompt):
         prompts.append(prompt)
@@ -132,9 +132,10 @@ def test_interactive_wizard_asks_language_first_and_speaks_it(tmp_path, monkeypa
     assert prompts[0].startswith("Idioma / Language")
     assert prompts[1].startswith("Language of the courses")
     assert prompts[6].startswith("Assembly backend [SLXD Creator/HTML]")
-    assert prompts[7].startswith("slxd MCP server URL")
-    assert prompts[8].startswith("Theme of the course in creator")
-    assert prompts[10].startswith("Your name")
+    assert prompts[7].startswith("Where the instructional design is made") and "[local/slxd] (slxd)" in prompts[7]
+    assert prompts[8].startswith("slxd MCP server URL")
+    assert prompts[9].startswith("Theme of the course in creator")
+    assert prompts[11].startswith("Your name")
     assert (root / ".env").read_text(encoding="utf-8").count("Ana") == 1
     data = yaml.safe_load((root / "project.yaml").read_text(encoding="utf-8"))
     assert data["content_language"] == "en"
@@ -145,7 +146,7 @@ def test_mirror_details_are_asked_and_saved(tmp_path, monkeypatch, capsys):
     synced = tmp_path / "SharePoint" / "Cursos"
     synced.mkdir(parents=True)
     url = "https://acme.sharepoint.com/sites/cursos/Documentos compartidos/Cursos"
-    answers = iter(["es", "", "Demo", "ACME", "", "", "", "", "", "sharepoint", f'"{synced}"', url,
+    answers = iter(["es", "", "Demo", "ACME", "", "", "", "", "", "", "sharepoint", f'"{synced}"', url,
                     "Ana Pérez", "ana@example.com", "", "n"])
     prompts = []
 
@@ -157,8 +158,8 @@ def test_mirror_details_are_asked_and_saved(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr("builtins.input", fake_input)
     root = tmp_path / "demo"
     assert main(["init", str(root), "--no-git"]) == 0
-    assert prompts[10].startswith("Ruta local de la carpeta sincronizada")
-    assert prompts[11].startswith("Dirección web de la carpeta")
+    assert prompts[11].startswith("Ruta local de la carpeta sincronizada")
+    assert prompts[12].startswith("Dirección web de la carpeta")
     data = yaml.safe_load((root / "project.yaml").read_text(encoding="utf-8"))
     assert data["mirror"] == {"provider": "sharepoint", "url": url}
     assert f"MIRROR_DIR={synced}" in (root / ".env").read_text(encoding="utf-8")
@@ -198,7 +199,7 @@ def test_init_ends_inviting_to_create_the_first_course(tmp_path, capsys):
 
 def test_mcp_url_is_asked_for_creator_and_configures_the_tools(tmp_path, monkeypatch, capsys):
     url = "https://acme.slxd.app/mcp/creator"
-    answers = iter(["en", "", "Demo", "ACME", "", "", "", "not a url", url, "", "none", "Ana Pérez", "ana@example.com", "", "n", "n"])
+    answers = iter(["en", "", "Demo", "ACME", "", "", "", "", "not a url", url, "", "none", "Ana Pérez", "ana@example.com", "", "n", "n"])
     monkeypatch.setattr("sys.stdin.isatty", lambda: True, raising=False)
     monkeypatch.setattr("builtins.input", lambda prompt: next(answers))
     monkeypatch.setattr("shutil.which", lambda tool: "/bin/" + tool)
@@ -215,8 +216,18 @@ def test_without_the_mcp_url_it_warns_and_does_not_offer_the_course(tmp_path, ca
     assert run_init(tmp_path / "demo") == 0
     out = capsys.readouterr().out
     assert "its URL is missing" in out
-    assert run_init(tmp_path / "other", "--backend", "html") == 0
-    assert "its URL is missing" in capsys.readouterr().out  # the design is done in creator with either backend
+    assert run_init(tmp_path / "other", "--backend", "html", "--design-tool", "slxd") == 0
+    assert "its URL is missing" in capsys.readouterr().out  # a design made in slxd needs it with either backend
+
+
+def test_with_html_the_design_is_local_and_needs_no_slxd(tmp_path, capsys):
+    root = tmp_path / "demo"
+    assert run_init(root, "--backend", "html") == 0
+    assert "its URL is missing" not in capsys.readouterr().out
+    data = yaml.safe_load((root / "project.yaml").read_text(encoding="utf-8"))
+    assert data["rules"]["defaults"]["design_tool"] == "local"
+    assert run_init(tmp_path / "other") == 0  # with slxd, the package default, project.yaml leaves the rules alone
+    assert "rules" not in yaml.safe_load((tmp_path / "other" / "project.yaml").read_text(encoding="utf-8"))
 
 
 def test_mcp_url_flag_is_validated(tmp_path):
@@ -228,7 +239,7 @@ def test_the_first_course_can_be_started_at_the_end(tmp_path, monkeypatch):
     from coursekit import launch
 
     url = "https://acme.slxd.app/mcp/creator"
-    answers = iter(["en", "", "Demo", "ACME", "", "", "", url, "", "none", "Ana Pérez", "ana@example.com", "", "n",
+    answers = iter(["en", "", "Demo", "ACME", "", "", "", "", url, "", "none", "Ana Pérez", "ana@example.com", "", "n",
                     "", "", "Passwords \"101\"", "abc", "0", "1,5", "", ""])
     launched = []
     monkeypatch.chdir(tmp_path)  # init changes folder to start the course: restore it afterwards
@@ -247,7 +258,7 @@ def test_the_wizard_pauses_for_the_reference_material_before_the_first_course(tm
 
     url = "https://acme.slxd.app/mcp/creator"
     prompts = []
-    answers = iter(["en", "", "Demo", "ACME", "", "", "", url, "", "none", "Ana Pérez", "ana@example.com", "", "n",
+    answers = iter(["en", "", "Demo", "ACME", "", "", "", "", url, "", "none", "Ana Pérez", "ana@example.com", "", "n",
                     "", "Passwords", "1", "", "y", ""])
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr("sys.stdin.isatty", lambda: True, raising=False)
@@ -268,7 +279,7 @@ def test_the_wizard_without_material_says_the_design_starts_on_assumptions(tmp_p
     from coursekit import launch
 
     url = "https://acme.slxd.app/mcp/creator"
-    answers = iter(["en", "", "Demo", "ACME", "", "", "", url, "", "none", "Ana Pérez", "ana@example.com", "", "n",
+    answers = iter(["en", "", "Demo", "ACME", "", "", "", "", url, "", "none", "Ana Pérez", "ana@example.com", "", "n",
                     "", "Passwords", "1", "", ""])
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr("sys.stdin.isatty", lambda: True, raising=False)
@@ -281,7 +292,7 @@ def test_the_wizard_without_material_says_the_design_starts_on_assumptions(tmp_p
 
 def test_the_wizard_can_hand_the_whole_process_off(tmp_path, monkeypatch, capsys):
     url = "https://acme.slxd.app/mcp/creator"
-    answers = iter(["en", "", "Demo", "ACME", "", "", "", url, "", "none", "Ana Pérez", "ana@example.com", "", "n",
+    answers = iter(["en", "", "Demo", "ACME", "", "", "", "", url, "", "none", "Ana Pérez", "ana@example.com", "", "n",
                     "", "Passwords", "1", "y"])
     started = []
     monkeypatch.chdir(tmp_path)

@@ -1,3 +1,4 @@
 # Errors of `coursekit new`.
 bad_approach: {es: "enfoque desconocido: {approach} (válidos: {valid})", en: "unknown approach: {approach} (valid: {valid})"}
+bad_design_tool: {es: "herramienta de diseño desconocida: {tool} (válidas: {valid})", en: "unknown design tool: {tool} (valid: {valid})"}
 already_exists: {es: "{path} ya existe", en: "{path} already exists"}

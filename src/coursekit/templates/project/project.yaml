@@ -14,7 +14,7 @@ address: {address}
 assembly:
   # creator | html
   backend: {backend}
-
+{design_rules}
 theme:
   # Creator backend: tenant_default (the default theme of the organization in creator) | branding (a theme made from the
   # material in theme/branding/). With the html backend the look is theme/maqueta.css (or the base look) and this is not used.
