@@ -698,3 +698,23 @@ def test_a_hash_in_a_simulation_text_needs_quotes():
     quoted = [line.replace("text: Lo compruebo por #soporte con Seguridad", 'text: "Lo compruebo por #soporte con Seguridad"')
               for line in body]
     assert simulation.parse("scenario", quoted, "x").errors == []
+
+
+def test_the_simulation_that_opens_a_section_holds_the_rest_of_the_lesson(decision_course):
+    from importlib import resources
+
+    from coursekit import assemble, course
+    from coursekit.htmlkit import render
+    from coursekit.project import find_project
+
+    (decision_course / "content.md").write_text(decision_content(GOOD_SECTION), encoding="utf-8")
+    data = course.load(find_project(decision_course), "DB1")
+    plan, _, _ = assemble.build_plan(data, data["units"][0], simulations=True)
+    opening = plan["lessons"][1]["bricks"][0]
+    assert opening["type"] == "SIMULATION" and opening["meta"]["blocks"] is True
+    assert not [b for lesson in plan["lessons"] for b in lesson["bricks"][1:] if b["meta"].get("blocks")]
+    html = render.simulation(opening, render.Ctx({}, "U1-S2"))
+    assert 'data-sim="call" data-blocks=""' in html
+    entry = (Path(str(resources.files("coursekit.templates.html"))) / "player" / "entry.js").read_text(encoding="utf-8")
+    assert 'root.hasAttribute("data-blocks")' in entry and "lockedLessons.has(lessons[current])" in entry
+

@@ -145,22 +145,6 @@ async function main() {
     const axeSource = readFileSync(require.resolve("axe-core/axe.min.js"), "utf-8");
     await frame.evaluate(axeSource);
 
-    // every lesson, as the learner sees it, through axe
-    const keys = await frame.evaluate(() => Array.from(document.querySelectorAll(".ck-lesson")).map((l) => [l.dataset.lesson, l.dataset.type]));
-    for (const [key, type] of keys) {
-      await frame.evaluate(show, key);
-      await pause(80);
-      const result = await frame.evaluate(() => window.axe.run(document, { resultTypes: ["violations"] }));
-      result.violations.forEach((v) => {
-        const data = ((v.nodes[0] && v.nodes[0].any[0]) || {}).data || {};
-        const detail = v.id === "color-contrast" && data.contrastRatio
-          ? `${data.contrastRatio}:1, ${data.fgColor} / ${data.bgColor}, ${data.expectedContrastRatio}` : "";
-        out.axe.push({ lesson: key, id: v.id, impact: v.impact, help: v.help, detail,
-          targets: v.nodes.slice(0, 3).map((n) => n.target.join(" ")), count: v.nodes.length });
-      });
-      out.lessons.push({ key, type });
-    }
-
     // each test answered right, after the best path of its scored simulations
     for (const test of scenario.tests) {
       await frame.evaluate(show, test.lesson);
@@ -192,6 +176,22 @@ async function main() {
         out.paths.push({ sim: sim.id, n, ...played, run: sims(cmi)[sim.id] || null, sims: sims(cmi),
           adaptive: await frame.evaluate(adaptive) });
       }
+    }
+
+    // every lesson, as the learner sees it, through axe (last: the simulations that hold their lesson have ended)
+    const keys = await frame.evaluate(() => Array.from(document.querySelectorAll(".ck-lesson")).map((l) => [l.dataset.lesson, l.dataset.type]));
+    for (const [key, type] of keys) {
+      await frame.evaluate(show, key);
+      await pause(80);
+      const result = await frame.evaluate(() => window.axe.run(document, { resultTypes: ["violations"] }));
+      result.violations.forEach((v) => {
+        const data = ((v.nodes[0] && v.nodes[0].any[0]) || {}).data || {};
+        const detail = v.id === "color-contrast" && data.contrastRatio
+          ? `${data.contrastRatio}:1, ${data.fgColor} / ${data.bgColor}, ${data.expectedContrastRatio}` : "";
+        out.axe.push({ lesson: key, id: v.id, impact: v.impact, help: v.help, detail,
+          targets: v.nodes.slice(0, 3).map((n) => n.target.join(" ")), count: v.nodes.length });
+      });
+      out.lessons.push({ key, type });
     }
 
     // out and back in: the unit resumes where it was

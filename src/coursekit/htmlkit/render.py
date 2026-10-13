@@ -390,7 +390,8 @@ def simulation(brick: dict, ctx: Ctx) -> str:
     skin = f" ck-sim-on-{a(data['skin'])}" if data.get("skin") else ""
     options = "".join(f"<li>{d.get('text') or d.get('label')}</li>" for d in (first.get("choices") or []) + (first.get("hotspots") or []))
     fallback = f'<div class="ck-sim-static">{first.get("text", "")}<ul>{options}</ul></div>'
-    return (f'<section class="ck-sim ck-sim-{a(data.get("kind", "scenario"))}{skin}" data-sim="{a(data.get("id", ""))}" '
+    blocks = ' data-blocks=""' if (brick.get("meta") or {}).get("blocks") else ""  # the rest of the lesson waits for its ending
+    return (f'<section class="ck-sim ck-sim-{a(data.get("kind", "scenario"))}{skin}" data-sim="{a(data.get("id", ""))}"{blocks} '
             f'data-id="{a(ctx.next_id())}" aria-label="{a(re.sub(r"<[^>]+>", "", data.get("title", "")))}">'
             f'<h3 class="ck-sim-title">{data.get("title", "")}</h3>{fallback}'
             f'<script type="application/json" class="ck-sim-data">{payload}</script></section>')

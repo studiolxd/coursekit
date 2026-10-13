@@ -165,8 +165,9 @@ function mailWeb(screen, ui) {
 
 // ── chat ───────────────────────────────────────────────────────────────────────────────────────
 
-function chatLines(messages, cls) {
-  const list = el("ol", { class: cls });
+// The messages of a chat; it scrolls on its own, so it takes the focus (the keyboard scrolls it) and has a name.
+function chatLines(messages, cls, label) {
+  const list = el("ol", { class: cls, tabindex: "0", "aria-label": label });
   messages.forEach((msg, i) => {
     const mine = msg.me === true;
     const row = el("li", { class: mine ? "is-me" : "", "data-target": msg.target === false ? null : `message:${i + 1}` });
@@ -192,7 +193,7 @@ function chatWorkspace(screen, ui, messages) {
     + (screen.channels || [screen.channel || "General"]).map((c) => `<span class="${plain(c) === plain(screen.channel) ? "is-active" : ""}"># ${c}</span>`).join("");
   const main = el("div", { class: "ck-cw-main" });
   main.appendChild(el("header", { class: "ck-cw-head" }, `<strong># ${screen.channel || "General"}</strong>${icon("video")}${icon("more")}`));
-  main.appendChild(chatLines(messages, "ck-cw-lines"));
+  main.appendChild(chatLines(messages, "ck-cw-lines", ui.skin_chat));
   main.appendChild(el("div", { class: "ck-cw-compose", "aria-hidden": "true" }, `<span>${ui.skin_type_message}</span>${icon("send")}`));
   app.append(rail, side, main);
   return app;
@@ -206,7 +207,7 @@ function messenger(screen, ui, messages) {
   head.appendChild(el("div", { class: "ck-ms-who" }, `<strong>${screen.contact || ""}</strong><small>${screen.status || ui.skin_online}</small>`));
   head.insertAdjacentHTML("beforeend", `<span class="ck-ms-tools">${icon("video")}${icon("phone")}${icon("more")}</span>`);
   app.appendChild(head);
-  app.appendChild(chatLines(messages, "ck-ms-lines"));
+  app.appendChild(chatLines(messages, "ck-ms-lines", ui.skin_chat));
   app.appendChild(el("div", { class: "ck-ms-compose", "aria-hidden": "true" }, `<span>${ui.skin_type_message}</span><b>${icon("mic")}</b>`));
   return app;
 }
@@ -220,7 +221,7 @@ function phone(screen, ui, messages) {
     head.appendChild(avatar(screen.caller));
     head.appendChild(el("strong", { "data-target": "caller" }, screen.caller || ""));
     if (screen.number) head.appendChild(el("small", { "data-target": "number" }, screen.number));
-    app.append(head, chatLines(messages, "ck-ph-lines"));
+    app.append(head, chatLines(messages, "ck-ph-lines", ui.skin_chat));
     return app;
   }
   const call = el("div", { class: "ck-ph-call" });

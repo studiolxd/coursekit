@@ -677,15 +677,15 @@ def walk(bricks: list[dict]):
             yield from walk((brick["data"].get("then") or []) + (brick["data"].get("else") or []))
 
 
-def for_creator(bricks: list[dict], ctx: dict, key: str, opens: bool = False) -> list[dict]:
+def for_creator(bricks: list[dict], ctx: dict, key: str) -> list[dict]:
     """Creator has no adaptive content (its neutral branch is assembled) and takes a simulation as an EMBED of its package
     (`SIM-<id>` in the manifest, built with `coursekit media embed` and uploaded); until it is uploaded, a note stands for it.
-    `opens`: the first brick is the simulation that opens a section of a decision-based course; its EMBED blocks the lesson
-    until the simulation reaches an ending (the package says `complete`), so the learner decides before reading."""
+    A simulation marked `meta.blocks` (it opens a section of a decision-based course) blocks the lesson until it reaches an
+    ending (the package says `complete`), so the learner decides before reading."""
     from coursekit.htmlkit.simpackage import asset_id
 
     out: list[dict] = []
-    for n, brick in enumerate(bricks):
+    for brick in bricks:
         if brick["type"] == "CONDITIONAL":
             ctx["warnings"].append(t("assemble", "adaptive_neutral", key=key, condition=brick["data"].get("condition", "")))
             out += for_creator(brick["data"].get("else") or [], ctx, key)
@@ -699,7 +699,7 @@ def for_creator(bricks: list[dict], ctx: dict, key: str, opens: bool = False) ->
                 # unique in the course); `scored` and `weight` as the simulation says
                 properties = {"embedFolderPrefix": asset["asset_path"], "embedTitle": title, "simulationId": sid,
                               "scored": brick["data"].get("scored") is True, "weight": float(brick["data"].get("weight") or 1)}
-                if opens and n == 0:
+                if brick["meta"].get("blocks"):
                     properties["blocker_enabled"] = True
                 out.append({"type": "EMBED", "data": {"properties": properties}, "meta": meta})
             else:
@@ -755,11 +755,15 @@ def build_plan(course: dict, unit: dict, assets: dict[str, dict] | None = None,
                             "quiz": quiz_settings(course, unit, m.group(1), m.group(2)),
                             "bricks": parse_blocks(body, ctx, key)})
 
-    decision_based = (course.get("design") or {}).get("approach") == "decision-based"
+    if (course.get("design") or {}).get("approach") == "decision-based":
+        # the simulation that opens a content section holds the rest of the lesson until it reaches an ending: the learner
+        # decides before reading (creator: the EMBED's blocking; html: the player hides what follows)
+        for lesson in lessons:
+            if lesson["type"] == "content" and lesson["bricks"] and lesson["bricks"][0]["type"] == "SIMULATION":
+                lesson["bricks"][0]["meta"]["blocks"] = True
     if coursemod.backend(course) == "creator" and not simulations and course.get("_project"):
         for lesson in lessons:
-            opens = decision_based and lesson["type"] == "content"
-            lesson["bricks"] = for_creator(lesson["bricks"], ctx, lesson["key"], opens)
+            lesson["bricks"] = for_creator(lesson["bricks"], ctx, lesson["key"])
     for lesson in lessons:
         for brick in lesson["bricks"]:
             brick["hash"] = brick_hash(brick)

@@ -22,6 +22,31 @@ const simulations = initSimulations(document, ui, tracker);
 const adapt = () => updateAdaptive(document, tracker);
 simulations.forEach((sim) => sim.onChange(adapt));
 
+// The simulation that opens a section of a decision-based course (`data-blocks`) holds the rest of its lesson, and the
+// "next" button, until it reaches an ending: the learner decides before reading the explanation.
+const blockers = simulations.map((sim) => ({ sim, root: document.querySelector(`.ck-sim[data-sim="${sim.id}"]`) }))
+  .filter(({ root }) => root && root.hasAttribute("data-blocks"));
+const lockedLessons = new Set();
+blockers.forEach(({ sim, root }) => {
+  const lesson = root.closest(".ck-lesson");
+  const hint = document.createElement("p");
+  hint.className = "ck-sim-locked";
+  hint.textContent = ui.sim_locked;
+  root.after(hint);
+  const rest = [];
+  for (let node = hint.nextElementSibling; node; node = node.nextElementSibling) rest.push(node);
+  const apply = () => {
+    const locked = !sim.finished();
+    rest.forEach((node) => { node.hidden = locked; });
+    hint.hidden = !locked;
+    if (locked) lockedLessons.add(lesson);
+    else lockedLessons.delete(lesson);
+    updateNext();
+  };
+  sim.onChange(apply);
+  apply();
+});
+
 function format(text, values) {
   return Object.entries(values).reduce((out, [key, val]) => out.replace(`{${key}}`, val), text);
 }
@@ -35,6 +60,10 @@ function updateProgress() {
   }
 }
 
+function updateNext() {
+  next.disabled = current === lessons.length - 1 || lockedLessons.has(lessons[current]);
+}
+
 function show(index, focus) {
   current = Math.max(0, Math.min(lessons.length - 1, index));
   lessons.forEach((lesson, i) => {
@@ -46,7 +75,7 @@ function show(index, focus) {
     link.parentNode.classList.toggle("is-visited", tracker.state.visited.includes(i) || i === current);
   });
   previous.disabled = current === 0;
-  next.disabled = current === lessons.length - 1;
+  updateNext();
   tracker.visit(current, lessons[current].dataset.lesson);
   adapt();
   updateProgress();

@@ -99,6 +99,7 @@ player:
   sim_checkpoint: Back to the last checkpoint
   sim_restart: Start again
   sim_finish_first: Finish the simulations of this test first.
+  sim_locked: Decide until you reach an ending; then the section goes on.
   skin_mail_app: Mail
   skin_chat_app: Team
   skin_inbox: Inbox
