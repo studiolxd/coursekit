@@ -203,7 +203,7 @@ unit 1: 5 files in courses/PWD/assembly/html/unit-01
 package PWD-U01-v1.0-scorm12.zip (212.4 KB)
 ```
 
-Without `--version` the last line is `preview: open courses/PWD/assembly/html/unit-01/index.html in the browser`. Warnings are printed first (`WARNING …`): a `labelled-graphic` whose image is not produced yet, and a produced asset whose file does not exist.
+Without `--version` the last line is `preview: coursekit preview PWD (with a simulated LMS), or open courses/PWD/assembly/html/unit-01/index.html in the browser` (see [Preview with a simulated LMS](#preview-with-a-simulated-lms)). Warnings are printed first (`WARNING …`): a `labelled-graphic` whose image is not produced yet, and a produced asset whose file does not exist.
 
 Each build starts from scratch: the unit's folder is deleted and written again. The standard (SCORM 1.2 or 2004 4th edition) is `export.standard` of the delivery configuration ([SCORM export settings](#scorm-export-settings)). The command fails, with exit code 1 and the list of problems, when:
 
@@ -285,6 +285,30 @@ The runtime is `@studiolxd/scorm`, bundled into `assets/player.js`.
 | Score | Raw (percentage), minimum 0 and maximum 100; also scaled in SCORM 2004 |
 | Interactions | One per question of the test: its id, the type (choice for single and multiple choice, fill-in for the rest), the learner's response (cut at 250 characters), correct or incorrect, weight 1. And one per decision in a simulation: `<simulation>-<n>`, choice, the text of the decision, correct when it earned points, incorrect when it lost them and neutral otherwise, weighted by its points |
 | Session | Session time and exit `suspend`; the data is committed after every change and the session is terminated when the page is hidden or closed |
+
+### Preview with a simulated LMS
+
+The folder of a unit opens from the disk, but then the package has no LMS: its tracking stays in memory and is lost on
+closing. [`coursekit preview`](03-commands.md#coursekit-preview) plays it as a platform would:
+
+```bash
+coursekit preview PWD            # opens http://127.0.0.1:8765/ in the browser
+```
+
+- A local server shows a page that holds the SCORM 1.2 and 2004 APIs, with the unit inside: the package finds its LMS
+  and sends what it would send on a platform. Nothing leaves the machine.
+- What the unit sends is kept in the browser, per course and unit: **Exit and reopen** closes the session (exit and
+  finish) and opens it again, so you see whether it resumes where it was (`entry: resume`, the location, the state of
+  each simulation). **Clear the tracking** starts the unit from scratch.
+- A side panel shows the tracking live: completion, success, score, location, entry and exit; the saved state
+  (`suspend_data`) with its size against the limit of the standard (4,096 characters in SCORM 1.2); every interaction
+  (id, response, result and weight: one per question of a test and one per decision of a simulation); and the calls to
+  the API.
+- When a unit is built again (`coursekit assemble build` in another terminal), it reopens by itself.
+- A selector changes unit. A unit that is not built shows the command that builds it.
+
+It is a check of the package, not a replacement for a test on the real platform (SCORM Cloud or the client's LMS)
+before delivering.
 
 ### Styles
 
@@ -615,7 +639,7 @@ The same course with the html backend (`assembly.backend: html`) skips the links
 ```bash
 coursekit assemble build PWD --unit 1
 # unit 1: 5 files in courses/PWD/assembly/html/unit-01
-# preview: open courses/PWD/assembly/html/unit-01/index.html in the browser
+# preview: coursekit preview PWD (with a simulated LMS), or open courses/PWD/assembly/html/unit-01/index.html in the browser
 coursekit assemble build PWD --unit 1 --version 1.0
 # package PWD-U01-v1.0-scorm12.zip (212.4 KB)
 # (try the zip in the target LMS or SCORM Cloud, and host it for the client if there is a review)

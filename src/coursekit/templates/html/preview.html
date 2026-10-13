@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="__LANG__">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+  :root { --line: #d8dbe0; --muted: #5b6270; --bg: #f5f6f8; --accent: #1f5fbf; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; color: #1b1f27; }
+  body { display: grid; grid-template-rows: auto 1fr; }
+  header { display: flex; gap: .75rem; align-items: center; padding: .5rem .75rem; border-bottom: 1px solid var(--line); background: var(--bg); flex-wrap: wrap; }
+  header strong { margin-right: auto; white-space: nowrap; }
+  header select { max-width: 20rem; }
+  header label { display: flex; gap: .35rem; align-items: center; }
+  button, select { font: inherit; padding: .3rem .6rem; border: 1px solid var(--line); border-radius: 6px; background: #fff; cursor: pointer; }
+  button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  main { display: grid; grid-template-columns: 1fr 420px; min-height: 0; }
+  main.wide { grid-template-columns: 1fr 0; }
+  main.wide aside { display: none; }
+  iframe { width: 100%; height: 100%; border: 0; background: #fff; }
+  aside { border-left: 1px solid var(--line); overflow: auto; padding: .75rem; background: #fff; }
+  h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 1rem 0 .4rem; }
+  h2:first-child { margin-top: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: .2rem .3rem; border-bottom: 1px solid var(--line); vertical-align: top; word-break: break-word; }
+  th { color: var(--muted); font-weight: 500; }
+  #status th { width: 40%; }
+  #interactions td:first-child { word-break: break-all; }
+  pre { margin: 0; padding: .5rem; background: var(--bg); border-radius: 6px; font-size: 12px; white-space: pre-wrap; word-break: break-all; max-height: 16rem; overflow: auto; }
+  .meter { height: 6px; background: var(--bg); border-radius: 3px; margin: .3rem 0; overflow: hidden; }
+  .meter span { display: block; height: 100%; background: var(--accent); }
+  .meter.over span { background: #b3261e; }
+  .muted { color: var(--muted); font-size: 12px; }
+  .note { padding: 2rem; color: var(--muted); }
+  ol.calls { margin: 0; padding-left: 1.2rem; font: 12px/1.35 ui-monospace, Menlo, monospace; max-height: 14rem; overflow: auto; }
+</style>
+</head>
+<body>
+<header>
+  <strong id="title"></strong>
+  <label><span id="unit-label"></span> <select id="unit"></select></label>
+  <span class="muted" id="standard"></span>
+  <button type="button" id="reopen"></button>
+  <button type="button" id="reset"></button>
+  <button type="button" id="toggle"></button>
+</header>
+<main id="main">
+  <div id="stage"></div>
+  <aside aria-live="off">
+    <h2 id="h-status"></h2>
+    <table id="status"></table>
+    <h2 id="h-suspend"></h2>
+    <div class="meter" id="meter"><span></span></div>
+    <div class="muted" id="chars"></div>
+    <pre id="suspend"></pre>
+    <h2 id="h-interactions"></h2>
+    <table id="interactions"></table>
+    <h2 id="h-calls"></h2>
+    <ol class="calls" id="calls"></ol>
+  </aside>
+</main>
+<script>
+(() => {
+  "use strict";
+  const config = __CONFIG__;
+  const T = config.texts;
+  const $ = (id) => document.getElementById(id);
+  const is2004 = config.standard === "2004";
+  const budget = is2004 ? 64000 : 4096;
+  let unit = config.first;
+  let data = {};
+  let calls = [];
+  let open = false;
+  let lastError = "0";
+
+  const key = () => `coursekit-preview:${config.course}:${unit}:${config.standard}`;
+  const load = () => {
+    try { data = JSON.parse(localStorage.getItem(key()) || "{}"); } catch (e) { data = {}; }
+  };
+  const persist = () => localStorage.setItem(key(), JSON.stringify(data));
+
+  // ── the simulated LMS ──────────────────────────────────────────────────────────
+  const K = is2004 ? {
+    status: "cmi.completion_status", success: "cmi.success_status", score: "cmi.score.raw", location: "cmi.location",
+    progress: "cmi.progress_measure", entry: "cmi.entry", exit: "cmi.exit", time: "cmi.session_time", suspend: "cmi.suspend_data",
+  } : {
+    status: "cmi.core.lesson_status", success: null, score: "cmi.core.score.raw", location: "cmi.core.lesson_location",
+    progress: null, entry: "cmi.core.entry", exit: "cmi.core.exit", time: "cmi.core.session_time", suspend: "cmi.suspend_data",
+  };
+  const defaults = is2004 ? {
+    "cmi._version": "1.0", "cmi.learner_id": "preview", "cmi.learner_name": "Preview, Learner", "cmi.mode": "normal",
+    "cmi.credit": "credit", "cmi.completion_status": "unknown", "cmi.success_status": "unknown", "cmi.total_time": "PT0S",
+    "cmi.launch_data": "", "cmi.location": "", "cmi.suspend_data": "", "cmi.completion_threshold": "", "cmi.scaled_passing_score": "",
+  } : {
+    "cmi.core._children": "student_id,student_name,lesson_location,credit,lesson_status,entry,score,total_time,lesson_mode,exit,session_time",
+    "cmi.core.student_id": "preview", "cmi.core.student_name": "Preview, Learner", "cmi.core.lesson_mode": "normal",
+    "cmi.core.credit": "credit", "cmi.core.lesson_status": "not attempted", "cmi.core.total_time": "0000:00:00",
+    "cmi.launch_data": "", "cmi.core.lesson_location": "", "cmi.suspend_data": "", "cmi.student_data.mastery_score": "",
+  };
+  const interactionIndexes = () => {
+    const seen = new Set();
+    Object.keys(data.cmi || {}).forEach((k) => { const m = /^cmi\.interactions\.(\d+)\./.exec(k); if (m) seen.add(Number(m[1])); });
+    return [...seen].sort((a, b) => a - b);
+  };
+  const log = (name, args, result) => {
+    calls.push(`${name}(${args.map((a) => JSON.stringify(a)).join(", ")}) → ${JSON.stringify(result)}`);
+    if (calls.length > 200) calls = calls.slice(-200);
+    render();
+  };
+  const initialize = () => {
+    load();
+    data.cmi = data.cmi || {};
+    const resumed = data.closedWith === "suspend";
+    // after a normal exit the LMS opens a new attempt and starts the record again
+    if (!resumed && data.launched) data.cmi = {};
+    data.cmi[K.entry] = resumed ? "resume" : "ab-initio";
+    data.launched = true;
+    delete data.closedWith;
+    open = true;
+    persist();
+    return "true";
+  };
+  const getValue = (name) => {
+    if (name === "cmi.interactions._count") return String(interactionIndexes().length);
+    if (name === "cmi.interactions._children") {
+      return is2004 ? "id,type,objectives,timestamp,correct_responses,weighting,learner_response,result,latency,description"
+        : "id,objectives,time,type,correct_responses,weighting,student_response,result,latency";
+    }
+    if (name === "cmi.objectives._count") return "0";
+    const cmi = data.cmi || {};
+    if (name in cmi) return cmi[name];
+    if (name in defaults) return defaults[name];
+    return "";
+  };
+  const setValue = (name, value) => {
+    data.cmi = data.cmi || {};
+    data.cmi[name] = String(value);
+    return "true";
+  };
+  const commit = () => { persist(); return "true"; };
+  const finish = () => {
+    if (!open) { lastError = is2004 ? "113" : "101"; return "false"; }
+    open = false;
+    data.closedWith = (data.cmi || {})[K.exit] === "suspend" ? "suspend" : "normal";
+    persist();
+    return "true";
+  };
+  const errorString = (code) => ({ "0": "No error", "101": "General exception", "113": "Termination after termination" })[code] || "";
+
+  const wrap = (name, fn) => (...args) => {
+    lastError = "0";
+    const result = fn(...args);
+    if (!/GetLastError|GetErrorString|GetDiagnostic/.test(name)) log(name, args, result);
+    return result;
+  };
+  window.API = {
+    LMSInitialize: wrap("LMSInitialize", initialize), LMSFinish: wrap("LMSFinish", finish),
+    LMSGetValue: wrap("LMSGetValue", getValue), LMSSetValue: wrap("LMSSetValue", setValue), LMSCommit: wrap("LMSCommit", commit),
+    LMSGetLastError: () => lastError, LMSGetErrorString: (c) => errorString(String(c)), LMSGetDiagnostic: (c) => errorString(String(c)),
+  };
+  window.API_1484_11 = {
+    Initialize: wrap("Initialize", initialize), Terminate: wrap("Terminate", finish),
+    GetValue: wrap("GetValue", getValue), SetValue: wrap("SetValue", setValue), Commit: wrap("Commit", commit),
+    GetLastError: () => lastError, GetErrorString: (c) => errorString(String(c)), GetDiagnostic: (c) => errorString(String(c)),
+  };
+
+  // ── the panel ─────────────────────────────────────────────────────────────────
+  const cell = (text) => { const td = document.createElement("td"); td.textContent = text; return td; };
+  const row = (label, value) => {
+    const tr = document.createElement("tr");
+    const th = document.createElement("th"); th.textContent = label;
+    tr.append(th, cell(value === "" || value === undefined ? "—" : value));
+    return tr;
+  };
+  function render() {
+    const cmi = data.cmi || {};
+    const get = (k) => (k ? (k in cmi ? cmi[k] : defaults[k] || "") : null);
+    const rows = [[T.completion, get(K.status)], [T.success, get(K.success)], [T.score, get(K.score)], [T.location, get(K.location)],
+      [T.progress, get(K.progress)], [T.entry, get(K.entry)], [T.exit, get(K.exit)], [T.session_time, get(K.time)]]
+      .filter(([, v]) => v !== null);
+    $("status").replaceChildren(...rows.map(([l, v]) => row(l, v)));
+    const raw = get(K.suspend) || "";
+    let pretty = raw;
+    try { pretty = raw ? JSON.stringify(JSON.parse(raw), null, 1) : ""; } catch (e) { /* not JSON: as it is */ }
+    $("suspend").textContent = pretty || T.none;
+    $("chars").textContent = T.chars.replace("{count}", raw.length).replace("{max}", budget);
+    $("meter").classList.toggle("over", raw.length > budget);
+    $("meter").firstElementChild.style.width = `${Math.min(100, (100 * raw.length) / budget)}%`;
+    const field = (i, name) => cmi[`cmi.interactions.${i}.${name}`] || "";
+    const head = document.createElement("tr");
+    [T.interaction_id, T.response, T.result, T.weighting].forEach((h) => { const th = document.createElement("th"); th.textContent = h; head.append(th); });
+    const lines = interactionIndexes().map((i) => {
+      const tr = document.createElement("tr");
+      const id = cell(field(i, "id"));
+      const description = field(i, "description");
+      if (description) id.title = description;
+      tr.append(id, cell(field(i, is2004 ? "learner_response" : "student_response")), cell(field(i, "result")), cell(field(i, "weighting")));
+      return tr;
+    });
+    $("interactions").replaceChildren(...(lines.length ? [head, ...lines] : [row(T.none, "")]));
+    $("calls").replaceChildren(...calls.slice(-60).map((c) => { const li = document.createElement("li"); li.textContent = c; return li; }));
+    $("calls").scrollTop = $("calls").scrollHeight;
+  }
+
+  // ── the unit ──────────────────────────────────────────────────────────────────
+  const stamps = {};
+  function mount() {
+    const info = config.units.find((u) => u.n === unit);
+    load();
+    if (!info || !info.built) {
+      const note = document.createElement("p");
+      note.className = "note";
+      note.textContent = T.not_built.replace("{n}", unit);
+      $("stage").replaceChildren(note);
+      render();
+      return;
+    }
+    const frame = document.createElement("iframe");
+    frame.title = `${T.unit} ${unit}`;
+    frame.src = `/unit/${String(unit).padStart(2, "0")}/index.html?t=${Date.now()}`;
+    $("stage").replaceChildren(frame);
+    $("stage").style.height = "100%";
+    render();
+  }
+  // Closing the unit (removing its frame) ends its session (exit and Finish) under the unit still open; then `then` runs.
+  function close(then) {
+    const frame = $("stage").querySelector("iframe");
+    if (frame) frame.remove();
+    setTimeout(() => { if (then) then(); mount(); }, 50);
+  }
+  const reopen = () => close();
+
+  $("title").textContent = `${config.course} · ${T.panel_title}`;
+  $("unit-label").textContent = T.unit;
+  $("standard").textContent = `${T.standard}: SCORM ${config.standard}`;
+  $("reopen").textContent = T.reopen;
+  $("reset").textContent = T.reset;
+  $("toggle").textContent = T.hide;
+  $("h-status").textContent = T.status;
+  $("h-suspend").textContent = T.suspend_data;
+  $("h-interactions").textContent = T.interactions;
+  $("h-calls").textContent = T.calls;
+  config.units.forEach((u) => {
+    const option = document.createElement("option");
+    option.value = u.n;
+    option.textContent = u.title ? `${u.n} · ${u.title}` : String(u.n);
+    option.selected = u.n === unit;
+    $("unit").append(option);
+  });
+  $("unit").addEventListener("change", (e) => close(() => { unit = Number(e.target.value); calls = []; }));
+  $("reopen").addEventListener("click", reopen);
+  $("reset").addEventListener("click", () => close(() => { localStorage.removeItem(key()); calls = []; }));
+  $("toggle").addEventListener("click", () => {
+    const wide = $("main").classList.toggle("wide");
+    $("toggle").textContent = wide ? T.show : T.hide;
+  });
+  // the unit reloads when it is built again (`coursekit assemble build` in another terminal)
+  setInterval(() => {
+    fetch("/__ck/stamps", { cache: "no-store" }).then((r) => r.json()).then((now) => {
+      config.units.forEach((u) => {
+        const value = now[String(u.n)] || 0;
+        const before = stamps[u.n];
+        stamps[u.n] = value;
+        u.built = value > 0;
+        if (before !== undefined && before !== value && u.n === unit) {
+          calls.push(T.reloaded);
+          reopen();
+        }
+      });
+    }).catch(() => {});
+  }, 1500);
+  mount();
+})();
+</script>
+</body>
+</html>

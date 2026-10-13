@@ -146,6 +146,13 @@ help_paths:
   es: "todos los caminos de las simulaciones de un curso, con su diagrama, en reviews/unit-NN-paths.md (para la revisión)"
   en: "every path of the simulations of a course, with its flowchart, in reviews/unit-NN-paths.md (for the review)"
 help_paths_unit: {es: "solo esta unidad", en: "only this unit"}
+help_preview:
+  es: "juega las unidades de un curso html con un LMS simulado: guarda el progreso en el navegador y muestra el seguimiento SCORM en vivo"
+  en: "play the units of an html course with a simulated LMS: it keeps the progress in the browser and shows the SCORM tracking live"
+help_preview_unit: {es: "la unidad que se abre primero (si no está construida, se construye)", en: "the unit that opens first (built if it is not)"}
+help_preview_build: {es: "construir antes las unidades (todas, o la de --unit)", en: "build the units first (every one, or the one of --unit)"}
+help_preview_port: {es: "puerto local (por defecto 8765; si está ocupado, uno libre)", en: "local port (8765 by default; a free one if it is taken)"}
+help_preview_no_open: {es: "no abrir el navegador", en: "do not open the browser"}
 help_voice_character:
   es: "fija la voz de este personaje (del proveedor del curso) en vez de la del curso"
   en: "set the voice of this character (of the provider of the course) instead of the course voice"

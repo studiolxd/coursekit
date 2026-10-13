@@ -1,0 +1,36 @@
+# `coursekit preview`: the local server and the texts of its panel.
+serving: {es: "vista previa en {url}", en: "preview at {url}"}
+stop_hint: {es: "Ctrl+C para pararla", en: "Ctrl+C to stop it"}
+needs_html:
+  es: "{code} usa el backend {backend}: la vista previa con LMS simulado es del backend html (en creator, usa su vista previa)"
+  en: "{code} uses the {backend} backend: the preview with a simulated LMS is for the html backend (in creator, use its preview)"
+building: {es: "construyendo la unidad {n}…", en: "building unit {n}…"}
+panel_title: {es: "Vista previa con LMS simulado", en: "Preview with a simulated LMS"}
+unit: {es: "Unidad", en: "Unit"}
+standard: {es: "Estándar", en: "Standard"}
+status: {es: "Seguimiento", en: "Tracking"}
+completion: {es: "Finalización", en: "Completion"}
+success: {es: "Superación", en: "Success"}
+score: {es: "Nota", en: "Score"}
+location: {es: "Ubicación", en: "Location"}
+progress: {es: "Progreso", en: "Progress"}
+entry: {es: "Entrada", en: "Entry"}
+exit: {es: "Salida", en: "Exit"}
+session_time: {es: "Tiempo de la sesión", en: "Session time"}
+suspend_data: {es: "Estado guardado (suspend_data)", en: "Saved state (suspend_data)"}
+chars: {es: "{count} de {max} caracteres", en: "{count} of {max} characters"}
+interactions: {es: "Interacciones", en: "Interactions"}
+interaction_id: {es: "Id", en: "Id"}
+response: {es: "Respuesta", en: "Response"}
+result: {es: "Resultado", en: "Result"}
+weighting: {es: "Peso", en: "Weight"}
+none: {es: "ninguna", en: "none"}
+calls: {es: "Llamadas a la API", en: "API calls"}
+reopen: {es: "Salir y volver a entrar", en: "Exit and reopen"}
+reset: {es: "Borrar el seguimiento", en: "Clear the tracking"}
+reloaded: {es: "— unidad reconstruida: se vuelve a abrir —", en: "— unit rebuilt: it opens again —"}
+not_built:
+  es: "La unidad {n} no está construida: coursekit assemble build CODE --unit {n}"
+  en: "Unit {n} is not built: coursekit assemble build CODE --unit {n}"
+hide: {es: "Ocultar el panel", en: "Hide the panel"}
+show: {es: "Mostrar el panel", en: "Show the panel"}

@@ -83,7 +83,7 @@ Mientras un curso está en `on_hold`, los comandos que cambian su trabajo se rec
 | Estado del curso y revisión del cliente | `coursekit hold`, `coursekit resume`, `coursekit client` |
 | Lanzar agentes | `coursekit write`, `coursekit review`, `coursekit run` |
 | Multimedia | `coursekit media`, `coursekit voice`, `coursekit tts`, `coursekit subtitles`, `coursekit theme` |
-| Montaje y entrega | `coursekit assemble`, `coursekit directives`, `coursekit delivery`, `coursekit publish`, `coursekit catalog` |
+| Montaje y entrega | `coursekit assemble`, `coursekit preview`, `coursekit directives`, `coursekit delivery`, `coursekit publish`, `coursekit catalog` |
 
 ## Proyecto y máquina
 
@@ -887,7 +887,7 @@ Acción del backend html:
 
 - `build`: construye cada unidad (la de `--unit` o todas, por orden) en `courses/<CODE>/assembly/html/unit-NN/`, una carpeta que se abre desde el disco en un navegador (`index.html`, `assets/styles.css`, el reproductor empaquetado `assets/player.js`, los recursos producidos en `media/` e `imsmanifest.xml`). La carpeta se rehace desde cero cada vez y el `.gitignore` del proyecto la ignora (`courses/*/assembly/html/`). El contenido es el mismo `content.md` y `assessment.md` que lee el backend creator, convertido al mismo plan, con los recursos `produced` (o `uploaded`) copiados en el paquete. Los estilos son la maqueta base del paquete, los tokens del curso, `theme/maqueta.css`, `courses/<CODE>/theme/maqueta.css` y `components/*.css`; el reproductor empaqueta los `components/*.js` del proyecto ([04-configuration.md](04-configuration.md#ficheros-del-backend-html)). El estándar SCORM sale de `delivery.yaml › export.standard` y los ajustes del cuestionario (nota para aprobar, intentos) del curso. Con `--version X.Y` escribe además el zip `courses/<CODE>/delivery/<nombre de delivery.yaml › file_name>` (por ejemplo `PWD-U01-v1.0-scorm12.zip`, el nombre que imprime `coursekit delivery name`), con `imsmanifest.xml` el primero en la raíz, listo para `coursekit delivery add`. La primera construcción prepara el constructor (`npm install` de `@studiolxd/scorm` y `esbuild` en el almacén) si `coursekit setup` no lo ha hecho todavía. Cuando todas las unidades del curso están construidas y el curso está en `media`, pasa a `assembly` e imprime `todas las unidades están construidas: el curso pasa a assembly`.
 
-Salida de `build`, por unidad: los avisos (`AVISO …`: por ejemplo un recurso producido cuyo fichero no existe, o la imagen de un gráfico etiquetado que todavía no está producida; un marcador sin fichero producido se queda en la página como una nota visible), después `unidad N: F ficheros en courses/<CODE>/assembly/html/unit-NN` y, con `--version`, `paquete <nombre> (<tamaño>)` o, sin ella, `vista previa: abre courses/<CODE>/assembly/html/unit-NN/index.html en el navegador`. Sin un LMS, la vista previa guarda el estado del alumno solo en memoria.
+Salida de `build`, por unidad: los avisos (`AVISO …`: por ejemplo un recurso producido cuyo fichero no existe, o la imagen de un gráfico etiquetado que todavía no está producida; un marcador sin fichero producido se queda en la página como una nota visible), después `unidad N: F ficheros en courses/<CODE>/assembly/html/unit-NN` y, con `--version`, `paquete <nombre> (<tamaño>)` o, sin ella, `vista previa: coursekit preview <CODE> (con LMS simulado), o abre courses/<CODE>/assembly/html/unit-NN/index.html en el navegador`. Abierta desde el disco, sin LMS, la carpeta guarda el estado del alumno solo en memoria: [`coursekit preview`](#coursekit-preview) la juega con un LMS simulado.
 
 `build` se detiene en la primera unidad que no se puede construir (código de salida 1, los problemas por stderr tras `coursekit:`, uno por línea) y no empaqueta nada de ella. Los problemas son:
 
@@ -903,6 +903,28 @@ Códigos de salida: `0` cuando se construyeron todas las unidades; `1` por los p
 coursekit assemble plan PWD --unit 1
 coursekit assemble build PWD --unit 1
 coursekit assemble build PWD --version 1.0
+```
+
+### `coursekit preview`
+
+Juega las unidades de un curso con el backend html como lo haría el alumno en una plataforma, con un LMS simulado. Quién: los dos (quien construye el paquete y quien revisa). Ver [Vista previa con LMS simulado](08-assembly-and-delivery.md#vista-previa-con-lms-simulado).
+
+```
+coursekit preview [--unit UNIT] [--build] [--port PORT] [--no-open] code
+```
+
+| Argumento | Valores / por defecto | Significado |
+|---|---|---|
+| `code` | código o carpeta del curso | Curso que se juega. |
+| `--unit UNIT` | número; por defecto: la primera unidad | La unidad que se abre primero; si no está construida, se construye. |
+| `--build` | indicador | Construir antes las unidades: todas, o la de `--unit`. |
+| `--port PORT` | número; por defecto: `8765` | Puerto local del servidor (`127.0.0.1`); si está ocupado, uno libre. |
+| `--no-open` | indicador | No abrir el navegador: solo escribe la dirección. |
+
+Escribe `vista previa en http://127.0.0.1:8765/` y sirve hasta Ctrl+C. Códigos de salida: `0` al pararla; `1` con un curso del backend creator (usa la vista previa de creator), una unidad que no existe o una construcción que falla.
+
+```
+coursekit preview PWD --unit 2
 ```
 
 ### `coursekit directives`

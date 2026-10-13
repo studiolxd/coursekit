@@ -170,6 +170,35 @@ def cmd_paths(args: argparse.Namespace) -> int:
     return 1 if failed else 0
 
 
+def cmd_preview(args: argparse.Namespace) -> int:
+    from coursekit import preview
+    from coursekit.htmlkit import build as htmlbuild
+
+    course = coursemod.load(_project(), args.code)
+    if coursemod.backend(course) != "html":
+        print(t("preview", "needs_html", code=course["code"], backend=coursemod.backend(course)), file=sys.stderr)
+        return 1
+    units = course.get("units") or []
+    if not units:
+        print(t("commands", "no_units"), file=sys.stderr)
+        return 1
+    if args.unit is not None and not any(u["n"] == args.unit for u in units):
+        print(t("commands", "unit_not_found", n=args.unit), file=sys.stderr)
+        return 1
+    first = args.unit if args.unit is not None else units[0]["n"]
+    for unit in units:
+        if (args.build and (args.unit is None or unit["n"] == args.unit)) or (unit["n"] == first and not preview.stamp(course, first)):
+            print(t("preview", "building", n=unit["n"]))
+            try:
+                result = htmlbuild.build(course, unit, None)
+            except htmlbuild.HtmlBuildError as exc:
+                print(t("commands", "error_line", text=exc), file=sys.stderr)
+                return 1
+            for warning in result.warnings:
+                print(t("commands", "warning_line", text=warning))
+    return preview.run(course, units, first, args.port, not args.no_open)
+
+
 def cmd_verify(args: argparse.Namespace) -> int:
     course = coursemod.load(_project(), args.code)
     problem = coursemod.approval_problem(course)
@@ -399,7 +428,8 @@ def cmd_assemble_build(course: dict, args: argparse.Namespace) -> int:
         if result.package:
             print(t("htmlkit", "packaged", name=result.package.name, size=_size(result.package)))
         else:
-            print(t("htmlkit", "preview", path=(result.out_dir / "index.html").relative_to(course["_project"].root).as_posix()))
+            index = (result.out_dir / "index.html").relative_to(course["_project"].root).as_posix()
+            print(t("htmlkit", "preview", code=course["code"], path=index))
     message = htmlbuild.mark_assembled(course)
     if message:
         print(message)
@@ -763,6 +793,14 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("code")
     p.add_argument("--unit", type=int, help=t("commands", "help_paths_unit"))
     p.set_defaults(func=cmd_paths)
+
+    p = sub.add_parser("preview", help=t("commands", "help_preview"))
+    p.add_argument("code")
+    p.add_argument("--unit", type=int, help=t("commands", "help_preview_unit"))
+    p.add_argument("--build", action="store_true", help=t("commands", "help_preview_build"))
+    p.add_argument("--port", type=int, default=8765, help=t("commands", "help_preview_port"))
+    p.add_argument("--no-open", action="store_true", help=t("commands", "help_preview_no_open"))
+    p.set_defaults(func=cmd_preview)
 
     p = sub.add_parser("verify", help=t("commands", "help_verify"))
     p.add_argument("code")

@@ -83,7 +83,7 @@ While a course is `on_hold`, the commands that change its work are refused with 
 | Course state and client review | `coursekit hold`, `coursekit resume`, `coursekit client` |
 | Launching agents | `coursekit write`, `coursekit review`, `coursekit run` |
 | Media | `coursekit media`, `coursekit voice`, `coursekit tts`, `coursekit subtitles`, `coursekit theme` |
-| Assembly and delivery | `coursekit assemble`, `coursekit directives`, `coursekit delivery`, `coursekit publish`, `coursekit catalog` |
+| Assembly and delivery | `coursekit assemble`, `coursekit preview`, `coursekit directives`, `coursekit delivery`, `coursekit publish`, `coursekit catalog` |
 
 ## Project and machine
 
@@ -887,7 +887,7 @@ Action of the html backend:
 
 - `build`: builds each unit (the one in `--unit`, or every unit in order) into `courses/<CODE>/assembly/html/unit-NN/`, a folder that opens from the disk in a browser (`index.html`, `assets/styles.css`, the bundled player `assets/player.js`, the produced media in `media/` and `imsmanifest.xml`). The folder is rebuilt from scratch every time and the project `.gitignore` ignores it (`courses/*/assembly/html/`). The content is the same `content.md` and `assessment.md` the creator backend reads, converted to the same plan, with the media that are `produced` (or `uploaded`) copied into the package. The styles are the base layout of the package, the tokens of the course, `theme/maqueta.css`, `courses/<CODE>/theme/maqueta.css` and `components/*.css`; the player bundles `components/*.js` of the project ([04-configuration.md](04-configuration.md#files-of-the-html-backend)). The SCORM standard comes from `delivery.yaml › export.standard` and the quiz settings (passing score, attempts) from the course. With `--version X.Y` it also writes the zip `courses/<CODE>/delivery/<name from delivery.yaml › file_name>` (for example `PWD-U01-v1.0-scorm12.zip`, the name `coursekit delivery name` prints), with `imsmanifest.xml` first at its root, ready for `coursekit delivery add`. The first build prepares the builder (`npm install` of `@studiolxd/scorm` and `esbuild` in the store) if `coursekit setup` has not done it yet. When every unit of the course has been built and the course is in `media`, it moves to `assembly` and prints `every unit is built: the course moves to assembly`.
 
-Output of `build`, per unit: the warnings (`WARNING …`: for example a produced asset whose file does not exist, or the image of a labelled graphic that is not produced yet; a placeholder without a produced file stays in the page as a visible note), then `unit N: F files in courses/<CODE>/assembly/html/unit-NN` and either `package <name> (<size>)` with `--version` or `preview: open courses/<CODE>/assembly/html/unit-NN/index.html in the browser` without it. Without an LMS the preview keeps the learner's state only in memory.
+Output of `build`, per unit: the warnings (`WARNING …`: for example a produced asset whose file does not exist, or the image of a labelled graphic that is not produced yet; a placeholder without a produced file stays in the page as a visible note), then `unit N: F files in courses/<CODE>/assembly/html/unit-NN` and either `package <name> (<size>)` with `--version` or `preview: coursekit preview <CODE> (with a simulated LMS), or open courses/<CODE>/assembly/html/unit-NN/index.html in the browser` without it. Opened from the disk, without an LMS, the folder keeps the learner's state only in memory: [`coursekit preview`](#coursekit-preview) plays it with a simulated LMS.
 
 `build` stops at the first unit that cannot be built (exit code 1, the problems on stderr after `coursekit:`, one per line) and nothing is packaged for it. The problems are:
 
@@ -903,6 +903,28 @@ Exit codes: `0` when every unit was built; `1` for the problems above, for a uni
 coursekit assemble plan PWD --unit 1
 coursekit assemble build PWD --unit 1
 coursekit assemble build PWD --version 1.0
+```
+
+### `coursekit preview`
+
+Plays the units of a course with the html backend as a learner would on a platform, with a simulated LMS. Who: both (the person who builds the package and the reviewer). See [Preview with a simulated LMS](08-assembly-and-delivery.md#preview-with-a-simulated-lms).
+
+```
+coursekit preview [--unit UNIT] [--build] [--port PORT] [--no-open] code
+```
+
+| Argument | Values / default | Meaning |
+|---|---|---|
+| `code` | course code or folder | Course to play. |
+| `--unit UNIT` | number; default: the first unit | The unit that opens first; if it is not built, it is built. |
+| `--build` | flag | Build the units first: every one, or the one of `--unit`. |
+| `--port PORT` | number; default: `8765` | Local port of the server (`127.0.0.1`); if it is taken, a free one. |
+| `--no-open` | flag | Do not open the browser: only print the address. |
+
+Prints `preview at http://127.0.0.1:8765/` and keeps serving until Ctrl+C. Exit codes: `0` when stopped; `1` for a course with the creator backend (use the creator preview), a unit that does not exist or a build that fails.
+
+```
+coursekit preview PWD --unit 2
 ```
 
 ### `coursekit directives`

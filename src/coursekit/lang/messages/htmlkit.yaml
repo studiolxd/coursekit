@@ -17,4 +17,6 @@ built:
   es: "unidad {n}: {files} ficheros en {path}"
   en: "unit {n}: {files} files in {path}"
 packaged: {es: "paquete {name} ({size})", en: "package {name} ({size})"}
-preview: {es: "vista previa: abre {path} en el navegador", en: "preview: open {path} in the browser"}
+preview:
+  es: "vista previa: coursekit preview {code} (con LMS simulado), o abre {path} en el navegador"
+  en: "preview: coursekit preview {code} (with a simulated LMS), or open {path} in the browser"

@@ -203,7 +203,7 @@ unidad 1: 5 ficheros en courses/PWD/assembly/html/unit-01
 paquete PWD-U01-v1.0-scorm12.zip (212.4 KB)
 ```
 
-Sin `--version` la última línea es `vista previa: abre courses/PWD/assembly/html/unit-01/index.html en el navegador`. Los avisos se imprimen antes (`AVISO …`): un `labelled-graphic` cuya imagen aún no está producida y un recurso producido cuyo fichero no existe.
+Sin `--version` la última línea es `vista previa: coursekit preview PWD (con LMS simulado), o abre courses/PWD/assembly/html/unit-01/index.html en el navegador` (ver [Vista previa con LMS simulado](#vista-previa-con-lms-simulado)). Los avisos se imprimen antes (`AVISO …`): un `labelled-graphic` cuya imagen aún no está producida y un recurso producido cuyo fichero no existe.
 
 Cada construcción empieza de cero: la carpeta de la unidad se borra y se escribe de nuevo. El estándar (SCORM 1.2 o 2004 4.ª edición) es `export.standard` de la configuración de entrega ([Ajustes de exportación SCORM](#ajustes-de-exportación-scorm)). El comando falla, con código de salida 1 y la lista de problemas, cuando:
 
@@ -285,6 +285,31 @@ El runtime es `@studiolxd/scorm`, empaquetado en `assets/player.js`.
 | Puntuación | Bruta (porcentaje), mínimo 0 y máximo 100; en SCORM 2004 también la escalada |
 | Interacciones | Una por pregunta del test: su id, el tipo (choice para la opción simple y múltiple, fill-in para el resto), la respuesta de la persona (cortada a 250 caracteres), correcta o incorrecta, peso 1. Y una por decisión en una simulación: `<simulación>-<n>`, choice, el texto de la decisión, correcta si sumó puntos, incorrecta si los restó y neutral si no, con sus puntos como peso |
 | Sesión | Tiempo de sesión y salida `suspend`; los datos se confirman tras cada cambio y la sesión se termina cuando la página se oculta o se cierra |
+
+### Vista previa con LMS simulado
+
+La carpeta de una unidad se abre desde el disco, pero entonces el paquete no tiene LMS: su seguimiento se queda en
+memoria y se pierde al cerrar. [`coursekit preview`](03-commands.md#coursekit-preview) la juega como lo haría una
+plataforma:
+
+```bash
+coursekit preview PWD            # abre http://127.0.0.1:8765/ en el navegador
+```
+
+- Un servidor local muestra una página que tiene las API de SCORM 1.2 y 2004, con la unidad dentro: el paquete
+  encuentra su LMS y manda lo que mandaría en una plataforma. Nada sale de la máquina.
+- Lo que manda la unidad se guarda en el navegador, por curso y unidad: **Salir y volver a entrar** cierra la sesión
+  (salida y cierre) y la abre otra vez, para ver si sigue donde estaba (`entry: resume`, la ubicación, el estado de
+  cada simulación). **Borrar el seguimiento** empieza la unidad de cero.
+- Un panel lateral muestra el seguimiento en vivo: finalización, superación, nota, ubicación, entrada y salida; el
+  estado guardado (`suspend_data`) con su tamaño frente al límite del estándar (4.096 caracteres en SCORM 1.2); cada
+  interacción (id, respuesta, resultado y peso: una por pregunta de una prueba y una por decisión de una simulación); y
+  las llamadas a la API.
+- Cuando una unidad se vuelve a construir (`coursekit assemble build` en otro terminal), se vuelve a abrir sola.
+- Un selector cambia de unidad. Una unidad sin construir muestra el comando que la construye.
+
+Es una comprobación del paquete, no sustituye a probarlo en la plataforma real (SCORM Cloud o el LMS del cliente)
+antes de entregar.
 
 ### Estilos
 
@@ -615,7 +640,7 @@ El mismo curso con el backend html (`assembly.backend: html`) se salta los enlac
 ```bash
 coursekit assemble build PWD --unit 1
 # unidad 1: 5 ficheros en courses/PWD/assembly/html/unit-01
-# vista previa: abre courses/PWD/assembly/html/unit-01/index.html en el navegador
+# vista previa: coursekit preview PWD (con LMS simulado), o abre courses/PWD/assembly/html/unit-01/index.html en el navegador
 coursekit assemble build PWD --unit 1 --version 1.0
 # paquete PWD-U01-v1.0-scorm12.zip (212.4 KB)
 # (prueba el zip en el LMS de destino o en SCORM Cloud, y aloja el paquete para el cliente si hay revisión)

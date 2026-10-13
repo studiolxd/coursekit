@@ -209,7 +209,7 @@ def test_the_course_moves_to_assembly_when_every_unit_is_built(html_course, caps
 def test_without_a_version_there_is_only_the_preview(html_course, capsys):
     assert main(["assemble", "build", "PWD", "--unit", "1"]) == 0
     out = capsys.readouterr().out
-    assert "preview: open courses/PWD/assembly/html/unit-01/index.html" in out
+    assert "preview: coursekit preview PWD (with a simulated LMS), or open courses/PWD/assembly/html/unit-01/index.html" in out
     assert not (html_course / "delivery").exists() or not list((html_course / "delivery").glob("*.zip"))
     assert "not produced" in out or "warning" in out  # the image of the labelled graphic is still to be produced
 
