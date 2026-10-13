@@ -416,18 +416,25 @@ coursekit download "https://…/export/download?t=…" --out courses/PWD/design/
 Converts the reference material of a course (or of the project) to Markdown for the agents. Use it after dropping files in `brief/sources/` or URLs in `brief/links.md`. Who: both.
 
 ```
-coursekit brief [--refresh] [code]
+coursekit brief [--refresh] [--find FIND] [--section SECTION] [--top TOP] [code]
 ```
 
 | Argument | Values / default | Meaning |
 |---|---|---|
 | `code` | course code or folder; default: the project `brief/` | Brief to convert. With a code, the project brief is converted too and the course index links to it. |
 | `--refresh` | flag | Download the URLs of `links.md` again (by default each URL is downloaded once). |
+| `--find FIND` | text; needs `code` | Do not convert: print the passages of the material (of the course and of the project, `brief/text/`) closest to this text. |
+| `--section SECTION` | `U.S`, e.g. `1.2`; needs `code` | Like `--find`, with the title and objectives of that section of the design and the title of its unit. |
+| `--top TOP` | number; default `rules › brief › passages` (`8`) | How many passages `--find` and `--section` print. |
 
 Converts files of `brief/sources/` to `brief/text/files/` (MarkItDown) and the URLs of `links.md` to `brief/text/web/` (needs Node), only when new or changed, and writes `brief/index.md`, which the agents read, in the content language of the project (or of the course). Images are listed for the agents to open; audio and video need a transcript. With a code it works in `courses/<CODE>/brief/` and creates `sources/`, `links.md` and `notes.md` if missing. Prints a `brief:` summary line (documents, webs, images/audio/video and the index path) and one warning per problem. Exit code 1 if a file could not be converted or if the URLs cannot be downloaded because Node is missing; a download that fails while it runs is reported as a warning and the exit code stays 0.
 
+With `--find` or `--section` it converts nothing: it cuts the Markdown of `brief/text/` into passages (at every heading, and by paragraphs of about `rules › brief › passage_words` words) and ranks them with BM25, locally (accents, plurals and the common words of the course language do not count). It prints `# N passage(s) of the material for «…» (of M)` and each passage under `## i · <file>:<first line>-<last line> · <heading>`, so the writer reads only those lines and cites them. Exit code 1 when the course has no converted material or the section does not exist, 2 without a course code. The writer uses it when the material is larger than `rules › brief › large_words`.
+
 ```
 coursekit brief PWD --refresh
+coursekit brief PWD --section 1.2
+coursekit brief PWD --find "authenticator app versus SMS" --top 3
 ```
 
 ## Verification and sign-off

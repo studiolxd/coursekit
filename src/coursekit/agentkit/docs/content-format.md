@@ -65,6 +65,7 @@ Internal structure (anything else fails at assembly):
 | `note` | optional `{{k_title}}: …` + text |
 | `highlight` | text |
 | `quote` | quote + `— author` on the last line |
+| `reflection` | optional `{{k_title}}: …` + two or three open questions (summary section: what the learner did, what they would change, how they will apply it) |
 | `word-search`, `wordle`, `hangman` | `- WORD` per line |
 | `memory` | `- card content` per line |
 | `pasapalabra` | `- A ({{w_starts}}): definition :: ANSWER` or `({{w_contains}})`; alternatives with `/` |

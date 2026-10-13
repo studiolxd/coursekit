@@ -63,6 +63,28 @@ misconceptions:
   per_objective: 2             # common errors the design lists for each objective (`coursekit approve design` asks for them);
                                # 0: the course does without them (verify then checks the file only if there is one)
 
+# Readability of the prose (warnings of `coursekit verify`, per section). The index is the language's: Szigriszt-Pazos
+# (INFLESZ) in Spanish, Flesch in English; both read alike (65 or more easy, 55-65 normal, 40-55 somewhat hard). Other
+# languages get only the length of their sentences. Directives, placeholders, headings, tables and code are not measured.
+readability:
+  audience: general            # basic | general | specialist: how demanding the prose may be for the people of the course
+  long_sentence_words:         # a sentence with more words than this is long
+    basic: 25
+    general: 30
+    specialist: 40
+  long_share_max: 0.2          # share of long sentences in a section above which verify warns
+  min_index:                   # index below which verify warns
+    basic: 65
+    general: 55
+    specialist: 40
+  min_sentences: 10            # a section with fewer sentences of prose is not measured
+
+# The reference material (brief/): searching it for what a section needs (`coursekit brief CODE --find` / `--section`).
+brief:
+  passage_words: 200           # the material is cut into passages of about this many words (and at every heading)
+  passages: 8                  # passages a search returns (--top changes it)
+  large_words: 20000           # above this many words of material, the writer searches it per section instead of reading it
+
 # Assembly in creator: its code block takes only the languages of its `codeLanguage` list (`get_brick_type_schema` CODE). When it
 # adds some, list them here and coursekit uses them: `plaintext` for the blocks that show output, `shell` ("Terminal") for those
 # made of commands and for `console`/`terminal` fences, `powershell` for PowerShell, `diff`, `dockerfile`, `http`.
@@ -77,6 +99,8 @@ content:
   interactive_per_hour: 4              # distinct interactive directives per content-section hour
   min_interactive_per_content_section: 1
   questions_per_objective: 5           # summative question bank, per objective of the unit
+  reflections_per_unit: 1              # :::reflection in the summary section (or the last one): the learner looks back at what
+                                       # they did and how they will apply it (warning only; 0: not checked)
   placeholder_types: [image, video, animated_gif, infographic, diagram, simulation, terminal_demo, audio]
   # Directives and their creator bricks: config/directives.yaml
   allowed_symbols: "★✔✘·—‹›"

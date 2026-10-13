@@ -30,6 +30,7 @@ import yaml
 from coursekit import config
 from coursekit import course as coursemod
 from coursekit import misconceptions as misconmod
+from coursekit import readability as readmod
 from coursekit import simulation as simmod
 from coursekit import story as storymod
 from coursekit.fingerprint import changed_since_review
@@ -273,6 +274,29 @@ def course_simulations(course: dict, rules: dict) -> list[tuple[int, str, int, s
     return found
 
 
+def check_readability(course: dict, label: str, lines: list[str], report: Report) -> None:
+    """Warnings when the prose of a section is harder than its audience can take (rules › readability)."""
+    cfg = coursemod.rules(course).get("readability") or {}
+    audience = str(cfg.get("audience") or "general")
+    long_words = int((cfg.get("long_sentence_words") or {}).get(audience) or 0)
+    if not long_words:
+        return
+    # the three audiences of the defaults have a name in each language; a project's own one is shown as it is written
+    name = t("verify", f"audience_{audience}") if audience in ("basic", "general", "specialist") else audience
+    language = coursemod.language(course)
+    m = readmod.measure(lines, language, long_words)
+    if m.sentences < int(cfg.get("min_sentences") or 0):
+        return
+    minimum = (cfg.get("min_index") or {}).get(audience)
+    if m.index is not None and minimum is not None and m.index < float(minimum):
+        report.warn(t("verify", "hard_to_read", label=label, index=round(m.index), name=m.index_name, minimum=minimum,
+                      audience=name, average=round(m.average)))
+    share = len(m.long) / m.sentences
+    if share > float(cfg.get("long_share_max") or 1):
+        report.warn(t("verify", "long_sentences", label=label, count=len(m.long), total=m.sentences, words=long_words,
+                      audience=name, example=readmod.start(m.long[0])))
+
+
 CHOICE_BRICKS = ("SINGLE_CHOICE", "MULTI_SELECT", "TRIVIAL")
 
 
@@ -396,6 +420,7 @@ def verify_unit(course: dict, unit: dict) -> Report:
             60 * sim_words(assessment_sims) / words_per_hour, 1))))
     unit_sims: list[simmod.Simulation] = []
     practised: set[str] = set()
+    closing = next((s["n"] for s in specs if s["kind"] == "summary"), specs[-1]["n"] if specs else None)
     min_total = 0
     for spec in specs:
         sec = by_n.get(spec["n"])
@@ -422,6 +447,10 @@ def verify_unit(course: dict, unit: dict) -> Report:
         min_total += minimum
         if sec.title.strip() != spec["title"].strip():
             report.warn(t("verify", "title_differs", label=label, title=sec.title, design=spec["title"]))
+        check_readability(course, label, sec.lines, report)
+        needed_reflections = int(rules.get("reflections_per_unit") or 0)
+        if spec["n"] == closing and sec.directives.count("reflection") < needed_reflections:
+            report.warn(t("verify", "no_reflection", label=label, n=needed_reflections))
         if decision_based and spec["kind"] == "content":
             if not opens_with_simulation(sec, simulations):
                 report.error(t("verify", "section_not_opening_with_simulation", label=label))

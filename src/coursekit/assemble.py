@@ -373,7 +373,8 @@ def directive_brick(name: str, body: list[str], ctx: dict) -> dict:
             items.append({"content": inline(" ".join(lines)), "author": inline(author) if author else ""})
         data = {"items": items}
     elif brick_type == "NOTE":
-        data = {"content": {"title": inline(values.get(syntax.key("title"), syntax.t["note"])), "content": html("\n".join(rest))}}
+        default = syntax.t["reflection"] if name == "reflection" else syntax.t["note"]
+        data = {"content": {"title": inline(values.get(syntax.key("title"), default)), "content": html("\n".join(rest))}}
     elif brick_type == "HIGHLIGHT":
         data = {"content": {"content": html("\n".join(rest))}}
     elif brick_type == "QUOTE":

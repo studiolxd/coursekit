@@ -167,6 +167,19 @@ def context(project: Project) -> dict[str, str]:
         "intro_summary_hours": str(design.get("intro_summary_hours", "0.2–0.3")),
         **decision_tokens(rules.get("decision_based") or {}),
         "misconceptions_per_objective": str(int((rules.get("misconceptions") or {}).get("per_objective") or 0)),
+        **readability_tokens(rules.get("readability") or {}),
+        "reflections_per_unit": str(int((rules.get("content") or {}).get("reflections_per_unit") or 0)),
+        "brief_large_words": str((rules.get("brief") or {}).get("large_words", "")),
+    }
+
+
+def readability_tokens(cfg: dict) -> dict[str, str]:
+    """The readability the audience of the project's courses asks for (rules › readability)."""
+    audience = str(cfg.get("audience") or "general")
+    return {
+        "readability_audience": audience,
+        "long_sentence_words": str((cfg.get("long_sentence_words") or {}).get(audience, "")),
+        "readability_min_index": str((cfg.get("min_index") or {}).get(audience, "")),
     }
 
 

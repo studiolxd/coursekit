@@ -32,7 +32,7 @@ reach the learner), **improvement** (noticeably better quality) or **minor** (st
 | 5 | Activities | Match the design; unambiguous questions, plausible distractors, one right answer in single-choice, useful feedback pointing to the section. {{questions_per_objective}} questions per objective assessed by questionnaire. Each distractor is the common error its `‹id›` names (`design/misconceptions.yaml`), worded as the learner would think it, and the feedback explains why it is wrong; a distractor that is absurd or tagged with an error it does not represent is a finding. |
 | 6 | Interactivity | Directive suited to the kind of content; no flat section. |
 | 7 | Media | Necessary placeholders, well specified, with accessibility (captions, alt text). |
-| 8 | Style | {{language_name}}, {{address_rule}}, tone of `course.yaml`, inclusive language, no emojis. |
+| 8 | Style | {{language_name}}, {{address_rule}}, tone of `course.yaml`, inclusive language, no emojis. Readable for a {{readability_audience}} audience (the readability warnings of `verify`: split long sentences, plainer words). The unit closes with a `:::reflection` that makes the learner look back and plan how to apply it, not a disguised quiz. |
 | 9 | Continuity | No overlap with other units nor content the design keeps for a later one (`coursekit outline <CODE>`; to check an overlap, `--section U.S`); correct cross-references. |
 | 10 | Simulations (decision-based courses, or any simulation) | Run `coursekit paths <CODE> --unit N` and read every path of `reviews/unit-NN-paths.md`, and its table of scenes (what the learner sees in each one: text, screen of the skin, characters): no empty or contradictory screen. Each section opens with its simulation; the situation is realistic for the audience; options are plausible (none obviously right, none absurd); consequences follow from the decisions and some are delayed; there is a way to recover; points reward what an expert would do; a decision with `error` is that common error and its feedback or the debriefing explains it; every debriefing explains without preaching; the explanation after it starts from what the learner lived through, the `:::if` branches fit their path and every `:::else` is neutral (it never assumes a decision: whoever has not played and creator read it); no text outside a simulation states what the learner did (the end of the story lives in the endings of the scored simulation); characters, world and tone match `design/story.md`. A path that makes no sense or an ending that teaches the wrong thing is **blocking**. |
 
@@ -71,7 +71,9 @@ them against the previous review, or the person names them with `--parts`):
 ```
 
    The `<!-- result: … -->` line repeats the **Result** with one of its three values, as written there (untranslated,
-   with underscores): tools read it. Update it too when a partial review changes the Result.
+   with underscores): tools read it. In the findings table, write the **Severity** as `blocking`, `minor` or
+   `improvement` and start the **Action** with `applied` or `proposed`, untranslated too (then your words): the handoff
+   gives the writer exactly the blocking findings that are not `applied`. Update it too when a partial review changes the Result.
 3. Run `coursekit reviewed <CODE> <N>`: it verifies again and marks the unit as reviewed (if it
    fails, fix and repeat). Never edit statuses by hand. Never pass `--by` to it: that option records the review
    of a person.

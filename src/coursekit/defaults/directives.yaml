@@ -49,6 +49,7 @@ directives:
   note:               {brick: NOTE,               role: static, use: "Note, tip or warning set apart from the main text."}
   highlight:          {brick: HIGHLIGHT,          role: static, use: "Highlight a key idea."}
   quote:              {brick: QUOTE,              role: static, use: "Quote from an expert or a source, with attribution."}
+  reflection:         {brick: NOTE,               role: static, use: "Closing reflection of a unit: open questions on what the learner did, what they would change and how they will apply it."}
 
 not_directives:
   HEADING: "### / #### in Markdown"

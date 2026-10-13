@@ -17,6 +17,12 @@ assessment_bank: Banco de preguntas
 download: Descargar
 learner: Tú                          # the learner when they speak in a dialogue (no portrait)
 note: Nota
+stopwords:                           # words left out when searching the material (coursekit brief --find)
+  [a, al, algo, ante, antes, como, con, contra, cual, cuando, de, del, desde, donde, dos, durante, e, el, ella, ellos, en,
+   entre, era, es, esa, ese, eso, esta, este, esto, estos, fue, ha, hay, la, las, le, les, lo, los, mas, me, mi, muy, ni,
+   "no", nos, o, os, para, pero, por, porque, que, se, "si", sin, sobre, son, su, sus, tambien, te, tiene, todo, tu, un, una,
+   uno, unos, y, ya, yo]
+reflection: Para reflexionar      # title of a :::reflection without its own
 
 # Resource types of the media placeholders: the id (configuration, manifest) -> what is written in the content.
 media_types:

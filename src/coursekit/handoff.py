@@ -21,10 +21,10 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
-from coursekit import approve, clientreview, config, identity, launch, new, verify
+from coursekit import approve, clientreview, config, fixes, identity, launch, new, verify
 from coursekit import assemble as assemblemod
 from coursekit import course as coursemod
 from coursekit import media as mediamod
@@ -48,6 +48,11 @@ FIX_NOTE = (
     "\n\nHANDOFF MODE: the AI review of this unit found problems it could not settle (`reviews/unit-{n:02d}-ai-review.md`, "
     "Result: not ready). Fix every blocking finding in the unit, run `coursekit verify {code} --unit {n}` until it passes, "
     "and finish. Do not write the review: it is done afterwards."
+)
+FIX_REPORT_NOTE = (
+    "\n\nHANDOFF MODE: fix ONLY what `{path}` lists (errors of verify and blocking findings of the review, with where they "
+    "are), nothing else: do not rewrite what it does not mention. Then run `coursekit verify {code} --unit {n}` until it "
+    "passes, and finish. Do not write the review."
 )
 STYLE_NOTE = ("\n\nHANDOFF MODE: produce ONLY the style sheet now (`media/style/`, see \"Simulations\" in the media-production "
               "skill); coursekit signs it next, and the images of the simulations follow in another session.")
@@ -73,6 +78,7 @@ class Context:
     rounds: int
     log: Log
     mirror: Mirror
+    fix_rounds: dict[int, int] = field(default_factory=dict)  # unit -> fix reports written in this run
 
     def course(self) -> dict:
         return coursemod.load(self.project, self.code)
@@ -199,14 +205,41 @@ def _design(ctx: Context, course: dict) -> None:
     raise _stuck(ctx, "design_not_signable", problem=problem)
 
 
+def _fix_report(ctx: Context, n: int, review: bool) -> str:
+    """Write the fix report of the unit (`reviews/unit-NN-fix.md`) and return the note that points the writer at it; empty
+    when there is nothing deterministic to fix. Stops when this round found what the round before found."""
+    course = ctx.course()
+    findings = fixes.verify_findings(course, n) + (fixes.review_findings(course, n) if review else [])
+    if not findings:
+        return ""
+    before = fixes.previous_fingerprint(course, n) if ctx.fix_rounds.get(n) else None
+    round_no = ctx.fix_rounds.get(n, 0) + 1
+    path = fixes.write(course, n, findings, round_no)
+    ctx.mirror()
+    where = path.relative_to(ctx.project.root).as_posix()
+    if before == fixes.fingerprint(findings):
+        raise _stuck(ctx, "same_findings", n=n, path=where, count=len(findings))
+    ctx.fix_rounds[n] = round_no
+    ctx.log(t("handoff", "fix_report_line", n=n, count=len(findings), path=where))
+    return FIX_REPORT_NOTE.format(path=where, code=ctx.code, n=n)
+
+
+def _fixed(ctx: Context, n: int) -> None:
+    """The unit passed: its fix report is no longer pending."""
+    fixes.report_path(ctx.course(), n).unlink(missing_ok=True)
+    ctx.fix_rounds.pop(n, None)
+
+
 def _write(ctx: Context, course: dict) -> None:
     for n in launch.units_to_do(course, "writer"):
         note, result = "", None
-        for _ in range(ctx.rounds):
+        for attempt in range(1, ctx.rounds + 1):
             result = _unit(ctx, "writer", n, note)
             if launch.done("writer", result.status):
+                _fixed(ctx, n)
                 break
-            note = RETRY_NOTE.format(status=result.status)
+            if attempt < ctx.rounds:  # what to fix, for the next round
+                note = RETRY_NOTE.format(status=result.status) + _fix_report(ctx, n, review=False)
         if result is None or not launch.done("writer", result.status):
             raise _stuck(ctx, "unit_not_written", result.log if result else None, n=n, status=result.status if result else "-")
 
@@ -220,11 +253,12 @@ def _review_unit(ctx: Context, n: int) -> None:
                 raise _stuck(ctx, "unit_not_reviewed", result.log, n=n, status=result.status)
             continue
         if review_result(ctx.course()["_dir"], n) != NOT_READY:
+            _fixed(ctx, n)
             return
         if attempt == ctx.rounds:
             break
         ctx.log(t("handoff", "not_ready_line", n=n))
-        fixed = _unit(ctx, "writer", n, FIX_NOTE.format(n=n, code=ctx.code))
+        fixed = _unit(ctx, "writer", n, _fix_report(ctx, n, review=True) or FIX_NOTE.format(n=n, code=ctx.code))
         if not launch.done("writer", fixed.status):
             raise _stuck(ctx, "unit_not_written", fixed.log, n=n, status=fixed.status)
     raise _stuck(ctx, "unit_not_ready", n=n)
@@ -371,8 +405,33 @@ def _media(ctx: Context, course: dict) -> None:
     raise _stuck(ctx, "not_assembled", log, why=_why(ctx, log, summary, "assembly"))
 
 
+def _check_packages(ctx: Context, course: dict) -> None:
+    """html backend: every unit played in a browser before it is delivered (`coursekit assemble check`); its errors are
+    written to `reviews/package-check.md` and the handoff stops there (they are rarely the writer's: the theme, a media
+    file, the player). Without a browser the check is only of the files, and it says so in the log."""
+    from coursekit.htmlkit import playcheck
+
+    problems: dict[int, list[str]] = {}
+    for unit in course.get("units") or []:
+        result = playcheck.check(course, unit)
+        for warning in result.warnings:
+            ctx.log(t("handoff", "warning_line", text=warning))
+        if result.errors:
+            problems[unit["n"]] = result.errors
+    report = course["_dir"] / "reviews" / "package-check.md"
+    if not problems:
+        report.unlink(missing_ok=True)
+        return
+    path = fixes.write_package_check(course, problems)
+    ctx.mirror()
+    raise _stuck(ctx, "package_check_failed", path=path.relative_to(ctx.project.root).as_posix(),
+                 count=sum(len(v) for v in problems.values()))
+
+
 def _deliver(ctx: Context, course: dict) -> None:
     _refresh_media(ctx, course)
+    if coursemod.backend(course) == "html":
+        _check_packages(ctx, ctx.course())
     log = None
     if coursemod.backend(course) == "creator" and _unchecked(ctx):
         for _ in range(ctx.rounds):

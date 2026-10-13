@@ -275,6 +275,7 @@ Never reuse a password.
 | `note` | `NOTE` | static | Note, tip or warning set apart from the main text | ✔ |
 | `highlight` | `HIGHLIGHT` | static | Highlight a key idea | ✔ |
 | `quote` | `QUOTE` | static | Quote from an expert or source, with attribution | ✔ |
+| `reflection` | `NOTE` | static | Closing reflection of a unit: open questions on what the learner did, what they would change and how they will apply it | ✔ |
 
 The games (`word-search` to `trivial`) count as interactive; use them sparingly, for review or reward. They are the only directives the html backend does not render yet (last column): `coursekit assemble build` refuses a unit that uses one, and `coursekit verify` reports it with the html backend (`MEMORY: this component is not available in the html backend yet…`). Everything else is built as described in [Components](08-assembly-and-delivery.md#components). A plain blockquote (`> text`) that is not a placeholder becomes a `HIGHLIGHT` brick.
 
@@ -295,6 +296,7 @@ Anything that does not follow these shapes fails when the unit is converted (`ve
 | `note` | Optional `title: …` line (default title: `Note`) + text |
 | `highlight` | Text |
 | `quote` | Quote + `— author` on the last line |
+| `reflection` | Optional `title: …` line (default title: `Think it over`) + two or three open questions; it goes in the summary section |
 | `word-search`, `wordle`, `hangman` | `- WORD` per line |
 | `memory` | `- card content` per line |
 | `pasapalabra` | `- A (starts): definition :: ANSWER` (or `(contains)`) per line; the answer takes alternatives separated by `/` (`ANSWER/OTHER`) |
@@ -634,6 +636,8 @@ The numbers are the package defaults (`src/coursekit/defaults/rules.yaml`). A pr
 | Question objective | Every question directive has the objective key (`objective:` / `objetivo:`) | — | warning |
 | Common errors | Every error of `design/misconceptions.yaml` of the unit's objectives is in a distractor (`‹id›`) or a decision (`error:`); every id exists; no right option carries one | — | error (a distractor or a decision that loses points without one: warning) |
 | Question bank | `questions_per_objective` × number of distinct objectives assessed by an activity whose instrument is `cuestionario` (the value of the instrument field of the design, whatever the course language) | 5 per objective | warning |
+| Reflection | The summary section (the last one without it) has at least `reflections_per_unit` `:::reflection` | 1 | warning |
+| Readability | Per section, the share of sentences longer than `readability.long_sentence_words` and the readability index of the language (Szigriszt-Pazos in Spanish, Flesch in English), by the audience `readability.audience`; a section with fewer than `readability.min_sentences` sentences of prose is not measured | general audience: 30 words, at most 20 % long, index 55 | warning |
 | Symbols | No emoji or pictograph outside `allowed_symbols` | `★ ✔ ✘ · — ‹ ›` | error |
 | Assembly | The Markdown converts to bricks (same parse as `assemble plan`). With the html backend it also reports the directives that are not available yet | — | error |
 | Files | `content.md` and `assessment.md` exist | — | error |

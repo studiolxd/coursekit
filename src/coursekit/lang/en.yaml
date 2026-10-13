@@ -17,6 +17,12 @@ assessment_bank: Question bank
 download: Download
 learner: You                          # the learner when they speak in a dialogue (no portrait)
 note: Note
+stopwords:                           # words left out when searching the material (coursekit brief --find)
+  [a, about, after, all, also, an, and, any, are, as, at, be, been, but, by, can, could, do, does, for, from, had, has,
+   have, he, her, his, how, i, if, in, into, is, it, its, more, most, "no", not, of, "on", one, or, other, our, she, so,
+   some, than, that, the, their, them, then, there, these, they, this, to, up, was, we, were, what, when, which, who,
+   will, with, would, you, your]
+reflection: Think it over         # title of a :::reflection without its own
 
 # Resource types of the media placeholders: the id (configuration, manifest) -> what is written in the content.
 media_types:

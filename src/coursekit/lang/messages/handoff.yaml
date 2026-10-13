@@ -93,3 +93,13 @@ not_delivered_to_reopen:
 reopen_line:
   es: "handoff {code}: reabierto para una versión nueva; continúa desde «{status}». Las firmas las pone {who}; ninguna persona revisa el curso."
   en: "handoff {code}: reopened for a new version; carries on from '{status}'. {who} signs; no person reviews the course."
+fix_report_line:
+  es: "unidad {n}: {count} punto(s) que corregir en {path}"
+  en: "unit {n}: {count} item(s) to fix in {path}"
+same_findings:
+  es: "{code}: la unidad {n} sigue con los mismos {count} fallo(s) después de corregirla: otra ronda no lo arreglará. Están en {path}; corrígelos y sigue con `coursekit handoff {code}`"
+  en: "{code}: unit {n} still has the same {count} problem(s) after fixing it: another round will not settle it. They are in {path}; fix them and carry on with `coursekit handoff {code}`"
+
+package_check_failed:
+  es: "{code}: la comprobación de los paquetes ha encontrado {count} error(es), apuntados en {path}; corrígelos y sigue con `coursekit handoff {code}`"
+  en: "{code}: the check of the packages found {count} error(s), listed in {path}; fix them and carry on with `coursekit handoff {code}`"

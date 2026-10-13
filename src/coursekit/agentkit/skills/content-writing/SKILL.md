@@ -25,7 +25,10 @@ Mandatory format: `.coursekit/docs/content-format.md`. Write in {{language_name}
    to advance what the design keeps for a later one. To check how a topic was handled, read only
    that section with `coursekit outline <CODE> --section U.S`; do not read whole units.
 6. Reference material: `coursekit brief <CODE>`, then `brief/index.md` and `brief/notes.md` of
-   the course and of the project. Open in `brief/text/` only the pages for this unit. Facts,
+   the course and of the project. Open in `brief/text/` only the pages for this unit. When the material is large (the
+   index counts more than {{brief_large_words}} words), do not open whole files: before each section run
+   `coursekit brief <CODE> --section U.S` (the passages its title and objectives need, each with its file and lines) and,
+   for a particular fact, `coursekit brief <CODE> --find "<words>"`; open a file only at the lines a passage gives. Facts,
    commands, options and product names come from there; whatever is not in the material and you
    cannot be sure of, mark it with `<!-- VERIFICAR: … -->`.
 
@@ -51,8 +54,10 @@ Mandatory format: `.coursekit/docs/content-format.md`. Write in {{language_name}
     directives.
   - `activities`: the unit's learning activities (`activities.learning`) with question
     directives, each with `{{t_question_key}}` and feedback that points back to the section.
-  - `summary`: key ideas, glossary (`:::accordion` or `:::flashcards`) and link with the next
-    unit.
+  - `summary`: key ideas, glossary (`:::accordion` or `:::flashcards`), a closing `:::reflection` (at least
+    {{reflections_per_unit}}: two or three open questions for the learner to look back on what they did or decided in the
+    unit, what they would do differently and how they will apply it in their own work; never a quiz in disguise) and the
+    link with the next unit.
 - Media placeholders where an asset really adds something, with all their fields and
   accessibility; verify gives the minimum per unit (by hours) and of types.
 - Assessment: present each activity of `activities.assessment` in the relevant section (what it
@@ -67,6 +72,10 @@ Mandatory format: `.coursekit/docs/content-format.md`. Write in {{language_name}
   never sees it), and the feedback says why it is wrong; in a simulation, a decision that represents one says so with
   `error: reuse` and its `feedback` or the debriefing explains it. `coursekit verify` fails when an error of the unit
   appears nowhere or an id is not in the file, and warns of distractors and decisions that lose points without one.
+- **Readable for the audience** ({{readability_audience}}): one idea per sentence, sentences of up to
+  {{long_sentence_words}} words as a rule, the everyday word before the technical one (define the technical term the
+  first time). `coursekit verify` warns when a section's readability index falls below {{readability_min_index}} or too
+  many sentences are long.
 - **No emojis.** Only `{{allowed_symbols}}`.
 
 ## Decision-based courses

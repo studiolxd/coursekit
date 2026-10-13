@@ -281,8 +281,44 @@ def cmd_approve(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_brief_find(project: Project, args: argparse.Namespace) -> int:
+    """The passages of the material (of the course and of the project) a query or a section of the design needs."""
+    from coursekit import sources
+
+    if not args.code:
+        print(t("commands", "brief_find_needs_code"), file=sys.stderr)
+        return 2
+    course = coursemod.load(project, args.code)
+    cfg = coursemod.rules(course).get("brief") or {}
+    if args.section:
+        found = sources.section_query(course, args.section)
+        if found is None:
+            print(t("commands", "brief_section_not_found", section=args.section, code=course["code"]), file=sys.stderr)
+            return 1
+        query, label = found
+    else:
+        query, label = args.find, args.find
+    words = sources.stopwords(coursemod.language(course))
+    files = sources.text_files(course["_dir"] / "brief", project.brief_dir)
+    if not files:
+        print(t("commands", "brief_find_no_text", code=course["code"]), file=sys.stderr)
+        return 1
+    found = sources.passages(files, int(cfg.get("passage_words") or 200), words)
+    best = sources.rank(found, query, words, int(args.top or cfg.get("passages") or 8))
+    print(t("commands", "brief_find_title", query=label, count=len(best), total=len(found)))
+    for i, (_score, passage) in enumerate(best, 1):
+        where = f"{passage.file.relative_to(project.root).as_posix()}:{passage.start}-{passage.end}"
+        heading = f" · {passage.heading}" if passage.heading else ""
+        print(f"\n## {i} · {where}{heading}\n\n{passage.text}")
+    if not best:
+        print(t("commands", "brief_find_nothing"))
+    return 0
+
+
 def cmd_brief(args: argparse.Namespace) -> int:
     project = _project()
+    if args.find or args.section:
+        return cmd_brief_find(project, args)
     log = lambda m: print(m, flush=True)  # noqa: E731
     general = project.brief_dir
     project_language = str(config.project_data(project).get("content_language") or "es")
@@ -1029,6 +1065,9 @@ def register(sub: argparse._SubParsersAction) -> None:
     p = sub.add_parser("brief", help=t("commands", "help_brief"))
     p.add_argument("code", nargs="?", help=t("commands", "help_brief_code"))
     p.add_argument("--refresh", action="store_true", help=t("commands", "help_brief_refresh"))
+    p.add_argument("--find", help=t("commands", "help_brief_find"))
+    p.add_argument("--section", help=t("commands", "help_brief_section"))
+    p.add_argument("--top", type=int, help=t("commands", "help_brief_top"))
     p.set_defaults(func=cmd_brief)
 
 

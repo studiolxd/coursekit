@@ -1,0 +1,12 @@
+# The fix report of a unit for the handoff (reviews/unit-NN-fix.md).
+title: {es: "Corrige solo esto — {code} · unidad {n} (ronda {round})", en: "Fix only this — {code} · unit {n} (round {round})"}
+intro:
+  es: "Corrige cada punto de esta lista en content.md y assessment.md de la unidad, y nada más: no reescribas lo que no aparece aquí. Después ejecuta `coursekit verify {code} --unit {n}` hasta que pase."
+  en: "Fix every item of this list in content.md and assessment.md of the unit, and nothing else: do not rewrite what is not here. Then run `coursekit verify {code} --unit {n}` until it passes."
+section_verify: {es: "Errores de coursekit verify", en: "Errors of coursekit verify"}
+section_review: {es: "Hallazgos bloqueantes de la revisión sin aplicar", en: "Blocking findings of the review not applied"}
+package_title: {es: "Comprobación de los paquetes — {code}", en: "Check of the packages — {code}"}
+package_intro:
+  es: "coursekit assemble check ha jugado cada unidad en un navegador y ha encontrado estos errores. Corrígelos (el tema, un recurso, el contenido) y vuelve a comprobarlo con `coursekit assemble check {code}`."
+  en: "coursekit assemble check played each unit in a browser and found these errors. Fix them (the theme, an asset, the content) and check again with `coursekit assemble check {code}`."
+package_unit: {es: "Unidad {n}", en: "Unit {n}"}

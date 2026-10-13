@@ -343,3 +343,20 @@ theme_manual:
 theme_origin:
   es: "origen: theme «{name}» de la plataforma ({theme_id}, versión {version}), importado el {date}"
   en: "origin: platform theme '{name}' ({theme_id}, version {version}), imported on {date}"
+help_brief_find:
+  es: "busca en el material del curso y del proyecto (brief/text/) los fragmentos que más tienen que ver con este texto, con su fichero y sus líneas"
+  en: "search the material of the course and of the project (brief/text/) for the passages closest to this text, with their file and lines"
+help_brief_section:
+  es: "como --find, con el título, los objetivos y la unidad de un apartado del diseño (U.S, p. ej. 1.2)"
+  en: "like --find, with the title, objectives and unit of a section of the design (U.S, e.g. 1.2)"
+help_brief_top: {es: "cuántos fragmentos (por defecto, rules › brief › passages)", en: "how many passages (default: rules › brief › passages)"}
+brief_find_needs_code: {es: "--find y --section necesitan el código del curso", en: "--find and --section need the course code"}
+brief_section_not_found: {es: "{code} no tiene el apartado {section} (U.S, p. ej. 1.2)", en: "{code} has no section {section} (U.S, e.g. 1.2)"}
+brief_find_no_text:
+  es: "{code} no tiene material convertido: coloca ficheros en brief/sources/ o enlaces en brief/links.md y ejecuta `coursekit brief {code}`"
+  en: "{code} has no converted material: put files in brief/sources/ or links in brief/links.md and run `coursekit brief {code}`"
+brief_find_title:
+  es: "# {count} fragmento(s) del material para «{query}» (de {total})"
+  en: "# {count} passage(s) of the material for «{query}» (of {total})"
+brief_find_nothing: {es: "ningún fragmento del material contiene esas palabras", en: "no passage of the material holds those words"}
+

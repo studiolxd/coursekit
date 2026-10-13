@@ -214,6 +214,9 @@ La estructura (unidades, apartados, objetivos, horas) no se fija aquí: sale del
 | `design.competencies_per_course` | `"2–4"` | Orientación para el agente de diseño: competencias por curso. |
 | `design.objectives_per_unit` | `"2–4"` | Orientación: objetivos por unidad. |
 | `design.intro_summary_hours` | `"0.2–0.3"` | Orientación: horas de la introducción y del resumen. |
+| `brief.passage_words` | `200` | El material se corta en fragmentos de unas tantas palabras (y en cada encabezado) para `coursekit brief --find` / `--section`. |
+| `brief.passages` | `8` | Fragmentos que devuelve una búsqueda (`--top` lo cambia). |
+| `brief.large_words` | `20000` | Por encima de tantas palabras de material, el redactor lo busca por apartado (`coursekit brief CODE --section U.S`) en vez de leerlo. |
 | `misconceptions.per_objective` | `2` | Errores típicos que el diseño recoge por objetivo en `design/misconceptions.yaml`, firmados con el diseño (`coursekit approve design` los pide); el contenido muestra y explica cada uno. `0`: el curso prescinde de ellos, y `verify` solo comprueba el fichero si existe. Ver [Errores típicos](06-content.md#errores-típicos). |
 | `review.ai` | `required` | `required` o `skip`. `required`: una revisión con IA precede a la firma de cada unidad. `skip`: una unidad que pasa `coursekit verify` cuenta como revisada y la revisión es la firma de la persona. En ambos casos una persona puede registrar su propia revisión de una unidad con `coursekit reviewed --by`. |
 | `handoff.rounds` | `2` | Intentos por paso de `coursekit handoff` (redactar una unidad, su revisión con sus correcciones, la firma del diseño, el multimedia, el montaje, la entrega) antes de parar. `--rounds` lo cambia en una ejecución. |
@@ -226,6 +229,12 @@ La estructura (unidades, apartados, objetivos, horas) no se fija aquí: sale del
 | `content.interactive_per_hour` | `4` | Directivas interactivas distintas exigidas por hora de un apartado de contenido. |
 | `content.min_interactive_per_content_section` | `1` | Suelo de la regla anterior: todo apartado de contenido necesita al menos tantas. |
 | `content.questions_per_objective` | `5` | Tamaño del banco de preguntas por objetivo de la unidad (quedarse corto es un aviso). |
+| `content.reflections_per_unit` | `1` | `:::reflection` que debe tener el apartado de resumen (o el último): el alumno mira atrás a lo que hizo y a cómo lo aplicará. Quedarse corto es un aviso; `0` lo desactiva. |
+| `readability.audience` | `general` | Cuánto puede exigir la prosa: `basic`, `general` o `specialist` (un proyecto puede añadir el suyo con sus cifras). Elige los valores de abajo. |
+| `readability.long_sentence_words` | `basic: 25`, `general: 30`, `specialist: 40` | Una frase con más palabras es larga. |
+| `readability.long_share_max` | `0.2` | Proporción de frases largas de un apartado por encima de la cual `verify` avisa. |
+| `readability.min_index` | `basic: 65`, `general: 55`, `specialist: 40` | Índice de legibilidad del idioma (Szigriszt-Pazos en español, Flesch en inglés; 65 o más, fácil; 55–65, normal; 40–55, algo difícil) por debajo del cual `verify` avisa. Los demás idiomas solo se miden por la longitud de sus frases. |
+| `readability.min_sentences` | `10` | Un apartado con menos frases de prosa no se mide. |
 | `content.placeholder_types` | `image`, `video`, `animated_gif`, `infographic`, `diagram`, `simulation`, `terminal_demo`, `audio` | Tipos de marcador permitidos en el contenido, por **id**. El autor escribe en el marcador la palabra del idioma del curso (`Infografía`, `Infographic`…) y `verify` la convierte en el id; un tipo que no esté en la lista es un error. Una lista que escribas sustituye la lista entera, y los ids deben coincidir con las claves de `types` de la configuración `media`. La tabla de ids y palabras está en [Tipos de recurso y claves de las directivas por idioma](06-content.md#tipos-de-recurso-y-claves-de-las-directivas-por-idioma). |
 | `content.allowed_symbols` | `★✔✘·—‹›` | Únicos símbolos pictográficos permitidos en el texto; cualquier otro es un error. |
 

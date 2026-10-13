@@ -275,6 +275,7 @@ No reutilices nunca una contraseña.
 | `note` | `NOTE` | static | Nota, consejo o advertencia separada del texto principal | ✔ |
 | `highlight` | `HIGHLIGHT` | static | Destacar una idea clave | ✔ |
 | `quote` | `QUOTE` | static | Cita de una persona experta o fuente, con atribución | ✔ |
+| `reflection` | `NOTE` | static | Reflexión de cierre de una unidad: preguntas abiertas sobre lo que hizo el alumno, qué cambiaría y cómo lo aplicará | ✔ |
 
 Los juegos (`word-search` a `trivial`) cuentan como interactivos; úsalos con moderación, para repasar o premiar. Son las únicas directivas que el backend html aún no renderiza (última columna): `coursekit assemble build` rechaza una unidad que use alguna, y `coursekit verify` la informa con el backend html (`MEMORY: este componente aún no está disponible en el backend html…`). Todo lo demás se construye como se describe en [Componentes](08-assembly-and-delivery.md#componentes). Una cita Markdown simple (`> texto`) que no sea un recurso multimedia se convierte en un brick `HIGHLIGHT`.
 
@@ -295,6 +296,7 @@ Lo que no siga estas formas falla al convertir la unidad (`verify` lo indica).
 | `note` | Línea opcional `título: …` (título por defecto: `Nota`) + texto |
 | `highlight` | Texto |
 | `quote` | Cita + `— autor` en la última línea |
+| `reflection` | Línea opcional `título: …` (título por defecto: `Para reflexionar`) + dos o tres preguntas abiertas; va en el apartado de resumen |
 | `word-search`, `wordle`, `hangman` | `- PALABRA` por línea |
 | `memory` | `- contenido de la tarjeta` por línea |
 | `pasapalabra` | `- A (empieza): definición :: RESPUESTA` (o `(contiene)`) por línea; la respuesta admite alternativas separadas por `/` (`RESPUESTA/OTRA`) |
@@ -638,6 +640,8 @@ Las cifras son los valores por defecto del paquete (`src/coursekit/defaults/rule
 | Objetivo de la pregunta | Toda directiva de pregunta lleva la clave de objetivo (`objetivo:` / `objective:`) | — | aviso |
 | Errores típicos | Cada error de `design/misconceptions.yaml` de los objetivos de la unidad está en un distractor (`‹id›`) o una decisión (`error:`); cada id existe; ninguna opción correcta lleva uno | — | error (un distractor o una decisión que resta puntos sin él: aviso) |
 | Banco de preguntas | `questions_per_objective` × número de objetivos distintos evaluados por una actividad cuyo instrumento es `cuestionario` (el valor del campo de instrumento del diseño, sea cual sea el idioma del curso) | 5 por objetivo | aviso |
+| Reflexión | El apartado de resumen (o el último, si no lo hay) tiene al menos `reflections_per_unit` `:::reflection` | 1 | aviso |
+| Legibilidad | Por apartado, la proporción de frases de más de `readability.long_sentence_words` palabras y el índice de legibilidad del idioma (Szigriszt-Pazos en español, Flesch en inglés), según el público `readability.audience`; un apartado con menos de `readability.min_sentences` frases de prosa no se mide | público general: 30 palabras, como mucho un 20 % largas, índice 55 | aviso |
 | Símbolos | Ningún emoji ni pictograma fuera de `allowed_symbols` | `★ ✔ ✘ · — ‹ ›` | error |
 | Montaje | El Markdown se convierte en bricks (mismo análisis que `assemble plan`). Con el backend html informa además de las directivas que aún no están disponibles | — | error |
 | Ficheros | Existen `content.md` y `assessment.md` | — | error |

@@ -214,6 +214,9 @@ Structure (units, sections, objectives, hours) is not set here: it comes from ea
 | `design.competencies_per_course` | `"2–4"` | Guidance given to the design agent: competencies per course. |
 | `design.objectives_per_unit` | `"2–4"` | Guidance: objectives per unit. |
 | `design.intro_summary_hours` | `"0.2–0.3"` | Guidance: hours for the introduction and the summary. |
+| `brief.passage_words` | `200` | The material is cut into passages of about this many words (and at every heading) for `coursekit brief --find` / `--section`. |
+| `brief.passages` | `8` | Passages a search returns (`--top` changes it). |
+| `brief.large_words` | `20000` | Above this many words of material, the writer searches it per section (`coursekit brief CODE --section U.S`) instead of reading it. |
 | `misconceptions.per_objective` | `2` | Common errors the design lists for each objective in `design/misconceptions.yaml`, signed with the design (`coursekit approve design` asks for them); the content shows and explains each one. `0`: the course does without them, and `verify` checks the file only if there is one. See [Common errors](06-content.md#common-errors). |
 | `review.ai` | `required` | `required` or `skip`. `required`: an AI review comes before each unit's sign-off. `skip`: a unit that passes `coursekit verify` counts as reviewed and the person's sign-off is the review. Either way a person can record their own review of a unit with `coursekit reviewed --by`. |
 | `handoff.rounds` | `2` | Attempts per step of `coursekit handoff` (writing a unit, its review with its fixes, the design sign-off, media, assembly, delivery) before it stops. `--rounds` changes it for one run. |
@@ -226,6 +229,12 @@ Structure (units, sections, objectives, hours) is not set here: it comes from ea
 | `content.interactive_per_hour` | `4` | Distinct interactive directives required per hour of a content section. |
 | `content.min_interactive_per_content_section` | `1` | Floor for the previous rule: every content section needs at least this many. |
 | `content.questions_per_objective` | `5` | Question bank size per objective of the unit (a shortfall is a warning). |
+| `content.reflections_per_unit` | `1` | `:::reflection` the summary section (or the last one) must have: the learner looks back at what they did and how they will apply it. A shortfall is a warning; `0` turns it off. |
+| `readability.audience` | `general` | How demanding the prose may be: `basic`, `general` or `specialist` (a project may add its own with its numbers). Picks the values below. |
+| `readability.long_sentence_words` | `basic: 25`, `general: 30`, `specialist: 40` | A sentence with more words is long. |
+| `readability.long_share_max` | `0.2` | Share of long sentences of a section above which `verify` warns. |
+| `readability.min_index` | `basic: 65`, `general: 55`, `specialist: 40` | Readability index of the language (Szigriszt-Pazos in Spanish, Flesch in English; 65 or more easy, 55–65 normal, 40–55 somewhat hard) below which `verify` warns. Other languages are measured only by the length of their sentences. |
+| `readability.min_sentences` | `10` | A section with fewer sentences of prose is not measured. |
 | `content.placeholder_types` | `image`, `video`, `animated_gif`, `infographic`, `diagram`, `simulation`, `terminal_demo`, `audio` | Placeholder types allowed in the content, by **id**. The author writes the word of the course language in the placeholder (`Infographic`, `Infografía`…) and `verify` maps it to the id; a type that is not in the list is an error. A list you write replaces the whole list, and the ids must match the keys of `types` in the `media` configuration. The table of ids and words is in [Resource types and directive keys by language](06-content.md#resource-types-and-directive-keys-by-language). |
 | `content.allowed_symbols` | `★✔✘·—‹›` | The only pictographic symbols allowed in the text; any other is an error. |
 

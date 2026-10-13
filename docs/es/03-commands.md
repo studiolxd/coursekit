@@ -416,18 +416,25 @@ coursekit download "https://…/export/download?t=…" --out courses/PWD/design/
 Convierte el material de referencia de un curso (o del proyecto) a Markdown para los agentes. Úsalo después de dejar ficheros en `brief/sources/` o URL en `brief/links.md`. Quién: ambos.
 
 ```
-coursekit brief [--refresh] [code]
+coursekit brief [--refresh] [--find FIND] [--section SECTION] [--top TOP] [code]
 ```
 
 | Argumento | Valores / por defecto | Significado |
 |---|---|---|
 | `code` | código o carpeta del curso; por defecto: el `brief/` del proyecto | Brief que convertir. Con un código, también se convierte el brief del proyecto y el índice del curso enlaza con él. |
 | `--refresh` | indicador | Vuelve a descargar las URL de `links.md` (por defecto cada URL se descarga una sola vez). |
+| `--find FIND` | texto; necesita `code` | No convierte: escribe los fragmentos del material (del curso y del proyecto, `brief/text/`) que más tienen que ver con este texto. |
+| `--section SECTION` | `U.S`, p. ej. `1.2`; necesita `code` | Como `--find`, con el título y los objetivos de ese apartado del diseño y el título de su unidad. |
+| `--top TOP` | número; por defecto `rules › brief › passages` (`8`) | Cuántos fragmentos escriben `--find` y `--section`. |
 
 Convierte los ficheros de `brief/sources/` en `brief/text/files/` (MarkItDown) y las URL de `links.md` en `brief/text/web/` (necesita Node), solo cuando son nuevos o han cambiado, y escribe `brief/index.md`, que es lo que leen los agentes, en el idioma del contenido del proyecto (o del curso). Las imágenes se listan para que los agentes las abran; el audio y el vídeo necesitan una transcripción. Con un código trabaja en `courses/<CODE>/brief/` y crea `sources/`, `links.md` y `notes.md` si faltan. Imprime una línea de resumen `brief:` (documentos, webs, imágenes/audio/vídeo y la ruta del índice) y un aviso por cada problema. Código de salida 1 si no se pudo convertir algún fichero o si no se pueden descargar las URL porque falta Node; una descarga que falla mientras se ejecuta se avisa como advertencia y el código de salida sigue siendo 0.
 
+Con `--find` o `--section` no convierte nada: corta el Markdown de `brief/text/` en fragmentos (en cada encabezado y por párrafos de unas `rules › brief › passage_words` palabras) y los ordena con BM25, en local (no cuentan las tildes, los plurales ni las palabras comunes del idioma del curso). Escribe `# N fragmento(s) del material para «…» (de M)` y cada fragmento bajo `## i · <fichero>:<primera línea>-<última línea> · <encabezado>`, para que el redactor lea solo esas líneas y las cite. Código de salida 1 cuando el curso no tiene material convertido o el apartado no existe, 2 sin código de curso. El redactor lo usa cuando el material pasa de `rules › brief › large_words` palabras.
+
 ```
 coursekit brief PWD --refresh
+coursekit brief PWD --section 1.2
+coursekit brief PWD --find "aplicación autenticadora frente a SMS" --top 3
 ```
 
 ## Verificación y firma
