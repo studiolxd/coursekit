@@ -420,11 +420,17 @@ def cmd_assemble_build(course: dict, args: argparse.Namespace) -> int:
     if not units:
         print(t("commands", "unit_not_found", n=args.unit), file=sys.stderr)
         return 1
+    failed = False
     for unit in units:
         result = htmlbuild.build(course, unit, args.version)
         for warning in result.warnings:
             print(t("commands", "warning_line", text=warning))
         print(t("htmlkit", "built", n=unit["n"], files=result.files, path=result.out_dir.relative_to(course["_project"].root).as_posix()))
+        if result.package and not args.no_check and not _print_check(course, unit, args.browser):
+            result.package.unlink(missing_ok=True)
+            print(t("playcheck", "not_delivered"), file=sys.stderr)
+            failed = True
+            continue
         if result.package:
             print(t("htmlkit", "packaged", name=result.package.name, size=_size(result.package)))
         else:
@@ -434,7 +440,44 @@ def cmd_assemble_build(course: dict, args: argparse.Namespace) -> int:
     if message:
         print(message)
     _mirror(course["_project"], course["code"])
-    return 0
+    return 1 if failed else 0
+
+
+def _print_check(course: dict, unit: dict, browser: str | None) -> bool:
+    """`assemble check` of one built unit, printed; True when it has no errors."""
+    from coursekit.htmlkit import playcheck
+
+    result = playcheck.check(course, unit, browser)
+    for warning in result.warnings:
+        print(t("commands", "warning_line", text=warning))
+    for error in result.errors:
+        print(t("commands", "error_line", text=error))
+    if result.played:
+        print(t("playcheck", "summary", n=unit["n"], lessons=result.lessons, tests=result.tests, simulations=result.simulations,
+                paths=result.paths, errors=len(result.errors), warnings=len(result.warnings)))
+    else:
+        print(t("playcheck", "files_only", n=unit["n"], errors=len(result.errors), warnings=len(result.warnings)))
+    return not result.errors
+
+
+def cmd_assemble_check(course: dict, args: argparse.Namespace) -> int:
+    from coursekit import preview
+    from coursekit.htmlkit import build as htmlbuild
+
+    if coursemod.backend(course) != "html":
+        print(t("commands", "assemble_build_needs_html", code=course["code"], backend=coursemod.backend(course)), file=sys.stderr)
+        return 1
+    units = [u for u in course.get("units") or [] if args.unit is None or u["n"] == args.unit]
+    if not units:
+        print(t("commands", "unit_not_found", n=args.unit), file=sys.stderr)
+        return 1
+    ok = True
+    for unit in units:
+        if not preview.stamp(course, unit["n"]):
+            print(t("preview", "building", n=unit["n"]))
+            htmlbuild.build(course, unit, None)
+        ok = _print_check(course, unit, args.browser) and ok
+    return 0 if ok else 1
 
 
 def _size(path: Path) -> str:
@@ -450,6 +493,8 @@ def cmd_assemble(args: argparse.Namespace) -> int:
     statesmod.ensure_active(course)
     if args.action == "build":
         return cmd_assemble_build(course, args)
+    if args.action == "check":
+        return cmd_assemble_check(course, args)
     if coursemod.backend(course) == "html":
         print(t("commands", "assemble_creator_only", code=course["code"], action=args.action), file=sys.stderr)
         return 1
@@ -847,10 +892,13 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.set_defaults(func=cmd_run)
 
     p = sub.add_parser("assemble", help=t("commands", "help_assemble"))
-    p.add_argument("action", choices=("plan", "diff", "applied", "checked", "link", "build"), help=t("commands", "help_assemble_action"))
+    p.add_argument("action", choices=("plan", "diff", "applied", "checked", "link", "build", "check"),
+                   help=t("commands", "help_assemble_action"))
     p.add_argument("code")
     p.add_argument("--unit", type=int, help=t("commands", "help_assemble_unit"))
     p.add_argument("--version", help=t("commands", "help_assemble_version"))
+    p.add_argument("--no-check", action="store_true", help=t("commands", "help_assemble_no_check"))
+    p.add_argument("--browser", help=t("commands", "help_assemble_browser"))
     p.add_argument("--lesson")
     p.add_argument("--lesson-id")
     p.add_argument("--brick-ids", default="")

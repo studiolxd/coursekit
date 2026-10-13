@@ -283,7 +283,7 @@ The runtime is `@studiolxd/scorm`, bundled into `assets/player.js`.
 | Progress | Lessons visited divided by lessons of the unit (progress measure, SCORM 2004) |
 | Completion | Without a test: completed when every lesson has been visited, incomplete until then. With a test, in SCORM 2004: completed when every lesson has been visited, and passed or failed when the test is submitted. With a test, in SCORM 1.2, which has a single status: passed or failed when the test is submitted |
 | Score | Raw (percentage), minimum 0 and maximum 100; also scaled in SCORM 2004 |
-| Interactions | One per question of the test: its id, the type (choice for single and multiple choice, fill-in for the rest), the learner's response (cut at 250 characters), correct or incorrect, weight 1. And one per decision in a simulation: `<simulation>-<n>`, choice, the text of the decision, correct when it earned points, incorrect when it lost them and neutral otherwise, weighted by its points |
+| Interactions | One per question of the test: its id, the type (choice for single and multiple choice, fill-in for the rest), the response (in a choice, the letters of the options chosen: `a,c` in SCORM 1.2, `a[,]c` in 2004; in the rest, the learner's answer cut at 250 characters), correct or wrong (`wrong` in 1.2, `incorrect` in 2004), weight 1. And one per decision in a simulation: `<simulation>-<n>`, choice, the letter of the decision among those of its scene (`a`, `b`…), its text as the description (SCORM 2004 only: 1.2 has no description), correct when it earned points, wrong when it lost them and neutral otherwise, weighted by its points. Every value is one the standard admits: a strict LMS refuses the rest and they are lost |
 | Session | Session time and exit `suspend`; the data is committed after every change and the session is terminated when the page is hidden or closed |
 
 ### Preview with a simulated LMS
@@ -296,7 +296,9 @@ coursekit preview PWD            # opens http://127.0.0.1:8765/ in the browser
 ```
 
 - A local server shows a page that holds the SCORM 1.2 and 2004 APIs, with the unit inside: the package finds its LMS
-  and sends what it would send on a platform. Nothing leaves the machine.
+  and sends what it would send on a platform. Nothing leaves the machine. The simulated LMS is as strict as a platform:
+  a value the standard does not admit (a result, a response, a score out of range, a saved state too long) is refused
+  with its error code and listed in red in the panel, under **Values an LMS would refuse**.
 - What the unit sends is kept in the browser, per course and unit: **Exit and reopen** closes the session (exit and
   finish) and opens it again, so you see whether it resumes where it was (`entry: resume`, the location, the state of
   each simulation). **Clear the tracking** starts the unit from scratch.
@@ -309,6 +311,33 @@ coursekit preview PWD            # opens http://127.0.0.1:8765/ in the browser
 
 It is a check of the package, not a replacement for a test on the real platform (SCORM Cloud or the client's LMS)
 before delivering.
+
+### Checking the package
+
+Before delivering, [`coursekit assemble check`](03-commands.md#coursekit-assemble) plays each unit as a learner would,
+and `coursekit assemble build --version` does it by itself before writing the zip (`--no-check` skips it):
+
+```bash
+coursekit assemble check PWD            # every unit
+coursekit assemble check PWD --unit 2
+```
+
+| What it checks | An error when |
+|---|---|
+| Files | The page or its styles point to a file that is not in the package |
+| Console and loading | The player writes an error in the console, or a file does not load |
+| Accessibility | axe finds a `critical` or `serious` violation in a lesson (`moderate` and `minor` are warnings); a contrast problem shows its ratio and colours |
+| Tests | Answered right, after the best path of its scored simulations, a test does not send the score it should |
+| Unit score | In a unit without a test, its scored simulations (by their best path) do not give the score they should |
+| Simulations | A path of [`coursekit paths`](03-commands.md#coursekit-paths) cannot be played, or ends at another scene or with other points |
+| Adaptive blocks | After a path, a `:::if` block shows a branch other than the one its condition asks for |
+| SCORM | The LMS would refuse a value; the saved state does not fit in the standard (a warning from 80 % of it) |
+| Resuming | On exiting and coming back, the unit is not where it was |
+
+It needs Node and a browser: the installed Google Chrome or, else, Microsoft Edge (`--browser PATH` for another one),
+driven without a window by Playwright. The first run prepares the checker in the store (`npm install` of
+`playwright-core` and `axe-core`; no browser is downloaded). Without a browser only the files are checked, with a
+warning. A unit with many paths takes some seconds: every path of every simulation is played.
 
 ### Styles
 

@@ -29,6 +29,7 @@ PAIRS = [
     ("text-soft", "background", 4.5, "use_secondary_text"),
     ("on-accent", "accent", 4.5, "use_button_text"),
     ("accent", "background", 3.0, "use_accent"),
+    ("accent-strong", "background", 4.5, "use_accent_text"),
     ("text", "surface", 4.5, "use_card_text"),
     ("text", "highlight", 4.5, "use_highlight_text"),
     ("correct", "background", 4.5, "use_correct"),
@@ -279,12 +280,16 @@ def from_creator(response: dict) -> dict:
     soft = 0.35
     while soft > 0 and contrast(mix(text, background, soft), background) < 4.5:
         soft -= 0.05
+    # the accent as text (secondary buttons, dates, focus): darkened towards the text until it reads on the background
+    strong = 0.0
+    while strong < 1 and contrast(mix(accent, text, strong), background) < 4.5:
+        strong += 0.05
     derived = {
         "text-soft": mix(text, background, max(soft, 0)),
         "surface": mix(background, text, 0.04),
         "highlight": mix(background, accent, 0.12),
         "line": mix(background, text, 0.2),
-        "accent-strong": accent,
+        "accent-strong": mix(accent, text, min(strong, 1.0)),
     }
     fonts = cfg.get("fonts") or {}
     assignments = fonts.get("assignments") or {}

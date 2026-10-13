@@ -26,6 +26,7 @@ result: {es: "Resultado", en: "Result"}
 weighting: {es: "Peso", en: "Weight"}
 none: {es: "ninguna", en: "none"}
 calls: {es: "Llamadas a la API", en: "API calls"}
+errors: {es: "Valores que un LMS rechazaría", en: "Values an LMS would refuse"}
 reopen: {es: "Salir y volver a entrar", en: "Exit and reopen"}
 reset: {es: "Borrar el seguimiento", en: "Clear the tracking"}
 reloaded: {es: "— unidad reconstruida: se vuelve a abrir —", en: "— unit rebuilt: it opens again —"}

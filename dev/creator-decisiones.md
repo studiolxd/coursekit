@@ -198,19 +198,21 @@ propio paquete SCORM (`units[].content_id` en `course.yaml`); sus apartados son 
 de la unidad es la nota del contenido. No hay nota de curso: si hace falta, la combina el LMS a partir de las de cada
 paquete.
 
-**¿Identificador corto más descripción en las interacciones?** Sí. coursekit da a cada opción de una decisión un id
-estable (`[a-z][a-z0-9_]*`, único en su escena). La interacción queda así:
+**¿Identificador corto más descripción en las interacciones?** Sí. La respuesta es la letra de la opción elegida entre
+las de su escena (`a`, `b`…, por su orden en el YAML: primero `choices`, después `hotspots`), que es lo que admite SCORM
+para una `choice` (en 1.2, un carácter; en 2004, identificadores sin espacios), y el texto va en la descripción. Es lo
+que ya manda el backend html. La interacción queda así:
 
 | Campo | Valor |
 |---|---|
 | `id` | `<simulación>-<n>` (`n`, el número de la decisión en el intento) |
 | `type` | `choice` |
-| `learner_response` | el id de la opción elegida |
+| `learner_response` | la letra de la opción elegida |
 | `description` | el texto de la decisión (máx. 250 caracteres) |
-| `result` | `correct`, `incorrect` o `neutral` |
+| `result` | `correct`, `incorrect` (`wrong` en SCORM 1.2) o `neutral` |
 | `weighting` | los puntos en valor absoluto (1 si 0) |
 
-`ck:interaction` lleva entonces `response` (el id) y `description` (el texto); sustituye a la definición de 1.1.
+`ck:interaction` lleva entonces `response` (la letra) y `description` (el texto); sustituye a la definición de 1.1.
 
 **¿Ramas guardadas en plano dentro del `CONDITIONAL`?** Sí, la representación interna es cosa de creator, con tres
 condiciones: el MCP acepta y devuelve la forma anidada `{condition, then: [...], else: [...]}`; el orden de los bricks

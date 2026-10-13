@@ -163,8 +163,9 @@ def timeline(brick: dict, ctx: Ctx) -> str:
 
 def cards(brick: dict, ctx: Ctx, carousel_mode: bool) -> str:
     faces = "".join(
-        f'<div class="ck-card" data-widget="card" role="button" tabindex="0" aria-pressed="false" aria-label="{a(ctx.say("flip"))}">'
-        f'<div class="ck-front">{inline(i.get("front"))}</div>'
+        # its name is what it shows, then what it does (a label of its own would hide its text from screen readers)
+        f'<div class="ck-card" data-widget="card" role="button" tabindex="0" aria-pressed="false">'
+        f'<div class="ck-front">{inline(i.get("front"))}<span class="ck-visually-hidden"> ({escape(ctx.say("flip"))})</span></div>'
         f'<div class="ck-back">{block(i.get("back"))}</div></div>' for i in items(brick))
     if carousel_mode:
         return f'<div class="ck-carousel ck-cards" data-widget="carousel" data-id="{a(ctx.next_id())}">{faces}</div>'

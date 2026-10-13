@@ -400,7 +400,7 @@ Qué contiene:
 
 | Ruta (dentro del almacén) | La escribe | Contenido |
 |---|---|---|
-| `workspaces/<name>-<hash>/` | `coursekit setup --media` (Remotion); `coursekit setup` y `coursekit assemble build` (constructor html) | Un espacio de trabajo de Node instalado una sola vez con `npm install`: el de Remotion (`workspaces/remotion-<hash>/`) y el constructor del backend html (`workspaces/html-builder-<hash>/`, con `@studiolxd/scorm` y `esbuild`). `<hash>` se calcula a partir de su `package.json` y su `package-lock.json`: los proyectos con las mismas dependencias comparten la carpeta, y un proyecto que edita su `package.json` tiene otra. El constructor html toma su `package.json` de coursekit, así que todos los proyectos de la misma versión lo comparten. |
+| `workspaces/<name>-<hash>/` | `coursekit setup --media` (Remotion); `coursekit setup` y `coursekit assemble build` (constructor html); `coursekit assemble check` (verificador html) | Un espacio de trabajo de Node instalado una sola vez con `npm install`: el de Remotion (`workspaces/remotion-<hash>/`), el constructor del backend html (`workspaces/html-builder-<hash>/`, con `@studiolxd/scorm` y `esbuild`) y su verificador (`workspaces/html-checker-<hash>/`, con `playwright-core` y `axe-core`; usa el navegador instalado y no descarga ninguno). `<hash>` se calcula a partir de su `package.json` y su `package-lock.json`: los proyectos con las mismas dependencias comparten la carpeta, y un proyecto que edita su `package.json` tiene otra. El constructor html toma su `package.json` de coursekit, así que todos los proyectos de la misma versión lo comparten. |
 | `installed.json` | `coursekit setup`, `coursekit assemble build` | El registro de lo que coursekit instaló fuera de los proyectos, para que `coursekit uninstall` pueda quitarlo. |
 
 `installed.json` es un fichero JSON con una lista por cada tipo de cosa:
@@ -426,6 +426,7 @@ No lo edites a mano. Es solo un registro: si se pierde, `coursekit uninstall` si
 | Las líneas de los ficheros de la terminal y las variables de usuario de Windows. | `project.yaml › network`: qué certificado de CA usar. |
 | Los paquetes del sistema (`ffmpeg`, `node`, `vhs`, `asciinema`). | |
 | `workspaces/html-builder-<hash>/`: el constructor del backend html (`@studiolxd/scorm`, `esbuild`). | Nada: el proyecto no guarda copia ni enlace; `coursekit assemble build` usa el del almacén. |
+| `workspaces/html-checker-<hash>/`: el verificador del backend html (`playwright-core`, `axe-core`). | Nada: `coursekit assemble check` lo vuelve a preparar la próxima vez. |
 
 El `.gitignore` que escribe `coursekit init` ignora `node_modules/` (`coursekit init --update` refresca el `.gitignore` salvo que lo hayas editado a mano), así que el enlace nunca se sube. Si no se puede crear el enlace, o `tools/remotion/` ya tiene una carpeta `node_modules` de verdad, se usa esa carpeta tal cual.
 

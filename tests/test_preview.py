@@ -77,3 +77,22 @@ def test_preview_builds_the_unit_it_opens_and_refuses_creator(html_course, monke
     monkeypatch.setattr(coursemod, "backend", lambda course: "creator")
     assert main(["preview", "PWD"]) == 1
     assert "creator backend" in capsys.readouterr().err
+
+
+def test_the_simulated_lms_is_served_and_media_can_be_asked_by_parts(served):
+    base, course = served
+    status, kind, body = _get(base + "/__ck/lms.js")
+    assert status == 200 and kind.startswith("text/javascript") and b"export function createLms" in body
+    page = _get(base + "/")[2].decode("utf-8")
+    assert '<script type="module">' in page and 'import { createLms } from "/__ck/lms.js";' in page
+    (preview.unit_dir(course, 1) / "media").mkdir(exist_ok=True)
+    (preview.unit_dir(course, 1) / "media" / "a.mp3").write_bytes(bytes(range(100)))
+    request = urllib.request.Request(base + "/unit/01/media/a.mp3", headers={"Range": "bytes=10-19"})
+    with urllib.request.urlopen(request, timeout=5) as response:
+        assert response.status == 206 and response.headers["Content-Range"] == "bytes 10-19/100"
+        assert response.read() == bytes(range(10, 20))
+    request = urllib.request.Request(base + "/unit/01/media/a.mp3", headers={"Range": "bytes=200-"})
+    with pytest.raises(urllib.error.HTTPError) as error:
+        urllib.request.urlopen(request, timeout=5)
+    assert error.value.code == 416
+    assert _get(base + "/favicon.ico")[0] == 204

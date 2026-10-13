@@ -33,6 +33,15 @@ function area(node, box) {
   }
 }
 
+// The part of a screen a hotspot points at; a heading cannot be a button, so its text is wrapped in one.
+function targetOf(node) {
+  if (!node || !/^H[1-6]$/.test(node.tagName)) return node;
+  const inner = el("span", { class: "ck-sim-target-text" });
+  inner.append(...node.childNodes);
+  node.appendChild(inner);
+  return inner;
+}
+
 function portraitFigure(person, name) {
   const figure = el("figure", { class: "ck-sim-person" });
   if (person && person.path) figure.appendChild(el("img", { src: person.path, alt: person.alt || name }));
@@ -70,13 +79,15 @@ function initSimulation(root, ui, tracker) {
   };
   const grade = () => (data.max_score > 0 ? Math.max(0, Math.min(100, Math.round((100 * run.score) / data.max_score))) : 0);
 
-  function button(label, onClick, extra = "") {
-    const node = el("button", { type: "button", class: `ck-btn ${extra}`.trim() }, label);
+  // `attrs`: the marks a checker plays by (`data-ck-decision`, `data-ck-continue`, `data-ck-restart`)
+  function button(label, onClick, extra = "", attrs = {}) {
+    const node = el("button", { type: "button", class: `ck-btn ${extra}`.trim(), ...attrs }, label);
     node.addEventListener("click", onClick);
     return node;
   }
 
-  function decide(decision, label) {
+  // `index`: the place of the decision among the scene's choices and hotspots (a, b, c… in the tracking)
+  function decide(decision, label, index) {
     const before = run.score;
     Object.entries(decision.effects || {}).forEach(([key, value]) => {
       run.env[key] = (run.env[key] || 0) + value;
@@ -89,7 +100,8 @@ function initSimulation(root, ui, tracker) {
     tracker.interaction({
       id: `${data.id}-${run.path.length}`,
       type: "choice",
-      learnerResponse: strip(label).slice(0, 250),
+      choice: index,
+      description: strip(label).slice(0, 250),
       result: points > 0 ? "correct" : points < 0 ? "incorrect" : "neutral",
       weighting: Math.abs(points) || 1,
     });
@@ -97,7 +109,7 @@ function initSimulation(root, ui, tracker) {
       choices.replaceChildren();
       stage.querySelectorAll(".ck-sim-hotspot").forEach((node) => node.remove());
       feedback.innerHTML = decision.feedback;
-      choices.appendChild(button(ui.continue, () => go(decision.goto), "ck-btn-primary"));
+      choices.appendChild(button(ui.continue, () => go(decision.goto), "ck-btn-primary", { "data-ck-continue": "feedback" }));
       choices.querySelector("button").focus();
       run.at = decision.goto;
       persist();
@@ -226,7 +238,7 @@ function initSimulation(root, ui, tracker) {
       run = fresh();
       persist();
       render(true);
-    }));
+    }, "", { "data-ck-restart": "" }));
     end.appendChild(actions);
   }
 
@@ -271,13 +283,17 @@ function initSimulation(root, ui, tracker) {
     }
     if (scene.next) {
       const step = scene.next.find((s) => test(s.if, run.env));
-      choices.appendChild(button(ui.continue, () => go(step.goto), "ck-btn-primary"));
+      choices.appendChild(button(ui.continue, () => go(step.goto), "ck-btn-primary", { "data-ck-continue": "next" }));
     } else {
-      (scene.choices || []).filter((d) => test(d.if, run.env)).forEach((d) => {
-        choices.appendChild(button(d.text, () => decide(d, d.text), "ck-sim-choice"));
+      const offset = (scene.choices || []).length;
+      (scene.choices || []).forEach((d, i) => {
+        if (!test(d.if, run.env)) return;
+        choices.appendChild(button(d.text, () => decide(d, d.text, i), "ck-sim-choice", { "data-ck-decision": i }));
       });
-      (scene.hotspots || []).filter((d) => test(d.if, run.env)).forEach((d) => {
-        const part = d.target ? stage.querySelector(`[data-target="${d.target}"]`) : null;
+      (scene.hotspots || []).forEach((d, j) => {
+        if (!test(d.if, run.env)) return;
+        const index = offset + j;
+        const part = d.target ? targetOf(stage.querySelector(`[data-target="${d.target}"]`)) : null;
         if (part || (scene._background && !d.target)) {
           hint.textContent = ui.sim_hint;
           hint.hidden = false;
@@ -286,21 +302,30 @@ function initSimulation(root, ui, tracker) {
           part.classList.add("ck-sim-target");
           part.setAttribute("role", "button");
           part.setAttribute("tabindex", "0");
-          part.setAttribute("aria-label", strip(d.label));
-          part.addEventListener("click", () => decide(d, d.label));
+          // what the part shows stays its name (as the learner reads it); the decision is its description
+          if (part.textContent.trim()) {
+            const note = el("span", { class: "ck-visually-hidden", id: `${data.id}-d${index}` }, "");
+            note.textContent = strip(d.label);
+            stage.appendChild(note);
+            part.setAttribute("aria-describedby", note.id);
+          } else {
+            part.setAttribute("aria-label", strip(d.label));
+          }
+          part.setAttribute("data-ck-decision", String(index));
+          part.addEventListener("click", () => decide(d, d.label, index));
           part.addEventListener("keydown", (event) => {
             if (event.key === "Enter" || event.key === " ") {
               event.preventDefault();
-              decide(d, d.label);
+              decide(d, d.label, index);
             }
           });
         } else if (scene._background && !d.target) {
-          const spot = el("button", { type: "button", class: "ck-sim-hotspot", "aria-label": strip(d.label) });
+          const spot = el("button", { type: "button", class: "ck-sim-hotspot", "aria-label": strip(d.label), "data-ck-decision": index });
           area(spot, d.area);
-          spot.addEventListener("click", () => decide(d, d.label));
+          spot.addEventListener("click", () => decide(d, d.label, index));
           stage.appendChild(spot);
         } else {
-          choices.appendChild(button(d.label, () => decide(d, d.label), "ck-sim-choice"));
+          choices.appendChild(button(d.label, () => decide(d, d.label, index), "ck-sim-choice", { "data-ck-decision": index }));
         }
       });
     }

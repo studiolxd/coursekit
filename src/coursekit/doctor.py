@@ -113,6 +113,9 @@ def collect(project: Project) -> list[Section]:
     if setup_needs_html_builder(project):
         builders = sorted(store.workspaces_dir().glob("html-builder-*")) if store.workspaces_dir().is_dir() else []
         base.add(bool(builders) or None, t("doctor", "html_builder"), "coursekit setup")
+        from coursekit.htmlkit.playcheck import find_browser
+
+        base.add(bool(find_browser()) or None, t("doctor", "html_browser"), t("doctor", "html_browser_hint"))
 
     theme = Section(t("doctor", "section_theme"))
     found = thememod.status(project)

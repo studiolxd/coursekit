@@ -43,6 +43,16 @@ def test_roles_palette_references_and_fonts_are_resolved():
     assert {"text-soft", "surface", "highlight", "line", "accent-strong"} == set(origin["derived"])
 
 
+def test_a_light_accent_is_darkened_to_be_read_as_text():
+    data = creator()
+    data["theme"]["config"]["colors"]["semantic"]["accent"] = {"custom": "#BAABFF"}
+    tokens = theme.from_creator(data)
+    assert tokens["color"]["accent"] == "#BAABFF"
+    strong = tokens["color"]["accent-strong"]
+    assert strong != "#BAABFF" and theme.contrast(strong, tokens["color"]["background"]) >= 4.5
+    assert any("accent-strong" in line for ok, line in theme.check(tokens) if ok)
+
+
 def test_the_soft_colours_stay_readable_and_the_whole_theme_passes_the_check():
     tokens = theme.from_creator(creator())
     assert theme.contrast(tokens["color"]["text-soft"], tokens["color"]["background"]) >= 4.5

@@ -202,6 +202,8 @@ function choiceType() {
         label.classList.toggle("is-wrong", input.checked && input.dataset.correct !== "1");
       });
     },
+    // the positions of the options chosen (the tracker writes them as the standard asks)
+    choices: (q) => Array.from(q.querySelectorAll("input")).map((input, i) => (input.checked ? i : -1)).filter((i) => i >= 0),
     response: (q) => Array.from(q.querySelectorAll("input")).map((input, i) => (input.checked ? letters(i) : "")).join(""),
   };
 }
@@ -240,6 +242,7 @@ export function initQuestion(q, ui, onGraded) {
       type.reset(q);
     },
     response: () => type.response(q),
+    choices: () => (type.choices ? type.choices(q) : null),
   };
   // Practice questions check themselves; the ones of a test are graded all together by the lesson.
   if (!q.closest('[data-type="evaluation"]')) {

@@ -400,7 +400,7 @@ What it holds:
 
 | Path (inside the store) | Written by | Content |
 |---|---|---|
-| `workspaces/<name>-<hash>/` | `coursekit setup --media` (Remotion); `coursekit setup` and `coursekit assemble build` (html builder) | A Node workspace installed once with `npm install`: the Remotion one (`workspaces/remotion-<hash>/`) and the builder of the html backend (`workspaces/html-builder-<hash>/`, with `@studiolxd/scorm` and `esbuild`). `<hash>` is computed from its `package.json` and `package-lock.json`: projects with the same dependencies share the folder, and a project that edits its `package.json` gets another one. The html builder takes its `package.json` from coursekit, so every project of the same version shares it. |
+| `workspaces/<name>-<hash>/` | `coursekit setup --media` (Remotion); `coursekit setup` and `coursekit assemble build` (html builder); `coursekit assemble check` (html checker) | A Node workspace installed once with `npm install`: the Remotion one (`workspaces/remotion-<hash>/`), the builder of the html backend (`workspaces/html-builder-<hash>/`, with `@studiolxd/scorm` and `esbuild`) and its checker (`workspaces/html-checker-<hash>/`, with `playwright-core` and `axe-core`; it uses the installed browser and downloads none). `<hash>` is computed from its `package.json` and `package-lock.json`: projects with the same dependencies share the folder, and a project that edits its `package.json` gets another one. The html builder takes its `package.json` from coursekit, so every project of the same version shares it. |
 | `installed.json` | `coursekit setup`, `coursekit assemble build` | The record of what coursekit installed outside the projects, so that `coursekit uninstall` can take it away. |
 
 `installed.json` is a JSON file with one list per kind of thing:
@@ -426,6 +426,7 @@ Do not edit it by hand. It is only a record: if it is lost, the shell-file lines
 | The lines in the shell files and the user variables of Windows. | `project.yaml › network`: which CA certificate to use. |
 | The system packages (`ffmpeg`, `node`, `vhs`, `asciinema`). | |
 | `workspaces/html-builder-<hash>/`: the builder of the html backend (`@studiolxd/scorm`, `esbuild`). | Nothing: the project keeps no copy or link; `coursekit assemble build` uses the one in the store. |
+| `workspaces/html-checker-<hash>/`: the checker of the html backend (`playwright-core`, `axe-core`). | Nothing: `coursekit assemble check` prepares it again the next time. |
 
 The `.gitignore` that `coursekit init` writes ignores `node_modules/` (`coursekit init --update` refreshes the `.gitignore` unless you edited it by hand), so the link is never committed. If the link cannot be made, or `tools/remotion/` already has a real `node_modules` folder, that folder is used as it is.
 

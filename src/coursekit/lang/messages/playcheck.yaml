@@ -1,0 +1,57 @@
+# `coursekit assemble check`: the built package of a unit, played in a browser.
+missing_file:
+  es: "el paquete no contiene {ref}, al que apunta la página o sus estilos"
+  en: "the package does not contain {ref}, which the page or its styles point to"
+path_unplayable:
+  es: "{sim}: no se puede reproducir el camino {n} (una decisión que no se encuentra en su escena)"
+  en: "{sim}: path {n} cannot be replayed (a decision that is not in its scene)"
+no_node: {es: "no se ha jugado la unidad: falta Node (coursekit doctor)", en: "the unit was not played: Node is missing (coursekit doctor)"}
+no_workspace:
+  es: "no se ha jugado la unidad: no se pudo preparar el verificador (npm install de playwright-core y axe-core; coursekit doctor)"
+  en: "the unit was not played: the checker could not be prepared (npm install of playwright-core and axe-core; coursekit doctor)"
+no_browser:
+  es: "no se ha jugado la unidad: no hay navegador (instala Google Chrome o Microsoft Edge, o indica uno con --browser): {error}"
+  en: "the unit was not played: no browser (install Google Chrome or Microsoft Edge, or give one with --browser): {error}"
+run_failed: {es: "no se ha podido jugar la unidad: {error}", en: "the unit could not be played: {error}"}
+console: {es: "error en la consola: {text}", en: "error in the console: {text}"}
+request_failed: {es: "no se pudo cargar {text}", en: "could not load {text}"}
+axe:
+  es: "{lesson}: accesibilidad, {rule} ({impact}): {help} — {count} elemento(s): {targets}"
+  en: "{lesson}: accessibility, {rule} ({impact}): {help} — {count} element(s): {targets}"
+test_score:
+  es: "{lesson}: respondida bien, la prueba debería dar {expected} y el SCORM recibe {got}"
+  en: "{lesson}: answered right, the test should give {expected} and the SCORM gets {got}"
+unit_score:
+  es: "la nota de la unidad (sus simulaciones evaluables por su mejor camino) debería ser {expected} y el SCORM recibe {got}"
+  en: "the score of the unit (its scored simulations by their best path) should be {expected} and the SCORM gets {got}"
+best_path: {es: "mejor", en: "best"}
+path_stuck:
+  es: "{sim}, camino {n}: en el paso {step} no aparece {what}"
+  en: "{sim}, path {n}: at step {step} there is no {what}"
+path_differs:
+  es: "{sim}, camino {n}: debería acabar en {ending} con {score} puntos y acaba en {got_ending} con {got_score} (final {done})"
+  en: "{sim}, path {n}: should end at {ending} with {score} points and ends at {got_ending} with {got_score} (ended {done})"
+adaptive:
+  es: "bloque «:::if {condition}» tras el camino {n} de {sim}: debería verse la rama {expected} y se ve la {got}"
+  en: "block ':::if {condition}' after path {n} of {sim}: the {expected} branch should show and the {got} one does"
+lms_refused:
+  es: "el LMS rechazaría {name} = {value} (error {code}: {message})"
+  en: "the LMS would refuse {name} = {value} (error {code}: {message})"
+suspend_over:
+  es: "el estado guardado llega a {size} caracteres y el estándar admite {limit}: el LMS lo cortaría"
+  en: "the saved state reaches {size} characters and the standard admits {limit}: the LMS would cut it"
+suspend_near:
+  es: "el estado guardado llega a {size} de los {limit} caracteres que admite el estándar"
+  en: "the saved state reaches {size} of the {limit} characters the standard admits"
+no_resume:
+  es: "al salir y volver a entrar la unidad no sigue donde estaba (entrada {entry}, ubicación {location} → {after}, o el estado de sus simulaciones cambia)"
+  en: "on exiting and coming back the unit does not resume where it was (entry {entry}, location {location} → {after}, or the state of its simulations changes)"
+summary:
+  es: "unidad {n}: {lessons} lecciones, {tests} prueba(s), {simulations} simulación(es) y {paths} camino(s) jugados — {errors} error(es), {warnings} aviso(s)"
+  en: "unit {n}: {lessons} lessons, {tests} test(s), {simulations} simulation(s) and {paths} path(s) played — {errors} error(s), {warnings} warning(s)"
+files_only:
+  es: "unidad {n}: comprobados solo los ficheros — {errors} error(es), {warnings} aviso(s)"
+  en: "unit {n}: only the files checked — {errors} error(s), {warnings} warning(s)"
+not_delivered:
+  es: "la comprobación ha encontrado errores: no se escribe el paquete (corrígelos, o --no-check para escribirlo igualmente)"
+  en: "the check found errors: the package is not written (fix them, or --no-check to write it anyway)"

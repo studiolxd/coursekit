@@ -27,6 +27,7 @@ It prints what is installed and configured on this machine for the current proje
 | `MarkItDown (coursekit brief)` | the library that converts the brief documents. Fix: reinstall coursekit |
 | `Node (web links of brief/links.md)` | needed only to download the URLs of the brief. Fix: `coursekit setup --media` |
 | `html backend builder (@studiolxd/scorm and esbuild)` | shown only when `project.yaml › assembly.backend` is html (a course that uses html through its own `course.yaml` does not make it appear). `ok` when the builder is installed in the coursekit store; `info`, with the fix after the arrow, when it is not. Fix: `coursekit setup` (it needs Node and npm). See [The html backend](#the-html-backend) |
+| `browser for coursekit assemble check (Chrome or Edge)` | shown in the same projects. `ok` when Google Chrome, Microsoft Edge or Chromium is installed; `info` when not, and then `coursekit assemble check` (and the check of `assemble build --version`) only checks the files of the package. Fix: install one of them, or give one with `--browser PATH` |
 
 ### Agent tools
 

@@ -103,13 +103,13 @@ lessons.forEach((lesson) => {
     const earned = results.filter((r) => r.ok).length + scoredSims.reduce((sum, sim) => sum + (sim.weight * sim.grade()) / 100, 0);
     const score = Math.round((100 * earned) / Math.max(1, results.length + weights));
     const passed = score >= (quiz.passingGrade ?? 0);
-    const interactions = results.map((r) => ({
-      id: r.item.q.dataset.id,
-      type: ["single", "multi"].includes(r.item.q.dataset.type) ? "choice" : "fill-in",
-      learnerResponse: r.item.response().slice(0, 250),
-      result: r.ok ? "correct" : "incorrect",
-      weighting: 1,
-    }));
+    const interactions = results.map((r) => {
+      const choices = r.item.choices();
+      const entry = { id: r.item.q.dataset.id, type: choices ? "choice" : "fill-in", result: r.ok ? "correct" : "incorrect", weighting: 1 };
+      if (choices) entry.choices = choices;
+      else entry.learnerResponse = r.item.response().slice(0, 250);
+      return entry;
+    });
     tracker.quiz({ score, passed, interactions });
     status(score, passed);
     return passed;

@@ -1,6 +1,7 @@
 // SCORM tracking of one unit, on top of @studiolxd/scorm. Without an LMS (a preview from a folder) the runtime is the
 // in-memory mock, so the package works the same and nothing is sent anywhere.
 import { createScormSession } from "@studiolxd/scorm";
+import { conform } from "./interactions.js";
 
 const value = (result, fallback) => (result && result.ok ? result.value : fallback);
 
@@ -87,7 +88,7 @@ export function createTracker(config) {
         safe(() => api.setScore({ raw: score, min: 0, max: 100, scaled: score / 100 }));
         safe(() => (passed ? api.setPassed() : api.setFailed()));
         interactions.forEach((entry) => {
-          safe(() => api.recordInteraction(state.interactions, entry));
+          safe(() => api.recordInteraction(state.interactions, conform(entry, config.standard)));
           state.interactions += 1;
         });
       }
@@ -106,8 +107,9 @@ export function createTracker(config) {
       return run;
     },
     interaction(entry) {
-      if (api) safe(() => api.recordInteraction(state.interactions, entry));
+      if (api) safe(() => api.recordInteraction(state.interactions, conform(entry, config.standard)));
       state.interactions += 1;
+      save();
     },
     finish() {
       if (!api) return;

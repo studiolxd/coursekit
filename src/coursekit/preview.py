@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import mimetypes
+import re
 import threading
 import webbrowser
 from collections.abc import Callable
@@ -25,10 +26,12 @@ from coursekit.i18n import t
 
 Say = Callable[[str], None]
 
+RANGE_RE = re.compile(r"^bytes=(\d*)-(\d*)$")
+
 # The texts of the panel, from lang/messages/preview.yaml.
 PANEL_TEXTS = ("panel_title", "unit", "standard", "status", "completion", "success", "score", "location", "progress",
                "entry", "exit", "session_time", "suspend_data", "chars", "interactions", "interaction_id", "response",
-               "result", "weighting", "none", "calls", "reopen", "reset", "reloaded",
+               "result", "weighting", "none", "calls", "errors", "reopen", "reset", "reloaded",
                "not_built", "hide", "show")
 
 
@@ -68,21 +71,48 @@ def handler_for(course: dict, units: list[dict], first: int):
             pass
 
         def _send(self, body: bytes, kind: str, status: HTTPStatus = HTTPStatus.OK) -> None:
-            self.send_response(status)
-            self.send_header("Content-Type", kind)
-            self.send_header("Content-Length", str(len(body)))
-            self.send_header("Cache-Control", "no-store")
-            self.end_headers()
-            if self.command != "HEAD":
-                self.wfile.write(body)
+            # audio and video ask for parts (Range): without them the browser gives up on the file
+            part = RANGE_RE.match(self.headers.get("Range") or "") if status == HTTPStatus.OK else None
+            size = len(body)
+            if part:
+                first = int(part.group(1) or 0)
+                last = min(int(part.group(2)) if part.group(2) else size - 1, size - 1)
+                if first >= size or first > last:
+                    self.send_response(HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
+                    self.send_header("Content-Range", f"bytes */{size}")
+                    self.send_header("Content-Length", "0")
+                    self.end_headers()
+                    return
+                body = body[first:last + 1]
+                status = HTTPStatus.PARTIAL_CONTENT
+            try:
+                self.send_response(status)
+                self.send_header("Content-Type", kind)
+                self.send_header("Content-Length", str(len(body)))
+                self.send_header("Accept-Ranges", "bytes")
+                if part:
+                    self.send_header("Content-Range", f"bytes {first}-{last}/{size}")
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                if self.command != "HEAD":
+                    self.wfile.write(body)
+            except (BrokenPipeError, ConnectionResetError):
+                pass  # the browser stopped wanting it (a reload, a media element that moved on)
 
         def do_HEAD(self):  # noqa: N802
             self.do_GET()
 
         def do_GET(self):  # noqa: N802
             path = unquote(urlsplit(self.path).path)
+            if path == "/favicon.ico":
+                self._send(b"", "image/x-icon", HTTPStatus.NO_CONTENT)
+                return
             if path in ("/", "/index.html"):
                 self._send(page(course, units, first).encode("utf-8"), "text/html; charset=utf-8")
+                return
+            if path == "/__ck/lms.js":
+                body = resources.files("coursekit.templates.html").joinpath("lms.js").read_bytes()
+                self._send(body, "text/javascript; charset=utf-8")
                 return
             if path == "/__ck/stamps":
                 body = json.dumps({str(u["n"]): stamp(course, u["n"]) for u in units})
@@ -103,13 +133,18 @@ def handler_for(course: dict, units: list[dict], first: int):
     return Handler
 
 
+class Server(ThreadingHTTPServer):
+    daemon_threads = True
+    request_queue_size = 128  # a page asks for many images at once: the default queue (5) refuses connections
+
+
 def serve(course: dict, units: list[dict], first: int, port: int = 8765) -> ThreadingHTTPServer:
     """The preview server on 127.0.0.1 (the port asked for, else a free one); call `serve_forever` on it."""
     handler = handler_for(course, units, first)
     try:
-        return ThreadingHTTPServer(("127.0.0.1", port), handler)
+        return Server(("127.0.0.1", port), handler)
     except OSError:
-        return ThreadingHTTPServer(("127.0.0.1", 0), handler)
+        return Server(("127.0.0.1", 0), handler)
 
 
 def run(course: dict, units: list[dict], first: int, port: int, open_browser: bool, say: Say = print) -> int:

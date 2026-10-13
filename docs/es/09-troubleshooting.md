@@ -27,6 +27,7 @@ Imprime qué hay instalado y configurado en este equipo para el proyecto actual.
 | `MarkItDown (coursekit brief)` | la biblioteca que convierte los documentos del brief. Solución: reinstala coursekit |
 | `Node (enlaces web de brief/links.md)` | solo hace falta para descargar las URLs del brief. Solución: `coursekit setup --media` |
 | `constructor del backend html (@studiolxd/scorm y esbuild)` | solo aparece cuando `project.yaml › assembly.backend` es html (un curso que usa html por su propio `course.yaml` no lo hace aparecer). `ok` cuando el constructor está instalado en el almacén de coursekit; `info`, con la solución tras la flecha, cuando no lo está. Solución: `coursekit setup` (necesita Node y npm). Mira [El backend html](#el-backend-html) |
+| `navegador para coursekit assemble check (Chrome o Edge)` | sale en los mismos proyectos. `ok` cuando está instalado Google Chrome, Microsoft Edge o Chromium; `info` cuando no, y entonces `coursekit assemble check` (y la comprobación de `assemble build --version`) solo comprueba los ficheros del paquete. Solución: instalar uno de ellos, o indicar uno con `--browser RUTA` |
 
 ### Herramientas de agente
 

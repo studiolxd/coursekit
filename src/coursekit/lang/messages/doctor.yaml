@@ -9,6 +9,10 @@ section_mirror: {es: Carpeta espejo, en: Mirror folder}
 store: {es: "almacén de coursekit {path} ({size})", en: "coursekit store {path} ({size})"}
 remotion_deps: {es: "dependencias de Remotion (tools/remotion/node_modules)", en: "Remotion dependencies (tools/remotion/node_modules)"}
 html_builder: {es: "constructor del backend html (@studiolxd/scorm y esbuild)", en: "html backend builder (@studiolxd/scorm and esbuild)"}
+html_browser: {es: "navegador para coursekit assemble check (Chrome o Edge)", en: "browser for coursekit assemble check (Chrome or Edge)"}
+html_browser_hint:
+  es: "instala Google Chrome o Microsoft Edge; sin ellos, check solo comprueba los ficheros"
+  en: "install Google Chrome or Microsoft Edge; without them, check only checks the files"
 section_theme: {es: "Theme del proyecto", en: "Project theme"}
 theme_derived: {es: "tokens derivados del theme de la plataforma", en: "tokens derived from the theme of the platform"}
 theme_missing: {es: "sin tokens de diseño (theme/tokens.json)", en: "no design tokens (theme/tokens.json)"}

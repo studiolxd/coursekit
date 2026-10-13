@@ -1,0 +1,9 @@
+{
+  "name": "coursekit-html-checker",
+  "private": true,
+  "description": "Plays a built html unit in a headless browser for `coursekit assemble check`: Playwright drives the installed Chrome, axe checks accessibility.",
+  "dependencies": {
+    "axe-core": "^4.14.0",
+    "playwright-core": "^1.64.0"
+  }
+}

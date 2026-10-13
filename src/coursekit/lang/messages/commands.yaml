@@ -216,10 +216,14 @@ help_assemble:
   es: "monta una unidad: planifica, compara y registra en creator, o construye su paquete con el backend html"
   en: "assemble a unit: plan, diff and record in creator, or build its package with the html backend"
 help_assemble_action:
-  es: "plan, diff, applied, checked y link son del backend creator; build construye el paquete del backend html"
-  en: "plan, diff, applied, checked and link are for the creator backend; build builds the package of the html backend"
+  es: "plan, diff, applied, checked y link son del backend creator; build construye el paquete del backend html y check lo juega en un navegador"
+  en: "plan, diff, applied, checked and link are for the creator backend; build builds the package of the html backend and check plays it in a browser"
 help_assemble_unit: {es: "número de unidad (build sin él: todas)", en: "unit number (build without it: every unit)"}
-help_assemble_version: {es: "build: versión del paquete; con ella también se crea el zip en delivery/", en: "build: version of the package; with it the zip is also created in delivery/"}
+help_assemble_version: {es: "build: versión del paquete; con ella también se crea el zip en delivery/, si pasa la comprobación (check)", en: "build: version of the package; with it the zip is also created in delivery/, if it passes the check"}
+help_assemble_no_check: {es: "build --version: escribir el zip sin jugarlo antes (check)", en: "build --version: write the zip without playing it first (check)"}
+help_assemble_browser:
+  es: "build y check: el navegador con el que se juega (ruta al ejecutable; por defecto Chrome o Edge instalados)"
+  en: "build and check: the browser it is played with (path to the executable; by default the installed Chrome or Edge)"
 assemble_build_needs_html:
   es: "{code} se monta con el backend «{backend}»: `build` es del backend html (project.yaml › assembly.backend o course.yaml › assembly.backend)"
   en: "{code} is assembled with the '{backend}' backend: `build` is for the html backend (project.yaml › assembly.backend or course.yaml › assembly.backend)"

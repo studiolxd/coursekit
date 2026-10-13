@@ -283,7 +283,7 @@ El runtime es `@studiolxd/scorm`, empaquetado en `assets/player.js`.
 | Progreso | Lecciones visitadas dividido entre las lecciones de la unidad (medida de progreso, SCORM 2004) |
 | Finalización | Sin test: completada cuando se han visitado todas las lecciones, incompleta hasta entonces. Con test, en SCORM 2004: completada cuando se han visitado todas las lecciones, y aprobada o suspensa cuando se envía el test. Con test, en SCORM 1.2, que tiene un único estado: aprobada o suspensa cuando se envía el test |
 | Puntuación | Bruta (porcentaje), mínimo 0 y máximo 100; en SCORM 2004 también la escalada |
-| Interacciones | Una por pregunta del test: su id, el tipo (choice para la opción simple y múltiple, fill-in para el resto), la respuesta de la persona (cortada a 250 caracteres), correcta o incorrecta, peso 1. Y una por decisión en una simulación: `<simulación>-<n>`, choice, el texto de la decisión, correcta si sumó puntos, incorrecta si los restó y neutral si no, con sus puntos como peso |
+| Interacciones | Una por pregunta del test: su id, el tipo (choice para la opción simple y múltiple, fill-in para el resto), la respuesta (en una choice, las letras de las opciones elegidas: `a,c` en SCORM 1.2, `a[,]c` en 2004; en el resto, la respuesta de la persona cortada a 250 caracteres), correcta o incorrecta (`wrong` en 1.2, `incorrect` en 2004), peso 1. Y una por decisión en una simulación: `<simulación>-<n>`, choice, la letra de la decisión entre las de su escena (`a`, `b`…), su texto como descripción (solo SCORM 2004: 1.2 no tiene descripción), correcta si sumó puntos, incorrecta si los restó y neutral si no, con sus puntos como peso. Todos los valores son de los que admite el estándar: un LMS estricto rechaza el resto y se pierden |
 | Sesión | Tiempo de sesión y salida `suspend`; los datos se confirman tras cada cambio y la sesión se termina cuando la página se oculta o se cierra |
 
 ### Vista previa con LMS simulado
@@ -297,7 +297,10 @@ coursekit preview PWD            # abre http://127.0.0.1:8765/ en el navegador
 ```
 
 - Un servidor local muestra una página que tiene las API de SCORM 1.2 y 2004, con la unidad dentro: el paquete
-  encuentra su LMS y manda lo que mandaría en una plataforma. Nada sale de la máquina.
+  encuentra su LMS y manda lo que mandaría en una plataforma. Nada sale de la máquina. El LMS simulado es tan estricto
+  como una plataforma: un valor que el estándar no admite (un resultado, una respuesta, una nota fuera de rango, un
+  estado guardado demasiado largo) se rechaza con su código de error y sale en rojo en el panel, en **Valores que un
+  LMS rechazaría**.
 - Lo que manda la unidad se guarda en el navegador, por curso y unidad: **Salir y volver a entrar** cierra la sesión
   (salida y cierre) y la abre otra vez, para ver si sigue donde estaba (`entry: resume`, la ubicación, el estado de
   cada simulación). **Borrar el seguimiento** empieza la unidad de cero.
@@ -310,6 +313,33 @@ coursekit preview PWD            # abre http://127.0.0.1:8765/ en el navegador
 
 Es una comprobación del paquete, no sustituye a probarlo en la plataforma real (SCORM Cloud o el LMS del cliente)
 antes de entregar.
+
+### Comprobar el paquete
+
+Antes de entregar, [`coursekit assemble check`](03-commands.md#coursekit-assemble) juega cada unidad como lo haría el
+alumno, y `coursekit assemble build --version` lo hace por sí solo antes de escribir el zip (`--no-check` lo salta):
+
+```bash
+coursekit assemble check PWD            # todas las unidades
+coursekit assemble check PWD --unit 2
+```
+
+| Qué comprueba | Es un error cuando |
+|---|---|
+| Ficheros | La página o sus estilos apuntan a un fichero que no está en el paquete |
+| Consola y carga | El reproductor escribe un error en la consola, o un fichero no carga |
+| Accesibilidad | axe encuentra una infracción `critical` o `serious` en una lección (`moderate` y `minor` son avisos); un problema de contraste muestra su relación y sus colores |
+| Pruebas | Respondida bien, tras el mejor camino de sus simulaciones evaluables, una prueba no manda la nota que debe |
+| Nota de la unidad | En una unidad sin prueba, sus simulaciones evaluables (por su mejor camino) no dan la nota que deben |
+| Simulaciones | Un camino de [`coursekit paths`](03-commands.md#coursekit-paths) no se puede jugar, o acaba en otra escena o con otros puntos |
+| Bloques adaptativos | Tras un camino, un bloque `:::if` muestra otra rama que la que pide su condición |
+| SCORM | El LMS rechazaría un valor; el estado guardado no cabe en el estándar (aviso desde el 80 %) |
+| Reanudar | Al salir y volver a entrar, la unidad no está donde estaba |
+
+Necesita Node y un navegador: el Google Chrome instalado o, si no, Microsoft Edge (`--browser RUTA` para otro), manejado
+sin ventana por Playwright. La primera vez prepara el verificador en el almacén (`npm install` de `playwright-core` y
+`axe-core`; no se descarga ningún navegador). Sin navegador solo se comprueban los ficheros, con un aviso. Una unidad con
+muchos caminos tarda unos segundos: se juegan todos los caminos de todas las simulaciones.
 
 ### Estilos
 
