@@ -277,13 +277,12 @@ def simulation_blocks(lines: list[str], ctx: dict) -> list[str]:
     return out
 
 
-def conditional_parts(lines: list[str], start: int) -> tuple[str, list[str], list[str], int]:
-    """From the `:::if` line at `start`: (condition, lines of the :::if branch, lines of the :::else branch, index of the
-    closing line). Directives inside the branches are kept whole."""
-    condition = simulation.IF_RE.match(lines[start].strip()).group(1)
-    then: list[str] = []
+def conditional_parts(lines: list[str], start: int) -> tuple[list[tuple[str, list[str]]], list[str], int]:
+    """From the `:::if` line at `start`: ([(condition, lines) of the :::if branch and of each :::elif], lines of the :::else
+    branch, index of the closing line). Directives inside the branches are kept whole."""
+    branches: list[tuple[str, list[str]]] = [(simulation.IF_RE.match(lines[start].strip()).group(1), [])]
     other: list[str] = []
-    target = then
+    target = branches[0][1]
     i = start + 1
     in_directive = in_code = False
     while i < len(lines):
@@ -293,17 +292,22 @@ def conditional_parts(lines: list[str], start: int) -> tuple[str, list[str], lis
         elif not in_code:
             if in_directive:
                 in_directive = not DIRECTIVE_CLOSE_RE.match(stripped)
+            elif simulation.ELIF_RE.match(stripped):
+                branches.append((simulation.ELIF_RE.match(stripped).group(1), []))
+                target = branches[-1][1]
+                i += 1
+                continue
             elif simulation.ELSE_RE.match(stripped):
                 target = other
                 i += 1
                 continue
             elif DIRECTIVE_CLOSE_RE.match(stripped):
-                return condition, then, other, i
+                return branches, other, i
             elif DIRECTIVE_OPEN_RE.match(stripped):
                 in_directive = True
         target.append(lines[i])
         i += 1
-    return condition, then, other, i
+    return branches, other, i
 
 
 def directive_brick(name: str, body: list[str], ctx: dict) -> dict:
@@ -548,9 +552,11 @@ def parse_blocks(lines: list[str], ctx: dict, section_key: str) -> list[dict]:
                                                     "content": {"content": "\n".join(code)}}, "meta": {}})
         elif simulation.IF_RE.match(stripped):
             close_text()
-            condition, then, other, i = conditional_parts(lines, i)
-            bricks.append({"type": "CONDITIONAL", "data": {"condition": condition, "then": parse_blocks(then, ctx, section_key),
-                                                           "else": parse_blocks(other, ctx, section_key)}, "meta": {}})
+            branches, other, i = conditional_parts(lines, i)
+            # creator's general form: one or more branches with a condition, in order, and the neutral one
+            bricks.append({"type": "CONDITIONAL", "data": {
+                "branches": [{"condition": condition, "bricks": parse_blocks(part, ctx, section_key)} for condition, part in branches],
+                "else": parse_blocks(other, ctx, section_key)}, "meta": {}})
         elif DIRECTIVE_OPEN_RE.match(stripped):
             close_text()
             name = DIRECTIVE_OPEN_RE.match(stripped).group(1)
@@ -674,12 +680,22 @@ def quiz_settings(course: dict, unit: dict, number: str, title: str) -> dict:
             "courseWeight": pick(found.get("weight"), 1)}
 
 
+def branch_bricks(brick: dict) -> list[dict]:
+    """The bricks inside the branches of an adaptive block (every branch, then the neutral one)."""
+    data = brick["data"]
+    return [b for branch in data.get("branches") or [] for b in branch.get("bricks") or []] + list(data.get("else") or [])
+
+
+def conditions(brick: dict) -> list[str]:
+    return [str(branch.get("condition") or "") for branch in brick["data"].get("branches") or []]
+
+
 def walk(bricks: list[dict]):
     """The bricks, and those inside the branches of the adaptive blocks."""
     for brick in bricks:
         yield brick
         if brick["type"] == "CONDITIONAL":
-            yield from walk((brick["data"].get("then") or []) + (brick["data"].get("else") or []))
+            yield from walk(branch_bricks(brick))
 
 
 def for_creator(bricks: list[dict], ctx: dict, key: str) -> list[dict]:
@@ -692,7 +708,7 @@ def for_creator(bricks: list[dict], ctx: dict, key: str) -> list[dict]:
     out: list[dict] = []
     for brick in bricks:
         if brick["type"] == "CONDITIONAL":
-            ctx["warnings"].append(t("assemble", "adaptive_neutral", key=key, condition=brick["data"].get("condition", "")))
+            ctx["warnings"].append(t("assemble", "adaptive_neutral", key=key, condition=" | ".join(conditions(brick))))
             out += for_creator(brick["data"].get("else") or [], ctx, key)
         elif brick["type"] == "SIMULATION":
             sid = str(brick["data"].get("id") or "")

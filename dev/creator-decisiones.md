@@ -285,3 +285,16 @@ Contrato de creator del 2026-10-13, fase 2. Lo que hace coursekit (`player/embed
   con `restore` y `reset` con un intento nuevo.
 - Pendiente (fase 3): `CONDITIONAL`. Hasta entonces se sigue montando la rama neutra.
 
+## 13. Adelanto del contrato de los bloques condicionales (fase 3), aplicado
+
+| Creator | coursekit |
+|---|---|
+| Varias ramas: `if` / `elseif`… / `else`, hasta 10 con condición más la neutra; se ve la primera que se cumple, y la neutra si ninguna, si la simulación no ha terminado o si falla la evaluación | `:::elif` en el formato; el plan usa siempre la forma general; el reproductor html muestra la primera rama que se cumple. |
+| Forma por MCP: `{branches: [{condition, bricks}], else}` (también la corta `{condition, then, else}`); `get_lesson` devuelve siempre la general | El plan genera la general en los dos backends (`assemble.branch_bricks`, `conditions`); en creator se sigue montando la rama neutra hasta la fase en la que el alumno vea el bloque. |
+| Textos entre comillas, solo con `==` y `!=` | En `simulation.py` y `player/expr.js`, con el mismo error si se usan de otro modo; un test comprueba que los dos evalúan igual. |
+| Variables: `state.vars` y, del último `result`, `grade`, `score`, `maxScore`, `ending`, `kind`; esos cinco nombres son reservados | El paquete EMBED manda sus variables en `state.vars`; `verify` rechaza esos nombres en `state` y acepta `id.grade`… en las condiciones; el reproductor html y `assemble check` los calculan igual. |
+| Límites: 500 caracteres por condición, 8 simulaciones por bloque, un nivel, no leer una simulación de dentro, ninguna evaluable dentro | Errores de `verify`. |
+| Nunca en pruebas ni bancos | Error de `verify` si hay un bloque en `assessment.md`. |
+| Ids estables en los bricks de cada rama | Pendiente de la fase en que se monte el bloque: `applied` guardará los ids de cada rama. |
+| Calendario: montar por MCP → el alumno lo ve → editor | Seguimos con la rama neutra hasta la segunda. |
+

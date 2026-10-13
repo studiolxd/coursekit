@@ -130,7 +130,7 @@ def parse_directives(path: Path, lines: list[str], rules: dict, report: Report, 
         if in_code:
             continue
         if current is None:
-            if simmod.IF_RE.match(line.strip()) or simmod.ELSE_RE.match(line.strip()):
+            if simmod.IF_RE.match(line.strip()) or simmod.ELIF_RE.match(line.strip()) or simmod.ELSE_RE.match(line.strip()):
                 continue  # the fences of an adaptive block (scan_conditionals checks them)
             m = DIRECTIVE_OPEN_RE.match(line)
             if m:
@@ -252,8 +252,9 @@ def analyse_section(path: Path, sec: Section, rules: dict, syntax: Syntax, repor
                     current.fields.add(f)
 
 
-def course_simulations(course: dict, rules: dict) -> list[tuple[int, str, int, str, set[str]]]:
-    """Every simulation of the course, read without checking it: (unit, file, line, id, variables)."""
+def course_simulations(course: dict, rules: dict) -> list[tuple[int, str, int, str, set[str], bool]]:
+    """Every simulation of the course, read without checking it: (unit, file, line, id, what an adaptive block can read of
+    it: its variables and the fields of its result, scored)."""
     found = []
     for other in course.get("units") or []:
         folder = coursemod.unit_dir(course["_dir"], other["n"])
@@ -270,7 +271,8 @@ def course_simulations(course: dict, rules: dict) -> list[tuple[int, str, int, s
                     continue
                 if isinstance(data, dict) and data.get("id"):
                     state = data.get("state") if isinstance(data.get("state"), dict) else {}
-                    found.append((other["n"], name, line_no, str(data["id"]), set(map(str, state))))
+                    found.append((other["n"], name, line_no, str(data["id"]), set(map(str, state)) | set(simmod.RESULT_FIELDS),
+                                  data.get("scored") is True))
     return found
 
 
@@ -324,29 +326,55 @@ def check_misconceptions(course: dict, unit: dict, files: list[tuple[str, list]]
         report.warn(note)
 
 
+ADAPTIVE_LIMITS = {"branches": 10, "condition": 500, "simulations": 8}  # creator's limits for one block
+
+
 def check_adaptive(path: Path, lines: list[str], unit_n: int, sims: list, report: Report) -> int:
-    """The `:::if` blocks of a file: well formed, with `:::else`, reading variables of simulations that come before in the
-    same unit (each unit is its own package, with its own saved state: it cannot read what was decided in another)."""
+    """The `:::if` blocks of a file: well formed, with `:::else`, reading variables (or the result: grade, score, maxScore,
+    ending, kind) of simulations that come before in the same unit (each unit is its own package, with its own saved
+    state: it cannot read what was decided in another), within creator's limits; never in a test."""
     blocks, problems = simmod.scan_conditionals(lines)
     for line, key in problems:
         report.error(f"{path.name}:{line}: " + t("simulation", key))
     for block in blocks:
-        earlier = {f"{sid}.{var}" for n, name, line, sid, variables in sims for var in variables
+        where = f"{path.name}:{block.line}: "
+        if path.name == "assessment.md":
+            report.error(where + t("simulation", "if_in_test"))
+        if len(block.branches) > ADAPTIVE_LIMITS["branches"]:
+            report.error(where + t("simulation", "if_too_many_branches", count=len(block.branches), limit=ADAPTIVE_LIMITS["branches"]))
+        end = block.end_line or block.line
+        inside = [(sid, scored) for n, name, line, sid, _, scored in sims if n == unit_n and name == path.name and block.line < line < end]
+        for sid, scored in inside:
+            if scored:
+                report.error(where + t("simulation", "if_scored_inside", id=sid))
+        earlier = {f"{sid}.{var}" for n, name, line, sid, variables, _ in sims for var in variables
                    if (n == unit_n and name == path.name and line < block.line)
                    or (n == unit_n and name == "content.md" and path.name == "assessment.md")}
-        elsewhere = {f"{sid}.{var}": n for n, name, line, sid, variables in sims for var in variables if n != unit_n}
-        try:
-            node = simmod.parse_expression(block.condition)
-        except simmod.ExpressionError as exc:
-            report.error(f"{path.name}:{block.line}: {exc}")
-            continue
-        for name in sorted(simmod.names(node) - earlier):
-            if name in elsewhere:
-                report.error(f"{path.name}:{block.line}: " + t("simulation", "if_other_unit", condition=block.condition, name=name,
-                                                                 n=elsewhere[name]))
-            else:
-                report.error(f"{path.name}:{block.line}: " + t("simulation", "if_unknown_simulation", condition=block.condition,
-                                                                 name=name))
+        elsewhere = {f"{sid}.{var}": n for n, name, line, sid, variables, _ in sims for var in variables if n != unit_n}
+        inner = {f"{sid}.{var}" for n, name, line, sid, variables, _ in sims for var in variables
+                 if (sid, False) in inside or (sid, True) in inside}
+        read: set[str] = set()
+        for line_no, condition in block.branches:
+            here = f"{path.name}:{line_no}: "
+            if len(condition) > ADAPTIVE_LIMITS["condition"]:
+                report.error(here + t("simulation", "if_too_long", count=len(condition), limit=ADAPTIVE_LIMITS["condition"]))
+            try:
+                node = simmod.parse_expression(condition)
+            except simmod.ExpressionError as exc:
+                report.error(f"{here}{exc}")
+                continue
+            for name in sorted(simmod.names(node)):
+                read.add(name.split(".", 1)[0])
+                if name in earlier:
+                    continue
+                if name in inner:
+                    report.error(here + t("simulation", "if_reads_inside", condition=condition, name=name))
+                elif name in elsewhere:
+                    report.error(here + t("simulation", "if_other_unit", condition=condition, name=name, n=elsewhere[name]))
+                else:
+                    report.error(here + t("simulation", "if_unknown_simulation", condition=condition, name=name))
+        if len(read) > ADAPTIVE_LIMITS["simulations"]:
+            report.error(where + t("simulation", "if_too_many_simulations", count=len(read), limit=ADAPTIVE_LIMITS["simulations"]))
     return len(blocks)
 
 
@@ -532,7 +560,7 @@ def verify_unit(course: dict, unit: dict) -> Report:
         report.error(t("verify", "file_missing", path=assessment_path.name))
 
     places = {}
-    for n, name, line, sid, _ in sims:
+    for n, name, line, sid, _, _ in sims:
         places.setdefault(sid, []).append(f"{t('verify', 'unit_word')} {n} {name}:{line}")
     for sid in sorted({sim.id for sim in unit_sims if sim.id}):
         if len(places.get(sid, [])) > 1:

@@ -109,9 +109,10 @@ function playPath([id, steps]) {
 }
 
 function adaptive() {
-  return Array.from(document.querySelectorAll(".ck-adaptive")).map((block) => ({
-    condition: block.dataset.condition, shown: !block.querySelector(".ck-if").hidden,
-  }));
+  return Array.from(document.querySelectorAll(".ck-adaptive")).map((block) => {
+    const branches = Array.from(block.querySelectorAll(":scope > .ck-if"));
+    return { conditions: branches.map((b) => b.dataset.condition), shown: branches.findIndex((b) => !b.hidden) };
+  });
 }
 
 function show(key) {

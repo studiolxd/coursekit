@@ -19,8 +19,9 @@
   };
   const letter = (i) => (i < 26 ? String.fromCharCode(97 + i) : `o${i}`);  // the option, as SCORM 1.2 takes a choice
   const grade = (score) => (data.max_score > 0 ? Math.max(0, Math.min(100, Math.round((100 * score) / data.max_score))) : 0);
-  // the state the lesson keeps (at most 1,024 characters of JSON): where it is, its variables, points, ended, attempt, decisions
-  const compact = (run) => ({ a: run.at, e: run.env || {}, s: run.score || 0, d: run.done ? 1 : 0, t: run.attempt || 1,
+  // the state the lesson keeps (at most 1,024 characters of JSON): where it is, its variables in `vars` (the only part
+  // creator reads: its adaptive blocks), points, ended, attempt, decisions
+  const compact = (run) => ({ a: run.at, vars: run.env || {}, s: run.score || 0, d: run.done ? 1 : 0, t: run.attempt || 1,
     n: run.decisions || 0 });
 
   const store = { sims: {} };
@@ -65,7 +66,7 @@
     if (started) return;
     if (saved && typeof saved === "object" && typeof saved.a === "string" && scenes[saved.a]) {
       const done = saved.d === 1;
-      store.sims[data.id] = { at: saved.a, env: saved.e || {}, score: Number(saved.s) || 0, done, ending: done ? saved.a : null,
+      store.sims[data.id] = { at: saved.a, env: saved.vars || saved.e || {}, score: Number(saved.s) || 0, done, ending: done ? saved.a : null,
         path: [], attempt: Number(saved.t) || 1, decisions: Number(saved.n) || 0 };
       closed = done;
       last = JSON.stringify([compact(store.sims[data.id]), done]);

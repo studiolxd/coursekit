@@ -2,6 +2,9 @@
 # Each one comes after "<file>:<line> <kind> '<id>':".
 expr_bad_char: {es: "carácter no válido '{char}' en «{text}»", en: "invalid character '{char}' in «{text}»"}
 expr_empty: {es: "condición vacía", en: "empty condition"}
+expr_text_compare:
+  es: "un texto entre comillas solo se compara con == o != (p. ej. llamada.kind == \"good\"): «{text}»"
+  en: "a text in quotes is only compared with == or != (e.g. call.kind == \"good\"): «{text}»"
 expr_unexpected: {es: "'{token}' inesperado en «{text}»", en: "unexpected '{token}' in «{text}»"}
 expr_incomplete: {es: "condición incompleta: «{text}»", en: "incomplete condition: «{text}»"}
 expr_parenthesis: {es: "falta cerrar un paréntesis en «{text}»", en: "a parenthesis is not closed in «{text}»"}
@@ -96,6 +99,8 @@ too_many_states:
 # Adaptive blocks
 nested_if: {es: "':::if' dentro de otro ':::if'", en: "':::if' inside another ':::if'"}
 else_without_if: {es: "':::else' sin ':::if'", en: "':::else' without ':::if'"}
+elif_without_if: {es: "':::elif' sin ':::if'", en: "':::elif' without ':::if'"}
+elif_after_else: {es: "':::elif' después de ':::else': el ':::else' es la última rama", en: "':::elif' after ':::else': ':::else' is the last branch"}
 two_else: {es: "dos ':::else' en el mismo ':::if'", en: "two ':::else' in the same ':::if'"}
 close_without_open: {es: "':::' de cierre sin bloque abierto", en: "closing ':::' with no open block"}
 if_without_else:
@@ -145,4 +150,21 @@ skin_bad_file:
   es: "{path}: una piel declara 'screen' (sus claves), 'targets' (sus partes; 'parte:' cuenta desde 1) y, si acaso, 'chat'"
   en: "{path}: a skin declares 'screen' (its keys), 'targets' (its parts; 'part:' counts from 1) and, optionally, 'chat'"
 skin_without_js: {es: "{path}: falta {js}, que la dibuja", en: "{path}: {js}, which draws it, is missing"}
+reserved_variable:
+  es: "la variable '{name}' tiene un nombre reservado: {reserved} son los campos del resultado de la simulación, que leen los bloques adaptativos; no los uses en 'state'"
+  en: "variable '{name}' has a reserved name: {reserved} are the fields of the result of the simulation, read by the adaptive blocks; do not use them in 'state'"
+if_in_test:
+  es: "un bloque adaptativo no puede ir en una prueba ni en su banco de preguntas (creator lo rechaza): muévelo a content.md"
+  en: "an adaptive block cannot go in a test or its question bank (creator refuses it): move it to content.md"
+if_too_many_branches: {es: "el bloque tiene {count} ramas con condición; como mucho {limit}", en: "the block has {count} branches with a condition; at most {limit}"}
+if_too_long: {es: "la condición tiene {count} caracteres; como mucho {limit}", en: "the condition has {count} characters; at most {limit}"}
+if_too_many_simulations:
+  es: "el bloque lee {count} simulaciones distintas entre todas sus ramas; como mucho {limit}"
+  en: "the block reads {count} different simulations in all its branches; at most {limit}"
+if_scored_inside:
+  es: "la simulación '{id}' está dentro de una rama: ahí no puede ser evaluable (quita scored o sácala del bloque)"
+  en: "simulation '{id}' is inside a branch: it cannot be scored there (drop scored or move it out of the block)"
+if_reads_inside:
+  es: "la condición «{condition}» lee '{name}', de una simulación que está dentro del propio bloque"
+  en: "condition «{condition}» reads '{name}', of a simulation inside the block itself"
 

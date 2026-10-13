@@ -498,7 +498,22 @@ export function initSimulations(root, ui, tracker) {
   return Array.from(root.querySelectorAll(".ck-sim")).map((node) => initSimulation(node, ui, tracker));
 }
 
-// Adaptive blocks: the `:::if` branch when the simulations it reads have ended and its condition holds, else the neutral one.
+// Adaptive blocks: the first branch whose condition holds (`:::if`, then each `:::elif`), once the simulations it reads
+// have ended; else the neutral one (`:::else`). A condition reads the variables of a simulation and its result: grade,
+// score, maxScore, ending (the id of its ending scene) and kind (good, mixed or bad).
+const simData = {};
+function dataOf(root, id) {
+  if (!(id in simData)) {
+    const node = root.querySelector(`.ck-sim[data-sim="${id}"] .ck-sim-data`);
+    try {
+      simData[id] = node ? JSON.parse(node.textContent) : null;
+    } catch (error) {
+      simData[id] = null;
+    }
+  }
+  return simData[id];
+}
+
 export function updateAdaptive(root, tracker) {
   const env = {};
   Object.entries(tracker.state.sims || {}).forEach(([id, run]) => {
@@ -506,17 +521,29 @@ export function updateAdaptive(root, tracker) {
     Object.entries(run.env || {}).forEach(([key, value]) => {
       env[`${id}.${key}`] = value;
     });
+    const data = dataOf(root, id) || {};
+    const ending = run.ending || run.at;
+    const max = Number(data.max_score) || 0;
+    Object.assign(env, {
+      [`${id}.score`]: Number(run.score) || 0,
+      [`${id}.maxScore`]: max,
+      [`${id}.grade`]: max > 0 ? Math.max(0, Math.min(100, Math.round((100 * (Number(run.score) || 0)) / max))) : 0,
+      [`${id}.ending`]: String(ending || ""),
+      [`${id}.kind`]: String(((data.scenes || {})[ending] || {}).ending || ""),
+    });
   });
-  root.querySelectorAll(".ck-adaptive").forEach((block) => {
-    let holds = false;
+  const holds = (condition) => {
     try {
-      const condition = block.dataset.condition;
       const played = condition.match(/[A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*/g) || [];
-      holds = played.every((name) => Object.prototype.hasOwnProperty.call(env, name)) && test(condition, env);
+      return played.every((name) => Object.prototype.hasOwnProperty.call(env, name)) && test(condition, env);
     } catch (error) {
-      holds = false;
+      return false;
     }
-    block.querySelector(".ck-if").hidden = !holds;
-    block.querySelector(".ck-else").hidden = holds;
+  };
+  root.querySelectorAll(".ck-adaptive").forEach((block) => {
+    const branches = Array.from(block.querySelectorAll(":scope > .ck-if"));
+    const shown = branches.findIndex((branch) => holds(branch.dataset.condition || ""));
+    branches.forEach((branch, i) => { branch.hidden = i !== shown; });
+    block.querySelector(":scope > .ck-else").hidden = shown >= 0;
   });
 }

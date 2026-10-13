@@ -47,7 +47,7 @@ def prose(lines: list[str]) -> list[str]:
             continue
         if fenced:
             continue
-        if re.match(r"^:::else\s*$", line):
+        if re.match(r"^:::(else\s*|elif\s.*)$", line):
             flush()
             continue
         if DIRECTIVE_OPEN_RE.match(line):

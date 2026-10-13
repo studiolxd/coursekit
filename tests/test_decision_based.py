@@ -221,7 +221,8 @@ def test_a_condition_cannot_read_another_unit():
     from coursekit.verify import Report
 
     report = Report()
-    sims = [(1, "content.md", 1, "call", {"risk"}), (2, "content.md", 5, "later", {"x"}), (1, "content.md", 40, "after", {"y"})]
+    sims = [(1, "content.md", 1, "call", {"risk"}, False), (2, "content.md", 5, "later", {"x"}, False),
+            (1, "content.md", 40, "after", {"y"}, False)]
     lines = ["intro", ":::if call.risk >= 3 && later.x > 0 && after.y", "a", ":::else", "b", ":::"]
     assert verifymod.check_adaptive(Path("content.md"), lines, 1, sims, report) == 1
     text = "\n".join(report.errors)
@@ -254,8 +255,8 @@ def test_the_plan_carries_simulations_and_adaptive_blocks(decision_course, capsy
     bricks = plan["lessons"][1]["bricks"]
     assert bricks[0]["type"] == "SIMULATION" and bricks[0]["data"]["id"] == "call" and bricks[0]["data"]["max_score"] == 2
     conditional = bricks[1]
-    assert conditional["type"] == "CONDITIONAL" and conditional["data"]["condition"] == "call.risk >= 3"
-    assert conditional["data"]["then"][0]["type"] == "TEXT" and conditional["data"]["else"][0]["type"] == "TEXT"
+    assert conditional["type"] == "CONDITIONAL" and [b["condition"] for b in conditional["data"]["branches"]] == ["call.risk >= 3"]
+    assert conditional["data"]["branches"][0]["bricks"][0]["type"] == "TEXT" and conditional["data"]["else"][0]["type"] == "TEXT"
     creator_plan, errors, warnings, counts = assemble.write_plan(data, data["units"][0])
     assert not errors and "SIMULATION" not in counts and "CONDITIONAL" not in counts
     first = creator_plan["lessons"][1]["bricks"]
@@ -396,7 +397,7 @@ def test_the_html_backend_renders_simulations_and_adaptive_blocks(decision_cours
     sim = json.loads(payload)
     assert sim["max_score"] == 2 and sim["rewind"] is True and sim["scenes"]["begin"]["text"].startswith("<p>Suena")
     assert sim["scenes"]["begin"]["characters"][0]["_portrait"] is None
-    assert '<div class="ck-adaptive" data-condition="call.risk &gt;= 3"><div class="ck-if" hidden>' in html
+    assert '<div class="ck-adaptive"><div class="ck-if" data-condition="call.risk &gt;= 3" hidden>' in html
     assert '<div class="ck-else"><div class="ck-text"><p>No caíste' in html
     assert '<div class="ck-sim-static"><p>Suena el teléfono.' in html  # readable without JavaScript
 

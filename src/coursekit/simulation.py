@@ -63,9 +63,15 @@ class ExpressionError(Exception):
     pass
 
 
+# What the adaptive blocks can read of a simulation that ended, besides its variables: its result (creator's names). They
+# are reserved: no variable of `state` may be called like them.
+RESULT_FIELDS = ("grade", "score", "maxScore", "ending", "kind")
+
+
 # ── Conditions ──────────────────────────────────────────────────────────────────────────────
 
-TOKEN_RE = re.compile(r"\s*(?:(\d+(?:\.\d+)?)|([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)|(&&|\|\||==|!=|<=|>=|[<>!()+-]))")
+TOKEN_RE = re.compile(r"\s*(?:(\d+(?:\.\d+)?)|([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)"
+                      r'|(&&|\|\||==|!=|<=|>=|[<>!()+-])|"([^"\\]*)")')
 
 
 def _tokens(text: str) -> list[tuple[str, object]]:
@@ -75,8 +81,10 @@ def _tokens(text: str) -> list[tuple[str, object]]:
         m = TOKEN_RE.match(text, pos)
         if not m or m.end() == pos:
             raise ExpressionError(t("simulation", "expr_bad_char", char=text[pos:].strip()[:1], text=text))
-        number, name, op = m.groups()
-        if number is not None:
+        number, name, op, string = m.groups()
+        if string is not None:  # a text, only compared with == and != (`call.kind == "good"`)
+            out.append(("str", string))
+        elif number is not None:
             out.append(("num", float(number) if "." in number else int(number)))
         elif name is not None:
             if name in ("true", "false"):
@@ -135,6 +143,9 @@ class _Parser:
         op = self.take("==", "!=", "<", "<=", ">", ">=")
         if op:
             node = (op, node, self.sum_())
+        texts = node[0] == "str" or (node[0] in ("==", "!=", "<", "<=", ">", ">=") and "str" in (node[1][0], node[2][0]))
+        if texts and node[0] not in ("==", "!="):
+            raise ExpressionError(t("simulation", "expr_text_compare", text=self.text))
         return node
 
     def sum_(self) -> tuple:
@@ -144,10 +155,15 @@ class _Parser:
             if not op:
                 return node
             node = (op, node, self.unary())
+            if "str" in (node[1][0], node[2][0]):
+                raise ExpressionError(t("simulation", "expr_text_compare", text=self.text))
 
     def unary(self) -> tuple:
         if self.take("-"):
-            return ("neg", self.unary())
+            node = self.unary()
+            if node[0] == "str":
+                raise ExpressionError(t("simulation", "expr_text_compare", text=self.text))
+            return ("neg", node)
         item = self.peek()
         if item is None:
             raise ExpressionError(t("simulation", "expr_incomplete", text=self.text))
@@ -175,14 +191,14 @@ def names(node: tuple) -> set[str]:
     """The variables a condition reads."""
     if node[0] == "var":
         return {str(node[1])}
-    if node[0] == "num":
+    if node[0] in ("num", "str"):
         return set()
     return set().union(*(names(child) for child in node[1:]))
 
 
 def evaluate(node: tuple, env: dict) -> object:
     kind = node[0]
-    if kind == "num":
+    if kind in ("num", "str"):
         return node[1]
     if kind == "var":
         return env.get(str(node[1]), 0)
@@ -387,6 +403,8 @@ def parse(kind: str, body: list[str], where: str, line: int = 0) -> Simulation:
     for var, value in state.items():
         if not VAR_RE.match(str(var)):
             err("bad_variable", name=var)
+        elif str(var) in RESULT_FIELDS:
+            err("reserved_variable", name=var, reserved=", ".join(RESULT_FIELDS))
         if not isinstance(value, (int, float)):
             err("bad_initial", name=var, value=value)
     scenes = data.get("scenes")
@@ -833,6 +851,7 @@ def grade(sim: Simulation, points: float) -> float:
 # ── Adaptive content ────────────────────────────────────────────────────────────────────────
 
 IF_RE = re.compile(r"^:::if\s+(.+?)\s*$")
+ELIF_RE = re.compile(r"^:::elif\s+(.+?)\s*$")
 ELSE_RE = re.compile(r"^:::else\s*$")
 OPEN_RE = re.compile(r"^:::([a-z][a-z-]*)\s*$")
 CLOSE_RE = re.compile(r"^:::\s*$")
@@ -844,6 +863,12 @@ class Conditional:
     condition: str
     else_line: int | None = None
     end_line: int | None = None
+    elifs: list[tuple[int, str]] = field(default_factory=list)  # (line, condition) of each :::elif
+
+    @property
+    def branches(self) -> list[tuple[int, str]]:
+        """(line, condition) of every branch with a condition, in order: the :::if, then each :::elif."""
+        return [(self.line, self.condition)] + self.elifs
 
 
 def scan_conditionals(lines: list[str], start: int = 1) -> tuple[list[Conditional], list[tuple[int, str]]]:
@@ -869,6 +894,13 @@ def scan_conditionals(lines: list[str], start: int = 1) -> tuple[list[Conditiona
                 problems.append((i, "nested_if"))
                 continue
             current = Conditional(line=i, condition=IF_RE.match(stripped).group(1))
+        elif ELIF_RE.match(stripped):
+            if current is None:
+                problems.append((i, "elif_without_if"))
+            elif current.else_line is not None:
+                problems.append((i, "elif_after_else"))
+            else:
+                current.elifs.append((i, ELIF_RE.match(stripped).group(1)))
         elif ELSE_RE.match(stripped):
             if current is None:
                 problems.append((i, "else_without_if"))
@@ -893,7 +925,8 @@ def scan_conditionals(lines: list[str], start: int = 1) -> tuple[list[Conditiona
 
 
 def adaptive_lines(lines: list[str], start: int = 1) -> set[int]:
-    """Line numbers that only some learners see: the `:::if` branch and the fences of the blocks."""
+    """Line numbers that only some learners see: the branches with a condition (`:::if`, `:::elif`) and the fences of the
+    blocks."""
     found, _ = scan_conditionals(lines, start)
     hidden: set[int] = set()
     for block in found:

@@ -607,16 +607,27 @@ El contenido puede cambiar según lo que el alumno decidió en una simulación a
 ```markdown
 :::if call.risk >= 3
 Le diste tu contraseña al «técnico». Veamos qué palancas usó.
+:::elif call.kind == "mixed"
+No se la diste, pero dudaste. Veamos qué te hizo dudar.
 :::else
 No caíste, pero mucha gente sí. Veamos por qué.
 :::
 ```
 
-`:::else` es obligatorio: es la versión para todos los demás y la que muestra creator mientras no pueda adaptar contenido. La
-condición lee variables de simulaciones anteriores de la misma unidad (`id.variable`): cada unidad es su propio
-paquete, con su propio estado guardado, así que no puede leer lo que se decidió en otra unidad (`verify` lo da como
-error).
-Las ramas pueden contener cualquier contenido y directivas; cuentan las palabras de la rama `:::else`.
+El alumno ve la primera rama cuya condición se cumple (`:::if` y después cada `:::elif`, hasta 10); si ninguna se cumple,
+o las simulaciones que lee aún no han llegado a un final, la rama `:::else`, que es obligatoria: es la versión para todos
+los demás y la que muestra creator mientras no pueda adaptar contenido. Una condición lee, de cada simulación anterior de
+la misma unidad, sus variables (`id.variable`) y su resultado: `id.grade` (0–100), `id.score`, `id.maxScore`, `id.ending`
+(el id de su escena final) e `id.kind` (`"good"`, `"mixed"` o `"bad"`). Los textos van entre comillas dobles y solo se
+comparan con `==` y `!=`. Esos cinco nombres están reservados: ninguna variable del `state` de una simulación puede
+llamarse así. Cada unidad es su propio paquete, con su propio estado guardado, así que un bloque no puede leer lo que se
+decidió en otra unidad. Las ramas pueden contener cualquier contenido y directivas; cuentan las palabras de la rama
+`:::else`.
+
+`verify` mantiene los bloques dentro de los límites de creator: como mucho 10 ramas con condición, 500 caracteres por
+condición y 8 simulaciones distintas por bloque; ningún bloque dentro de otro; una condición no puede leer una simulación
+que esté dentro del bloque, y una simulación dentro de una rama no puede ser evaluable; nunca en una prueba ni en su banco
+de preguntas.
 
 En una unidad con prueba, la nota es la de la prueba: una simulación evaluable (`scored: true`) puesta en `content.md` no
 cuenta para ella, y `verify` avisa. Las simulaciones evaluables van en `assessment.md`; en el contenido sirven para

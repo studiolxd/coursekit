@@ -71,9 +71,9 @@ def good_observation(sim):
     paths = []
     for n, path in enumerate(sim.paths):
         run = {"a": path["ending"], "e": path["state"], "s": path["score"], "d": 1}
-        shown = path["state"].get("risk", 0) >= 3
+        shown = 0 if path["state"].get("risk", 0) >= 3 else -1
         paths.append({"sim": "call", "n": n, "missing": None, "run": run, "sims": {"call": run},
-                      "adaptive": [{"condition": "call.risk >= 3", "shown": shown}]})
+                      "adaptive": [{"conditions": ["call.risk >= 3"], "shown": shown}]})
     return {"ok": True, "console": [], "failed": [], "axe": [], "lessons": [{"key": "U1-S1"}, {"key": "U1-E1.1"}],
             "tests": [{"lesson": "U1-E1.1", "questions": 2, "score": "100"}], "paths": paths, "lms": [], "maxSuspend": 300,
             "resume": {"entry": "resume", "location": "U1-S1", "locationAfter": "U1-S1", "simsBefore": {}, "simsAfter": {}}}
@@ -97,7 +97,7 @@ def test_every_difference_is_an_error():
                    {"lesson": "U1-S1", "id": "region", "impact": "moderate", "help": "Regions", "targets": ["p"], "count": 1}]
     seen["tests"][0]["score"] = "80"
     seen["paths"][0]["run"] = {**seen["paths"][0]["run"], "a": "safe"}
-    seen["paths"][1]["adaptive"][0]["shown"] = not seen["paths"][1]["adaptive"][0]["shown"]
+    seen["paths"][1]["adaptive"][0]["shown"] = -1 - seen["paths"][1]["adaptive"][0]["shown"]  # the other branch
     seen["paths"].append({"sim": "call", "n": 2, "missing": "decision 1", "step": 0})
     seen["lms"] = [{"code": 405, "name": "cmi.interactions.0.result", "value": "incorrect", "message": "Incorrect data type"}] * 2
     seen["maxSuspend"] = 5000

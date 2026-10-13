@@ -1,7 +1,8 @@
 // Conditions of the simulations and of the adaptive blocks, the same language as coursekit/simulation.py:
-// numbers, true, false, variables (`risk`, `call.risk`), + - == != < <= > >= ! && || and parentheses.
+// numbers, true, false, texts in double quotes (only with == and !=), variables (`risk`, `call.risk`),
+// + - == != < <= > >= ! && || and parentheses.
 
-const TOKEN = /\s*(?:(\d+(?:\.\d+)?)|([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)|(&&|\|\||==|!=|<=|>=|[<>!()+-]))/y;
+const TOKEN = /\s*(?:(\d+(?:\.\d+)?)|([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)|(&&|\|\||==|!=|<=|>=|[<>!()+-])|"([^"\\]*)")/y;
 
 function tokens(text) {
   const out = [];
@@ -11,7 +12,8 @@ function tokens(text) {
     const start = TOKEN.lastIndex;
     const m = TOKEN.exec(source);
     if (!m || TOKEN.lastIndex === start) throw new Error(`invalid condition: ${source}`);
-    if (m[1] !== undefined) out.push(["num", Number(m[1])]);
+    if (m[4] !== undefined) out.push(["str", m[4]]);
+    else if (m[1] !== undefined) out.push(["num", Number(m[1])]);
     else if (m[2] !== undefined) out.push(m[2] === "true" || m[2] === "false" ? ["num", m[2] === "true"] : ["var", m[2]]);
     else out.push(["op", m[3]]);
   }
@@ -31,8 +33,12 @@ export function parse(text) {
     }
     return null;
   };
+  const textOnly = (node) => {
+    if (node[0] === "str") throw new Error(`a text is only compared with == or !=: ${text}`);
+    return node;
+  };
   const unary = () => {
-    if (take("-")) return ["neg", unary()];
+    if (take("-")) return ["neg", textOnly(unary())];
     if (take("(")) {
       const node = or();
       if (!take(")")) throw new Error(`a parenthesis is not closed: ${text}`);
@@ -47,7 +53,7 @@ export function parse(text) {
     let node = unary();
     let op = take("+", "-");
     while (op) {
-      node = [op, node, unary()];
+      node = [op, textOnly(node), textOnly(unary())];
       op = take("+", "-");
     }
     return node;
@@ -55,7 +61,13 @@ export function parse(text) {
   const compare = () => {
     const node = sum();
     const op = take("==", "!=", "<", "<=", ">", ">=");
-    return op ? [op, node, sum()] : node;
+    if (!op) return textOnly(node);
+    const right = sum();
+    if (op !== "==" && op !== "!=") {
+      textOnly(node);
+      textOnly(right);
+    }
+    return [op, node, right];
   };
   const not = () => (take("!") ? ["!", not()] : compare());
   const and = () => {
@@ -76,13 +88,13 @@ export function parse(text) {
 
 export function names(node) {
   if (node[0] === "var") return [node[1]];
-  if (node[0] === "num") return [];
+  if (node[0] === "num" || node[0] === "str") return [];
   return node.slice(1).flatMap(names);
 }
 
 export function evaluate(node, env) {
   const [kind] = node;
-  if (kind === "num") return node[1];
+  if (kind === "num" || kind === "str") return node[1];
   if (kind === "var") return Object.prototype.hasOwnProperty.call(env, node[1]) ? env[node[1]] : 0;
   if (kind === "!") return !evaluate(node[1], env);
   if (kind === "neg") return -evaluate(node[1], env);

@@ -418,10 +418,11 @@ def simulation(brick: dict, ctx: Ctx) -> str:
 def conditional(brick: dict, ctx: Ctx) -> str:
     """Content that depends on what the learner decided: the player shows one branch; without JavaScript, the neutral one."""
     data = brick["data"]
-    then = "".join(RENDERERS[b["type"]](b, ctx) for b in data.get("then") or [])
+    branches = "".join(f'<div class="ck-if" data-condition="{a(branch.get("condition", ""))}" hidden>'
+                       + "".join(RENDERERS[b["type"]](b, ctx) for b in branch.get("bricks") or []) + "</div>"
+                       for branch in data.get("branches") or [])
     other = "".join(RENDERERS[b["type"]](b, ctx) for b in data.get("else") or [])
-    return (f'<div class="ck-adaptive" data-condition="{a(data.get("condition", ""))}">'
-            f'<div class="ck-if" hidden>{then}</div><div class="ck-else">{other}</div></div>')
+    return f'<div class="ck-adaptive">{branches}<div class="ck-else">{other}</div></div>'
 
 
 RENDERERS: dict[str, Callable[[dict, Ctx], str]] = {
@@ -441,7 +442,8 @@ def unsupported_bricks(plan: dict) -> list[str]:
         for brick in bricks:
             yield brick
             if brick["type"] == "CONDITIONAL":
-                yield from walk((brick["data"].get("then") or []) + (brick["data"].get("else") or []))
+                yield from walk([b for branch in brick["data"].get("branches") or [] for b in branch.get("bricks") or []]
+                                + (brick["data"].get("else") or []))
 
     return [f"{lesson['key']}: {brick['type']}" for lesson in plan["lessons"] for brick in walk(lesson["bricks"])
             if brick["type"] not in RENDERERS]

@@ -124,8 +124,7 @@ def _walk_bricks(bricks: list[dict]):
     for brick in bricks:
         yield brick
         if brick.get("type") == "CONDITIONAL":
-            yield from _walk_bricks(brick["data"].get("then") or [])
-            yield from _walk_bricks(brick["data"].get("else") or [])
+            yield from _walk_bricks(assemblemod.branch_bricks(brick))
 
 
 def decision_steps(sim: simmod.Simulation, path: dict) -> list | None:
@@ -251,15 +250,38 @@ def run_browser(data: dict, say: Say) -> dict:
     return observed
 
 
-def adaptive_expected(condition: str, runs: dict) -> bool:
-    """The branch updateAdaptive (player/simulation.js) shows: only ended simulations count, and every variable the
-    condition reads must be there."""
-    env = {f"{sid}.{key}": value for sid, run in runs.items() if run and run.get("d") == 1 for key, value in (run.get("e") or {}).items()}
+def adaptive_env(runs: dict, sims: dict[str, simmod.Simulation] | None = None) -> dict:
+    """What the adaptive blocks read (updateAdaptive of player/simulation.js): of each simulation that ended, its variables
+    and its result (grade, score, maxScore, ending, kind)."""
+    env: dict = {}
+    for sid, run in runs.items():
+        if not run or run.get("d") != 1:
+            continue
+        env.update({f"{sid}.{key}": value for key, value in (run.get("e") or {}).items()})
+        sim = (sims or {}).get(sid)
+        ending = str(run.get("a") or "")
+        score = float(run.get("s") or 0)
+        maximum = sim.max_score if sim else 0
+        kind = str(((sim.data.get("scenes") or {}).get(ending) or {}).get("ending") or "") if sim else ""
+        env.update({f"{sid}.score": score, f"{sid}.maxScore": maximum, f"{sid}.ending": ending, f"{sid}.kind": kind,
+                    f"{sid}.grade": sim_grade(sim, score) if sim else 0})
+    return env
+
+
+def adaptive_expected(condition: str, runs: dict, sims: dict[str, simmod.Simulation] | None = None) -> bool:
+    """Whether a branch holds as updateAdaptive (player/simulation.js) decides it: only ended simulations count, and every
+    variable the condition reads must be there."""
+    env = adaptive_env(runs, sims)
     try:
         names = simmod.names(simmod.parse_expression(condition))
         return all(name in env for name in names) and simmod.test(condition, env)
     except simmod.ExpressionError:
         return False
+
+
+def adaptive_branch(conditions: list[str], runs: dict, sims: dict[str, simmod.Simulation] | None = None) -> int:
+    """The branch that should show: the first that holds, or -1 (the neutral one)."""
+    return next((i for i, condition in enumerate(conditions) if adaptive_expected(condition, runs, sims)), -1)
 
 
 def compare(plan: Scenario, observed: dict, standard: str, result: CheckResult) -> None:
@@ -315,10 +337,11 @@ def compare(plan: Scenario, observed: dict, standard: str, result: CheckResult) 
             err(t("playcheck", "path_differs", sim=sim.id, n=n + 1, ending=path["ending"], score=f"{path['score']:g}",
                   got_ending=run.get("a") or "—", got_score=run.get("s", "—"), done="✔" if run.get("d") == 1 else "✘"))
         for block in played.get("adaptive") or []:
-            expected = adaptive_expected(block["condition"], played.get("sims") or {})
+            expected = adaptive_branch(block["conditions"], played.get("sims") or {}, plan.sims)
             if expected != block["shown"]:
-                err(t("playcheck", "adaptive", condition=block["condition"], sim=sim.id, n=n + 1,
-                      expected="if" if expected else "else", got="if" if block["shown"] else "else"))
+                names = block["conditions"] + ["else"]  # index -1: the neutral branch
+                err(t("playcheck", "adaptive", condition=" | ".join(block["conditions"]), sim=sim.id, n=n + 1,
+                      expected=names[expected], got=names[block["shown"]]))
 
     for problem in {(e["code"], e.get("name") or "", (e.get("value") or "")[:80]): e for e in observed.get("lms") or []}.values():
         err(t("playcheck", "lms_refused", code=problem["code"], message=problem.get("message") or "", name=problem.get("name") or "",

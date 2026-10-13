@@ -185,14 +185,20 @@ Content after a simulation may change with what the learner decided:
 ```markdown
 :::if call.risk >= 3
 You gave your password to the "technician". Let us see which levers he used.
+:::elif call.kind == "mixed"
+You did not give it, but you doubted. Let us see what made you doubt.
 :::else
 You did not fall for it, but many people do. Let us see why.
 :::
 ```
 
-`:::else` is required (it is the version for everyone else and the one creator shows). The condition reads variables of
-simulations that come before (`id.variable`). The branches may hold any content and directives; the words of the
-`:::else` branch count.
+The first branch that holds is shown (`:::if`, then each `:::elif`, up to 10); `:::else` is required (it is the version
+for everyone else and the one creator shows). A condition reads, of simulations that come before in the unit, their
+variables (`id.variable`) and their result: `id.grade`, `id.score`, `id.maxScore`, `id.ending`, `id.kind` (`"good"`,
+`"mixed"`, `"bad"`); texts in double quotes, only with `==` and `!=`. Never call a `state` variable grade, score,
+maxScore, ending or kind. At most 500 characters per condition and 8 simulations per block; no scored simulation inside a
+branch, and no block in `assessment.md`. The branches may hold any content and directives; the words of the `:::else`
+branch count.
 
 ## 3. Question directives (practice activities and tests)
 

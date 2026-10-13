@@ -604,15 +604,25 @@ Content may change with what the learner decided in an earlier simulation:
 ```markdown
 :::if call.risk >= 3
 You gave your password to the "technician". Let us see which levers he used.
+:::elif call.kind == "mixed"
+You did not give it, but you doubted. Let us see what made you doubt.
 :::else
 You did not fall for it, but many people do. Let us see why.
 :::
 ```
 
-`:::else` is required: it is the version for everyone else, and the one creator shows while it cannot adapt content. The
-condition reads variables of simulations that come before it in the same unit (`id.variable`): each unit is its own
-package, with its own saved state, so it cannot read what was decided in another unit (`verify` reports it as an error).
-The branches may hold any content and directives; the words of the `:::else` branch count.
+The learner sees the first branch whose condition holds (`:::if`, then each `:::elif`, up to 10); if none holds, or the
+simulations it reads have not reached an ending yet, the `:::else` branch, which is required: it is the version for
+everyone else, and the one creator shows while it cannot adapt content. A condition reads, of each simulation that comes
+before it in the same unit, its variables (`id.variable`) and its result: `id.grade` (0–100), `id.score`, `id.maxScore`,
+`id.ending` (the id of its ending scene) and `id.kind` (`"good"`, `"mixed"` or `"bad"`). Texts go in double quotes and
+are only compared with `==` and `!=`. Those five names are reserved: no variable of a simulation's `state` may be called
+like them. Each unit is its own package, with its own saved state, so a block cannot read what was decided in another
+unit. The branches may hold any content and directives; the words of the `:::else` branch count.
+
+`verify` keeps the blocks within creator's limits: at most 10 branches with a condition, 500 characters per condition and
+8 different simulations per block; no block inside another; a condition cannot read a simulation that is inside the block,
+and a simulation inside a branch cannot be scored; never in a test or its question bank.
 
 In a unit with a test, the grade is the test's: a scored simulation (`scored: true`) placed in `content.md` does not
 count for it, and `verify` warns. Scored simulations go in `assessment.md`; in the content they practise.
