@@ -474,7 +474,7 @@ def test_the_currency_check_runs_before_the_review_when_the_rule_asks(project, m
     assert fake.update_arguments == arguments
 
 
-def test_the_update_command_is_a_reviewer_command_with_web_access():
+def test_the_update_command_is_a_reviewer_command_with_web_access(agent_tool):  # the command line is built without the tool installed
     assert launch.COMMAND_ROLE["update-unit"] == "reviewer"
     args = launch.headless_args(launch.Agent("reviewer", "claude", ""), "x", Path("last.txt"), "slxd")
     assert "WebFetch" in args and "WebSearch" in args
