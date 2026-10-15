@@ -240,6 +240,7 @@ Antes de crear el curso conviene dejar material de referencia en `brief/sources/
 | `"Contraseñas seguras"` | título del curso, entre comillas |
 | `2` | duración en horas |
 | `--code PWD` | código del curso; por defecto es el título en mayúsculas, unido con guiones |
+| `--approach expository\|decision-based` | cómo enseña el curso: `expository` (expositivo) explica y luego practica y evalúa; `decision-based` (basado en decisiones) abre cada apartado con una simulación donde quien aprende decide. Si no lo indicas, el agente te pregunta cuál quieres |
 | `--no-intro`, `--no-summary` | unidades sin el apartado de introducción inicial o sin el de resumen final |
 | cualquier otro texto | indicaciones libres para el diseño |
 

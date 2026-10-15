@@ -240,6 +240,7 @@ Before creating the course, it helps to drop reference material in `brief/source
 | `"Strong passwords"` | course title, in quotes |
 | `2` | duration in hours |
 | `--code PWD` | course code; by default it is the title in capitals, joined with hyphens |
+| `--approach expository\|decision-based` | how the course teaches: `expository` explains, then practises and assesses; `decision-based` opens every section with a simulation where the learner decides. If you leave it out, the agent asks you which one you want |
 | `--no-intro`, `--no-summary` | units without the opening introduction or the closing summary section |
 | any other text | free indications for the design |
 

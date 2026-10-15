@@ -11,8 +11,11 @@ $ARGUMENTS
    `--no-material` (only for you: do not pass it to `coursekit new`) and the rest as free indications. If the title or the hours are missing, ask for them and stop.
    The approach: `--approach expository` (each section explains, then practises and assesses) or
    `--approach decision-based` (each section opens with a simulation where the learner decides, and the explanation comes
-   after). If it is not given but the indications clearly ask for learning by deciding, practising first, scenarios or
-   simulations, pass `--approach decision-based`; otherwise leave it out and the project default applies.
+   after). If `--approach` is not given and the course does not exist yet (step 2), **ask the person, in
+   {{ui_language_name}}, which one they want** before creating it, describing both in one line each, and pass their
+   answer. If the indications already make it clear (learning by deciding, practising first, scenarios or simulations
+   point to `decision-based`), propose that one and ask them to confirm. If you cannot ask (non-interactive session,
+   or the course already exists), leave the option out and the project default applies.
 2. Run `coursekit new "<title>" <hours> [options] --notes "<indications>"`, unless `courses/<CODE>/course.yaml` already
    exists (the course was created before, for example in handoff mode): then skip this step and work on it as it is.
 3. Run `coursekit brief <CODE>` and read `brief/index.md` and `brief/notes.md`. If there is no
