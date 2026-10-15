@@ -181,7 +181,7 @@ def test_media_plan_warns_and_set_refuses_without_derived_tokens(course, capsys)
     assert main(["media", "set", "PWD", "U1-S2-M1", "--status", "produced"]) == 1
     assert "/define-theme" in capsys.readouterr().err
     assert main(["media", "set", "PWD", "U1-S2-M1", "--status", "scripted"]) == 0  # only producing needs the theme
-    assert main(["media", "set", "PWD", "U1-S2-M1", "--status", "produced", "--force"]) == 0
+    assert main(["media", "set", "PWD", "U1-S2-M1", "--status", "produced", "--depicts", "concept", "--force"]) == 0
 
     (course.parent.parent / "theme").mkdir(exist_ok=True)
     (course.parent.parent / "theme" / "tokens.json").write_text(json.dumps({"color": {"text": "#000"}}), encoding="utf-8")
@@ -193,7 +193,7 @@ def test_media_plan_warns_and_set_refuses_without_derived_tokens(course, capsys)
 def test_media_set_remembers_the_tokens_and_plan_notices_a_change(course, capsys):  # noqa: F811
     assert main(["theme", "import", str(FIXTURE)]) == 0
     assert main(["media", "extract", "PWD"]) == 0
-    assert main(["media", "set", "PWD", "U1-S2-M1", "--status", "produced"]) == 0
+    assert main(["media", "set", "PWD", "U1-S2-M1", "--status", "produced", "--depicts", "concept"]) == 0
     manifest = yaml.safe_load((course / "media" / "manifest.yaml").read_text(encoding="utf-8"))["assets"][0]
     assert manifest["theme"] == theme.fingerprint(theme.from_creator(creator()))
     capsys.readouterr()

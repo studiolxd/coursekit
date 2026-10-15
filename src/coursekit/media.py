@@ -565,7 +565,9 @@ def set_asset(course: dict, asset_id: str, **values) -> str:
         raise MediaError(t("media", "bad_depicts", value=depicts, valid=", ".join(DEPICTS)))
     required, real = depicts_rules(cfg)
     recipe = values.get("recipe") or asset.get("recipe")
-    if values.get("status") in ("produced", "uploaded") and first_time and asset["type"] in required and recipe not in real:
+    in_simulation = asset.get("kind") in SIMULATION_KINDS  # backgrounds, layers, portraits: the application there is fictional
+    if values.get("status") in ("produced", "uploaded") and first_time and asset["type"] in required and recipe not in real \
+            and not in_simulation:
         if not depicts:  # a generated resource says what it shows; a real one (a capture, a recording) needs not
             raise MediaError(t("media", "depicts_missing", asset=asset_id))
         if depicts == "interface":

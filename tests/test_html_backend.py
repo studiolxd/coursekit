@@ -169,7 +169,8 @@ def produce_image(course):
     assert main(["media", "extract", "PWD"]) == 0
     (course / "media" / "files").mkdir(parents=True, exist_ok=True)
     (course / "media" / "files" / "U1-S2-M1.svg").write_text('<svg xmlns="http://www.w3.org/2000/svg"/>', encoding="utf-8")
-    assert main(["media", "set", "PWD", "U1-S2-M1", "--status", "produced", "--file", "media/files/U1-S2-M1.svg", "--alt", "Parts"]) == 0
+    assert main(["media", "set", "PWD", "U1-S2-M1", "--status", "produced", "--depicts", "concept",
+                 "--file", "media/files/U1-S2-M1.svg", "--alt", "Parts"]) == 0
 
 
 def test_build_writes_the_preview_and_the_zip(html_course, capsys):
@@ -216,7 +217,8 @@ def test_without_a_version_there_is_only_the_preview(html_course, capsys):
 
 def test_a_produced_asset_without_its_file_is_a_warning(html_course, capsys):
     assert main(["media", "extract", "PWD"]) == 0
-    assert main(["media", "set", "PWD", "U1-S2-M1", "--status", "produced", "--file", "media/files/missing.svg"]) == 0
+    assert main(["media", "set", "PWD", "U1-S2-M1", "--status", "produced", "--depicts", "concept",
+                 "--file", "media/files/missing.svg"]) == 0
     capsys.readouterr()
     assert main(["assemble", "build", "PWD", "--unit", "1"]) == 0
     assert "U1-S2-M1 is produced but its file does not exist" in capsys.readouterr().out
