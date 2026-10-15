@@ -204,7 +204,7 @@ def test_the_report_names_what_rules_forbidden_asks_to_remove(tmp_path):
     rules = config.package_defaults("import")["idevices"]
     text, report = exelearning.convert(path, tmp_path / "m", "m", rules, "en",
                                        {"hosts": ["youtube.com"], "terms": ["welcome", "nothing here"]})
-    assert "(forbidden host: replace it with a media placeholder)" in text
+    assert "(forbidden host: keep it only if its channel is official" in text
     assert report.forbidden_embeds == ["https://www.youtube.com/embed/abc"]
     assert report.forbidden_terms == {"welcome": 1}
     assert "welcome" in exelearning.render_report([("f.elp", report)], "en")

@@ -45,8 +45,10 @@ Add a ninth criterion: **fidelity to the package**. Compare each section with th
   `rules › forbidden` ask to remove or replace. A loss is **blocking**: restore it. Wording changed without a reason in the
   notes is an **improvement** (propose reverting it).
 - Each interactive keeps its kind from the package (a tab set is not turned into an accordion).
-- Everything the report flags is settled: iDevices imported as text, embedded video on a forbidden host (replaced by a
-  placeholder or removed), images the package did not bring, forbidden terms.
+- Everything the report flags is settled: iDevices imported as text, embedded video on a forbidden host (kept because its
+  channel is official, replaced by an equivalent from an official channel, by a placeholder or removed; read
+  `reviews/external-videos.md` and say in the report which proposals a person still has to check), images the package did not
+  bring, forbidden terms.
 - What the writer added (new objectives' practice, assessment questions) is declared as new in the writer's summary; if it is
   not, list it in the report so the person can see it.
 - The sizes (`unit … falls short / runs over`) are warnings of `coursekit verify`: say in the report which units are

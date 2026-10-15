@@ -379,3 +379,6 @@ help_import_hours: {es: "horas del curso (cuando se importa una sola carpeta)", 
 help_import_title: {es: "título del curso (cuando se importa una sola carpeta)", en: "title of the course (when importing a single folder)"}
 help_import_handoff: {es: "tras importar cada curso, lo lleva hasta la entrega en modo handoff", en: "after importing each course, take it to delivery in handoff mode"}
 media_adopt_needs: {es: "adopt necesita el id del recurso y --file con la imagen que ya existe", en: "adopt needs the asset id and --file with the image that already exists"}
+help_videos: {es: "vídeos de sitios prohibidos que son de un canal oficial: comprobar, proponer, aprobar o rechazar", en: "videos on forbidden sites that come from an official channel: check, propose, approve or reject"}
+help_videos_why: {es: "propose: la evidencia de que el canal del vídeo es oficial", en: "propose: the evidence that the channel of the video is official"}
+help_videos_replaces: {es: "propose: la dirección del vídeo que sustituye", en: "propose: the address of the video it replaces"}

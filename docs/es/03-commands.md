@@ -78,7 +78,7 @@ Mientras un curso está en `on_hold`, los comandos que cambian su trabajo se rec
 | Fase | Comandos |
 |---|---|
 | Proyecto y máquina | `coursekit help`, `coursekit init`, `coursekit config`, `coursekit rules`, `coursekit agents`, `coursekit setup`, `coursekit doctor`, `coursekit uninstall`, `coursekit roles` |
-| Cursos y diseño | `coursekit new`, `coursekit handoff`, `coursekit status`, `coursekit design`, `coursekit sync`, `coursekit outline`, `coursekit brief`, `coursekit import`, `coursekit download` |
+| Cursos y diseño | `coursekit new`, `coursekit handoff`, `coursekit status`, `coursekit design`, `coursekit sync`, `coursekit outline`, `coursekit brief`, `coursekit import`, `coursekit videos`, `coursekit download` |
 | Verificación y firma | `coursekit verify`, `coursekit paths`, `coursekit reviewed`, `coursekit approve` |
 | Estado del curso y revisión del cliente | `coursekit hold`, `coursekit resume`, `coursekit client` |
 | Lanzar agentes | `coursekit write`, `coursekit review`, `coursekit run` |
@@ -491,6 +491,36 @@ Cada curso importado se crea con `design.origin: import`, sus paquetes se copian
 coursekit import ../exe/catalogo --plan                 # escribe import.yaml: completa título y horas y revisa las unidades
 coursekit import ../exe/catalogo --hours-file horas.xlsx
 coursekit import ../exe/catalogo --default-hours 20 --handoff
+```
+
+### `coursekit videos`
+
+Conserva los vídeos de un curso alojados en un sitio que `rules › forbidden` lista (YouTube, Vimeo…) cuando son de un **canal oficial**, y gestiona los reemplazos del resto. Quién: ambos (los agentes comprueban y proponen; solo una persona aprueba o rechaza).
+
+```
+coursekit videos [--why WHY] [--replaces REPLACES] {check,propose,approve,reject} code [url]
+```
+
+| Argumento | Valores / por defecto | Significado |
+|---|---|---|
+| `action` | `check`, `propose`, `approve`, `reject` | Ver más abajo. |
+| `code` | código de curso o carpeta | Curso. |
+| `url` | dirección del vídeo | Obligatoria en `propose`, `approve` y `reject` (vale cualquier forma de la dirección del mismo vídeo). |
+| `--why WHY` | texto | `propose`: la evidencia de que el canal es oficial (por ejemplo la página oficial que lo enlaza). Obligatoria. |
+| `--replaces REPLACES` | dirección de vídeo | `propose`: el vídeo al que sustituye. |
+
+Acciones:
+
+- `check`: busca cada dirección de un sitio prohibido en el `content.md` y el `assessment.md` del curso, pregunta al sitio quién la publica (oEmbed, sin clave) y la registra en `media/external-videos.yaml`: `approved` cuando su canal está en `rules › forbidden › allow_channels` (por alias, id, nombre o dirección), `pending` en caso contrario (hay que sustituirlo). Lo que ya está `approved`, `proposed` o `rejected` no se vuelve a preguntar. El idioma del vídeo no importa. Código de salida 1 mientras algo esté `pending` o `rejected`.
+- `propose`: el agente de redacción registra como `proposed` un vídeo que encontró en un canal oficial, con `--why` y, si sustituye a otro, `--replaces`. `coursekit verify` lo deja pasar con un aviso hasta que una persona lo compruebe.
+- `approve` / `reject`: una persona resuelve un vídeo registrado; queda anotado quién lo hizo, así que necesita la identidad del `.env`. Un vídeo rechazado hace fallar `verify` hasta que se sustituya. Los agentes no pueden ejecutarlos.
+
+Cada acción reescribe `reviews/external-videos.md` (en el idioma del curso), con primero los vídeos propuestos por el agente para comprobar, luego los que hay que sustituir, los aprobados y los rechazados. `coursekit verify` lee solo el registro, nunca la red. Se rechaza mientras el curso está en pausa.
+
+```
+coursekit videos check ACME
+coursekit videos propose ACME https://www.youtube.com/watch?v=abc --replaces https://youtu.be/xyz --why "Enlazado desde la web de soporte del producto"
+coursekit videos approve ACME https://www.youtube.com/watch?v=abc
 ```
 
 ## Verificación y firma

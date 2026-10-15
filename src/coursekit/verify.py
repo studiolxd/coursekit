@@ -34,6 +34,7 @@ from coursekit import misconceptions as misconmod
 from coursekit import readability as readmod
 from coursekit import simulation as simmod
 from coursekit import story as storymod
+from coursekit import videos as videosmod
 from coursekit.fingerprint import changed_since_review
 from coursekit.i18n import t
 from coursekit.lang import format_number
@@ -113,15 +114,26 @@ class Report:
 URL = re.compile(r"https?://[^\s)>\]\"']+|(?<![\w/.])www\.[^\s)>\]\"']+", re.I)
 
 
-def check_forbidden(label: str, lines: list[str], forbidden: dict, report: Report) -> None:
-    """`rules › forbidden`: addresses of sites and words or phrases that must not appear in the content."""
+def check_forbidden(label: str, lines: list[str], forbidden: dict, report: Report, videos: dict | None = None) -> None:
+    """`rules › forbidden`: addresses of sites and words or phrases that must not appear in the content. A video on a forbidden
+    site is let through when `coursekit videos` registered it as approved (its channel is official) or proposed (the agent
+    found it official and a person has yet to check it: a warning)."""
     hosts = [str(h).strip().lower().lstrip(".") for h in forbidden.get("hosts") or [] if str(h).strip()]
     terms = [str(w).strip() for w in forbidden.get("terms") or [] if str(w).strip()]
     for number, line in enumerate(lines, 1):
         for url in URL.findall(line) if hosts else []:
             host = (urlparse(url if "://" in url else f"http://{url}").hostname or "").lower()
             if any(host == h or host.endswith(f".{h}") for h in hosts):
-                report.error(t("verify", "forbidden_host", label=label, line=number, host=host))
+                entry = (videos or {}).get(videosmod.key(url))
+                status = entry.get("status") if entry else None
+                if status == "approved":
+                    continue
+                if status == "proposed":
+                    report.warn(t("verify", "video_proposed", label=label, line=number, host=host))
+                elif status == "rejected":
+                    report.error(t("verify", "video_rejected", label=label, line=number, host=host))
+                else:
+                    report.error(t("verify", "forbidden_host", label=label, line=number, host=host))
         for term in terms:
             if re.search(rf"(?<!\w){re.escape(term)}(?!\w)", line, re.I):
                 report.error(t("verify", "forbidden_term", label=label, line=number, term=term))
@@ -455,7 +467,8 @@ def verify_unit(course: dict, unit: dict) -> Report:
     text = content_path.read_text(encoding="utf-8")
     check_pictographs(content_path, text, rules["allowed_symbols"], report)
     forbidden = all_rules.get("forbidden") or {}
-    check_forbidden(content_path.name, text.splitlines(), forbidden, report)
+    registry = videosmod.by_key(course["_dir"])
+    check_forbidden(content_path.name, text.splitlines(), forbidden, report, registry)
     sections = split_sections(text, syntax)
     specs = unit.get("sections") or []
     found, expected = [s.n for s in sections], [s["n"] for s in specs]
@@ -568,7 +581,7 @@ def verify_unit(course: dict, unit: dict) -> Report:
     if assessment_path.exists():
         a_text = assessment_path.read_text(encoding="utf-8")
         check_pictographs(assessment_path, a_text, rules["allowed_symbols"], report)
-        check_forbidden(assessment_path.name, a_text.splitlines(), forbidden, report)
+        check_forbidden(assessment_path.name, a_text.splitlines(), forbidden, report, registry)
         directives = list(parse_directives(assessment_path, a_text.splitlines(), rules, report))
         assessment_directives = directives
         questions = check_questions(assessment_path, directives, rules, syntax, report)

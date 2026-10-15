@@ -381,7 +381,7 @@ class _Markup:
         flagged = bool(host) and any(host == h or host.endswith(f".{h}") for h in self.hosts)
         if flagged:
             self.report.forbidden_embeds.append(src)
-        mark = " (forbidden host: replace it with a media placeholder)" if flagged else ""
+        mark = " (forbidden host: keep it only if its channel is official, see `coursekit videos`; else replace it)" if flagged else ""
         return f"> **[{label}]** {src}{mark}" if src else f"> **[{label}]**"
 
     def list(self, node: Dom) -> str:

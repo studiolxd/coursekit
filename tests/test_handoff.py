@@ -478,4 +478,6 @@ def test_the_update_command_is_a_reviewer_command_with_web_access():
     args = launch.headless_args(launch.Agent("reviewer", "claude", ""), "x", Path("last.txt"), "slxd")
     assert "WebFetch" in args and "WebSearch" in args
     writer = launch.headless_args(launch.Agent("writer", "claude", ""), "x", Path("last.txt"), "slxd")
-    assert "WebSearch" not in writer
+    assert "WebSearch" in writer and "Bash(coursekit videos:*)" in writer  # it looks for a video of an official channel
+    assert "Bash(coursekit videos approve:*)" in launch.CLAUDE_DENY  # but only a person approves it
+    assert "WebSearch" not in launch.headless_args(launch.Agent("media", "claude", ""), "x", Path("last.txt"), "slxd")

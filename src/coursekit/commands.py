@@ -37,6 +37,7 @@ from coursekit import publish as publishmod
 from coursekit import setup as setupmod
 from coursekit import states as statesmod
 from coursekit import theme as thememod
+from coursekit import videos as videosmod
 from coursekit.htmlkit.build import HtmlBuildError
 from coursekit.i18n import t, tn
 from coursekit.lang import format_number
@@ -172,6 +173,33 @@ def cmd_import(args: argparse.Namespace) -> int:
                 print(t("handoff", "stopped", code=folder.name, reason=exc), file=sys.stderr)
     print(t("importer", "summary", done=done, skipped=skipped))
     return 1 if blocked and not done else 0
+
+
+def cmd_videos(args: argparse.Namespace) -> int:
+    project = _project()
+    course = coursemod.load(project, args.code)
+    statesmod.ensure_active(course)
+    try:
+        if args.action == "check":
+            videosmod.check(course)
+        else:
+            if not args.url:
+                print(t("videos", "need_url", action=args.action), file=sys.stderr)
+                return 2
+            if args.action == "propose":
+                videosmod.propose(course, args.url, args.why or "", args.replaces)
+            else:
+                entry = videosmod.decide(course, args.url, "approved" if args.action == "approve" else "rejected")
+                print(t("videos", "decided", url=entry["url"], status=entry["status"]))
+    except videosmod.VideoError as exc:
+        print(t("commands", "error_line", text=exc), file=sys.stderr)
+        return 1
+    path = videosmod.report(course, coursemod.language(course))
+    registered = videosmod.load(course["_dir"])
+    counts = {s: sum(1 for v in registered if v.get("status") == s) for s in ("approved", "proposed", "pending", "rejected")}
+    print(t("videos", "summary", path=path.relative_to(project.root).as_posix(), **counts))
+    _mirror(project, course["code"])
+    return 1 if counts["pending"] or counts["rejected"] else 0
 
 
 def cmd_status(args: argparse.Namespace) -> int:
@@ -977,6 +1005,14 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--handoff", action="store_true", help=t("commands", "help_import_handoff"))
     p.add_argument("--rounds", type=int, help=t("commands", "help_handoff_rounds"))
     p.set_defaults(func=cmd_import)
+
+    p = sub.add_parser("videos", help=t("commands", "help_videos"))
+    p.add_argument("action", choices=("check", "propose", "approve", "reject"))
+    p.add_argument("code")
+    p.add_argument("url", nargs="?")
+    p.add_argument("--why", help=t("commands", "help_videos_why"))
+    p.add_argument("--replaces", help=t("commands", "help_videos_replaces"))
+    p.set_defaults(func=cmd_videos)
 
     p = sub.add_parser("handoff", help=t("commands", "help_handoff"))
     p.add_argument("target", help=t("commands", "help_handoff_target"))

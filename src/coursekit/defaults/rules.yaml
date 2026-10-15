@@ -106,6 +106,8 @@ assembly:
 # A course sets its own in course.yaml › rules › forbidden (a list replaces this one).
 forbidden:
   hosts: []                    # sites whose address must not appear, subdomains included, e.g. [youtube.com, youtu.be, vimeo.com]
+  allow_channels: []           # official channels whose videos are fine on those sites, e.g. ["@MicrosoftTeams", "UC…"], by handle,
+                               # id, name or address (`coursekit videos check` asks the site who publishes each video)
   terms: []                    # words or phrases that must not appear (case-insensitive, whole words), e.g. ["a region's name"]
 
 content:

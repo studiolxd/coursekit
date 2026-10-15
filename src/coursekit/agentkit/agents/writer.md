@@ -5,6 +5,7 @@ model: {{model}}
 temperature: 0.4
 permission:
   edit: allow
+  webfetch: allow
   bash:
     "*": ask
     "coursekit verify*": allow
@@ -13,11 +14,14 @@ permission:
     "coursekit outline*": allow
     "coursekit paths*": allow
     "coursekit config*": allow
+    "coursekit videos*": allow
     "git status*": allow
     "git diff*": allow
     "git commit*": deny
     "git push*": deny
     "*coursekit approve*": deny
+    "*coursekit videos approve*": deny
+    "*coursekit videos reject*": deny
     "*coursekit client*": deny
     "*coursekit hold*": deny
     "*coursekit resume*": deny

@@ -14,12 +14,15 @@ permission:
     "coursekit outline*": allow
     "coursekit paths*": allow
     "coursekit config*": allow
+    "coursekit videos*": allow
     "coursekit reviewed*": allow
     "git status*": allow
     "git diff*": allow
     "git commit*": deny
     "git push*": deny
     "*coursekit approve*": deny
+    "*coursekit videos approve*": deny
+    "*coursekit videos reject*": deny
     "*coursekit client*": deny
     "*coursekit hold*": deny
     "*coursekit resume*": deny

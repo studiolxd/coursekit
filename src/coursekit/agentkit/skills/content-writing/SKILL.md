@@ -94,8 +94,17 @@ The course is the client's: its text comes from the packages converted in `brief
   and register the file instead of making it again: `coursekit media extract <CODE>`, then `coursekit media adopt <CODE> <id>
   --file brief/text/media/<package>/<file> --alt "<alt text>"`. The images of embedded content are not in the brief.
 - **Embedded video.** A line `> **[Video]** <address>` is content hosted elsewhere. Where `rules › forbidden` lists its
-  host (the report and the line say so), or the notes ask to drop external videos, replace it with a `video` placeholder
-  that describes what it showed (pending: the media step produces it) or remove it; never keep the address.
+  host (the report and the line say so), or the notes ask to drop external videos:
+  1. Put its address in the unit and run `coursekit videos check <CODE>`: a video of an official channel
+     (`forbidden.allow_channels`) is `approved` and stays as it is (its language does not matter: the platform subtitles and
+     translates).
+  2. For each one left `pending`, **look for an equivalent video on an official channel** (the one the producer of the
+     application, the body or the organisation behind the subject publishes; search the web, and trust the channel only
+     when an official page of that producer links to it). If you find one, use its address in the unit and register it:
+     `coursekit videos propose <CODE> <address> --replaces <old address> --why "<where you saw that the channel is official>"`.
+     It stays marked as proposed until a person checks it in `reviews/external-videos.md`; you never approve it.
+  3. If there is no official equivalent, replace it with a `video` placeholder that describes what it showed (pending: the
+     media step produces it) or remove it. Never keep an address `coursekit verify` rejects.
 - **The notes.** `brief/notes.md` may ask to remove references (a place, a brand, a platform), to replace media or to keep
   things as they are: apply it to the text and rewrite only the sentences it touches so they still read well.
   `coursekit verify` rejects every address and term of `rules › forbidden` that is left.

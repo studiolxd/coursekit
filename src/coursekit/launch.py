@@ -65,7 +65,8 @@ HEADLESS_NOTE = (
 _BASE_TOOLS = ["Read", "Edit", "Write", "Glob", "Grep", "Skill", "TodoWrite",
                "Bash(coursekit verify:*)", "Bash(coursekit brief:*)", "Bash(coursekit status:*)",
                "Bash(coursekit outline:*)", "Bash(coursekit paths:*)", "Bash(coursekit config:*)", "Bash(git status:*)", "Bash(git diff:*)"]
-CLAUDE_DENY = ["Bash(git commit:*)", "Bash(git push:*)", "Bash(coursekit approve:*)", "Bash(coursekit client:*)", "Bash(coursekit hold:*)",
+CLAUDE_DENY = ["Bash(git commit:*)", "Bash(git push:*)", "Bash(coursekit approve:*)", "Bash(coursekit videos approve:*)",
+               "Bash(coursekit videos reject:*)", "Bash(coursekit client:*)", "Bash(coursekit hold:*)",
                "Bash(coursekit resume:*)", "Bash(coursekit handoff:*)", "Bash(coursekit reviewed*--by*)",
                "Edit(courses/*/assembly/*.json)"]
 
@@ -230,6 +231,10 @@ def headless_args(agent: Agent, text: str, last_message: Path, mcp_name: str, co
         allowed = [*_BASE_TOOLS]
         if agent.role == "reviewer":
             allowed += ["Bash(coursekit reviewed:*)", "WebFetch", "WebSearch"]  # the currency check reads official sources
+        if agent.role in ("writer", "reviewer"):
+            allowed += ["Bash(coursekit videos:*)"]  # the official-channel videos of a migrated course
+        if agent.role == "writer":
+            allowed += ["WebFetch", "WebSearch"]  # to find an equivalent video on an official channel
         if agent.role in ("design", "media", "illustration", "assembly"):
             allowed += [f"mcp__{mcp_name}", *([f"mcp__{connector}"] if connector else []), "Bash(coursekit:*)", "WebFetch"]
         if agent.role in ("media", "illustration"):
