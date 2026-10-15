@@ -8,7 +8,7 @@ media, assembly and SCORM delivery, with human sign-offs at the control points. 
 
 Package `slxd-coursekit`, command `coursekit`. By Studio LXD.
 
-> Early development (`0.2.1`). Published on PyPI as `slxd-coursekit`.
+> Early development (`0.3.0`). Published on PyPI as `slxd-coursekit`.
 
 ## What it does
 
@@ -27,7 +27,7 @@ Only a person can sign (`coursekit approve`); agents are forbidden to run it.
 
 ## Status
 
-Early development (`0.2`). What is solid and what is still to prove:
+Early development (`0.3`). What is solid and what is still to prove:
 
 - **Used end to end:** the process from brief to SCORM delivery, with both backends (slxd creator and the html backend), in Spanish and English; the decision-based approach with simulations; the local instructional design; the handoff mode.
 - **New and less proven:** migrating an existing course from eXeLearning packages (`coursekit import`, `/update-unit`, videos from official channels). It converts real packages without losing text, but the whole flow with real agents is still being piloted.

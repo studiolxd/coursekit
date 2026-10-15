@@ -9,7 +9,7 @@ indistinta.
 
 Paquete `slxd-coursekit`, comando `coursekit`. De Studio LXD.
 
-> En desarrollo inicial (`0.2.1`). Publicado en PyPI como `slxd-coursekit`.
+> En desarrollo inicial (`0.3.0`). Publicado en PyPI como `slxd-coursekit`.
 
 ## Qué hace
 
@@ -28,7 +28,7 @@ Solo una persona puede firmar (`coursekit approve`); a los agentes les está pro
 
 ## Estado
 
-Desarrollo temprano (`0.2`). Qué está asentado y qué falta por demostrar:
+Desarrollo temprano (`0.3`). Qué está asentado y qué falta por demostrar:
 
 - **Usado de extremo a extremo:** el proceso del brief a la entrega SCORM, con los dos backends (slxd creator y el backend html), en español y en inglés; el enfoque basado en decisiones con simulaciones; el diseño instruccional local; el modo handoff.
 - **Nuevo y menos probado:** migrar un curso que ya existe desde paquetes de eXeLearning (`coursekit import`, `/update-unit`, vídeos de canales oficiales). Convierte paquetes reales sin perder texto, pero el flujo completo con agentes reales aún se está pilotando.
