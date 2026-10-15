@@ -5,6 +5,7 @@ model: {{model}}
 temperature: 0.2
 permission:
   edit: allow
+  webfetch: allow
   bash:
     "*": ask
     "coursekit verify*": allow

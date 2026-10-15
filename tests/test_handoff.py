@@ -81,6 +81,11 @@ class Agents:
             f"# AI review\n> **Result:** x\n<!-- result: {result} -->\n", encoding="utf-8")
         assert main(["reviewed", "PWD", "1"]) == 0
 
+    def update_unit(self, arguments):
+        self.update_arguments = arguments
+        (self.course / "reviews").mkdir(exist_ok=True)
+        (self.course / "reviews" / "unit-01-currency.md").write_text("# Currency check\n<!-- currency: current -->\n", encoding="utf-8")
+
     def define_theme(self, arguments):
         (self.root / "theme").mkdir(exist_ok=True)
         (self.root / "theme" / "tokens.json").write_text(json.dumps({"origin": {"source": "creator"}, "color": {}}), encoding="utf-8")
@@ -444,3 +449,33 @@ def test_checking_an_unchanged_assembly_moves_a_reopened_course_to_assembly(proj
     set_status(project, "media")  # reopened: nothing to apply, so nothing is recorded but the closing
     assert main(["assemble", "checked", "PWD", "--unit", "1"]) == 0
     assert data(project)["status"] == "assembly"
+
+
+def set_update_mode(root, mode):
+    path = root / "project.yaml"
+    info = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    info.setdefault("rules", {})["update"] = {"mode": mode}
+    path.write_text(yaml.safe_dump(info, allow_unicode=True), encoding="utf-8")
+
+
+def test_the_currency_check_is_off_by_default(project, monkeypatch):
+    fake = Agents(project, monkeypatch)
+    assert main(["handoff", "Contraseñas seguras", "1", "--code", "PWD"]) == 0
+    assert "update-unit" not in fake.calls
+
+
+@pytest.mark.parametrize(("mode", "arguments"), [("propose", "PWD 1"), ("apply", "PWD 1 --apply")])
+def test_the_currency_check_runs_before_the_review_when_the_rule_asks(project, monkeypatch, mode, arguments):
+    set_update_mode(project, mode)
+    fake = Agents(project, monkeypatch)
+    assert main(["handoff", "Contraseñas seguras", "1", "--code", "PWD"]) == 0
+    assert fake.calls[2:5] == ["write-unit", "update-unit", "review-unit"]
+    assert fake.update_arguments == arguments
+
+
+def test_the_update_command_is_a_reviewer_command_with_web_access():
+    assert launch.COMMAND_ROLE["update-unit"] == "reviewer"
+    args = launch.headless_args(launch.Agent("reviewer", "claude", ""), "x", Path("last.txt"), "slxd")
+    assert "WebFetch" in args and "WebSearch" in args
+    writer = launch.headless_args(launch.Agent("writer", "claude", ""), "x", Path("last.txt"), "slxd")
+    assert "WebSearch" not in writer

@@ -250,8 +250,20 @@ def _write(ctx: Context, course: dict) -> None:
             raise _stuck(ctx, "unit_not_written", result.log if result else None, n=n, status=result.status if result else "-")
 
 
+def _update_unit(ctx: Context, n: int) -> None:
+    """The optional currency check (`update.mode` of the rules) before the AI review, once per unit; a failure does not stop."""
+    mode = str((coursemod.rules(ctx.course()).get("update") or {}).get("mode") or "off")
+    if mode not in ("propose", "apply") or (ctx.course()["_dir"] / "reviews" / f"unit-{n:02d}-currency.md").exists():
+        return
+    code, log, _ = _agent(ctx, "reviewer", "update-unit", f"{ctx.code} {n}" + (" --apply" if mode == "apply" else ""), f"u{n:02d}-update")
+    if code:
+        ctx.log(t("handoff", "update_failed", n=n, where=_where(log, ctx.project)))
+    ctx.mirror()
+
+
 def _review_unit(ctx: Context, n: int) -> None:
     """Review the unit; a "not ready" result sends it back to the writer and it is reviewed again."""
+    _update_unit(ctx, n)
     for attempt in range(1, ctx.rounds + 1):
         result = _unit(ctx, "reviewer", n)
         if not launch.done("reviewer", result.status):

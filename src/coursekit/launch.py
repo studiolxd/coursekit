@@ -46,6 +46,7 @@ COMMAND_ROLE = {
     "course-status": "design",
     "write-unit": "writer",
     "review-unit": "reviewer",
+    "update-unit": "reviewer",
     "approve-unit": "reviewer",
     "produce-media": "media",
     "assemble": "assembly",
@@ -228,7 +229,7 @@ def headless_args(agent: Agent, text: str, last_message: Path, mcp_name: str, co
     if agent.tool == "claude":
         allowed = [*_BASE_TOOLS]
         if agent.role == "reviewer":
-            allowed.append("Bash(coursekit reviewed:*)")
+            allowed += ["Bash(coursekit reviewed:*)", "WebFetch", "WebSearch"]  # the currency check reads official sources
         if agent.role in ("design", "media", "illustration", "assembly"):
             allowed += [f"mcp__{mcp_name}", *([f"mcp__{connector}"] if connector else []), "Bash(coursekit:*)", "WebFetch"]
         if agent.role in ("media", "illustration"):

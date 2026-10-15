@@ -103,3 +103,4 @@ same_findings:
 package_check_failed:
   es: "{code}: la comprobación de los paquetes ha encontrado {count} error(es), apuntados en {path}; corrígelos y sigue con `coursekit handoff {code}`"
   en: "{code}: the check of the packages found {count} error(s), listed in {path}; fix them and carry on with `coursekit handoff {code}`"
+update_failed: {es: "unidad {n}: la comprobación de actualidad no terminó bien ({where}); sigue la revisión", en: "unit {n}: the currency check did not finish well ({where}); the review goes on"}

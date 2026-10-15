@@ -332,6 +332,12 @@ Two ways, and a person signs in both:
 - **One unit, reviewed by a person.** After reading it, run `coursekit reviewed PWD 1 --by "Ana Pérez" [--note "..."] [--report reviews/notes.md]`. The unit becomes `reviewed` without the AI report, and `course.yaml › units[].review` and the history record who reviewed it. Content edited after that goes back to `verified`, as with the AI review. `--note` and `--report` need `--by`, and the report must be a file inside the course folder. The record `units[].review` is removed if the unit goes back below `reviewed`. Agents are denied `--by`.
 - **The whole project (or one course), no AI review at all.** Set `review.ai: skip` in `rules` (`config/rules.yaml`, `project.yaml › rules` or `course.yaml › rules`). A unit that passes `coursekit verify` is `reviewed` straight away (`review.kind: skipped`), the course goes from `writing` to `editorial_review` without the `ai_review` phase, and your sign-off is the review. `coursekit review` still works if you want an AI review of a unit anyway.
 
+#### Update out-of-date content (optional)
+
+Courses age: products change name and interface, versions and prices move, regulations are replaced. `/update-unit PWD 1` (or `coursekit run update-unit PWD 1`) asks the reviewer agent to check the unit against current official sources: first the documentation the brief downloaded, then the web. It writes `reviews/unit-01-currency.md` with each finding (what the unit says, what is true now with its source, the text it proposes) and the claims it could not verify, and **changes nothing** unless you add `--apply`. Even then it writes only plain facts that have an official source (a name, a version, a figure, a date, an interface path, a link); anything that changes what the unit teaches stays as a proposal for you. A unit whose content changed goes back to `verified` and needs the AI review again.
+
+The `update.mode` rule (`config/rules.yaml`, `project.yaml` or one course's `course.yaml › rules`) makes the handoff run it before the AI review of each unit: `off` (default; it does not run by itself), `propose` (report only) or `apply`. See [`rules`](04-configuration.md#rules-production-rules).
+
 ### 5. Editorial review and sign-off
 
 Read the unit in `courses/PWD/content/unit-01/`, resolve the proposals in the AI review report and edit the Markdown as needed. After editing, run `coursekit verify PWD --unit 1`: if the edit touched parts the AI reviewed, the unit goes back to `verified` and needs another (partial) review before it can be signed. Then:

@@ -20,7 +20,7 @@ The work is split into six roles. Each role has a tool and a model.
 |---|---|---|---|---|---|
 | `design` | Instructional design proposal and changes; the theme and design tokens | `/new-course`, `/design-change`, `/approve-design`, `/define-theme`, `/course-status` | `claude` | `opus` | `anthropic/claude-opus-5-5` |
 | `writer` | Writes the content of a unit | `/write-unit` | `claude` | `sonnet` | `anthropic/claude-sonnet-5-5` |
-| `reviewer` | AI review of a written unit | `/review-unit`, `/approve-unit` | `claude` | `opus` | `anthropic/claude-opus-5-5` |
+| `reviewer` | AI review of a written unit | `/review-unit`, `/update-unit`, `/approve-unit` | `claude` | `opus` | `anthropic/claude-opus-5-5` |
 | `media` | Produces and uploads media assets | `/produce-media` | `claude` | `opus` | `anthropic/claude-opus-5-5` |
 | `illustration` | Draws in SVG: scenes, characters and objects when there is no image generator, diagrams, infographics | (none yet: the media production uses it) | as `media` | as `media` | as `media` |
 | `assembly` | Loads content into creator or builds the html packages, processes the client's review comments, exports or records packages, syncs directives | `/assemble`, `/client-feedback`, `/deliver`, `/sync-directives` | `claude` | `sonnet` | `anthropic/claude-sonnet-5-5` |
@@ -86,6 +86,7 @@ How coursekit treats files:
 | `instructional-design` | Proposing and changing a course's instructional design, in slxd or locally in `design/design.yaml` (`/new-course`, `/design-change`, `/approve-design`). |
 | `content-writing` | Writing a unit's `content.md` and `assessment.md` (`/write-unit`). |
 | `content-review` | Reviewing a unit written by another model and writing the report in `reviews/` (`/review-unit`). |
+| `content-update` | Looking for out-of-date content in a unit with official sources and writing the currency report (`/update-unit`). |
 | `theme-definition` | Choosing or creating the theme of the project (or of one course) in slxd creator, adapting it to the brand and deriving the design tokens from it with `coursekit theme import` (`/define-theme`). |
 | `media-production` | Producing and uploading the media assets, using the design tokens of the theme (`/produce-media`). |
 | `creator-assembly` | Loading and reloading content into slxd creator, and the preview and review links of each unit (`/assemble`, creator backend). |
@@ -108,6 +109,7 @@ Skills and commands read the production numbers from your configuration: words p
 | `/course-status` | `[CODE]` | Runs `coursekit status` and explains the state of the courses (or of one) and the next step in two or three lines. Not tied to a phase: use it at any point. |
 | `/write-unit` | `<CODE> [N]` | Writes a unit of a course whose design is signed. Without `N`, it writes every unit still to write, in order, in the same session (it stops at the first one that does not verify). `coursekit write` launches it with a number: one session per unit. |
 | `/review-unit` | `<CODE> <N>` | AI review of a written unit, with a report in `reviews/` whose Result is repeated in a `<!-- result: ... -->` comment (`ready`, `ready_with_changes` or `not_ready`); it finishes with `coursekit reviewed`. See [AI review](02-workflow.md#4-ai-review). |
+| `/update-unit` | `<CODE> <N> [--apply]` | Optional check of a written unit for out-of-date content (names, versions, prices, dates, regulations) against official sources, with a report `reviews/unit-NN-currency.md` whose result is repeated in a `<!-- currency: ... -->` comment (`current`, `updates_proposed` or `updates_applied`). It proposes each change with its source and writes it only with `--apply` (or `update.mode: apply`) and only when it is a plain fact. See [Update out-of-date content](02-workflow.md#update-out-of-date-content-optional). |
 | `/approve-unit` | `<CODE> <N>` | Checks that a unit is ready for editorial sign-off and tells you how to sign it. |
 | `/produce-media` | `<CODE> [asset id]` | Produces the pending media assets and uploads them. |
 | `/assemble` | `<CODE> [N]` | Loads the skill of the backend of the course. Creator: loads the content of a course or unit into creator (only what changed) and applies the theme of the course to each content (`set_content_theme`, with the id from `coursekit theme show --course CODE`); without tokens derived from the platform it leaves the default theme and tells you about `/define-theme`. Html: builds the package of each unit with `coursekit assemble build CODE --unit N` and tells you what to check in the preview. Without a unit number it processes every unit in order. |
@@ -219,7 +221,7 @@ How each tool is called, and its limits:
 
 | Tool | Command (simplified) | Limits |
 |---|---|---|
-| Claude Code | `claude -p ... --permission-mode acceptEdits --allowedTools ... --disallowedTools ...` | Allowed: read, edit and write files, skills, and only these shell commands: `coursekit verify`, `brief`, `status`, `outline`, `config`, `git status`, `git diff` (the reviewer also `coursekit reviewed`). The `design`, `media` and `assembly` roles also get the slxd MCP server (and, when `platform.slxd.connector` names one, that connector of your account), any `coursekit` command and web fetch. Always denied: `git commit`, `git push`, `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff`, `coursekit reviewed ... --by`. |
+| Claude Code | `claude -p ... --permission-mode acceptEdits --allowedTools ... --disallowedTools ...` | Allowed: read, edit and write files, skills, and only these shell commands: `coursekit verify`, `brief`, `status`, `outline`, `config`, `git status`, `git diff` (the reviewer also `coursekit reviewed`, web fetch and web search, for the currency check). The `design`, `media` and `assembly` roles also get the slxd MCP server (and, when `platform.slxd.connector` names one, that connector of your account), any `coursekit` command and web fetch. Always denied: `git commit`, `git push`, `coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff`, `coursekit reviewed ... --by`. |
 | opencode | `opencode run [--agent writer\|reviewer] --auto --format json ...` | Writer and reviewer run as the generated agents with their permissions; the instruction points at the command file because `run` has no slash commands. |
 | Codex | `codex exec --sandbox workspace-write --json -o <log>.last.txt ...` | Workspace-write sandbox. |
 
