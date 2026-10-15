@@ -170,6 +170,7 @@ def context(project: Project) -> dict[str, str]:
         **readability_tokens(rules.get("readability") or {}),
         "reflections_per_unit": str(int((rules.get("content") or {}).get("reflections_per_unit") or 0)),
         "brief_large_words": str((rules.get("brief") or {}).get("large_words", "")),
+        "reference_sources_max": str((rules.get("brief") or {}).get("reference_sources_max", "")),
         "project_skins": project_skins(project),
     }
 

@@ -36,6 +36,22 @@ reach the learner), **improvement** (noticeably better quality) or **minor** (st
 | 9 | Continuity | No overlap with other units nor content the design keeps for a later one (`coursekit outline <CODE>`; to check an overlap, `--section U.S`); correct cross-references. |
 | 10 | Simulations (decision-based courses, or any simulation) | Run `coursekit paths <CODE> --unit N` and read every path of `reviews/unit-NN-paths.md`, and its table of scenes (what the learner sees in each one: text, screen of the skin, characters): no empty or contradictory screen. Each section opens with its simulation; the situation is realistic for the audience; options are plausible (none obviously right, none absurd); consequences follow from the decisions and some are delayed; there is a way to recover; points reward what an expert would do; a decision with `error` is that common error and its feedback or the debriefing explains it; every debriefing explains without preaching; the explanation after it starts from what the learner lived through, the `:::if` branches fit their path and every `:::else` is neutral (it never assumes a decision: whoever has not played and creator read it); no text outside a simulation states what the learner did (the end of the story lives in the endings of the scored simulation); characters, world and tone match `design/story.md`. A path that makes no sense or an ending that teaches the wrong thing is **blocking**. |
 
+## Migrated courses (`design.origin: import`)
+
+Add a ninth criterion: **fidelity to the package**. Compare each section with the Markdown the package was converted to
+(`brief/text/files/NN-….md`) and with `brief/import-report.md`:
+
+- Nothing of the client's text, no interactive and no image is lost or silently reworded, except what `brief/notes.md` and
+  `rules › forbidden` ask to remove or replace. A loss is **blocking**: restore it. Wording changed without a reason in the
+  notes is an **improvement** (propose reverting it).
+- Each interactive keeps its kind from the package (a tab set is not turned into an accordion).
+- Everything the report flags is settled: iDevices imported as text, embedded video on a forbidden host (replaced by a
+  placeholder or removed), images the package did not bring, forbidden terms.
+- What the writer added (new objectives' practice, assessment questions) is declared as new in the writer's summary; if it is
+  not, list it in the report so the person can see it.
+- The sizes (`unit … falls short / runs over`) are warnings of `coursekit verify`: say in the report which units are
+  affected and what would fix it; they do not block.
+
 ## Partial review
 
 When the unit was already reviewed and only some parts changed (`coursekit review` computes

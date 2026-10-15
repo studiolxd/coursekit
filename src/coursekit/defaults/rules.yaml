@@ -87,12 +87,19 @@ brief:
   passage_words: 200           # the material is cut into passages of about this many words (and at every heading)
   passages: 8                  # passages a search returns (--top changes it)
   large_words: 20000           # above this many words of material, the writer searches it per section instead of reading it
+  reference_sources_max: 5     # official documentation or regulation the design agent proposes to add to the brief of a course
 
 # Assembly in creator: its code block takes only the languages of its `codeLanguage` list (`get_brick_type_schema` CODE). When it
 # adds some, list them here and coursekit uses them: `plaintext` for the blocks that show output, `shell` ("Terminal") for those
 # made of commands and for `console`/`terminal` fences, `powershell` for PowerShell, `diff`, `dockerfile`, `http`.
 assembly:
   code_languages: []           # e.g. [plaintext, shell, powershell, diff, dockerfile, http]
+
+# What must not appear in the content of a course: `coursekit verify` reports each occurrence as an error. Empty by default.
+# A course sets its own in course.yaml › rules › forbidden (a list replaces this one).
+forbidden:
+  hosts: []                    # sites whose address must not appear, subdomains included, e.g. [youtube.com, youtu.be, vimeo.com]
+  terms: []                    # words or phrases that must not appear (case-insensitive, whole words), e.g. ["a region's name"]
 
 content:
   word_margin: 0.05                    # recommended margin over the minimum (warning only)

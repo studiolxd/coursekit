@@ -24,6 +24,7 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
+from urllib.parse import urlparse
 
 import yaml
 
@@ -107,6 +108,23 @@ class Report:
 
     def warn(self, msg: str) -> None:
         self.warnings.append(msg)
+
+
+URL = re.compile(r"https?://[^\s)>\]\"']+|(?<![\w/.])www\.[^\s)>\]\"']+", re.I)
+
+
+def check_forbidden(label: str, lines: list[str], forbidden: dict, report: Report) -> None:
+    """`rules › forbidden`: addresses of sites and words or phrases that must not appear in the content."""
+    hosts = [str(h).strip().lower().lstrip(".") for h in forbidden.get("hosts") or [] if str(h).strip()]
+    terms = [str(w).strip() for w in forbidden.get("terms") or [] if str(w).strip()]
+    for number, line in enumerate(lines, 1):
+        for url in URL.findall(line) if hosts else []:
+            host = (urlparse(url if "://" in url else f"http://{url}").hostname or "").lower()
+            if any(host == h or host.endswith(f".{h}") for h in hosts):
+                report.error(t("verify", "forbidden_host", label=label, line=number, host=host))
+        for term in terms:
+            if re.search(rf"(?<!\w){re.escape(term)}(?!\w)", line, re.I):
+                report.error(t("verify", "forbidden_term", label=label, line=number, term=term))
 
 
 def check_pictographs(path: Path, text: str, allowed: str, report: Report) -> None:
@@ -424,6 +442,8 @@ def verify_unit(course: dict, unit: dict) -> Report:
     rules = all_rules["content"]
     decision = all_rules.get("decision_based") or {}
     decision_based = (course.get("design") or {}).get("approach") == "decision-based"
+    imported = (course.get("design") or {}).get("origin") == "import"
+    shortfall = report.warn if imported else report.error  # an imported course keeps its content: it is told, not blocked
     simulations = tuple(rules.get("simulation_directives") or ())
     fmt = lambda n: format_number(n, language)  # noqa: E731
     folder = coursemod.unit_dir(course["_dir"], unit["n"])
@@ -434,6 +454,8 @@ def verify_unit(course: dict, unit: dict) -> Report:
 
     text = content_path.read_text(encoding="utf-8")
     check_pictographs(content_path, text, rules["allowed_symbols"], report)
+    forbidden = all_rules.get("forbidden") or {}
+    check_forbidden(content_path.name, text.splitlines(), forbidden, report)
     sections = split_sections(text, syntax)
     specs = unit.get("sections") or []
     found, expected = [s.n for s in sections], [s["n"] for s in specs]
@@ -497,7 +519,7 @@ def verify_unit(course: dict, unit: dict) -> Report:
             if len(sec.simulations) < needed_sims:
                 report.error(t("verify", "few_simulations", label=label, count=len(sec.simulations), needed=needed_sims))
         if sec.words < minimum:
-            report.error(t("verify", "words_below_minimum", label=label, words=fmt(sec.words), minimum=fmt(minimum)))
+            shortfall(t("verify", "words_below_minimum", label=label, words=fmt(sec.words), minimum=fmt(minimum)))
         elif sec.words < minimum * (1 + margin):
             report.warn(t("verify", "words_below_margin", label=label, words=fmt(sec.words), margin=int(margin * 100)))
         elif rules.get("word_margin_max") is not None and sec.words > minimum * (1 + float(rules["word_margin_max"])):
@@ -512,7 +534,7 @@ def verify_unit(course: dict, unit: dict) -> Report:
             interactive = {d for d in sec.directives if d in rules["interactive_directives"] or d in simulations}
             needed = max(rules["min_interactive_per_content_section"], math.ceil(spec["hours"] * rules["interactive_per_hour"]))
             if len(interactive) < needed:
-                report.error(t("verify", "few_interactive", label=label, count=len(interactive), needed=needed))
+                shortfall(t("verify", "few_interactive", label=label, count=len(interactive), needed=needed))
 
     if any(s["kind"] == "content" for s in specs):
         for obj in unit.get("objectives") or []:
@@ -532,9 +554,9 @@ def verify_unit(course: dict, unit: dict) -> Report:
     needed_ph = math.ceil(float(unit["hours"]) * rules["placeholders_per_hour"])
     needed_types = min(rules["min_placeholder_types"], needed_ph)
     if len(placeholders) < needed_ph:
-        report.error(t("verify", "few_placeholders", count=len(placeholders), needed=needed_ph))
+        shortfall(t("verify", "few_placeholders", count=len(placeholders), needed=needed_ph))
     if len(kinds) < needed_types:
-        report.error(t("verify", "few_placeholder_types", count=len(kinds), needed=needed_types))
+        shortfall(t("verify", "few_placeholder_types", count=len(kinds), needed=needed_types))
 
     quiet = list(parse_directives(Path("content.md"), text.splitlines(), rules, Report()))
     content_questions = check_questions(content_path, quiet, rules, syntax, report)
@@ -546,6 +568,7 @@ def verify_unit(course: dict, unit: dict) -> Report:
     if assessment_path.exists():
         a_text = assessment_path.read_text(encoding="utf-8")
         check_pictographs(assessment_path, a_text, rules["allowed_symbols"], report)
+        check_forbidden(assessment_path.name, a_text.splitlines(), forbidden, report)
         directives = list(parse_directives(assessment_path, a_text.splitlines(), rules, report))
         assessment_directives = directives
         questions = check_questions(assessment_path, directives, rules, syntax, report)
@@ -608,6 +631,11 @@ def verify_unit(course: dict, unit: dict) -> Report:
         for err in check(course, unit):
             report.error(t("verify", "assembly_error", error=err))
 
+    if imported and min_total:
+        if total_words < min_total:
+            report.warn(t("verify", "unit_short", unit=unit["n"], words=fmt(total_words), minimum=fmt(min_total), hours=fmt(unit["hours"])))
+        elif rules.get("word_margin_max") is not None and total_words > min_total * (1 + float(rules["word_margin_max"])):
+            report.warn(t("verify", "unit_long", unit=unit["n"], words=fmt(total_words), minimum=fmt(min_total), hours=fmt(unit["hours"])))
     report.summary = {
         "words": total_words,
         "min_words": min_total,

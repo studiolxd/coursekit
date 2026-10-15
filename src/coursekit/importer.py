@@ -226,7 +226,8 @@ def import_course(project: Project, item: CoursePlan, log=print) -> Path:
         shutil.copy2(unit.path, sources / f"{index:02d}-{unit.path.name}")
     loaded = course.load(project, folder.name)
     summary = briefmod.build(folder / "brief", loaded["code"], language=course.language(loaded),
-                             importing=config.effective("import", project, loaded).value)
+                             importing=config.effective("import", project, loaded).value,
+                             forbidden=config.effective("rules", project, loaded).value.get("forbidden"))
     for source, note in summary["notes"]:
         log(t("commands", "brief_note", source=source, note=note))
     return folder

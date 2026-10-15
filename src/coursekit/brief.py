@@ -113,7 +113,7 @@ def exe_convert(src: Path, rel: str, brief: Path, target: Path, options: dict):
     shutil.rmtree(media, ignore_errors=True)
     try:
         body, report = exelearning.convert(src, media, Path(os.path.relpath(media, target.parent)).as_posix(),
-                                           options.get("rules") or [], options.get("language") or "es")
+                                           options.get("rules") or [], options.get("language") or "es", options.get("forbidden"))
     except exelearning.ExeError as exc:
         return None, note("convert_failed", error=str(exc)), None
     return body, None, report
@@ -287,13 +287,13 @@ def write_index(brief: Path, code: str, files: list[dict], webs: list[dict], gen
 
 
 def build(brief: Path, title: str, refresh: bool = False, general: str | None = None, log=None, language: str = "es",
-          importing: dict | None = None) -> dict:
+          importing: dict | None = None, forbidden: dict | None = None) -> dict:
     """Convert sources and links of one brief folder and write its index in `language` (the content's). Returns a summary."""
     (brief / "sources").mkdir(parents=True, exist_ok=True)
     state_path = brief / "text" / STATE
     state = json.loads(state_path.read_text(encoding="utf-8")) if state_path.exists() else {}
     options = {"rules": (importing if importing is not None else configmod.package_defaults("import")).get("idevices"),
-               "language": language}
+               "language": language, "forbidden": forbidden}
     files, failed_files = convert_files(brief, state, options)
     webs, failed_webs = download_links(brief, state, refresh, log)
     state_path.parent.mkdir(parents=True, exist_ok=True)

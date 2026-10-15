@@ -197,3 +197,63 @@ def test_import_plan_only_writes_the_plan(course, tmp_path, capsys):  # noqa: F8
     assert main(["import", str(tmp_path / "parent"), "--plan"]) == 0
     assert (course.parent.parent / "import.yaml").is_file() and not (course.parent / "ABC001").exists()
     assert "2 courses, 0 ready to import" in capsys.readouterr().out
+
+
+def test_the_report_names_what_rules_forbidden_asks_to_remove(tmp_path):
+    path = sample(tmp_path / "f.elp")
+    rules = config.package_defaults("import")["idevices"]
+    text, report = exelearning.convert(path, tmp_path / "m", "m", rules, "en",
+                                       {"hosts": ["youtube.com"], "terms": ["welcome", "nothing here"]})
+    assert "(forbidden host: replace it with a media placeholder)" in text
+    assert report.forbidden_embeds == ["https://www.youtube.com/embed/abc"]
+    assert report.forbidden_terms == {"welcome": 1}
+    assert "welcome" in exelearning.render_report([("f.elp", report)], "en")
+
+
+def edit_course(course_dir, change):
+    path = course_dir / "course.yaml"
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    change(data)
+    path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
+
+
+def test_verify_reports_what_rules_forbidden_lists(course, capsys):  # noqa: F811
+    assert main(["verify", "PWD", "--unit", "1"]) == 0
+    edit_course(course, lambda d: d["rules"].update(forbidden={"terms": ["palabra"], "hosts": ["example.com"]}))
+    capsys.readouterr()
+    assert main(["verify", "PWD", "--unit", "1"]) == 1
+    out = capsys.readouterr().out
+    assert "“palabra” is forbidden by `rules › forbidden`" in out
+
+
+def test_an_imported_course_is_warned_not_blocked_about_its_size(course, capsys):  # noqa: F811
+    def sizes(data):
+        for unit in data["units"]:
+            for section in unit["sections"]:
+                section["min_words"] = 5000
+
+    edit_course(course, sizes)
+    assert main(["verify", "PWD", "--unit", "1"]) == 1  # a new course: too short is an error
+    edit_course(course, lambda d: d["design"].update(origin="import"))
+    capsys.readouterr()
+    assert main(["verify", "PWD", "--unit", "1"]) == 0
+    out = capsys.readouterr().out
+    assert "WARNING" in out and "unit 1 (imported course)" in out and "falls short" in out
+
+
+def test_adopt_an_image_that_already_exists(course, capsys):  # noqa: F811
+    from tests.exe_fixture import png
+
+    assert main(["media", "extract", "PWD"]) == 0
+    source = course / "brief" / "text" / "media" / "unit" / "photo.png"
+    source.parent.mkdir(parents=True)
+    source.write_bytes(png())
+    capsys.readouterr()
+    assert main(["media", "adopt", "PWD", "U1-S2-M1", "--file", "brief/text/media/unit/photo.png", "--alt", "A padlock"]) == 0
+    assert "U1-S2-M1: produced" in capsys.readouterr().out
+    assert (course / "media" / "files" / "U1-S2-M1.png").read_bytes() == png()
+    asset = yaml.safe_load((course / "media" / "manifest.yaml").read_text(encoding="utf-8"))["assets"][0]
+    assert (asset["status"], asset["file"], asset["alt"], asset["recipe"]) == (
+        "produced", "media/files/U1-S2-M1.png", "A padlock", "imported")
+    assert main(["media", "adopt", "PWD", "U1-S2-M1", "--file", "nowhere.png"]) == 1
+    assert main(["media", "adopt", "PWD", "U1-S2-M1"]) == 2

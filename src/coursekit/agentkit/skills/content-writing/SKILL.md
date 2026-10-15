@@ -78,6 +78,30 @@ Mandatory format: `.coursekit/docs/content-format.md`. Write in {{language_name}
   many sentences are long.
 - **No emojis.** Only `{{allowed_symbols}}`.
 
+## Migrated courses (`design.origin: import`)
+
+The course is the client's: its text comes from the packages converted in `brief/text/files/` (one per unit, `01-…`,
+`02-…`), and `brief/import-report.md` lists what was left out or flagged.
+
+- **Reuse the text; do not rewrite it.** Take each section's text from the package as it is: do not summarise, restyle or
+  "improve" it. Change only what the format needs (the `## {{t_section}}` headings, the objective tag, the directive keys of
+  the course language) and what the notes ask (below). What is missing for the design (an objective's practice, assessment
+  questions) you write new, in the same voice, and say in your final summary which parts are new.
+- **Interactives keep their kind.** Copy the directives of the brief (`:::accordion`, `:::tabs`, `:::carousel`,
+  `:::flashcards`, `:::match`, `:::labelled-graphic`, questions…); give every question the objective of its section and
+  check the carousel slides that the conversion titled with a number.
+- **Images are already produced.** For each image of the brief you keep, write its media placeholder with all its fields
+  and register the file instead of making it again: `coursekit media extract <CODE>`, then `coursekit media adopt <CODE> <id>
+  --file brief/text/media/<package>/<file> --alt "<alt text>"`. The images of embedded content are not in the brief.
+- **Embedded video.** A line `> **[Video]** <address>` is content hosted elsewhere. Where `rules › forbidden` lists its
+  host (the report and the line say so), or the notes ask to drop external videos, replace it with a `video` placeholder
+  that describes what it showed (pending: the media step produces it) or remove it; never keep the address.
+- **The notes.** `brief/notes.md` may ask to remove references (a place, a brand, a platform), to replace media or to keep
+  things as they are: apply it to the text and rewrite only the sentences it touches so they still read well.
+  `coursekit verify` rejects every address and term of `rules › forbidden` that is left.
+- **Updating what is out of date** is a separate step (`/update-unit`), not part of writing: here write what the package
+  says, and mark with `<!-- VERIFICAR: … -->` what you suspect is old.
+
 ## Decision-based courses
 
 When `course.yaml › design.approach` is `decision-based` (read it before writing), the learner does not start by reading.

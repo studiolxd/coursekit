@@ -26,7 +26,9 @@ $ARGUMENTS
    it is there (then run `coursekit brief <CODE>` again), or tell you to go on without it. If you
    cannot ask (non-interactive session) or the person goes on without material, say in the final
    summary that the syllabus is an assumption and that `/design-change` redoes it with material.
-4. Load the `instructional-design` skill and follow its **Proposal** section (and **Decision-based courses** when
+4. Load the `instructional-design` skill and follow its **Proposal** section (and **Migrated courses** when `course.yaml › design.origin`
+   is `import`: the course was created by `coursekit import` and the brief holds its converted packages; and **Reference
+   documentation** when the subject is an application or a regulation) (and **Decision-based courses** when
    `course.yaml › design.approach` is `decision-based`).
 5. Run `coursekit theme show`. If the project has no theme tokens, say in the summary that `/define-theme`
    must be run before producing media.

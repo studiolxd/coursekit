@@ -99,3 +99,4 @@ voice_description:
   en: "The text of the scene (narration), read by {speaker}. Produced with `coursekit media narrate`."
 voice_specs: {es: "MP3, la voz configurada (coursekit voice)", en: "MP3, the configured voice (coursekit voice)"}
 
+adopt_missing: {es: "no existe el fichero {path} (una ruta desde la carpeta del curso o del proyecto)", en: "the file {path} does not exist (a path from the course or the project folder)"}

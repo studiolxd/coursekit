@@ -417,7 +417,8 @@ def cmd_brief(args: argparse.Namespace) -> int:
             briefmod.build(general, project.root.name, args.refresh, log=log, language=project_language, importing=importing)
         rel = "../../../brief/index.md" if (general / "index.md").exists() else None
         summary = briefmod.build(course["_dir"] / "brief", course["code"], args.refresh, general=rel, log=log,
-                                 language=coursemod.language(course), importing=config.effective("import", project, course).value)
+                                 language=coursemod.language(course), importing=config.effective("import", project, course).value,
+                                 forbidden=config.effective("rules", project, course).value.get("forbidden"))
         target = f"{course['code']}/brief/index.md"
     else:
         summary = briefmod.build(general, project.root.name, args.refresh, log=log, language=project_language, importing=importing)
@@ -723,6 +724,18 @@ def cmd_media(args: argparse.Namespace) -> int:
             print(t("commands", "media_fit_needs"), file=sys.stderr)
             return 2
         print(mediamod.image_tool(course, args.id, args.action, args.size))
+        return 0
+    if args.action == "adopt":
+        statesmod.ensure_active(course)
+        if not (args.id and args.file):
+            print(t("commands", "media_adopt_needs"), file=sys.stderr)
+            return 2
+        try:
+            print(mediamod.adopt(course, args.id, args.file, args.alt))
+        except mediamod.MediaError as exc:
+            print(t("commands", "error_line", text=exc), file=sys.stderr)
+            return 1
+        _mirror(course["_project"], course["code"])
         return 0
     if args.action == "optimize":
         statesmod.ensure_active(course)
@@ -1081,7 +1094,7 @@ def register(sub: argparse._SubParsersAction) -> None:
 
     p = sub.add_parser("media", help=t("commands", "help_media"))
     p.add_argument("action", choices=("extract", "plan", "providers", "set", "upload", "redo", "embed", "fit", "render", "narrate",
-                                      "optimize"))
+                                      "optimize", "adopt"))
     p.add_argument("code", nargs="?")
     p.add_argument("id", nargs="?")
     p.add_argument("more", nargs="*", help=t("commands", "help_media_more"))

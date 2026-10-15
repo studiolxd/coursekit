@@ -464,6 +464,25 @@ def optimize(course: dict, ids: list[str] | None = None) -> list[str]:
     return lines
 
 
+def adopt(course: dict, asset_id: str, source: str, alt: str | None = None) -> str:
+    """Takes a file that already exists (an image of an imported package, in the brief) as the produced asset `asset_id`:
+    it is copied to media/files/<id>.<ext> and the asset is marked produced, so it is not made again."""
+    _, _, data = load_manifest(course["_dir"])
+    if not any(a["id"] == asset_id for a in data["assets"]):
+        raise MediaError(t("media", "asset_not_found", asset_id=asset_id))
+    origin = Path(source)
+    if not origin.is_absolute():
+        origin = next((base / origin for base in (course["_dir"], course["_project"].root) if (base / origin).is_file()), origin)
+    if not origin.is_file():
+        raise MediaError(t("media", "adopt_missing", path=source))
+    target = course["_dir"] / "media" / "files" / f"{asset_id}{origin.suffix.lower()}"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(origin, target)
+    # a file that already exists was not made with the tokens of the theme: the guard of the media that use it does not apply
+    return set_asset(course, asset_id, status="produced", recipe="imported", file=f"media/files/{target.name}", alt=alt,
+                     made_with="imported", force=True)
+
+
 def redo(course: dict, ids: list[str] | None = None, everything: bool = False) -> list[str]:
     """Marks assets to be produced again: the ones named, else those that use the theme and were made with other tokens than the
     current ones (every one that uses the theme with `everything`). They go back to `scripted`, forgetting the fingerprint and

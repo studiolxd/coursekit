@@ -378,3 +378,4 @@ help_import_default_hours: {es: "horas para los cursos que no las tengan en el p
 help_import_hours: {es: "horas del curso (cuando se importa una sola carpeta)", en: "hours of the course (when importing a single folder)"}
 help_import_title: {es: "título del curso (cuando se importa una sola carpeta)", en: "title of the course (when importing a single folder)"}
 help_import_handoff: {es: "tras importar cada curso, lo lleva hasta la entrega en modo handoff", en: "after importing each course, take it to delivery in handoff mode"}
+media_adopt_needs: {es: "adopt necesita el id del recurso y --file con la imagen que ya existe", en: "adopt needs the asset id and --file with the image that already exists"}

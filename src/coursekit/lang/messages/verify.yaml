@@ -111,3 +111,7 @@ no_reflection:
 audience_basic: {es: básico, en: basic}
 audience_general: {es: general, en: general}
 audience_specialist: {es: especialista, en: specialist}
+forbidden_host: {es: "{label}:{line}: dirección de un sitio prohibido por `rules › forbidden` ({host})", en: "{label}:{line}: address of a site forbidden by `rules › forbidden` ({host})"}
+forbidden_term: {es: "{label}:{line}: «{term}» está prohibido por `rules › forbidden`", en: "{label}:{line}: “{term}” is forbidden by `rules › forbidden`"}
+unit_short: {es: "unidad {unit} (curso importado): {words} palabras < {minimum} que piden sus {hours} h: se queda corta", en: "unit {unit} (imported course): {words} words < the {minimum} its {hours} h ask for: it falls short"}
+unit_long: {es: "unidad {unit} (curso importado): {words} palabras, por encima de las {minimum} de sus {hours} h: se pasa", en: "unit {unit} (imported course): {words} words, above the {minimum} of its {hours} h: it runs over"}

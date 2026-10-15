@@ -378,7 +378,11 @@ class _Markup:
         host = re.sub(r"^https?://", "", src).split("/")[0].lower() if src else ""
         self.report.embeds.append((kind, src, host))
         label = {"video": "Video", "audio": "Audio", "embed": "Embed"}[kind]
-        return f"> **[{label}]** {src}" if src else f"> **[{label}]**"
+        flagged = bool(host) and any(host == h or host.endswith(f".{h}") for h in self.hosts)
+        if flagged:
+            self.report.forbidden_embeds.append(src)
+        mark = " (forbidden host: replace it with a media placeholder)" if flagged else ""
+        return f"> **[{label}]** {src}{mark}" if src else f"> **[{label}]**"
 
     def list(self, node: Dom) -> str:
         ordered = node.tag == "ol"
@@ -504,6 +508,8 @@ class Report:
     pages: int = 0
     empty_pages: list[str] = field(default_factory=list)
     questions: int = 0
+    forbidden_embeds: list[str] = field(default_factory=list)         # addresses of embedded content on a forbidden host
+    forbidden_terms: dict[str, int] = field(default_factory=dict)     # forbidden term -> times it appears
     missing_words: list[str] = field(default_factory=list)
     words_source: int = 0
     words_output: int = 0
@@ -711,10 +717,14 @@ class Converter(_Markup):
 
 # ── Conversion of a package ─────────────────────────────────────────────────────────────────────
 
-def convert(path: Path, media_dir: Path, media_rel: str, rules: list[dict], language: str) -> tuple[str, Report]:
-    """The Markdown of a package, with its images in `media_dir`, and the report of what was done."""
+def convert(path: Path, media_dir: Path, media_rel: str, rules: list[dict], language: str,
+            forbidden: dict | None = None) -> tuple[str, Report]:
+    """The Markdown of a package, with its images in `media_dir`, and the report of what was done. `forbidden` is
+    `rules › forbidden`: the report names the embedded content on those hosts and counts those terms."""
     package = read(path)
-    conv = Converter(package, media_dir, media_rel, rules, language)
+    forbidden = forbidden or {}
+    hosts = [str(h).strip().lower().lstrip(".") for h in forbidden.get("hosts") or []]
+    conv = Converter(package, media_dir, media_rel, rules, language, hosts)
     out = [f"# {package.title}" if package.title else ""]
 
     def walk(page: Page, depth: int) -> None:
@@ -740,6 +750,10 @@ def convert(path: Path, media_dir: Path, media_rel: str, rules: list[dict], lang
     for w in words_of(bare):
         if wanted.get(w):
             wanted[w] -= 1
+    for term in (str(x).strip() for x in forbidden.get("terms") or []):
+        found = len(re.findall(rf"(?<!\w){re.escape(term)}(?!\w)", bare, re.I)) if term else 0
+        if found:
+            report.forbidden_terms[term] = found
     report.missing_words = sorted(w for w, n in wanted.items() if n > 0)
     report.words_source = len(conv.source_words)
     report.words_output = len(words_of(bare))
@@ -786,6 +800,10 @@ def render_report(reports: list[tuple[str, Report]], lang: str) -> str:
             for kind, _, host in r.embeds:
                 hosts[f"{kind} · {host or '—'}"] = hosts.get(f"{kind} · {host or '—'}", 0) + 1
             out += [say("report_embeds"), *[f"- {k} ×{n}" for k, n in sorted(hosts.items())], ""]
+        if r.forbidden_embeds:
+            out += [say("report_forbidden_embeds", count=len(r.forbidden_embeds)), *[f"- {a}" for a in r.forbidden_embeds[:20]], ""]
+        if r.forbidden_terms:
+            out += [say("report_forbidden_terms", terms=", ".join(f"“{k}” ×{v}" for k, v in sorted(r.forbidden_terms.items()))), ""]
         if r.empty_pages:
             out += [say("report_empty_pages", pages=", ".join(r.empty_pages)), ""]
         if r.missing_images:
