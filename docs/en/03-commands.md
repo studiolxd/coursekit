@@ -78,7 +78,7 @@ While a course is `on_hold`, the commands that change its work are refused with 
 | Phase | Commands |
 |---|---|
 | Project and machine | `coursekit help`, `coursekit init`, `coursekit config`, `coursekit rules`, `coursekit agents`, `coursekit setup`, `coursekit doctor`, `coursekit uninstall`, `coursekit roles` |
-| Courses and design | `coursekit new`, `coursekit handoff`, `coursekit status`, `coursekit design`, `coursekit sync`, `coursekit outline`, `coursekit brief`, `coursekit download` |
+| Courses and design | `coursekit new`, `coursekit handoff`, `coursekit status`, `coursekit design`, `coursekit sync`, `coursekit outline`, `coursekit brief`, `coursekit import`, `coursekit download` |
 | Verification and sign-off | `coursekit verify`, `coursekit paths`, `coursekit reviewed`, `coursekit approve` |
 | Course state and client review | `coursekit hold`, `coursekit resume`, `coursekit client` |
 | Launching agents | `coursekit write`, `coursekit review`, `coursekit run` |
@@ -132,7 +132,7 @@ coursekit init [folder] [--update] [--name NAME] [--client CLIENT]
 What it does:
 
 - With a terminal and without `--yes` it asks for every value above (the slxd MCP URL only with the creator backend or a design made in slxd), then offers to create the first course with the design agent, only when slxd is not needed or its URL was given, and the design tool is installed (it asks the title and the hours, then whether to run the whole process in handoff mode with [`coursekit handoff`](#coursekit-handoff), which waits for the material itself; otherwise it asks whether you have reference material, waits while you drop it in `brief/` and launches `/new-course`).
-- Creates the folders `courses/`, `brief/sources/`, `config/`, `theme/`, `.agents/`; seeds `project.yaml`, `brief/notes.md` and `brief/links.md`; writes the managed files `AGENTS.md`, `CLAUDE.md`, `.env.example`, `.gitignore`, `config/<name>.example.yaml` (rules, directives, media, delivery) and `.githooks/post-merge`, `.githooks/post-checkout`; runs `git init` unless `--no-git`.
+- Creates the folders `courses/`, `brief/sources/`, `config/`, `theme/`, `.agents/`; seeds `project.yaml`, `brief/notes.md` and `brief/links.md`; writes the managed files `AGENTS.md`, `CLAUDE.md`, `.env.example`, `.gitignore`, `config/<name>.example.yaml` (rules, directives, media, delivery, import) and `.githooks/post-merge`, `.githooks/post-checkout`; runs `git init` unless `--no-git`.
 - Then runs the same steps as [`coursekit setup`](#coursekit-setup) (`.env`, `COURSEKIT_LANG` in `.env`, signing identity, git hooks, roles, agents, the html builder with the html backend, diagnosis) and prints the next steps. When the MCP URL is empty and slxd is needed (creator backend, or a design made in slxd), the next steps warn that the agents cannot connect to creator until `project.yaml › platform.slxd.mcp_url` is set and `coursekit agents` is run.
 - `--update` writes nothing outside the managed files (it only recreates the project folders if they are missing) and prints `created`, `updated`, `unchanged` or `kept` for each.
 - Exit code 1 when the folder already is a project (without `--update`) or is not one (with `--update`).
@@ -458,6 +458,39 @@ With `--find` or `--section` it converts nothing: it cuts the Markdown of `brief
 coursekit brief PWD --refresh
 coursekit brief PWD --section 1.2
 coursekit brief PWD --find "authenticator app versus SMS" --top 3
+```
+
+### `coursekit import`
+
+Creates courses from eXeLearning packages (`.elp`, eXeLearning 2 and 3). A folder with `.elp` files is one course and each package is a unit; a folder with a subfolder per course creates one course per subfolder. Who: people (the agents then design from the brief it leaves).
+
+```
+coursekit import [--plan] [--plan-file PLAN_FILE] [--hours-file HOURS_FILE]
+                 [--default-hours DEFAULT_HOURS] [--hours HOURS] [--title TITLE] [--code CODE]
+                 [--handoff] [--rounds ROUNDS] path
+```
+
+| Argument | Values / default | Meaning |
+|---|---|---|
+| `path` | folder | The folder with the `.elp` files of one course, or the parent folder of several courses. Subfolders with no package (for example an HTML export of a website) are listed and skipped. |
+| `--plan` | flag | Only write the plan (`import.yaml` at the project root) to review and complete; imports nothing. |
+| `--plan-file PLAN_FILE` | file; default `import.yaml` at the project root | The plan to write (`--plan`) or to read. |
+| `--hours-file HOURS_FILE` | `.xlsx` or CSV | One row per course: the folder (or code), the hours and, optionally, the title. Columns are found by their header (`folder`/`carpeta`, `hours`/`horas`, `title`/`título`); without a header the first two (and a third) are used. |
+| `--default-hours DEFAULT_HOURS` | number | Hours for the courses that have none in the plan or in the hours file. |
+| `--hours HOURS` | number | Hours of the course, when `path` is a single course. |
+| `--title TITLE` | text | Title of the course, when `path` is a single course. |
+| `--code CODE` | course code | Code of the course, when `path` is a single course; by default the name of the folder. |
+| `--handoff` | flag | After importing each course, take it to delivery in [handoff mode](02-workflow.md#handoff-mode). |
+| `--rounds ROUNDS` | number | With `--handoff`: rounds of AI review and fixes, as in `coursekit handoff`. |
+
+The hours are not in the packages, so each course needs them, from the plan, the hours file or `--default-hours` (in that order of priority). The title comes from the same places; without one the name of the folder is used and the course is reported as provisional. The order of the units is read from the number in the name of each package (`..._2_vREV`, `MOD3`, `Unidad 2. …`, `3_…`); when it cannot be read they go by name, and when two packages claim the same unit the course is skipped until the plan lists the units to use.
+
+Each imported course is created with `design.origin: import`, its packages are copied to `brief/sources/` as `01-…`, `02-…` and converted by the brief ([Import from eXeLearning](02-workflow.md#import-from-exelearning)). A course that already exists is never touched. Exit code 1 when a course could not be imported for lack of a decision and none could.
+
+```
+coursekit import ../exe/catalog --plan                  # write import.yaml, fill title and hours, review the units
+coursekit import ../exe/catalog --hours-file hours.xlsx
+coursekit import ../exe/catalog --default-hours 20 --handoff
 ```
 
 ## Verification and sign-off

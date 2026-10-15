@@ -1,0 +1,24 @@
+# Import of eXeLearning packages (`coursekit import`, and the `.elp` files dropped in brief/sources/).
+#
+# The tree of pages becomes headings, text becomes Markdown and the interactive iDevices keep their kind of interactivity
+# (accordion, tabs, carousel, flashcards, match, labelled graphic, questions). The effects of eXeLearning (`exe-accordion`,
+# `exe-tabs`, `exe-carousel`) are read from the HTML, wherever they are, and the games from their data: they need no rule.
+#
+# Generic iDevices (those made in the iDevice editor of eXeLearning, such as a template's "Warning" or "Definition" boxes)
+# only have a title and a label, so each is matched by rules. The rules are tried in order and the first one that matches
+# wins; `match` is a case-insensitive regular expression tested on "<title of the iDevice> <label of its first field>".
+#   action: drop        the iDevice is left out (it is counted, with its text, in the import report)
+#           text        its text goes in as plain paragraphs (what an iDevice with no rule gets; listed in the report)
+#           note        :::note, with the label as its title
+#           highlight   :::highlight, with the label in bold on top
+#           reflection  :::reflection, with the label as its title
+#           quote       :::quote
+# A project adds or changes rules in config/import.yaml (a list replaces this one: copy what you keep).
+idevices:
+  - {match: "click",                                  action: drop,       why: "the prompt that comes before an interactive; ours bring their own"}
+  - {match: "warning|atenci[oó]n|attention|important", action: note}
+  - {match: "concept|definici[oó]n|definition",        action: highlight}
+  - {match: "example|ejemplo",                         action: note}
+  - {match: "knowledge|sab[ií]as|did you know",        action: note}
+  - {match: "reflect|reflexi",                         action: reflection}
+  - {match: "link|enlace",                             action: text}

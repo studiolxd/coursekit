@@ -15,6 +15,7 @@ owners:
 design:
   hours: {hours}
   approach: {approach}     # expository | decision-based (rules › decision_based)
+  origin: {origin}         # new | import (migrated from existing packages: `coursekit import`)
   tool: {design_tool}         # slxd (design matrix in slxd) | local (design/design.yaml, `coursekit design`)
   structure: {structure}   # slxd patronEstructural: sin_modulos | con_modulos
   intro_section: {intro}   # every unit opens with the introduction section

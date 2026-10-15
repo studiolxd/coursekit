@@ -1,0 +1,25 @@
+# Messages of `coursekit import` (folders of eXeLearning packages as courses).
+not_a_folder: {es: "{path} no es una carpeta", en: "{path} is not a folder"}
+table_missing: {es: "no existe el fichero de horas {path}", en: "the hours file {path} does not exist"}
+order_by_name: {es: "no se pudo leer el número de alguna unidad en el nombre: se ordenan por nombre (revisa el orden)", en: "the number of a unit could not be read in its name: they are ordered by name (check the order)"}
+numbers_gap: {es: "los números de unidad detectados no son correlativos desde 1: {numbers}", en: "the unit numbers detected do not run from 1 without gaps: {numbers}"}
+duplicate_unit: {es: "la unidad {number} tiene varios paquetes ({names}): elige cuál usar listando las unidades en el plan", en: "unit {number} has several packages ({names}): choose which to use by listing the units in the plan"}
+provisional_title: {es: "título provisional (el nombre de la carpeta): confírmalo", en: "provisional title (the name of the folder): confirm it"}
+no_hours: {es: "faltan las horas del curso (en el plan, en el fichero de horas o con --default-hours)", en: "the hours of the course are missing (in the plan, in the hours file or with --default-hours)"}
+plan_unit_missing: {es: "el plan lista unidades que no existen en la carpeta: {names}", en: "the plan lists units that are not in the folder: {names}"}
+plan_header:
+  es: |
+    Plan de importación de eXeLearning. Completa `title` y `hours` de cada curso y revisa `units` (el orden de las unidades) y `check`
+    (lo que hay que decidir); después ejecuta `coursekit import <carpeta>` con este fichero.
+  en: |
+    eXeLearning import plan. Fill in `title` and `hours` of each course and review `units` (the order of the units) and `check`
+    (what has to be decided); then run `coursekit import <folder>` with this file.
+plan_written: {es: "plan escrito en {path}: {courses} cursos, {complete} listos para importar", en: "plan written to {path}: {courses} courses, {complete} ready to import"}
+no_courses: {es: "no hay paquetes .elp en {path}", en: "there are no .elp packages in {path}"}
+empty_folder: {es: "sin paquetes, no se importa: {name}", en: "no packages, not imported: {name}"}
+table_unmatched: {es: "fila del fichero de horas sin carpeta: {name}", en: "row of the hours file without a folder: {name}"}
+skipped: {es: "{folder}: no se importa — {reason}", en: "{folder}: not imported — {reason}"}
+course_exists: {es: "{folder}: ya existe el curso {code}, no se toca", en: "{folder}: the course {code} already exists, it is not touched"}
+imported: {es: "{folder} → {code}: {units} unidades, {hours} h", en: "{folder} → {code}: {units} units, {hours} h"}
+check_line: {es: "  a revisar: {text}", en: "  to check: {text}"}
+summary: {es: "importados {done}, omitidos {skipped} (ver arriba)", en: "imported {done}, skipped {skipped} (see above)"}

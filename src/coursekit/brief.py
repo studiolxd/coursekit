@@ -13,15 +13,18 @@ Images are listed for the agents to open directly; audio and video need a transc
 
 from __future__ import annotations
 
+import dataclasses
 import datetime as dt
 import json
+import os
 import re
 import shutil
 import subprocess
 from importlib import resources
 from pathlib import Path
 
-from coursekit import i18n
+from coursekit import config as configmod
+from coursekit import exelearning, i18n
 from coursekit.lang import format_number
 from coursekit.util import sha256_file
 
@@ -100,7 +103,24 @@ def text_path(out_root: Path, rel: str) -> Path:
     return out_root / (rel if Path(rel).suffix.lower() in (".md", ".markdown") else f"{rel}.md")
 
 
-def convert_files(brief: Path, state: dict) -> tuple[list[dict], int]:
+EXELEARNING = {".elp"}
+REPORT = "import-report.md"
+
+
+def exe_convert(src: Path, rel: str, brief: Path, target: Path, options: dict):
+    """A package of eXeLearning as Markdown (its images go to text/media/<name>/): (text, error, report)."""
+    media = brief / "text" / "media" / re.sub(r"[^\w.-]+", "-", rel).strip("-")
+    shutil.rmtree(media, ignore_errors=True)
+    try:
+        body, report = exelearning.convert(src, media, Path(os.path.relpath(media, target.parent)).as_posix(),
+                                           options.get("rules") or [], options.get("language") or "es")
+    except exelearning.ExeError as exc:
+        return None, note("convert_failed", error=str(exc)), None
+    return body, None, report
+
+
+def convert_files(brief: Path, state: dict, options: dict | None = None) -> tuple[list[dict], int]:
+    options = options or {}
     sources, out_root = brief / "sources", brief / "text" / "files"
     previous = state.get("files", {})
     current, present, rows, failed = {}, set(), [], 0
@@ -130,7 +150,11 @@ def convert_files(brief: Path, state: dict) -> tuple[list[dict], int]:
         digest = sha256_file(src)
         current[rel] = digest
         if previous.get(rel) != digest or not target.exists():
-            if ext in COPY:
+            if ext in EXELEARNING:
+                body, error, report = exe_convert(src, rel, brief, target, options)
+                if report is not None:
+                    state.setdefault("exe", {})[rel] = dataclasses.asdict(report)
+            elif ext in COPY:
                 body, error = src.read_text(encoding="utf-8", errors="replace"), None
             else:
                 body, error = markitdown(src)
@@ -148,18 +172,34 @@ def convert_files(brief: Path, state: dict) -> tuple[list[dict], int]:
             target.write_text(front + body, encoding="utf-8")
         text = target.read_text(encoding="utf-8")
         row.update(text=target.relative_to(brief).as_posix(), title=title_of(text, src.stem), words=words(text))
+        if ext in EXELEARNING and rel in state.get("exe", {}):
+            row["notes"] += [note("exe_report"), *exelearning.summary_notes(exelearning.Report(**state["exe"][rel]))]
         if row["words"] < MIN_WORDS:
             row["notes"].append(note("no_text"))
         rows.append(row)
     # Remove conversions of files that are no longer in sources/.
     for rel in set(previous) - present:
         text_path(out_root, rel).unlink(missing_ok=True)
+        if Path(rel).suffix.lower() in EXELEARNING:
+            shutil.rmtree(brief / "text" / "media" / re.sub(r"[^\w.-]+", "-", rel).strip("-"), ignore_errors=True)
+            state.get("exe", {}).pop(rel, None)
     if out_root.exists():
         for folder in sorted((d for d in out_root.rglob("*") if d.is_dir()), key=lambda d: len(d.parts), reverse=True):
             if not any(folder.iterdir()):
                 folder.rmdir()
     state["files"] = current
     return rows, failed
+
+
+def write_import_report(brief: Path, state: dict, lang: str) -> None:
+    """`brief/import-report.md`: what the conversion of the eXeLearning packages left out or did not understand."""
+    path = brief / REPORT
+    saved = state.get("exe") or {}
+    if not saved:
+        path.unlink(missing_ok=True)
+        return
+    reports = [(f"sources/{rel}", exelearning.Report(**data)) for rel, data in sorted(saved.items())]
+    path.write_text(exelearning.render_report(reports, lang), encoding="utf-8", newline="\n")
 
 
 def download_links(brief: Path, state: dict, refresh: bool, log=None) -> tuple[list[dict], int]:
@@ -246,17 +286,21 @@ def write_index(brief: Path, code: str, files: list[dict], webs: list[dict], gen
     (brief / "index.md").write_text("\n".join(out), encoding="utf-8")
 
 
-def build(brief: Path, title: str, refresh: bool = False, general: str | None = None, log=None, language: str = "es") -> dict:
+def build(brief: Path, title: str, refresh: bool = False, general: str | None = None, log=None, language: str = "es",
+          importing: dict | None = None) -> dict:
     """Convert sources and links of one brief folder and write its index in `language` (the content's). Returns a summary."""
     (brief / "sources").mkdir(parents=True, exist_ok=True)
     state_path = brief / "text" / STATE
     state = json.loads(state_path.read_text(encoding="utf-8")) if state_path.exists() else {}
-    files, failed_files = convert_files(brief, state)
+    options = {"rules": (importing if importing is not None else configmod.package_defaults("import")).get("idevices"),
+               "language": language}
+    files, failed_files = convert_files(brief, state, options)
     webs, failed_webs = download_links(brief, state, refresh, log)
     state_path.parent.mkdir(parents=True, exist_ok=True)
     state_path.write_text(json.dumps(state, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     if not (brief / "notes.md").exists():
         (brief / "notes.md").write_text("", encoding="utf-8")
+    write_import_report(brief, state, language)
     write_index(brief, title, files, webs, general, language)
     documents = [f for f in files if f["kind"] == "document"]
     return {

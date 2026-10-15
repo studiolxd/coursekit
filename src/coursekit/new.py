@@ -18,6 +18,7 @@ from coursekit.util import render, slugify
 
 COURSE_FOLDERS = ("brief/sources", "design", "content", "media", "reviews")
 APPROACHES = ("expository", "decision-based")
+ORIGINS = ("new", "import")  # a course written from the design, or migrated from an existing one (`coursekit import`)
 DESIGN_TOOLS = ("slxd", "local")
 
 
@@ -50,6 +51,7 @@ def create(
     language: str | None = None,
     approach: str | None = None,
     design_tool: str | None = None,
+    origin: str = "new",
 ) -> Path:
     code = code.upper() if code else slugify(title).upper()
     course_dir = project.courses_dir / code
@@ -76,6 +78,7 @@ def create(
         language=language or data.get("content_language") or "es",
         hours=hours_value,
         approach=approach,
+        origin=origin,
         design_tool=design_tool,
         structure=defaults.get("structure", "sin_modulos"),
         intro=str(bool(defaults.get("intro_section", True)) and intro).lower(),

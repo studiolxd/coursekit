@@ -78,7 +78,7 @@ Mientras un curso está en `on_hold`, los comandos que cambian su trabajo se rec
 | Fase | Comandos |
 |---|---|
 | Proyecto y máquina | `coursekit help`, `coursekit init`, `coursekit config`, `coursekit rules`, `coursekit agents`, `coursekit setup`, `coursekit doctor`, `coursekit uninstall`, `coursekit roles` |
-| Cursos y diseño | `coursekit new`, `coursekit handoff`, `coursekit status`, `coursekit design`, `coursekit sync`, `coursekit outline`, `coursekit brief`, `coursekit download` |
+| Cursos y diseño | `coursekit new`, `coursekit handoff`, `coursekit status`, `coursekit design`, `coursekit sync`, `coursekit outline`, `coursekit brief`, `coursekit import`, `coursekit download` |
 | Verificación y firma | `coursekit verify`, `coursekit paths`, `coursekit reviewed`, `coursekit approve` |
 | Estado del curso y revisión del cliente | `coursekit hold`, `coursekit resume`, `coursekit client` |
 | Lanzar agentes | `coursekit write`, `coursekit review`, `coursekit run` |
@@ -132,7 +132,7 @@ coursekit init [folder] [--update] [--name NAME] [--client CLIENT]
 Qué hace:
 
 - Con terminal y sin `--yes` pregunta cada uno de los valores anteriores (la URL del MCP de slxd solo con el backend creator o con un diseño hecho en slxd) y después ofrece crear el primer curso con el agente de diseño, solo cuando no hace falta slxd o se dio su URL, y la herramienta de diseño está instalada (pregunta el título y las horas, y después si quieres ejecutar todo el proceso en modo handoff con [`coursekit handoff`](#coursekit-handoff), que espera él mismo al material; si no, pregunta si tienes material de partida, espera mientras lo dejas en `brief/` y lanza `/new-course`).
-- Crea las carpetas `courses/`, `brief/sources/`, `config/`, `theme/`, `.agents/`; siembra `project.yaml`, `brief/notes.md` y `brief/links.md`; escribe los ficheros gestionados `AGENTS.md`, `CLAUDE.md`, `.env.example`, `.gitignore`, `config/<name>.example.yaml` (rules, directives, media, delivery) y `.githooks/post-merge`, `.githooks/post-checkout`; ejecuta `git init` salvo con `--no-git`.
+- Crea las carpetas `courses/`, `brief/sources/`, `config/`, `theme/`, `.agents/`; siembra `project.yaml`, `brief/notes.md` y `brief/links.md`; escribe los ficheros gestionados `AGENTS.md`, `CLAUDE.md`, `.env.example`, `.gitignore`, `config/<name>.example.yaml` (rules, directives, media, delivery, import) y `.githooks/post-merge`, `.githooks/post-checkout`; ejecuta `git init` salvo con `--no-git`.
 - Después ejecuta los mismos pasos que [`coursekit setup`](#coursekit-setup) (`.env`, `COURSEKIT_LANG` en `.env`, identidad de firma, hooks de git, roles, agentes, el constructor html con el backend html, diagnóstico) e imprime los siguientes pasos. Cuando la URL del MCP está vacía y hace falta slxd (backend creator o un diseño hecho en slxd), los siguientes pasos avisan de que los agentes no pueden conectar con creator hasta que se rellene `project.yaml › platform.slxd.mcp_url` y se ejecute `coursekit agents`.
 - `--update` no escribe nada fuera de los ficheros gestionados (solo vuelve a crear las carpetas del proyecto si faltan) e imprime `creado`, `actualizado`, `sin cambios` o `conservado` para cada uno.
 - Código de salida 1 cuando la carpeta ya es un proyecto (sin `--update`) o no lo es (con `--update`).
@@ -458,6 +458,39 @@ Con `--find` o `--section` no convierte nada: corta el Markdown de `brief/text/`
 coursekit brief PWD --refresh
 coursekit brief PWD --section 1.2
 coursekit brief PWD --find "aplicación autenticadora frente a SMS" --top 3
+```
+
+### `coursekit import`
+
+Crea cursos a partir de paquetes de eXeLearning (`.elp`, eXeLearning 2 y 3). Una carpeta con ficheros `.elp` es un curso y cada paquete es una unidad; una carpeta con una subcarpeta por curso crea un curso por subcarpeta. Quién: personas (los agentes diseñan después a partir del brief que deja).
+
+```
+coursekit import [--plan] [--plan-file PLAN_FILE] [--hours-file HOURS_FILE]
+                 [--default-hours DEFAULT_HOURS] [--hours HOURS] [--title TITLE] [--code CODE]
+                 [--handoff] [--rounds ROUNDS] path
+```
+
+| Argumento | Valores / por defecto | Significado |
+|---|---|---|
+| `path` | carpeta | La carpeta con los `.elp` de un curso, o la carpeta padre de varios cursos. Las subcarpetas sin ningún paquete (por ejemplo una exportación HTML de un sitio web) se listan y se omiten. |
+| `--plan` | opción sin valor | Solo escribe el plan (`import.yaml` en la raíz del proyecto) para revisarlo y completarlo; no importa nada. |
+| `--plan-file PLAN_FILE` | fichero; por defecto `import.yaml` en la raíz del proyecto | El plan que se escribe (`--plan`) o se lee. |
+| `--hours-file HOURS_FILE` | `.xlsx` o CSV | Una fila por curso: la carpeta (o el código), las horas y, si se quiere, el título. Las columnas se reconocen por su cabecera (`folder`/`carpeta`, `hours`/`horas`, `title`/`título`); sin cabecera se usan las dos primeras (y una tercera). |
+| `--default-hours DEFAULT_HOURS` | número | Horas para los cursos que no las tengan en el plan ni en el fichero de horas. |
+| `--hours HOURS` | número | Horas del curso, cuando `path` es un solo curso. |
+| `--title TITLE` | texto | Título del curso, cuando `path` es un solo curso. |
+| `--code CODE` | código de curso | Código del curso, cuando `path` es un solo curso; por defecto el nombre de la carpeta. |
+| `--handoff` | opción sin valor | Tras importar cada curso, lo lleva hasta la entrega en [modo handoff](02-workflow.md#modo-handoff). |
+| `--rounds ROUNDS` | número | Con `--handoff`: rondas de revisión con IA y correcciones, como en `coursekit handoff`. |
+
+Las horas no están en los paquetes, así que cada curso las necesita: del plan, del fichero de horas o de `--default-hours` (por ese orden de prioridad). El título sale de los mismos sitios; sin él se usa el nombre de la carpeta y el curso se avisa como provisional. El orden de las unidades se lee del número del nombre de cada paquete (`..._2_vREV`, `MOD3`, `Unidad 2. …`, `3_…`); si no se puede leer, van por nombre, y si dos paquetes reclaman la misma unidad el curso se omite hasta que el plan liste las unidades que se usan.
+
+Cada curso importado se crea con `design.origin: import`, sus paquetes se copian a `brief/sources/` como `01-…`, `02-…` y el brief los convierte ([Importar desde eXeLearning](02-workflow.md#importar-desde-exelearning)). Un curso que ya existe no se toca nunca. Código de salida 1 cuando faltó una decisión en algún curso y no se pudo importar ninguno.
+
+```
+coursekit import ../exe/catalogo --plan                 # escribe import.yaml: completa título y horas y revisa las unidades
+coursekit import ../exe/catalogo --hours-file horas.xlsx
+coursekit import ../exe/catalogo --default-hours 20 --handoff
 ```
 
 ## Verificación y firma

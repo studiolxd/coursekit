@@ -9,7 +9,7 @@ Los ejemplos usan un proyecto genérico: cliente «ACME», un curso sobre contra
 | Lugar | Se versiona | Quién lo edita | Qué contiene |
 |---|---|---|---|
 | Valores por defecto del paquete (dentro de coursekit) | no (viene con la herramienta) | nadie | Las reglas de producción, directivas, opciones de multimedia y ajustes de entrega por defecto, y la herramienta y el modelo por defecto de cada rol. |
-| `config/<nombre>.yaml` | sí | el equipo | Cambios sobre una de las cuatro configuraciones: `rules`, `directives`, `media`, `delivery`. |
+| `config/<nombre>.yaml` | sí | el equipo | Cambios sobre una de las cinco configuraciones: `rules`, `directives`, `media`, `delivery`, `import`. |
 | `project.yaml` | sí | el equipo | Identidad del proyecto, idiomas, backend de montaje, servidor slxd, carpeta espejo, red. También puede llevar secciones `rules:`, `directives:`, `media:` y `delivery:`. |
 | `course.yaml` | sí | los comandos y las personas | El registro de un curso. Puede llevar secciones `rules:`, `directives:`, `media:` y `delivery:` que se aplican solo a ese curso. |
 | `theme/` y `courses/<CODE>/theme/` | sí | `coursekit theme import` (tokens); el equipo (`maqueta.css`) | Tokens de diseño del tema, derivados del tema de la plataforma de montaje o, con el backend html, de la hoja de estilos (mira [Tokens del tema y carpetas de caché](#tokens-del-tema-y-carpetas-de-caché)). No es una capa de configuración: nadie edita los tokens a mano. Con el backend html, `maqueta.css` es la hoja de estilos que da otro aspecto al paquete y se edita a mano (mira [Ficheros del backend html](#ficheros-del-backend-html)). |
@@ -21,9 +21,9 @@ Regla práctica: lo que debe ser igual para todo el equipo va en ficheros versio
 
 ## Cómo se combinan los valores
 
-### Las cuatro configuraciones de producción
+### Las configuraciones de producción
 
-`rules`, `directives`, `media` y `delivery` se construyen fusionando, en este orden (gana la última):
+`rules`, `directives`, `media`, `delivery` e `import` se construyen fusionando, en este orden (gana la última):
 
 1. Valores por defecto del paquete.
 2. `config/<name>.yaml`, si existe.
@@ -57,7 +57,7 @@ Todos los textos, `--help` incluido, siguen `COURSEKIT_LANG` (la variable de la 
 
 ```bash
 coursekit config                     # las cuatro configuraciones, cada valor con su origen
-coursekit config rules               # solo una: rules | directives | media | delivery
+coursekit config rules               # solo una: rules | directives | media | delivery | import
 coursekit config rules --changed     # solo lo que difiere de los valores por defecto del paquete
 coursekit config rules --course PWD  # incluye los cambios de courses/PWD/course.yaml
 coursekit config delivery --json     # valores fusionados en JSON
@@ -188,7 +188,7 @@ Un proveedor se usa solo si su clave está definida. En [Multimedia](07-media.md
 
 ## Los ficheros de `config/`
 
-Las cuatro configuraciones son `rules`, `directives`, `media` y `delivery`. Cada proyecto recibe `config/<name>.example.yaml` con los valores por defecto completos del paquete (referencia, nunca se lee). Para cambiar algo, crea `config/<name>.yaml` con **solo las claves que cambias**; `coursekit init --update` actualiza los ejemplos sin tocar tus cambios.
+Las cinco configuraciones son `rules`, `directives`, `media`, `delivery` e `import`. Cada proyecto recibe `config/<name>.example.yaml` con los valores por defecto completos del paquete (referencia, nunca se lee). Para cambiar algo, crea `config/<name>.yaml` con **solo las claves que cambias**; `coursekit init --update` actualiza los ejemplos sin tocar tus cambios.
 
 Las mismas claves se pueden escribir en una sección `<name>:` de `project.yaml` (gana a `config/`) o del `course.yaml` de un curso (gana a ambos, solo para ese curso).
 
@@ -312,6 +312,16 @@ delivery:
   client_review:
     required: true
 ```
+
+### `import`: paquetes de eXeLearning
+
+En qué se convierten lo que hace `coursekit import` y los ficheros `.elp` que dejas en `brief/sources/`. El árbol de páginas pasa a encabezados, el texto a Markdown y los iDevices interactivos conservan su tipo de interactividad; solo los iDevices genéricos (hechos en el editor de iDevices de eXeLearning, como las cajas "Atención" o "Definición" de una plantilla) necesitan una regla, porque solo tienen un título y una etiqueta.
+
+| Clave | Por defecto | Significado |
+|---|---|---|
+| `idevices` | una lista de reglas | Reglas que se prueban en orden; gana la primera cuyo `match` (una expresión regular, sin distinguir mayúsculas, sobre `<título del iDevice> <etiqueta de su primer campo>`) coincide. `action` es `drop` (se deja fuera y se cuenta con su texto en el informe de importación), `text` (párrafos normales: lo que recibe un iDevice sin regla), `note`, `highlight`, `reflection` o `quote` (la directiva del mismo nombre, con la etiqueta como título). |
+
+Las reglas por defecto dejan fuera el aviso que precede a un interactivo (`click`; los nuestros traen el suyo) y convierten las cajas de atención, definición, ejemplo, "¿sabías que…?" y reflexión en `:::note`, `:::highlight` y `:::reflection`. Una lista se sustituye entera: para añadir una regla de tu plantilla, copia la lista por defecto en `config/import.yaml` y añade la tuya. Detalle de la conversión: [Importar desde eXeLearning](02-workflow.md#importar-desde-exelearning).
 
 ## `course.yaml`: qué puede fijar una persona por curso
 

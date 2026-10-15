@@ -218,6 +218,27 @@ coursekit brief --refresh  # vuelve a descargar las URLs
 
 Esto escribe `brief/index.md` y el texto convertido en `brief/text/`, que es lo que leen los agentes. Solo se convierten los ficheros nuevos o cambiados.
 
+### Importar desde eXeLearning
+
+Un curso que ya existe como paquetes de eXeLearning (`.elp`, eXeLearning 2 y 3) no se escribe otra vez desde cero: su contenido se convierte a Markdown, conservando su estructura y su tipo de interactividad, y los agentes trabajan a partir de él. Deja los `.elp` en `brief/sources/` y `coursekit brief` los convierte como cualquier otro documento, o crea cursos enteros con [`coursekit import`](03-commands.md#coursekit-import).
+
+Qué hace la conversión:
+
+| En el paquete | En el Markdown |
+|---|---|
+| Árbol de páginas | Un encabezado por página (`##`, `###`…); las páginas sin contenido se omiten |
+| Texto, listas, tablas, imágenes | Markdown; las imágenes se copian a `brief/text/media/<paquete>/` |
+| `exe-accordion`, `exe-tabs`, `exe-carousel` (en cualquier iDevice) | `:::accordion`, `:::tabs`, `:::carousel`, un `#### Título` por panel (una diapositiva sin título recibe su número) |
+| Tarjetas, juego de relacionar, mapa | `:::flashcards`, `:::match`, `:::labelled-graphic` (con la posición de cada punto) |
+| Elección múltiple, selección múltiple, verdadero o falso | `:::single-choice`, `:::multi-select`, `:::true-false`, con el feedback de las opciones; las preguntas llegan sin objetivo, que asigna el diseño |
+| iDevices genéricos (atención, definición, ejemplo, "¿sabías que…?", reflexión) | `:::note`, `:::highlight`, `:::reflection`, según las reglas de [`import`](04-configuration.md#import-paquetes-de-exelearning) |
+| El aviso previo a un interactivo ("Pulsa sobre las flechas…") y las instrucciones de los juegos | Se dejan fuera: los interactivos de coursekit traen el suyo |
+| Vídeos y otro contenido incrustado | Una línea `> **[Video]** dirección`, contada por proveedor en el informe |
+
+Nada se descarta en silencio. `brief/import-report.md` lista, por paquete, lo que las reglas dejaron fuera (con su texto y cuántas veces), los iDevices sin regla (importados como texto), el contenido incrustado por proveedor, las páginas omitidas y una **comprobación palabra a palabra**: cada palabra del texto del origen tiene que estar en el Markdown, y el informe nombra las que no. `coursekit brief` marca en `brief/index.md` los paquetes con algo que mirar. Solo se leen los `.elp` de eXeLearning 2 y 3; un paquete de eXeLearning 4 (`.elpx`) hay que exportarlo de nuevo como `.elp`.
+
+Cursos desde una carpeta: una carpeta con ficheros `.elp` es un curso y cada paquete una unidad; una carpeta padre con una subcarpeta por curso los crea todos. Las horas (y el título) no están en los paquetes, así que salen del plan (`coursekit import <carpeta> --plan` escribe `import.yaml` para completar y revisar), de un Excel o CSV con la carpeta y las horas (`--hours-file`) o de un valor para todos (`--default-hours`). Las unidades se ordenan por el número del nombre de cada paquete, y un curso con dos versiones de la misma unidad espera hasta que el plan diga cuál usar. Con `--handoff` cada curso sigue solo hasta la entrega.
+
 ### 2. Diseño instruccional
 
 ```text

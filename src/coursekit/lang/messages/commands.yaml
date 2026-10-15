@@ -369,3 +369,12 @@ brief_find_title:
 brief_find_nothing: {es: "ningún fragmento del material contiene esas palabras", en: "no passage of the material holds those words"}
 media_narrated: {es: "{count} narración(es) de escena producidas", en: "{count} scene narration(s) produced"}
 
+help_import: {es: "importa cursos de paquetes de eXeLearning (.elp): una carpeta es un curso, o una carpeta con muchos cursos", en: "import courses from eXeLearning packages (.elp): a folder is a course, or a folder of many courses"}
+help_import_path: {es: "carpeta con los .elp de un curso, o carpeta con una subcarpeta por curso", en: "folder with the .elp of a course, or a folder with a subfolder per course"}
+help_import_plan: {es: "solo escribe el plan (import.yaml) para revisarlo y completarlo; no importa nada", en: "only write the plan (import.yaml) to review and complete; imports nothing"}
+help_import_plan_file: {es: "fichero del plan (por defecto import.yaml en la raíz del proyecto)", en: "plan file (import.yaml at the project root by default)"}
+help_import_hours_file: {es: "Excel (.xlsx) o CSV con la carpeta, las horas y, si se quiere, el título de cada curso", en: "Excel (.xlsx) or CSV with the folder, the hours and, optionally, the title of each course"}
+help_import_default_hours: {es: "horas para los cursos que no las tengan en el plan ni en el fichero de horas", en: "hours for the courses that have none in the plan or the hours file"}
+help_import_hours: {es: "horas del curso (cuando se importa una sola carpeta)", en: "hours of the course (when importing a single folder)"}
+help_import_title: {es: "título del curso (cuando se importa una sola carpeta)", en: "title of the course (when importing a single folder)"}
+help_import_handoff: {es: "tras importar cada curso, lo lleva hasta la entrega en modo handoff", en: "after importing each course, take it to delivery in handoff mode"}

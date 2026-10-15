@@ -218,6 +218,27 @@ coursekit brief --refresh  # download the URLs again
 
 This writes `brief/index.md` and the converted text in `brief/text/`, which is what the agents read. Only new or changed files are converted.
 
+### Import from eXeLearning
+
+A course that already exists as eXeLearning packages (`.elp`, eXeLearning 2 and 3) is not written again from scratch: its content is converted to Markdown, keeping its structure and its kind of interactivity, and the agents work from it. Drop the `.elp` files in `brief/sources/` and `coursekit brief` converts them like any other document, or create whole courses with [`coursekit import`](03-commands.md#coursekit-import).
+
+What the conversion does:
+
+| In the package | In the Markdown |
+|---|---|
+| Tree of pages | A heading per page (`##`, `###`…); pages with no content are left out |
+| Text, lists, tables, images | Markdown; the images are copied to `brief/text/media/<package>/` |
+| `exe-accordion`, `exe-tabs`, `exe-carousel` (in any iDevice) | `:::accordion`, `:::tabs`, `:::carousel`, one `#### Title` per panel (a slide without a title gets its number) |
+| Flip cards, relate game, map | `:::flashcards`, `:::match`, `:::labelled-graphic` (with the position of each point) |
+| Multiple choice, multi-select, true or false | `:::single-choice`, `:::multi-select`, `:::true-false`, with the feedback of the options; the questions come without objective, which the design assigns |
+| Generic iDevices (warning, definition, example, "did you know", reflection) | `:::note`, `:::highlight`, `:::reflection`, by the rules of [`import`](04-configuration.md#import-exelearning-packages) |
+| The prompt before an interactive ("Click on the arrows…") and the instructions of the games | Left out: the interactives of coursekit bring their own |
+| Videos and other embedded content | A `> **[Video]** address` line, counted by host in the report |
+
+Nothing is dropped silently. `brief/import-report.md` lists, per package, what the rules left out (with its text and how many times), the iDevices with no rule (imported as text), the embedded content by host, the pages left out, and a **word-by-word check**: every word of the text of the source must be in the Markdown, and the report names the ones that are not. `coursekit brief` flags the packages with something to look at in `brief/index.md`. Only the `.elp` of eXeLearning 2 and 3 are read; a package of eXeLearning 4 (`.elpx`) must be exported again as `.elp`.
+
+Courses from a folder: a folder with `.elp` files is a course and each package a unit; a parent folder with one subfolder per course creates all of them. The hours (and the title) are not in the packages, so they come from the plan (`coursekit import <folder> --plan` writes `import.yaml` to fill in and review), from an Excel or CSV with the folder and the hours (`--hours-file`) or from one value for all of them (`--default-hours`). The units are ordered by the number in the name of each package, and a course with two versions of the same unit waits until the plan says which one to use. With `--handoff` each course goes on to delivery by itself.
+
 ### 2. Instructional design
 
 ```text

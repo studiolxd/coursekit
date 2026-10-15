@@ -30,6 +30,7 @@ from coursekit import catalog as catalogmod
 from coursekit import course as coursemod
 from coursekit import delivery as deliverymod
 from coursekit import handoff as handoffmod
+from coursekit import importer as importermod
 from coursekit import init as initmod
 from coursekit import media as mediamod
 from coursekit import publish as publishmod
@@ -120,6 +121,57 @@ def cmd_handoff(args: argparse.Namespace) -> int:
     print(t("handoff", "done", code=course["code"], who=handoffmod.HANDOFF.name))
     print(status.detail(course))
     return 0
+
+
+def cmd_import(args: argparse.Namespace) -> int:
+    project = _project()
+    try:
+        found = importermod.scan(Path(args.path))
+        table = importermod.read_table(Path(args.hours_file)) if args.hours_file else {}
+    except importermod.ImporterError as exc:
+        print(t("commands", "error_line", text=exc), file=sys.stderr)
+        return 1
+    if not found.courses:
+        print(t("importer", "no_courses", path=args.path), file=sys.stderr)
+        return 1
+    plan_path = Path(args.plan_file) if args.plan_file else project.root / importermod.PLAN_FILE
+    plan = importermod.read_plan(plan_path)
+    unmatched = importermod.resolve(found, plan, table, args.default_hours, args.hours, args.title, args.code)
+    for name in found.empty:
+        print(t("commands", "warning_line", text=t("importer", "empty_folder", name=name)))
+    for name in unmatched:
+        print(t("commands", "warning_line", text=t("importer", "table_unmatched", name=name)))
+    if args.plan:
+        importermod.write_plan(plan_path, found, plan)
+        ready = sum(1 for c in found.courses if not c.problems)
+        print(t("importer", "plan_written", path=plan_path.as_posix(), courses=len(found.courses), complete=ready))
+        return 0
+    done = skipped = blocked = 0
+    rounds = args.rounds or handoffmod.rounds_setting(project)
+    log = lambda m: print(m, flush=True)  # noqa: E731
+    for item in found.courses:
+        if (project.course_dir(item.code) / "course.yaml").exists():
+            print(t("importer", "course_exists", folder=item.folder.name, code=item.code))
+            skipped += 1
+            continue
+        if item.problems:
+            print(t("importer", "skipped", folder=item.folder.name, reason="; ".join(item.problems)))
+            skipped += 1
+            blocked += 1
+            continue
+        folder = importermod.import_course(project, item, log)
+        print(t("importer", "imported", folder=item.folder.name, code=folder.name, units=len(item.units), hours=item.hours))
+        for text in item.notes:
+            print(t("importer", "check_line", text=text))
+        _mirror(project, folder.name)
+        done += 1
+        if args.handoff:
+            try:
+                handoffmod.resume(project, folder.name, rounds, log, lambda code: _mirror(project, code))
+            except handoffmod.HandoffError as exc:
+                print(t("handoff", "stopped", code=folder.name, reason=exc), file=sys.stderr)
+    print(t("importer", "summary", done=done, skipped=skipped))
+    return 1 if blocked and not done else 0
 
 
 def cmd_status(args: argparse.Namespace) -> int:
@@ -357,17 +409,18 @@ def cmd_brief(args: argparse.Namespace) -> int:
     log = lambda m: print(m, flush=True)  # noqa: E731
     general = project.brief_dir
     project_language = str(config.project_data(project).get("content_language") or "es")
+    importing = config.effective("import", project).value
     if args.code:
         course = coursemod.load(project, args.code)
         new.ensure_brief(course["_dir"])
         if (general / "links.md").exists() or (general / "sources").exists():
-            briefmod.build(general, project.root.name, args.refresh, log=log, language=project_language)
+            briefmod.build(general, project.root.name, args.refresh, log=log, language=project_language, importing=importing)
         rel = "../../../brief/index.md" if (general / "index.md").exists() else None
         summary = briefmod.build(course["_dir"] / "brief", course["code"], args.refresh, general=rel, log=log,
-                                 language=coursemod.language(course))
+                                 language=coursemod.language(course), importing=config.effective("import", project, course).value)
         target = f"{course['code']}/brief/index.md"
     else:
-        summary = briefmod.build(general, project.root.name, args.refresh, log=log, language=project_language)
+        summary = briefmod.build(general, project.root.name, args.refresh, log=log, language=project_language, importing=importing)
         target = "brief/index.md"
     print(t("commands", "brief_summary", documents=summary["documents"], webs=summary["webs"], media=summary["media"], target=target))
     for source, note in summary["notes"]:
@@ -898,6 +951,19 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--approach", choices=new.APPROACHES, help=t("commands", "help_new_approach"))
     p.add_argument("--design-tool", choices=new.DESIGN_TOOLS, help=t("commands", "help_new_design_tool"))
     p.set_defaults(func=cmd_new)
+
+    p = sub.add_parser("import", help=t("commands", "help_import"))
+    p.add_argument("path", help=t("commands", "help_import_path"))
+    p.add_argument("--plan", action="store_true", help=t("commands", "help_import_plan"))
+    p.add_argument("--plan-file", help=t("commands", "help_import_plan_file"))
+    p.add_argument("--hours-file", help=t("commands", "help_import_hours_file"))
+    p.add_argument("--default-hours", type=float, help=t("commands", "help_import_default_hours"))
+    p.add_argument("--hours", type=float, help=t("commands", "help_import_hours"))
+    p.add_argument("--title", help=t("commands", "help_import_title"))
+    p.add_argument("--code", help=t("commands", "help_new_code"))
+    p.add_argument("--handoff", action="store_true", help=t("commands", "help_import_handoff"))
+    p.add_argument("--rounds", type=int, help=t("commands", "help_handoff_rounds"))
+    p.set_defaults(func=cmd_import)
 
     p = sub.add_parser("handoff", help=t("commands", "help_handoff"))
     p.add_argument("target", help=t("commands", "help_handoff_target"))

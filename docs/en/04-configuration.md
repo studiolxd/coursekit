@@ -9,7 +9,7 @@ The examples use a generic project: client "ACME", a course on strong passwords 
 | Place | Committed | Who edits it | What it holds |
 |---|---|---|---|
 | Package defaults (inside coursekit) | no (ships with the tool) | nobody | The default production rules, directives, media options and delivery settings, and the default tool and model of each role. |
-| `config/<name>.yaml` | yes | the team | Overrides of one of the four configurations: `rules`, `directives`, `media`, `delivery`. |
+| `config/<name>.yaml` | yes | the team | Overrides of one of the five configurations: `rules`, `directives`, `media`, `delivery`, `import`. |
 | `project.yaml` | yes | the team | Project identity, languages, assembly backend, slxd server, mirror folder, network. It can also carry `rules:`, `directives:`, `media:` and `delivery:` sections. |
 | `course.yaml` | yes | commands and people | The record of one course. It can carry `rules:`, `directives:`, `media:` and `delivery:` sections that apply to that course only. |
 | `theme/` and `courses/<CODE>/theme/` | yes | `coursekit theme import` (tokens); the team (`maqueta.css`) | Design tokens of the theme, derived from the theme of the assembly platform or, with the html backend, from the stylesheet (see [Theme tokens and cache folders](#theme-tokens-and-cache-folders)). Not a configuration layer: nobody edits the tokens by hand. With the html backend, `maqueta.css` is the stylesheet that restyles the package and is edited by hand (see [Files of the html backend](#files-of-the-html-backend)). |
@@ -21,9 +21,9 @@ Rule of thumb: what must be the same for the whole team goes in versioned files 
 
 ## How values combine
 
-### The four production configurations
+### The production configurations
 
-`rules`, `directives`, `media` and `delivery` are built by merging, in this order (the last one wins):
+`rules`, `directives`, `media`, `delivery` and `import` are built by merging, in this order (the last one wins):
 
 1. Package defaults.
 2. `config/<name>.yaml`, if it exists.
@@ -57,7 +57,7 @@ Every text, `--help` included, follows `COURSEKIT_LANG` (the shell variable, or 
 
 ```bash
 coursekit config                     # the four configurations, every value with its origin
-coursekit config rules               # only one: rules | directives | media | delivery
+coursekit config rules               # only one: rules | directives | media | delivery | import
 coursekit config rules --changed     # only what differs from the package defaults
 coursekit config rules --course PWD  # include the overrides in courses/PWD/course.yaml
 coursekit config delivery --json     # merged values as JSON
@@ -188,7 +188,7 @@ A provider is used only if its key is set. See [Media](07-media.md) for how cour
 
 ## The `config/` files
 
-The four configurations are `rules`, `directives`, `media` and `delivery`. Every project gets `config/<name>.example.yaml` with the complete package defaults (a reference, never read). To change something, create `config/<name>.yaml` with **only the keys you change**; `coursekit init --update` refreshes the examples without touching your overrides.
+The five configurations are `rules`, `directives`, `media`, `delivery` and `import`. Every project gets `config/<name>.example.yaml` with the complete package defaults (a reference, never read). To change something, create `config/<name>.yaml` with **only the keys you change**; `coursekit init --update` refreshes the examples without touching your overrides.
 
 The same keys can be written in a `<name>:` section of `project.yaml` (wins over `config/`) or of a course's `course.yaml` (wins over both, for that course only).
 
@@ -312,6 +312,16 @@ delivery:
   client_review:
     required: true
 ```
+
+### `import`: eXeLearning packages
+
+What `coursekit import` and the `.elp` files dropped in `brief/sources/` become. The tree of pages becomes headings, the text becomes Markdown, and the interactive iDevices keep their kind of interactivity; only the generic iDevices (made in the iDevice editor of eXeLearning, such as the "Warning" or "Definition" boxes of a template) need a rule, because they only have a title and a label.
+
+| Key | Default | Meaning |
+|---|---|---|
+| `idevices` | a list of rules | Rules tried in order; the first whose `match` (a case-insensitive regular expression tested on `<title of the iDevice> <label of its first field>`) matches wins. `action` is `drop` (left out, counted with its text in the import report), `text` (plain paragraphs, what an iDevice with no rule gets), `note`, `highlight`, `reflection` or `quote` (the directive of the same name, with the label as its title). |
+
+The default rules drop the prompt that comes before an interactive (`click`; ours bring their own), and turn warning, definition, example, "did you know" and reflection boxes into `:::note`, `:::highlight` and `:::reflection`. A list is replaced whole: to add a rule for your template, copy the default list into `config/import.yaml` and add yours. Details of the conversion: [Import from eXeLearning](02-workflow.md#import-from-exelearning).
 
 ## `course.yaml`: what a person may set per course
 
