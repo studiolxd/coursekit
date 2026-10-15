@@ -144,7 +144,7 @@ Creator no tiene un bloque para una simulación ni comparte estado entre bloques
 - En un curso basado en decisiones, el EMBED de la simulación que abre cada apartado de contenido lleva `blocker_enabled`: la lección no deja seguir al alumno hasta que la simulación llega a un final, para que decida antes de leer la explicación. Las demás simulaciones (una segunda en el apartado, las de las pruebas) no bloquean.
 - Un **bloque adaptativo** se monta con su rama neutra (`:::else`), y `plan` avisa.
 
-El bloque adaptativo es la fase siguiente del protocolo de creator (`dev/creator-decisiones.md`, en el repositorio de coursekit, recoge el acuerdo).
+El bloque adaptativo es la fase siguiente del protocolo de creator (ver [Límites conocidos del backend creator](#límites-conocidos-del-backend-creator)).
 
 ### `diff`
 
@@ -397,6 +397,17 @@ La causa típica es una línea que el formato no renderiza, por ejemplo una preg
 - **No se ha probado en un LMS real.** Prueba el paquete en el LMS de destino (o en SCORM Cloud) antes de entregarlo: comprueba que se reanuda la ubicación, que se registran la puntuación y el estado, y que el test se comporta como esperas.
 - El paquete es un SCO por unidad. Un curso de varias unidades da varios paquetes.
 - `export.reporting` y `export.scoreSource` no se aplican: el estado y la puntuación son los de [Seguimiento SCORM](#seguimiento-scorm).
+
+## Límites conocidos del backend creator
+
+Son huecos de la plataforma de autoría, no de coursekit. El pipeline los esquiva o avisa en lugar de fallar, y cada uno desaparece cuando creator lo cierra. Eran conocidos cuando se escribió esta versión (0.2); la vista previa del curso montado es donde comprobar si uno sigue vigente.
+
+- **Theme.** Creator no publica por MCP qué campos del theme admite cada bloque, su tipo, su valor por defecto ni qué pintan, y `update_theme` no dice qué campos descartó ni por qué. Tras importar un theme, mira el resultado en creator.
+- **Embeds en la vista compartida.** Un EMBED (una simulación, una demo de terminal) puede verse en blanco en la vista compartida de un contenido, porque la plataforma se niega a enmarcarlo (`X-Frame-Options: DENY`). En la vista del alumno y en el paquete exportado funciona.
+- **Bloque de código.** No tiene opción de texto plano (su detección automática puede etiquetar mal una salida) y las líneas largas se cortan. Tampoco tratan bien el código en línea, los bloques de código dentro de pestañas o desplegables ni los textos alternativos largos.
+- **Flashcards.** Algunos campos del theme dejan en blanco la cara frontal, y la etiqueta «Voltear» se ve bajo la tarjeta.
+- **Fuentes del theme.** Una fuente del theme puede no cargar en el reproductor (CORS).
+- **Bloques adaptativos (`:::if`).** Creator tiene el brick `CONDITIONAL`, pero coursekit sigue montando la rama neutra (`:::else`) y `plan` avisa, hasta que el reproductor del alumno muestre las ramas. Las simulaciones sí informan de su estado, su nota y cada decisión al SCORM del contenido (el protocolo `slxd-embed`, ver [Simulaciones en creator](#simulaciones-en-creator)).
 
 ## Revisión del cliente
 

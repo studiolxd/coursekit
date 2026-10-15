@@ -6,7 +6,7 @@ itself. The instructions that coursekit generates for course projects live in
 
 ## Read first
 
-- `dev/plan.md`: the plan, its phases and the state of each step (maintainers' notes, in Spanish; not user documentation).
+- `docs/` (English and Spanish): how each part works and how it is used; it is the reference for the design of the package. `README.md` has the status of the project and what is not done yet.
 - `CONTRIBUTING.md` (English) and `CONTRIBUTING.es.md` (Spanish): environment, tests, how to contribute; keep both in step.
 
 ## Public repository: nothing about clients or origin
@@ -56,6 +56,9 @@ itself. The instructions that coursekit generates for course projects live in
   documented in `docs/en` and `docs/es` (same files, same structure) in the same change.
   `tests/test_docs.py` checks that both trees have the same files, that links resolve, and that
   `docs/*/03-commands.md` mentions every command and every option of the CLI.
+- `README.md` / `README.es.md` carry the status of the project (what is solid, what is new, what is not done) and
+  `docs/*/08-assembly-and-delivery.md` the known limits of the creator platform: update them when something changes, and
+  keep no maintainers' notes in the repository outside `docs/` and the READMEs.
 - Skills, commands and agents are edited only in `src/coursekit/agentkit/`; every `{{token}}` must
   exist in `agents.context()` (a test fails otherwise).
 - The PyPI distribution is `slxd-coursekit` (the package and the command stay `coursekit`). The PyPI

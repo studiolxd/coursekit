@@ -25,6 +25,15 @@ process in which AI agents do the drafting and people keep the decisions:
 
 Only a person can sign (`coursekit approve`); agents are forbidden to run it.
 
+## Status
+
+Early development (`0.2`). What is solid and what is still to prove:
+
+- **Used end to end:** the process from brief to SCORM delivery, with both backends (slxd creator and the html backend), in Spanish and English; the decision-based approach with simulations; the local instructional design; the handoff mode.
+- **New and less proven:** migrating an existing course from eXeLearning packages (`coursekit import`, `/update-unit`, videos from official channels). It converts real packages without losing text, but the whole flow with real agents is still being piloted.
+- **Known gaps of the creator platform** that the pipeline works around: [Known limits of the creator backend](docs/en/08-assembly-and-delivery.md#known-limits-of-the-creator-backend).
+- **Not yet:** reading eXeLearning 4 packages (`.elpx`) or HTML exports of a site, publishing the components of the html backend as a package of their own, more languages than Spanish and English.
+
 ## Install
 
 You need [uv](https://docs.astral.sh/uv/); it brings the right Python (3.12 or 3.13). To work on courses you also need git, an AI tool (Claude Code, opencode or Codex) and the URL of your SLXD Creator MCP server; see [Getting started](docs/en/01-getting-started.md#requirements).

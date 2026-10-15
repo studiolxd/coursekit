@@ -144,7 +144,7 @@ Creator has no brick for a simulation and does not share state between bricks, s
 - In a decision-based course, the EMBED of the simulation that opens each content section carries `blocker_enabled`: the lesson does not let the learner go on until the simulation reaches an ending, so they decide before reading the explanation. The other simulations (a second one in the section, those of the tests) do not block.
 - An **adaptive block** is assembled with its neutral branch (`:::else`), and `plan` warns.
 
-The adaptive block is the next phase of creator's protocol (`dev/creator-decisiones.md` in the coursekit repository keeps the agreement).
+The adaptive block is the next phase of creator's protocol (see [Known limits of the creator backend](#known-limits-of-the-creator-backend)).
 
 ### `diff`
 
@@ -395,6 +395,17 @@ The typical cause is a line that the format does not render, for example a quest
 - **It has not been tested in a real LMS.** Try the package in the target LMS (or in SCORM Cloud) before you deliver it: check that the location is resumed, the score and the status are recorded, and the test behaves as you expect.
 - The package is one SCO per unit. A course of several units gives several packages.
 - `export.reporting` and `export.scoreSource` do not apply: the status and the score are those of [SCORM tracking](#scorm-tracking).
+
+## Known limits of the creator backend
+
+These are gaps of the authoring platform, not of coursekit. The pipeline works around them or warns instead of failing, and each one disappears when creator closes it. They were known when this version (0.2) was written; the preview of the assembled course is where to check whether one still applies.
+
+- **Theme.** Creator does not publish through MCP which fields of the theme each block accepts, their type, their default or what they paint, and `update_theme` does not say which fields it discarded or why. After importing a theme, look at the result in creator.
+- **Embeds in the shared view.** An EMBED (a simulation, a terminal demo) can show blank in the shared view of a content, because the platform refuses to frame it (`X-Frame-Options: DENY`). In the learner's view and in the exported package it works.
+- **Code block.** It has no plain-text option (its automatic detection can label output wrongly) and long lines are cut. Inline code, code blocks inside tabs or accordions, and long alternative texts are not handled well either.
+- **Flashcards.** Some theme fields leave the front face blank, and the "Flip" label shows under the card.
+- **Theme fonts.** A font of the theme may not load in the player (CORS).
+- **Adaptive blocks (`:::if`).** Creator has the `CONDITIONAL` brick, but coursekit still assembles the neutral branch (`:::else`) and `plan` warns, until the learner's player shows the branches. Simulations do report their state, score and every decision to the SCORM of the content (the `slxd-embed` protocol, see [Simulations in creator](#simulations-in-creator)).
 
 ## Client review
 
