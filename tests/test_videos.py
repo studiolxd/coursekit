@@ -99,3 +99,24 @@ def test_a_rejected_video_cannot_stay(course, web, capsys):  # noqa: F811
     assert main(["verify", "PWD", "--unit", "1"]) == 1
     assert "rejected by a person" in capsys.readouterr().out
     assert main(["videos", "approve", "PWD", "https://example.com/nothing"]) == 1  # not registered
+
+
+def test_a_channel_allowed_by_id_or_address_is_told_by_its_id(course, monkeypatch):  # noqa: F811
+    acme, fan = "UCaaaaaaaaaaaaaaaaaaaaaa", "UCbbbbbbbbbbbbbbbbbbbbbb"
+    pages = {"https://www.youtube.com/@AcmeSupport": acme, "https://www.youtube.com/@somefan": fan, "https://www.youtube.com/acme": acme}
+    monkeypatch.setattr(videos, "oembed", lambda url: CHANNELS.get(videos.key(url).removeprefix("youtube:")))
+    monkeypatch.setattr(videos, "channel_id", lambda address: videos.CHANNEL_ID.search(address).group(0)
+                        if "/channel/" in address else pages.get(address))
+    # allowed by a custom address, which the page of the site resolves to the id of the channel
+    allow(course, allow_channels=["https://www.youtube.com/acme", "https://www.youtube.com/channel/UCcccccccccccccccccccccc"])
+    with_videos(course, OFFICIAL, OTHER)
+    assert main(["videos", "check", "PWD"]) == 1
+    found = registry(course)
+    assert found["youtube:official1"]["status"] == "approved" and found["youtube:official1"]["channel"]["id"] == acme
+    assert found["youtube:other22"]["status"] == "pending"
+
+
+def test_the_id_of_a_channel_is_read_from_its_address_or_its_page():
+    assert videos.channel_id("https://www.youtube.com/channel/UCdddddddddddddddddddddd") == "UCdddddddddddddddddddddd"
+    assert videos.channel_id("not an address") is None
+    assert videos.allowed_ids(["UCdddddddddddddddddddddd", "@handle", "a name"]) == {"UCdddddddddddddddddddddd"}

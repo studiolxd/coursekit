@@ -29,6 +29,7 @@ from coursekit import assemble as assemblemod
 from coursekit import course as coursemod
 from coursekit import media as mediamod
 from coursekit import theme as thememod
+from coursekit import videos as videosmod
 from coursekit.i18n import t
 from coursekit.project import Project
 from coursekit.states import derive_course_status, history_entry
@@ -408,7 +409,30 @@ def _produce(ctx: Context, course: dict) -> None:
         raise _stuck(ctx, "media_pending", log, why=_why(ctx, log, summary, "media"), assets=", ".join(a["id"] for a in pending))
 
 
+def unchecked_videos(course: dict) -> list[dict]:
+    """The videos of forbidden sites that the agent proposed (it found their channel official) and no person has checked yet."""
+    if not course.get("_dir"):
+        return []
+    return [v for v in videosmod.load(course["_dir"]) if v.get("status") == "proposed" and v.get("in_content", True)]
+
+
+def _videos(ctx: Context, course: dict) -> None:
+    """Before the content goes into creator: the videos of forbidden sites are registered and, when the rule asks
+    (`handoff.stop_on_unchecked_videos`), the proposals nobody has checked stop the handoff; `coursekit handoff CODE` carries on."""
+    course = ctx.course()
+    rules = coursemod.rules(course)
+    if not (rules.get("forbidden") or {}).get("hosts"):
+        return
+    videosmod.check(course)
+    path = videosmod.report(course, coursemod.language(course))
+    waiting = unchecked_videos(ctx.course())
+    if waiting and (rules.get("handoff") or {}).get("stop_on_unchecked_videos", True):
+        ctx.mirror()
+        raise _stuck(ctx, "videos_unchecked", count=len(waiting), path=path.relative_to(ctx.project.root).as_posix())
+
+
 def _media(ctx: Context, course: dict) -> None:
+    _videos(ctx, course)
     mediamod.extract(course)
     if _pending_media(course):
         _produce(ctx, course)

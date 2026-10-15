@@ -30,6 +30,8 @@ review:
 handoff:
   rounds: 2                    # attempts per step (writing a unit, reviewing it with its fixes, the design sign-off, media, assembly,
                                # delivery) before it stops and tells the person where it is; `coursekit handoff CODE` carries on
+  stop_on_unchecked_videos: true   # the handoff stops before the content goes into creator while videos the agent proposed from
+                               # an official channel (coursekit videos) wait for a person to approve or reject them; `false` goes on
   media_tools: []              # programs the media agent may run when nobody can approve them (the handoff, `--headless`), besides
                                # `coursekit`, `npx`, Python and those the recipes of the media configuration declare in `needs`
                                # (bin, media); add the rest here, e.g. [blender, gs]. `bash`, `sh` and `node` let the agent run any
@@ -113,6 +115,8 @@ forbidden:
 content:
   word_margin: 0.05                    # recommended margin over the minimum (warning only)
   word_margin_max: 0.15                # above the minimum by more than this, the section lasts longer than its hours (warning only)
+  import_max_growth: 2.0               # imported course: content.md may have up to this many times the words of its package (the new
+                                       # activities of the design add some); above it `verify` fails: the client's text is reused, not rewritten
   placeholders_per_hour: 2.5           # multimedia placeholders per unit hour (rounded up)
   min_placeholder_types: 4             # capped by the number of placeholders required
   interactive_per_hour: 4              # distinct interactive directives per content-section hour

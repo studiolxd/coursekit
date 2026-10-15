@@ -83,10 +83,16 @@ Mandatory format: `.coursekit/docs/content-format.md`. Write in {{language_name}
 The course is the client's: its text comes from the packages converted in `brief/text/files/` (one per unit, `01-…`,
 `02-…`), and `brief/import-report.md` lists what was left out or flagged.
 
-- **Reuse the text; do not rewrite it.** Take each section's text from the package as it is: do not summarise, restyle or
-  "improve" it. Change only what the format needs (the `## {{t_section}}` headings, the objective tag, the directive keys of
+- **There is no minimum of words.** The skeleton of an imported unit shows, for each section, the page of the package it comes
+  from and **its words** (`source: <file> › <page>`), not a minimum. The size of the unit is the size of the package, however
+  many hours the design has: `coursekit verify` only warns that a unit is short, and **fails** when `content.md` has more
+  than {{import_max_growth}} times the words of its package. Never add narrative, examples, scenarios or explanations that the
+  package does not have to reach a length.
+- **Reuse the text; do not rewrite it.** Take each section's text from the package page its `source:` names, as it is: do not
+  summarise, restyle or "improve" it. Change only what the format needs (the `## {{t_section}}` headings, the objective tag, the directive keys of
   the course language) and what the notes ask (below). What is missing for the design (an objective's practice, assessment
-  questions) you write new, in the same voice, and say in your final summary which parts are new.
+  questions) you write new, in the same voice, and say in your final summary which parts are new; those new parts are the
+  activities of the design and the questions of the assessment, **not** more explanation of the subject.
 - **Interactives keep their kind.** Copy the directives of the brief (`:::accordion`, `:::tabs`, `:::carousel`,
   `:::flashcards`, `:::match`, `:::labelled-graphic`, questions…); give every question the objective of its section and
   check the carousel slides that the conversion titled with a number.

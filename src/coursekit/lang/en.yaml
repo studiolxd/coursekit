@@ -10,6 +10,8 @@ intro_pattern: '^\s*introduction'
 summary_pattern: '^\s*(summary|wrap-up|conclusion)'
 unit: Unit
 min_words: min. {words} words
+source_words: "package: {words} words"
+no_source: no matching page in the package
 question_objective_key: "objective:"
 thousands_separator: ","
 assessment_instructions: Instructions for the learner

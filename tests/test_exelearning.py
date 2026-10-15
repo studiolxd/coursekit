@@ -257,3 +257,73 @@ def test_adopt_an_image_that_already_exists(course, capsys):  # noqa: F811
         "produced", "media/files/U1-S2-M1.png", "A padlock", "imported")
     assert main(["media", "adopt", "PWD", "U1-S2-M1", "--file", "nowhere.png"]) == 1
     assert main(["media", "adopt", "PWD", "U1-S2-M1"]) == 2
+
+
+def test_a_package_is_converted_again_when_the_rules_change(course, capsys):  # noqa: F811
+    sample(course / "brief" / "sources" / "unit.elp")
+    assert main(["brief", "PWD"]) == 0
+    report = course / "brief" / "import-report.md"
+    assert "Términos de" not in report.read_text(encoding="utf-8")
+    edit_course(course, lambda d: d["rules"].update(forbidden={"terms": ["welcome"], "hosts": ["youtube.com"]}))
+    assert main(["brief", "PWD"]) == 0
+    text = report.read_text(encoding="utf-8")
+    assert "“welcome” ×1" in text and "sitio prohibido" in text
+
+
+PACKAGE = """# Contraseñas
+
+## Presentación y objetivos
+
+{intro}
+
+## Cómo es una contraseña robusta
+
+{body}
+
+### Subpágina
+
+{extra}
+
+## Ideas clave y resumen
+
+{closing}
+"""
+
+
+def seed_package(course_dir, intro=10, body=30, extra=10, closing=8):
+    folder = course_dir / "brief" / "text" / "files"
+    folder.mkdir(parents=True, exist_ok=True)
+    words = lambda n: " ".join(["palabra"] * n)  # noqa: E731
+    (folder / "01-unidad.elp.md").write_text(PACKAGE.format(intro=words(intro), body=words(body), extra=words(extra),
+                                                            closing=words(closing)), encoding="utf-8")
+
+
+def test_the_skeleton_of_an_imported_course_points_at_the_pages_of_its_package(course):  # noqa: F811
+    seed_package(course)
+    edit_course(course, lambda d: d["design"].update(origin="import"))
+    (course / "content" / "unit-01" / "content.md").unlink()
+    assert main(["sync", "PWD"]) == 0
+    text = (course / "content" / "unit-01" / "content.md").read_text(encoding="utf-8")
+    assert "**Texto del paquete importado:** 59 palabras" in text and "Palabras mínimas" not in text
+    assert "## Apartado 2 — Cómo es una contraseña robusta *(paquete: 41 palabras)*" in text  # its page and its subpage
+    assert "source: 01-unidad.elp.md › Cómo es una contraseña robusta" in text
+    assert "## Apartado 1 — Introducción y objetivos *(paquete: 10 palabras)*" in text  # the introduction, by its kind
+    assert "## Apartado 3 — Resumen *(paquete: 8 palabras)*" in text  # the closing one, by its kind
+    assert "mín." not in text
+
+
+def test_a_new_course_keeps_its_minimum_words(course):  # noqa: F811
+    (course / "content" / "unit-01" / "content.md").unlink()
+    assert main(["sync", "PWD"]) == 0
+    assert "Palabras mínimas" in (course / "content" / "unit-01" / "content.md").read_text(encoding="utf-8")
+
+
+def test_verify_fails_when_an_imported_unit_grows_far_beyond_its_package(course, capsys):  # noqa: F811
+    edit_course(course, lambda d: d["design"].update(origin="import"))
+    seed_package(course, intro=5, body=10, extra=5, closing=5)  # 26 words: the unit of the sample has many more
+    assert main(["verify", "PWD", "--unit", "1"]) == 1
+    assert "more than 2.0 times the 26 of its package: text was added" in capsys.readouterr().out
+    seed_package(course, intro=500, body=500, extra=500, closing=500)
+    capsys.readouterr()
+    assert main(["verify", "PWD", "--unit", "1"]) == 0
+    assert "less than half" in capsys.readouterr().out  # and a unit that loses text is warned

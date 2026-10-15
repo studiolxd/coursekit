@@ -12,6 +12,7 @@ from __future__ import annotations
 import csv
 import re
 import shutil
+import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -214,6 +215,44 @@ def resolve(found: Scan, plan: dict[str, dict], table: dict[str, dict], default_
         else:
             item.units = [by_name[n] for n in listed]
     return [name for name in table if not any(c.folder.name.casefold() == name or c.code.casefold() == name for c in found.courses)]
+
+
+# ── The text of the packages, for the writing ──────────────────────────────────────────────────
+
+def _norm(text: str) -> str:
+    plain = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode().casefold()
+    return re.sub(r"[^a-z0-9]+", " ", plain).strip()
+
+
+def source_pages(course_dir: Path, n: int) -> tuple[str | None, list[tuple[str, int]]]:
+    """The converted package of unit `n` (`brief/text/files/NN-….elp.md`) and its pages: (title, words), each with its subpages."""
+    files = sorted((course_dir / "brief" / "text" / "files").glob("*.elp.md"))
+    if not 0 < n <= len(files):
+        return None, []
+    pages: list[list] = []
+    for line in files[n - 1].read_text(encoding="utf-8").splitlines():
+        if line.startswith("## "):
+            pages.append([line[3:].strip(), 0])
+        elif pages:
+            pages[-1][1] += len(re.findall(r"\w+", line))
+    return files[n - 1].name, [(title, words) for title, words in pages]
+
+
+def source_words(course_dir: Path, n: int) -> int:
+    """The words of the text of the package of unit `n` (0 when there is none)."""
+    return sum(words for _, words in source_pages(course_dir, n)[1])
+
+
+def page_for(section: dict, pages: list[tuple[str, int]], intro: re.Pattern, summary: re.Pattern) -> tuple[str, int] | None:
+    """The page of the package a section of the design comes from: the same title, else, for the introduction, the page that says so
+    or the first one, and, for the summary, the one that says so or the last."""
+    wanted = _norm(section["title"])
+    found = next((p for p in pages if _norm(p[0]) == wanted), None)
+    if found is None and section.get("kind") == "intro":
+        found = next((p for p in pages if intro.search(p[0])), None) or (pages[0] if pages else None)
+    if found is None and section.get("kind") == "summary":
+        found = next((p for p in reversed(pages) if summary.search(p[0])), None) or (pages[-1] if pages else None)
+    return found
 
 
 # ── Import ─────────────────────────────────────────────────────────────────────────────────────

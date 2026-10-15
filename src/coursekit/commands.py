@@ -120,6 +120,10 @@ def cmd_handoff(args: argparse.Namespace) -> int:
         print(t("handoff", "stopped", code=code, reason=exc), file=sys.stderr)
         return 1
     print(t("handoff", "done", code=course["code"], who=handoffmod.HANDOFF.name))
+    waiting = handoffmod.unchecked_videos(course)
+    if waiting:
+        names = "; ".join(f"{(v.get('channel') or {}).get('name') or '—'} · {v['url']}" for v in waiting)
+        print(t("handoff", "videos_to_check", count=len(waiting), path=videosmod.REPORT, list=names))
     print(status.detail(course))
     return 0
 

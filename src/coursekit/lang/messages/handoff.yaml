@@ -104,3 +104,5 @@ package_check_failed:
   es: "{code}: la comprobación de los paquetes ha encontrado {count} error(es), apuntados en {path}; corrígelos y sigue con `coursekit handoff {code}`"
   en: "{code}: the check of the packages found {count} error(s), listed in {path}; fix them and carry on with `coursekit handoff {code}`"
 update_failed: {es: "unidad {n}: la comprobación de actualidad no terminó bien ({where}); sigue la revisión", en: "unit {n}: the currency check did not finish well ({where}); the review goes on"}
+videos_unchecked: {es: "{code}: {count} vídeos propuestos por el agente esperan a que una persona compruebe que su canal es oficial ({path}): apruébalos o recházalos con `coursekit videos approve` o `reject`", en: "{code}: {count} videos proposed by the agent wait for a person to check that their channel is official ({path}): approve or reject them with `coursekit videos approve` or `reject`"}
+videos_to_check: {es: "Vídeos propuestos por el agente sin comprobar ({count}; {path}): {list}", en: "Videos proposed by the agent not yet checked ({count}; {path}): {list}"}

@@ -30,6 +30,7 @@ import yaml
 
 from coursekit import config
 from coursekit import course as coursemod
+from coursekit import importer as importermod
 from coursekit import misconceptions as misconmod
 from coursekit import readability as readmod
 from coursekit import simulation as simmod
@@ -644,6 +645,14 @@ def verify_unit(course: dict, unit: dict) -> Report:
         for err in check(course, unit):
             report.error(t("verify", "assembly_error", error=err))
 
+    if imported:  # the text is the client's: it is reused, not written again
+        package = importermod.source_words(course["_dir"], unit["n"])
+        growth = float(rules.get("import_max_growth") or 0)
+        written = sum(sec.words for sec in sections)
+        if package and growth and written > package * growth:
+            report.error(t("verify", "unit_inflated", unit=unit["n"], words=fmt(written), package=fmt(package), times=growth))
+        elif package and written < package * 0.5:
+            report.warn(t("verify", "unit_trimmed", unit=unit["n"], words=fmt(written), package=fmt(package)))
     if imported and min_total:
         if total_words < min_total:
             report.warn(t("verify", "unit_short", unit=unit["n"], words=fmt(total_words), minimum=fmt(min_total), hours=fmt(unit["hours"])))

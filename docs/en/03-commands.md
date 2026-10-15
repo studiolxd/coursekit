@@ -515,6 +515,8 @@ Actions:
 - `propose`: the writing agent registers a video it found on an official channel as `proposed`, with `--why` and, if it replaces another, `--replaces`. `coursekit verify` lets it through with a warning until a person checks it.
 - `approve` / `reject`: a person settles a registered video; it is recorded with who did it, so it needs the identity of the `.env`. A rejected video makes `verify` fail until it is replaced. The agents may not run them.
 
+A channel in `allow_channels` can be given by handle (`@name`), by name, by id (`UC…`) or by its address, including a custom one (`youtube.com/name`): ids and addresses are resolved to the id of the channel, which is compared with the id of the channel that publishes each video.
+
 Every action rewrites `reviews/external-videos.md` (in the language of the course), with the videos proposed by the agent to check first, then those to replace, the approved and the rejected. `coursekit verify` reads only the registry, never the network. Refused while the course is on hold.
 
 ```

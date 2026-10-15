@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import dataclasses
 import datetime as dt
+import hashlib
 import json
 import os
 import re
@@ -148,6 +149,9 @@ def convert_files(brief: Path, state: dict, options: dict | None = None) -> tupl
         present.add(rel)
         target = text_path(out_root, rel)
         digest = sha256_file(src)
+        if ext in EXELEARNING:  # what a package becomes depends on the rules of the import and on what is forbidden
+            digest += ":" + hashlib.sha256(json.dumps([options.get("rules"), options.get("forbidden"), options.get("language")],
+                                                      sort_keys=True, default=str).encode("utf-8")).hexdigest()[:12]
         current[rel] = digest
         if previous.get(rel) != digest or not target.exists():
             if ext in EXELEARNING:

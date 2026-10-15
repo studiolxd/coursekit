@@ -188,9 +188,16 @@ def _unit_template(language: str, name: str) -> str:
     return resources.files(f"coursekit.templates.course.{language}").joinpath(name).read_text(encoding="utf-8")
 
 
-def skeleton(unit: dict, cfg: dict, tokens: dict, language: str) -> str:
+def skeleton(unit: dict, cfg: dict, tokens: dict, language: str, course: dict | None = None) -> str:
+    """The `content.md` to fill in. In an imported course it shows, instead of the minimum words, the page of the package each
+    section comes from and its words: the text of the package is reused, not written again."""
+    from coursekit import importer
+
     fmt = lambda n: format_number(n, language)  # noqa: E731
     objectives = "\n".join(f"> - **{o['id']}** — {o['text']}" for o in unit["objectives"]) or "> - (—)"
+    imported = bool(course) and (course.get("design") or {}).get("origin") == "import"
+    package, pages = importer.source_pages(course["_dir"], unit["n"]) if imported else (None, [])
+    intro, summary = re.compile(tokens["intro_pattern"], re.I), re.compile(tokens["summary_pattern"], re.I)
     blocks = []
     for s in unit["sections"]:
         hint = f"<!-- kind: {s['kind']}"
@@ -199,15 +206,19 @@ def skeleton(unit: dict, cfg: dict, tokens: dict, language: str) -> str:
         if s["subsections"]:
             hint += f" · subsections: {' | '.join(s['subsections'])}"
         minimum = tokens["min_words"].format(words=fmt(s["min_words"]))
+        if imported:
+            page = importer.page_for(s, pages, intro, summary)
+            minimum = tokens["source_words"].format(words=fmt(page[1])) if page else tokens["no_source"]
+            hint += f" · source: {package} › {page[0]}" if page else ""
         blocks.append(f"## {tokens['section']} {s['n']} — {s['title']} *({minimum})*\n\n{hint} -->\n")
     total = sum(s["min_words"] for s in unit["sections"])
     return render(
-        _unit_template(language, "content.md"),
+        _unit_template(language, "content.import.md" if imported else "content.md"),
         n=unit["n"],
         title=unit["title"],
         hours=unit["hours"],
         pages=total // cfg["words_per_page"],
-        words=fmt(total),
+        words=fmt(sum(words for _, words in pages) if imported else total),
         objectives=objectives,
         sections="\n".join(blocks),
     )
@@ -249,7 +260,7 @@ def sync(course: dict, check_only: bool = False) -> SyncResult:
         folder = coursemod.unit_dir(course_dir, unit["n"])
         content = folder / "content.md"
         old = previous.get(unit["slxd_id"])
-        if content.exists() and old and content.read_text(encoding="utf-8") == skeleton(old, cfg, tokens, language):
+        if content.exists() and old and content.read_text(encoding="utf-8") == skeleton(old, cfg, tokens, language, course):
             content.unlink()  # still the untouched skeleton of the previous design: regenerate it
         if content.exists():
             found = [(int(n), title.strip()) for n, title, _ in headings.findall(content.read_text(encoding="utf-8"))]
@@ -258,7 +269,7 @@ def sync(course: dict, check_only: bool = False) -> SyncResult:
                 result.warnings.append(t("sync", "headings_differ", unit=tokens["unit"], n=unit["n"]))
             continue
         folder.mkdir(parents=True, exist_ok=True)
-        content.write_text(skeleton(unit, cfg, tokens, language), encoding="utf-8", newline="\n")
+        content.write_text(skeleton(unit, cfg, tokens, language, course), encoding="utf-8", newline="\n")
         template = _unit_template(language, "assessment.md")
         assessment = folder / "assessment.md"
         if not assessment.exists() or assessment.read_text(encoding="utf-8") == render(template, n=(old or unit)["n"]):

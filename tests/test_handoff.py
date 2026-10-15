@@ -31,7 +31,7 @@ class Agents:
 
     def __init__(self, root, monkeypatch):
         self.root, self.calls, self.skip, self.reviews, self.fixing = root, [], {}, [], False
-        self.produced_status, self.uploading = "uploaded", False
+        self.produced_status, self.uploading, self.hooks = "uploaded", False, {}
         monkeypatch.setattr(launch, "execute", self.execute)
 
     @property
@@ -57,6 +57,7 @@ class Agents:
             assert main(["new", "Contraseñas seguras", "1", "--code", "PWD"]) == 0
         write_course_rules(self.course)
         shutil.copy(FIXTURES / "matrix.json", self.course / "design" / "matrix.json")
+        self.hooks.get("new_course", lambda: None)()
 
     def approve_design(self, arguments):
         pass
@@ -481,3 +482,31 @@ def test_the_update_command_is_a_reviewer_command_with_web_access():
     assert "WebSearch" in writer and "Bash(coursekit videos:*)" in writer  # it looks for a video of an official channel
     assert "Bash(coursekit videos approve:*)" in launch.CLAUDE_DENY  # but only a person approves it
     assert "WebSearch" not in launch.headless_args(launch.Agent("media", "claude", ""), "x", Path("last.txt"), "slxd")
+
+
+VIDEO = "https://www.youtube.com/watch?v=abc"
+
+
+def test_unchecked_videos_stop_the_handoff_before_the_content_goes_into_creator(project, monkeypatch, capsys):
+    from coursekit import videos
+
+    path = project / "project.yaml"
+    info = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    info.setdefault("rules", {})["forbidden"] = {"hosts": ["youtube.com"]}
+    path.write_text(yaml.safe_dump(info, allow_unicode=True), encoding="utf-8")
+    monkeypatch.setattr(videos, "oembed", lambda url: {"name": "Acme", "url": "https://www.youtube.com/@acme", "title": "Guide"})
+    monkeypatch.setattr("tests.test_handoff.CONTENT", CONTENT + f"\nMira {VIDEO}\n")
+    fake = Agents(project, monkeypatch)
+    # what the writing agent does when it finds an official channel: it proposes the video, it cannot approve it
+    fake.hooks["new_course"] = lambda: main(["videos", "propose", "PWD", VIDEO, "--why", "Linked from the official site"])
+    assert main(["handoff", "Contraseñas seguras", "1", "--code", "PWD"]) == 1
+    err = capsys.readouterr().err
+    assert "1 videos proposed by the agent wait for a person" in err and "reviews/external-videos.md" in err
+    assert "produce-media" not in fake.calls and "assemble" not in fake.calls and data(project)["status"] == "media"
+    monkeypatch.setenv("COURSEKIT_USER_NAME", "Ana")  # a person checks it
+    monkeypatch.setenv("COURSEKIT_USER_EMAIL", "ana@example.com")
+    assert main(["videos", "approve", "PWD", VIDEO]) == 0
+    capsys.readouterr()
+    assert main(["handoff", "PWD"]) == 0  # carries on from where it stopped
+    assert data(project)["status"] == "delivered"
+    assert "videos proposed by the agent not yet checked" not in capsys.readouterr().out

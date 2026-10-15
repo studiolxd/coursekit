@@ -30,6 +30,8 @@ URL = re.compile(r"https?://[^\s)>\]\"'<]+", re.I)
 OEMBED = {"youtube.com": "https://www.youtube.com/oembed?format=json&url={url}",
           "youtu.be": "https://www.youtube.com/oembed?format=json&url={url}",
           "vimeo.com": "https://vimeo.com/api/oembed.json?url={url}"}
+CHANNEL_ID = re.compile(r"UC[\w-]{22}")
+CANONICAL = re.compile(r'<link rel="canonical" href="[^"]*?/channel/(UC[\w-]{22})"')
 USABLE = ("approved", "proposed")   # the statuses `verify` lets through (a proposed one with a warning)
 
 
@@ -99,10 +101,43 @@ def oembed(url: str) -> dict | None:
     return {"name": data.get("author_name") or "", "url": data.get("author_url") or "", "title": data.get("title") or ""}
 
 
-def official(channel: dict | None, allowed: list[str]) -> bool:
-    """Whether the channel is one of `allow_channels` (by its name, its handle, its id or its address)."""
+def channel_id(address: str) -> str | None:
+    """The id (`UC…`) of the channel at an address: in it when it is `/channel/UC…`, else the canonical address its page declares
+    (a handle, a custom address…). None when it cannot be read. The only place besides `oembed` that asks the site."""
+    found = re.search(rf"/channel/({CHANNEL_ID.pattern})", address)
+    if found:
+        return found.group(1)
+    if not address.startswith("http"):
+        return None
+    request = urllib.request.Request(address, headers={"User-Agent": "Mozilla/5.0 (compatible; coursekit)", "Accept-Language": "es,en"})
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:
+            page = response.read(600_000).decode("utf-8", errors="replace")
+    except (urllib.error.URLError, OSError):
+        return None
+    found = CANONICAL.search(page)
+    return found.group(1) if found else None
+
+
+def allowed_ids(allowed: list[str]) -> set[str]:
+    """The ids of the channels `allow_channels` names by address or by id (a handle or a name is compared as it is)."""
+    ids = set()
+    for entry in (str(e).strip() for e in allowed):
+        if CHANNEL_ID.fullmatch(entry):
+            ids.add(entry)
+        elif entry.startswith("http"):
+            found = channel_id(entry)
+            if found:
+                ids.add(found)
+    return ids
+
+
+def official(channel: dict | None, allowed: list[str], ids: set[str] | None = None) -> bool:
+    """Whether the channel is one of `allow_channels`: by its id, or by its name or handle."""
     if not channel:
         return False
+    if channel.get("id") and channel["id"] in (ids or set()):
+        return True
     url = str(channel.get("url") or "").rstrip("/")
     tokens = {str(channel.get("name") or "").casefold(), url.casefold(), url.rsplit("/", 1)[-1].casefold()}
     tokens = {x.lstrip("@") for x in tokens if x}
@@ -134,6 +169,7 @@ def check(course: dict) -> list[dict]:
     rules = forbidden_rules(course)
     hosts = [str(h).strip().lower().lstrip(".") for h in rules.get("hosts") or [] if str(h).strip()]
     allowed = list(rules.get("allow_channels") or [])
+    ids = allowed_ids(allowed)
     registry = {key(v["url"]): v for v in load(course["_dir"])}
     present = set()
     for url in addresses(course, hosts):
@@ -143,7 +179,9 @@ def check(course: dict) -> list[dict]:
             continue  # settled by a rule, by the agent (waiting for a person) or by a person: not asked again
         info = oembed(url)
         channel = {"name": info["name"], "url": info["url"]} if info else None
-        status = "approved" if official(channel, allowed) else "pending"
+        if channel and ids and not official(channel, allowed):
+            channel["id"] = channel_id(channel["url"])  # a channel allowed by id is told apart by its id
+        status = "approved" if official(channel, allowed, ids) else "pending"
         why = "" if status == "approved" else t("videos", "pending_channel" if info else "pending_unresolved")
         registry[key(url)] = {"url": url, "title": (info or {}).get("title", ""), "channel": channel, "status": status, "why": why,
                               "checked": today(), **({"by": "rules"} if status == "approved" else {})}

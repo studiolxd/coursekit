@@ -515,6 +515,8 @@ Acciones:
 - `propose`: el agente de redacción registra como `proposed` un vídeo que encontró en un canal oficial, con `--why` y, si sustituye a otro, `--replaces`. `coursekit verify` lo deja pasar con un aviso hasta que una persona lo compruebe.
 - `approve` / `reject`: una persona resuelve un vídeo registrado; queda anotado quién lo hizo, así que necesita la identidad del `.env`. Un vídeo rechazado hace fallar `verify` hasta que se sustituya. Los agentes no pueden ejecutarlos.
 
+Un canal de `allow_channels` puede darse por alias (`@nombre`), por nombre, por id (`UC…`) o por su dirección, también una personalizada (`youtube.com/nombre`): los ids y las direcciones se resuelven al id del canal, que se compara con el del canal que publica cada vídeo.
+
 Cada acción reescribe `reviews/external-videos.md` (en el idioma del curso), con primero los vídeos propuestos por el agente para comprobar, luego los que hay que sustituir, los aprobados y los rechazados. `coursekit verify` lee solo el registro, nunca la red. Se rechaza mientras el curso está en pausa.
 
 ```

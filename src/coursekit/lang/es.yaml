@@ -10,6 +10,8 @@ intro_pattern: '^\s*introducci[oó]n'
 summary_pattern: '^\s*(resumen|s[ií]ntesis|conclusi[oó]n)'
 unit: Unidad
 min_words: mín. {words} palabras
+source_words: "paquete: {words} palabras"
+no_source: sin página equivalente en el paquete
 question_objective_key: "objetivo:"
 thousands_separator: "."
 assessment_instructions: Instrucciones para el alumno
