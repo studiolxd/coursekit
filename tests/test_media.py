@@ -32,8 +32,8 @@ def test_extract_plan_and_set(course, capsys):  # noqa: F811
     (course / "media" / "files").mkdir(exist_ok=True)
     (course / "media" / "files" / "U1-S2-M1.pdf").write_bytes(b"%PDF" + b"0" * 2000)
     args = ["media", "set", "PWD", "U1-S2-M1", "--status", "uploaded", "--recipe", "agent-svg", "--asset-path", "p/a.svg",
-            "--alt", "Partes de una contraseña", "--made-with", "claude · opus", "--download", "media/files/U1-S2-M1.pdf",
-            "--download-asset-path", "p/a.pdf"]
+            "--depicts", "concept", "--alt", "Partes de una contraseña", "--made-with", "claude · opus",
+            "--download", "media/files/U1-S2-M1.pdf", "--download-asset-path", "p/a.pdf"]
     assert main(args) == 0
     asset = manifest(course)[0]
     assert asset["status"] == "uploaded" and asset["made_with"] == "claude · opus"
@@ -54,7 +54,7 @@ def test_extract_plan_and_set(course, capsys):  # noqa: F811
 def test_changed_placeholder_goes_back_to_pending(course, capsys):  # noqa: F811
     import_theme(course)
     assert main(["media", "extract", "PWD"]) == 0
-    assert main(["media", "set", "PWD", "U1-S2-M1", "--status", "produced"]) == 0
+    assert main(["media", "set", "PWD", "U1-S2-M1", "--status", "produced", "--depicts", "concept"]) == 0
     content = course / "content" / "unit-01" / "content.md"
     content.write_text(content.read_text(encoding="utf-8").replace("Anatomía de una contraseña", "Partes de una contraseña"),
                        encoding="utf-8")
@@ -228,3 +228,69 @@ def test_optimize_command_skips_unproduced(course, capsys):  # noqa: F811
     capsys.readouterr()
     assert main(["media", "optimize", "PWD"]) == 0
     assert "nothing to optimise" in capsys.readouterr().out
+
+
+def prepare_asset(course, capsys):  # noqa: F811
+    import_theme(course)
+    assert main(["media", "extract", "PWD"]) == 0
+    capsys.readouterr()
+
+
+def test_a_generated_resource_says_what_it_shows_before_it_is_produced(course, capsys):  # noqa: F811
+    prepare_asset(course, capsys)
+    assert main(["media", "set", "PWD", "U1-S2-M1", "--status", "produced", "--recipe", "agent-svg"]) == 1
+    assert "say what it shows before it is produced" in capsys.readouterr().err
+    assert main(["media", "set", "PWD", "U1-S2-M1", "--status", "produced", "--recipe", "agent-svg", "--depicts", "concept"]) == 0
+    assert manifest(course)[0]["depicts"] == "concept"
+
+
+def test_the_interface_of_a_real_application_is_never_drawn(course, capsys):  # noqa: F811
+    prepare_asset(course, capsys)
+    for recipe in ("agent-svg", "remotion", "magnific-api"):
+        assert main(["media", "set", "PWD", "U1-S2-M1", "--status", "produced", "--recipe", recipe, "--depicts", "interface"]) == 1
+        err = capsys.readouterr().err
+        assert "the interface of a real application is not invented" in err and recipe in err
+    assert manifest(course)[0]["status"] == "pending"  # nothing was written
+    # real material is fine: a capture a person provided, without saying more
+    assert main(["media", "set", "PWD", "U1-S2-M1", "--status", "produced", "--recipe", "screenshot", "--depicts", "interface"]) == 0
+
+
+def test_the_plan_offers_only_real_material_for_an_interface(course, capsys):  # noqa: F811
+    prepare_asset(course, capsys)
+    assert main(["media", "plan", "PWD"]) == 0
+    out = capsys.readouterr().out
+    assert "what does it show?" in out and "screenshot" not in out  # not classified: nothing real is offered yet
+    assert main(["media", "set", "PWD", "U1-S2-M1", "--depicts", "interface", "--status", "scripted", "--recipe", "screenshot"]) == 0
+    capsys.readouterr()
+    assert main(["media", "plan", "PWD"]) == 0
+    out = capsys.readouterr().out
+    assert "shows the interface of a real application" in out and "waits for a person" in out
+    assert "agent-svg" not in out and "screenshot" in out
+    assert main(["media", "set", "PWD", "U1-S2-M1", "--depicts", "concept"]) == 0
+    capsys.readouterr()
+    assert main(["media", "plan", "PWD"]) == 0
+    out = capsys.readouterr().out
+    assert "agent-svg" in out and "screenshot" not in out
+
+
+def test_what_is_already_produced_is_not_asked_again(course, capsys):  # noqa: F811
+    prepare_asset(course, capsys)
+    assert main(["media", "set", "PWD", "U1-S2-M1", "--status", "produced", "--recipe", "agent-svg", "--depicts", "concept"]) == 0
+    data = yaml.safe_load((course / "media" / "manifest.yaml").read_text(encoding="utf-8"))
+    data["assets"][0].pop("depicts")  # a resource produced before the rule
+    (course / "media" / "manifest.yaml").write_text(yaml.safe_dump(data, allow_unicode=True), encoding="utf-8")
+    assert main(["media", "set", "PWD", "U1-S2-M1", "--status", "uploaded", "--asset-path", "p/a.png"]) == 0
+
+
+def test_a_resource_waiting_for_a_recording_does_not_hold_the_handoff(course, capsys):  # noqa: F811
+    from coursekit import course as coursemod
+    from coursekit import handoff
+    from coursekit.project import find_project
+
+    prepare_asset(course, capsys)
+    assert main(["media", "set", "PWD", "U1-S2-M1", "--depicts", "interface", "--status", "scripted", "--recipe", "screen-recording"]) == 0
+    loaded = coursemod.load(find_project(), "PWD")
+    assert handoff._pending_media(loaded) == []  # it waits for a person, not for the media agent
+    assert [a["id"] for a in handoff.awaiting_recordings(loaded)] == ["U1-S2-M1"]
+    assert main(["media", "set", "PWD", "U1-S2-M1", "--recipe", "agent-svg"]) == 0  # a generated recipe: the media agent's again
+    assert [a["id"] for a in handoff._pending_media(coursemod.load(find_project(), "PWD"))] == ["U1-S2-M1"]

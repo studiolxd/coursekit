@@ -49,6 +49,7 @@ Los ficheros de la multimedia de un curso están en `courses/PWD/media/`: `manif
 | `asset_path` | La ruta del recurso en la plataforma una vez subido (`--asset-path`) |
 | `downloads` | Los ficheros descargables: `file`, `title`, `asset_path` y `size` de cada uno |
 | `theme` | La huella de los tokens del tema con los que se hizo el recurso ([El control de los recursos](#el-control-de-los-recursos)) |
+| `depicts` | Qué muestra el recurso: `interface` (una aplicación real) o `concept` (`--depicts`; [La interfaz de una aplicación real no se inventa](#la-interfaz-de-una-aplicación-real-no-se-inventa)) |
 
 ### Imágenes de las simulaciones
 
@@ -73,6 +74,17 @@ Con el backend **creator** `extract` añade también `SIM-<ID>` (kind `package`,
 
 `extract` añade además un recurso `image`, con id `CHAR-<NOMBRE>` (`CHAR-DANIEL`), por cada personaje que habla en una directiva `:::dialog`: un personaje tiene un solo retrato en todo el curso, hable donde hable. El agente de multimedia lo produce como cualquier otra imagen (una ilustración plana dibujada como SVG y exportada a PNG, una imagen generada con un proveedor o una fotografía con licencia de una persona), cuadrada, como un busto sobre un fondo liso de un color de la paleta del theme, y nunca deja a un personaje con una inicial. Una vez subido, el montaje lo pone en el diálogo como avatar de ese personaje, con el texto alternativo del recurso; hasta entonces avisa `dialog: el retrato de 'Daniel' aún no está subido`.
 
+
+### La interfaz de una aplicación real no se inventa
+
+Un vídeo, imagen, GIF, infografía o diagrama que muestra la pantalla de una aplicación, plataforma, programa, sitio web o app reales (un tutorial, un menú, un cuadro de diálogo, "haz clic aquí") se hace solo con **material real**: nunca se dibuja, anima, genera ni recrea, ni de forma aproximada ni con nombres ficticios, porque el alumno lo toma por lo real y busca botones que no están o que se llaman de otra manera. El único sitio donde una interfaz inventada está bien es una simulación de decisión (`:::scenario`, `:::conversation`), donde la aplicación es ficticia.
+
+Cada recurso de los tipos de `media › depicts › required_for` (imagen, infografía, diagrama, GIF, vídeo) dice qué muestra, con `coursekit media set CODE ID --depicts interface|concept`: `concept` para una idea, un proceso, un diagrama o una escena (se puede dibujar, generar o animar), `interface` para una pantalla real. En caso de duda, `interface`.
+
+- `coursekit media plan` ofrece para un recurso `interface` solo las opciones que parten de material real (`shows: interface`, más `imported`, `vhs` y `asciinema`), y avisa de que un recurso que no ha dicho qué muestra tiene que decirlo.
+- `coursekit media set --status produced` (o `uploaded`, la primera vez) rechaza una receta generada para un recurso `interface`, y para un recurso de esos tipos hecho con una receta generada que no ha dicho qué muestra. No tiene `--force`. Los recursos ya producidos no se vuelven a preguntar.
+- Lo que se puede hacer con un recurso `interface`, por este orden: **un vídeo de un canal oficial** (no es un recurso: es una dirección en el contenido, ver [`coursekit videos`](03-commands.md#coursekit-videos)); **material real que aporta una persona** en `courses/CODE/media/recordings/<id>.mp4` o `.png` (un vídeo se compone sobre la grabación real con locución, subtítulos, zooms y resaltados, receta `screen-recording`; una imagen es una captura real que solo se recorta y se marca, receta `screenshot`; un GIF es la grabación cortada y convertida); o, si todavía no hay, **no se produce nada**: el agente escribe el guion para la persona en `media/scripts/<id>.md` (qué mostrar, la cuenta y la versión que usar, los pasos con las etiquetas como las muestra la aplicación, la locución, el fichero que entregar) y deja el recurso en `scripted`.
+- Un recurso que espera una grabación no detiene el handoff: el curso se monta con el marcador a la vista, y el mensaje final del handoff lista cada recurso que espera a una persona, con la ruta de su guion. Cuando la grabación está en `media/recordings/`, `/produce-media` compone el recurso.
 
 ### Estados
 

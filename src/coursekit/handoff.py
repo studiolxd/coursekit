@@ -308,7 +308,15 @@ def _sign(ctx: Context, course: dict) -> None:
 
 def _pending_media(course: dict) -> list[dict]:
     _, _, data = mediamod.load_manifest(course["_dir"])
-    return [a for a in data["assets"] if a.get("status") in ("pending", "scripted")]
+    return [a for a in data["assets"] if a.get("status") in ("pending", "scripted") and not mediamod.awaiting_recording(a)]
+
+
+def awaiting_recordings(course: dict) -> list[dict]:
+    """The resources that show a real interface and wait for a person to provide the capture or the recording."""
+    if not course.get("_dir"):
+        return []
+    _, _, data = mediamod.load_manifest(course["_dir"])
+    return [a for a in data["assets"] if mediamod.awaiting_recording(a)]
 
 
 UPLOAD_NOTE = (

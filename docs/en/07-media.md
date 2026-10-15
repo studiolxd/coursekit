@@ -49,6 +49,7 @@ The files of the media of a course are in `courses/PWD/media/`: `manifest.yaml`,
 | `asset_path` | The path of the asset in the platform once uploaded (`--asset-path`) |
 | `downloads` | The downloadable files: `file`, `title`, `asset_path` and `size` of each one |
 | `theme` | The fingerprint of the theme tokens the asset was made with ([The media guard](#the-media-guard)) |
+| `depicts` | What the asset shows: `interface` (a real application) or `concept` (`--depicts`; [The interface of a real application is never invented](#the-interface-of-a-real-application-is-never-invented)) |
 
 ### Images of the simulations
 
@@ -73,6 +74,17 @@ With the **creator** backend `extract` also adds `SIM-<ID>` (kind `package`, typ
 
 `extract` also adds one `image` asset, with id `CHAR-<NAME>` (`CHAR-DANIEL`), for every character that speaks in a `:::dialog` directive: a character has one portrait for the whole course, wherever it speaks. The media agent produces it like any other image (a flat illustration drawn as SVG and exported to PNG, an image generated with a provider, or a licensed photograph of a person), square, as a bust on a plain background in a colour of the theme palette, and it never leaves a character with an initial. Once uploaded, the assembly puts it in the dialogue as the avatar of that character, with the alt text of the asset; until then it warns `dialog: the portrait of 'Daniel' is not uploaded yet`.
 
+
+### The interface of a real application is never invented
+
+A video, image, GIF, infographic or diagram that shows the screen of a real application, platform, program, website or app (a tutorial, a menu, a dialog, "click here") is made only from **real material**: it is never drawn, animated, generated or recreated, not even approximately and not even with fictional names, because the learner takes it for the real thing and looks for buttons that are not there or are named otherwise. The only place where an invented interface is fine is a decision-based simulation (`:::scenario`, `:::conversation`), where the application is fictional.
+
+Each resource of the types in `media › depicts › required_for` (image, infographic, diagram, GIF, video) says what it shows, with `coursekit media set CODE ID --depicts interface|concept`: `concept` for an idea, a process, a diagram or a scene (it can be drawn, generated or animated), `interface` for a real screen. In doubt, `interface`.
+
+- `coursekit media plan` offers for an `interface` resource only the options that work from real material (`shows: interface`, plus `imported`, `vhs` and `asciinema`), and tells you that a resource that has not said what it shows has to.
+- `coursekit media set --status produced` (or `uploaded`, the first time) refuses a generated recipe for an `interface` resource, and for a resource of those types made with a generated recipe that has not said what it shows. It has no `--force`. Resources already produced are not asked again.
+- What can be done with an `interface` resource, in this order: **a video of an official channel** (not an asset: an address in the content, see [`coursekit videos`](03-commands.md#coursekit-videos)); **real material that a person provides** in `courses/CODE/media/recordings/<id>.mp4` or `.png` (a video is composed over the real recording with narration, captions, zooms and highlights, recipe `screen-recording`; an image is a real capture that is only cropped and marked, recipe `screenshot`; a GIF is the recording cut and converted); or, when there is none yet, **nothing is produced**: the agent writes the brief for the person in `media/scripts/<id>.md` (what to show, the account and version to use, the steps with the labels as the application shows them, the narration, the file to deliver) and leaves the resource `scripted`.
+- A resource that waits for a recording does not stop the handoff: the course is assembled with the placeholder showing, and the final message of the handoff lists every resource that waits for a person, with the path of its brief. Once the recording is in `media/recordings/`, `/produce-media` composes the resource.
 
 ### Statuses
 

@@ -120,6 +120,10 @@ def cmd_handoff(args: argparse.Namespace) -> int:
         print(t("handoff", "stopped", code=code, reason=exc), file=sys.stderr)
         return 1
     print(t("handoff", "done", code=course["code"], who=handoffmod.HANDOFF.name))
+    recordings = handoffmod.awaiting_recordings(course)
+    if recordings:
+        items = "; ".join(f"{a['id']} ({a.get('title', '')}) → media/scripts/{a['id']}.md" for a in recordings)
+        print(t("handoff", "recordings_needed", count=len(recordings), list=items))
     waiting = handoffmod.unchecked_videos(course)
     if waiting:
         names = "; ".join(f"{(v.get('channel') or {}).get('name') or '—'} · {v['url']}" for v in waiting)
@@ -801,7 +805,7 @@ def cmd_media(args: argparse.Namespace) -> int:
         return 2
     statesmod.ensure_active(course)
     values = {k: getattr(args, k) for k in ("status", "recipe", "asset_path", "file", "alt", "transcript", "subtitles_path",
-                                            "made_with", "download", "download_title", "download_asset_path", "force")}
+                                            "made_with", "download", "download_title", "download_asset_path", "force", "depicts")}
     print(mediamod.set_asset(course, args.id, **values))
     _mirror(course["_project"], course["code"])
     return 0
@@ -1144,6 +1148,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     for key in ("status", "recipe", "asset-path", "file", "alt", "transcript", "subtitles-path", "made-with",
                 "download", "download-title", "download-asset-path"):
         p.add_argument(f"--{key}")
+    p.add_argument("--depicts", choices=("interface", "concept"), help=t("commands", "help_media_depicts"))
     p.add_argument("--force", action="store_true", help=t("commands", "help_media_force"))
     p.add_argument("--all", action="store_true", help=t("commands", "help_media_all"))
     p.add_argument("--size", help=t("commands", "help_media_size"))

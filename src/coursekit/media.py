@@ -78,6 +78,21 @@ def options_for(kind: str, cfg: dict, root: Path | None = None) -> list[dict]:
     return chain
 
 
+DEPICTS = ("interface", "concept")
+
+
+def depicts_rules(cfg: dict) -> tuple[list[str], list[str]]:
+    """(the types that say what they show, the recipes that may make what shows a real interface)."""
+    block = cfg.get("depicts") or {}
+    return list(block.get("required_for") or []), list(block.get("interface_recipes") or [])
+
+
+def awaiting_recording(asset: dict) -> bool:
+    """A resource that shows a real interface and waits for a person to provide the capture or the recording."""
+    return (asset.get("depicts") == "interface" and asset.get("status") == "scripted"
+            and asset.get("recipe") in ("screen-recording", "screenshot"))
+
+
 def scan(course: dict) -> list[dict]:
     tk = coursemod.tokens(course)
     section_re = re.compile(rf"^## {re.escape(tk['section'])} (\d+)\s*[—-]")
@@ -326,11 +341,21 @@ def plan(course: dict) -> tuple[list[str], list[str]]:
             warnings.append(t("media", "no_generator", fallback=style["fallback"]))
         if not style_approval(course):
             warnings.append(t("media", "style_not_approved", code=course["code"]))
+    required, real = depicts_rules(cfg)
     for a in (a for a in data["assets"] if a.get("status") in ("pending", "scripted")):
         chain = options_for(a["type"], cfg, root)
+        real_interface = a.get("depicts") == "interface"
+        chain = [o for o in chain if (o["id"] in real or o.get("shows") == "interface")] if real_interface \
+            else [o for o in chain if o.get("shows") != "interface"]
         lines.append(f"{a['id']} [{a['type']}] {a.get('title', '')}")
+        if real_interface:
+            lines.append(t("media", "interface_line"))
+            if awaiting_recording(a):
+                lines.append(t("media", "awaiting_line", path=f"media/scripts/{a['id']}.md", folder=f"media/recordings/{a['id']}"))
+        elif a["type"] in required and not a.get("depicts"):
+            lines.append(t("media", "classify_line", id=a["id"]))
         if not chain:
-            lines.append(t("media", "no_option"))
+            lines.append(t("media", "interface_no_option" if real_interface else "no_option"))
         for option in chain:
             settings = ", ".join(f"{key}: {option[key]}" for key in ("model", "resolution", "variants") if option.get(key) is not None)
             lines.append(f"  - {option['id']} ({option['available']}): {option['how']}" + (f" [{settings}]" if settings else ""))
@@ -534,6 +559,19 @@ def set_asset(course: dict, asset_id: str, **values) -> str:
             raise MediaError(t("media", f"theme_{found.state}", code=course["code"]))
         if found.tokens:
             asset["theme"] = thememod.fingerprint(found.tokens)
+    first_time = asset.get("status") not in ("produced", "uploaded")
+    depicts = values.get("depicts") or asset.get("depicts")
+    if depicts and depicts not in DEPICTS:
+        raise MediaError(t("media", "bad_depicts", value=depicts, valid=", ".join(DEPICTS)))
+    required, real = depicts_rules(cfg)
+    recipe = values.get("recipe") or asset.get("recipe")
+    if values.get("status") in ("produced", "uploaded") and first_time and asset["type"] in required and recipe not in real:
+        if not depicts:  # a generated resource says what it shows; a real one (a capture, a recording) needs not
+            raise MediaError(t("media", "depicts_missing", asset=asset_id))
+        if depicts == "interface":
+            raise MediaError(t("media", "interface_generated", asset=asset_id, recipe=recipe or "-", allowed=", ".join(real)))
+    if values.get("depicts"):
+        asset["depicts"] = values["depicts"]
     for key in ("status", "recipe", "asset_path", "file", "alt", "transcript", "subtitles_path", "made_with"):
         if values.get(key) is not None:
             asset[key] = values[key]

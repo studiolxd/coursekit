@@ -59,7 +59,10 @@ Mandatory format: `.coursekit/docs/content-format.md`. Write in {{language_name}
     unit, what they would do differently and how they will apply it in their own work; never a quiz in disguise) and the
     link with the next unit.
 - Media placeholders where an asset really adds something, with all their fields and
-  accessibility; verify gives the minimum per unit (by hours) and of types.
+  accessibility; verify gives the minimum per unit (by hours) and of types. **A resource that shows the screen of a real
+  application (a tutorial, a capture, a menu) comes from real material**: in "how it is made" say that it is a recording or
+  capture of the real application that a person provides (or a video of an official channel), never a drawing, animation or
+  recreation of its interface. Diagrams, infographics and scenes of ideas can be drawn.
 - Assessment: present each activity of `activities.assessment` in the relevant section (what it
   assesses, how it is graded, attempts). The detail and the question bank go in
   `assessment.md`: {{questions_per_objective}} questions per objective assessed by questionnaire. Of each activity the

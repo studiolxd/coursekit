@@ -41,6 +41,45 @@ extra elements to fill the gap. It only needs what is in the project: anything i
 6. Options marked `only: terminal` (VHS, asciinema) are only for assets that show a terminal;
    decide from the placeholder's description.
 
+## 1.1 What a resource shows: the interface of a real application is never invented
+
+Before producing a resource of the types in `media › depicts › required_for` (image, infographic, diagram, GIF, video), decide
+what it shows and record it: `coursekit media set <CODE> <id> --depicts interface|concept`.
+
+- **`concept`**: an idea, a process, a diagram, a scene, a person. You may draw it, generate it or animate it.
+- **`interface`**: the screen of a real application, platform, program, website or app (a tutorial of how to use it, "click
+  here", a menu, a dialog, a chat window). **You never draw, recreate, imitate or "approximate" it**, with SVG, with
+  Remotion, with a generator or any other way, not even schematically, not even with fictional names or a note saying it is
+  a recreation: a learner would take it for the real thing and look for buttons that are not there or are named otherwise.
+  `coursekit media plan` offers only real material for it and `coursekit media set --status produced` refuses a generated
+  recipe. The decision-based simulations (`:::scenario`, `:::conversation`) are the only place where an invented interface is
+  fine: there the application is fictional and the course says so.
+
+What you may do with an `interface` resource, in this order:
+
+1. **A video of an official channel** (the producer of the application): it is not an asset to produce but an address in the
+   content (`coursekit videos`, see the writing skill), which you cannot change. Look for it (`WebSearch`, `WebFetch`) among the
+   channels of `rules › forbidden › allow_channels` (`coursekit config rules --course <CODE>`) and the official site of the
+   application, and write in the brief of the resource the candidates you find: address, channel, why it is official (the
+   official page that links to it), what it shows and whether it covers the same steps, so that the writer or a person can
+   replace the placeholder with it (`coursekit videos propose`). Never put an address in the content yourself.
+2. **Real material that a person provides**, in `courses/<CODE>/media/recordings/<id>.mp4` (or `.png` for a capture). If it is
+   there, work from it: for a **video**, the recipe `screen-recording` (Remotion over the real recording: narration with the
+   voice of the course, captions, zooms, highlights, the cursor of the recording; nothing of the screen is redrawn); for an
+   **image**, the recipe `screenshot` (crop it and mark it with numbers, frames or arrows; never redraw it); for a **GIF**, cut
+   and convert the recording with ffmpeg. Record it with the recipe and `--depicts interface`.
+3. **Nothing of the above exists yet: do not produce it.** Write the **brief for the person** in
+   `courses/<CODE>/media/scripts/<id>.md` and leave the asset waiting:
+   `coursekit media set <CODE> <id> --status scripted --recipe screen-recording|screenshot --depicts interface`.
+   The brief says: what the resource teaches; the exact account, application and version to use; the steps in order (what to
+   click or type, what must be on screen at each moment, with the labels as the application shows them); how long each one
+   takes; the narration, sentence by sentence, ready to be spoken over the recording; the file name and format to deliver
+   (`media/recordings/<id>.mp4`, 1920 × 1080, no personal data on screen) and, for a video, what to highlight and where to
+   zoom. Never mark it `produced`. The handoff does not stop for it: the course is assembled with the placeholder showing,
+   and the final report lists every resource that waits for a person.
+
+If you doubt whether a resource shows a real interface, it does: classify it `interface`.
+
 ## Course voice
 
 The whole course uses **one voice**. `coursekit voice list <CODE>` shows the configured
@@ -54,8 +93,8 @@ provider: propose one per character that fits the story bible (`personality`, `s
 ## 2. Script before producing (video, audio, GIF, demo)
 
 Write the script in `media/scripts/<id>.md` (voice-over word by word, scenes or terminal steps,
-estimated duration; say which screens come from a real run, with the version, and which from the
-documentation) and mark the asset `scripted` (`coursekit media set <CODE> <id> --status scripted`).
+estimated duration; any screen of a real application comes from a real run or a real recording, with its version, never from the
+documentation: see 1.1) and mark the asset `scripted` (`coursekit media set <CODE> <id> --status scripted`).
 For videos and voice-overs, **show the script to the person before producing** if it spends
 credits.
 

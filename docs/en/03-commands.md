@@ -774,7 +774,7 @@ Manages the media manifest of a course (`media/manifest.yaml`) and tells how to 
 coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [--file FILE]
                 [--alt ALT] [--transcript TRANSCRIPT] [--subtitles-path SUBTITLES_PATH]
                 [--made-with MADE_WITH] [--download DOWNLOAD] [--download-title DOWNLOAD_TITLE]
-                [--download-asset-path DOWNLOAD_ASSET_PATH] [--force]
+                [--download-asset-path DOWNLOAD_ASSET_PATH] [--depicts {interface,concept}] [--force]
                 [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all] [--size SIZE]
                 {extract,plan,providers,set,upload,redo,embed,fit,render,narrate,optimize,adopt} [code] [id] [more ...]
 ```
@@ -795,6 +795,7 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
 | `--download DOWNLOAD` | file name | Add or update an extra downloadable file of the asset. |
 | `--download-title DOWNLOAD_TITLE` | text | Title of that download (needs `--download`). |
 | `--download-asset-path DOWNLOAD_ASSET_PATH` | text | Uploaded path of that download (needs `--download`). |
+| `--depicts DEPICTS` | `interface`, `concept` | `set`: what the resource shows: the interface of a real application (never drawn or recreated: only real material) or an idea, diagram or scene. A generated recipe needs it before the first `produced`; see [the interface of a real application](07-media.md#the-interface-of-a-real-application-is-never-invented). |
 | `--url URL` | `https://` address | `upload`: the `uploadUrl` that the platform minted (creator's `request_asset_upload` or `request_embed_upload`). |
 | `--content-type CONTENT_TYPE` | MIME type, for example `image/png` | `upload`: the one the upload was requested with. |
 | `--method METHOD` | default `PUT` | `upload`: HTTP method. |

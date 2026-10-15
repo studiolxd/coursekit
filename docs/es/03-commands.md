@@ -774,7 +774,7 @@ Gestiona el manifiesto multimedia de un curso (`media/manifest.yaml`) e indica c
 coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [--file FILE]
                 [--alt ALT] [--transcript TRANSCRIPT] [--subtitles-path SUBTITLES_PATH]
                 [--made-with MADE_WITH] [--download DOWNLOAD] [--download-title DOWNLOAD_TITLE]
-                [--download-asset-path DOWNLOAD_ASSET_PATH] [--force]
+                [--download-asset-path DOWNLOAD_ASSET_PATH] [--depicts {interface,concept}] [--force]
                 [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all] [--size SIZE]
                 {extract,plan,providers,set,upload,redo,embed,fit,render,narrate,optimize,adopt} [code] [id] [more ...]
 ```
@@ -795,6 +795,7 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
 | `--download DOWNLOAD` | nombre de fichero | Añade o actualiza un fichero descargable adicional del recurso. |
 | `--download-title DOWNLOAD_TITLE` | texto | Título de esa descarga (necesita `--download`). |
 | `--download-asset-path DOWNLOAD_ASSET_PATH` | texto | Ruta subida de esa descarga (necesita `--download`). |
+| `--depicts DEPICTS` | `interface`, `concept` | `set`: qué muestra el recurso: la interfaz de una aplicación real (nunca dibujada ni recreada: solo material real) o una idea, diagrama o escena. Una receta generada lo necesita antes del primer `produced`; ver [la interfaz de una aplicación real](07-media.md#la-interfaz-de-una-aplicación-real-no-se-inventa). |
 | `--url URL` | dirección `https://` | `upload`: el `uploadUrl` que dio la plataforma (`request_asset_upload` o `request_embed_upload` de creator). |
 | `--content-type CONTENT_TYPE` | tipo MIME, por ejemplo `image/png` | `upload`: el mismo con el que se pidió la subida. |
 | `--method METHOD` | por defecto `PUT` | `upload`: método HTTP. |

@@ -114,6 +114,8 @@ these differences:
 - **Hours: the person's** (`design.hours`, not yours to change). Split them by the real load of the content you read (its
   words, its interactives, its activities), and say in the proposal notes, per unit, whether the content falls short of or
   runs over the {{words_per_hour}} words an hour asks for. `coursekit verify` only warns about it in this kind of course.
+  A migrated course is corrected, never expanded: do not propose more content to fill the hours, only the activities and
+  the objectives the package lacks.
 - **Interactivity as it is.** Each interactive of the brief keeps its kind (accordion, tabs, carousel, flashcards, match,
   labelled graphic, questions); do not swap one for another to fit a rule.
 - **Objectives and activities you add.** The package rarely has objectives or a full assessment: propose the objectives

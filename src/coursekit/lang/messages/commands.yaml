@@ -382,3 +382,4 @@ media_adopt_needs: {es: "adopt necesita el id del recurso y --file con la imagen
 help_videos: {es: "vídeos de sitios prohibidos que son de un canal oficial: comprobar, proponer, aprobar o rechazar", en: "videos on forbidden sites that come from an official channel: check, propose, approve or reject"}
 help_videos_why: {es: "propose: la evidencia de que el canal del vídeo es oficial", en: "propose: the evidence that the channel of the video is official"}
 help_videos_replaces: {es: "propose: la dirección del vídeo que sustituye", en: "propose: the address of the video it replaces"}
+help_media_depicts: {es: "set: qué muestra el recurso (interface: la interfaz de una aplicación real; concept: una idea, un diagrama, una escena)", en: "set: what the resource shows (interface: the interface of a real application; concept: an idea, a diagram, a scene)"}
