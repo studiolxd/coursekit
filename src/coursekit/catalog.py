@@ -6,6 +6,7 @@ Generated output, never edited by hand. Written in the project's ui_language (es
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
 import json
 from collections.abc import Callable
 from pathlib import Path
@@ -126,37 +127,104 @@ def _sheet(ws, headers, rows, fill: PatternFill, link_columns=()):
     ws.auto_filter.ref = ws.dimensions
 
 
-def build(project: Project, output: Path, folder_url: Callable[[str], str] | None = None) -> tuple[int, int]:
-    """Write the catalog atomically. Returns (courses, units). Raises PermissionError if it is open."""
+def _stat(path: Path) -> list[int] | None:
+    try:
+        found = path.stat()
+    except OSError:
+        return None
+    return [found.st_mtime_ns, found.st_size]
+
+
+def course_fingerprint(project: Project, folder: Path, language: str, link: str | None) -> str:
+    """What the rows of a course depend on, by the modification time and size of its files: the record, the media manifest and
+    the content of each unit, plus the project file, the language of the catalog and the link to its folder in the mirror."""
+    units = sorted(folder.glob("content/unit-*/content.md"))
+    parts = [language, link, _stat(project.file), _stat(folder / "course.yaml"), _stat(folder / "media" / "manifest.yaml"),
+             *[[p.relative_to(folder).as_posix(), _stat(p)] for p in units]]
+    return hashlib.sha256(json.dumps(parts, default=str).encode("utf-8")).hexdigest()
+
+
+def _cache_file(project: Project, name: str) -> Path:
+    return project.cache_dir / "catalog" / f"{name}.json"
+
+
+def _read_json(path: Path) -> dict:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _write_json(path: Path, data: dict) -> None:
+    """Best effort: a cache that cannot be written only costs the next build its work."""
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_name(f".~{path.name}")
+        tmp.write_text(json.dumps(data, ensure_ascii=False, default=str), encoding="utf-8")
+        tmp.replace(path)
+    except OSError:
+        pass
+
+
+def course_rows_of(project: Project, folder: Path, text: dict, link: str | None, folder_url) -> tuple[list, list]:
+    """The row of a course in the catalog and those of its units: from the cache while its files have not changed, else
+    computed (this is the only place that reads a course)."""
+    fingerprint = course_fingerprint(project, folder, ui_language(project), link)
+    cached = _read_json(_cache_file(project, folder.name))
+    if cached.get("fp") == fingerprint and isinstance(cached.get("course"), list) and isinstance(cached.get("units"), list):
+        return cached["course"], cached["units"]
+    course = coursemod.load(project, str(folder))
+    manifest_path = folder / "media" / "manifest.yaml"
+    assets = (load_yaml(manifest_path).get("assets") or []) if manifest_path.exists() else []
+    produced = sum(1 for a in assets if a.get("status") in ("produced", "uploaded"))
+    total_min = total_words = total_ph = 0
+    unit_rows = []
+    for unit in course.get("units") or []:
+        min_words, words, placeholders = unit_stats(course, unit)
+        total_min, total_words, total_ph = total_min + min_words, total_words + words, total_ph + placeholders
+        approval = content_approval(course, unit["n"]) or {}
+        unit_rows.append([course["code"], unit["n"], unit.get("title"), unit.get("status"), unit.get("hours"),
+                          min_words, words, placeholders, approval.get("by"),
+                          str(approval.get("at") or "")[:16].replace("T", " "), unit.get("content_id"),
+                          (unit.get("links") or {}).get("preview"), (unit.get("links") or {}).get("review")])
+    last = (course.get("history") or [{}])[-1]
+    owners = course.get("owners") or {}
+    design = coursemod.design_approval(course) or {}
+    course_row = [
+        course["code"], course.get("title"), text["status"].get(course.get("status"), course.get("status")),
+        course["design"].get("hours"), len(course.get("units") or []),
+        total_min, total_words, round(total_words / total_min, 3) if total_min else 0,
+        max(total_ph, len(assets)), produced,
+        folder_url(course["code"]) if folder_url else None,
+        design.get("by"), str(design.get("at") or "")[:16].replace("T", " "),
+        owners.get("instructional_design"), owners.get("writing"), owners.get("review"),
+        owners.get("media"), owners.get("assembly"), str(last.get("date", "")), last.get("note"),
+    ]
+    _write_json(_cache_file(project, folder.name), {"fp": fingerprint, "course": course_row, "units": unit_rows})
+    return course_row, unit_rows
+
+
+def build(project: Project, output: Path, folder_url: Callable[[str], str] | None = None,
+          force: bool = False) -> tuple[int, int, bool]:
+    """Write the catalog atomically. Returns (courses, units, written). Raises PermissionError if it is open.
+
+    The rows of each course come from a cache while its files have not changed, so a build costs what changed, not the number
+    of courses; and the file is written only when its data differ from those of the last write (or with `force`, or when it
+    does not exist), so calling this after every command costs nothing when nothing changed.
+    """
     text = TEXT[ui_language(project)]
     course_rows, unit_rows = [], []
     for folder in project.iter_courses():
-        course = coursemod.load(project, str(folder))
-        manifest_path = folder / "media" / "manifest.yaml"
-        assets = (load_yaml(manifest_path).get("assets") or []) if manifest_path.exists() else []
-        produced = sum(1 for a in assets if a.get("status") in ("produced", "uploaded"))
-        total_min = total_words = total_ph = 0
-        for unit in course.get("units") or []:
-            min_words, words, placeholders = unit_stats(course, unit)
-            total_min, total_words, total_ph = total_min + min_words, total_words + words, total_ph + placeholders
-            approval = content_approval(course, unit["n"]) or {}
-            unit_rows.append([course["code"], unit["n"], unit.get("title"), unit.get("status"), unit.get("hours"),
-                              min_words, words, placeholders, approval.get("by"),
-                              str(approval.get("at") or "")[:16].replace("T", " "), unit.get("content_id"),
-                              (unit.get("links") or {}).get("preview"), (unit.get("links") or {}).get("review")])
-        last = (course.get("history") or [{}])[-1]
-        owners = course.get("owners") or {}
-        design = coursemod.design_approval(course) or {}
-        course_rows.append([
-            course["code"], course.get("title"), text["status"].get(course.get("status"), course.get("status")),
-            course["design"].get("hours"), len(course.get("units") or []),
-            total_min, total_words, round(total_words / total_min, 3) if total_min else 0,
-            max(total_ph, len(assets)), produced,
-            folder_url(course["code"]) if folder_url else None,
-            design.get("by"), str(design.get("at") or "")[:16].replace("T", " "),
-            owners.get("instructional_design"), owners.get("writing"), owners.get("review"),
-            owners.get("media"), owners.get("assembly"), str(last.get("date", "")), last.get("note"),
-        ])
+        course_row, units = course_rows_of(project, folder, text, folder_url(folder.name) if folder_url else None, folder_url)
+        course_rows.append(course_row)
+        unit_rows += units
+    digest = hashlib.sha256(json.dumps([ui_language(project), header_color(project), course_rows, unit_rows],
+                                       ensure_ascii=False, default=str).encode("utf-8")).hexdigest()
+    state_file = _cache_file(project, "state")
+    state = _read_json(state_file)
+    if not force and output.exists() and state.get(str(output)) == digest:
+        return len(course_rows), len(unit_rows), False
 
     fill = PatternFill("solid", fgColor=header_color(project))
     wb = Workbook()
@@ -186,4 +254,5 @@ def build(project: Project, output: Path, folder_url: Callable[[str], str] | Non
     except PermissionError:
         tmp.unlink(missing_ok=True)
         raise
-    return len(course_rows), len(unit_rows)
+    _write_json(state_file, {**state, str(output): digest})
+    return len(course_rows), len(unit_rows), True

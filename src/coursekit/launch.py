@@ -322,13 +322,19 @@ def execute(project: Project, agent: Agent, text: str, headless: bool, log_name:
     args = headless_args(agent, text, last_message, mcp_name, agentsmod.connector_server(project), media_programs(project),
                          [store.workspaces_dir().as_posix()], media_connectors(project))
     # A clean session even when launched from inside another agent (e.g. Claude Code).
-    env = {k: v for k, v in os.environ.items() if not k.startswith("CLAUDE")} | SESSION_ENV
+    env = session_env()
     with log.open("w", encoding="utf-8") as fh:
         code = subprocess.call(args, cwd=project.root, stdout=fh, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, env=env)
     return code, log, final_message(agent.tool, log, last_message)
 
 
 # ── units ─────────────────────────────────────────────────────────────────────────────────
+
+def session_env() -> dict[str, str]:
+    """The environment of a session without an interface: clean of the variables of another agent, with what the handoff sets, and
+    with the publication to the mirror folder left to whoever started it (once at the end, not after every command)."""
+    return {k: v for k, v in os.environ.items() if not k.startswith("CLAUDE")} | SESSION_ENV | {"COURSEKIT_MIRROR": "deferred"}
+
 
 def _units(course: dict) -> list[dict]:
     return course.get("units") or []

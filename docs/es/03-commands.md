@@ -1103,7 +1103,7 @@ coursekit publish [--check] [--only-if-configured] [code]
 
 El espejo se define con `project.yaml › mirror` (proveedor y dirección web) más `MIRROR_DIR` en `.env` (ruta local). Por cada curso copia `course.yaml`, `design/`, `content/`, `reviews/` y `delivery/` a `<MIRROR_DIR>/courses/<CODE>/`, solo cuando el contenido cambió, elimina los ficheros que ya no existen en git (registrados en `.published.json`) y nunca borra los paquetes de `delivery/`. Después escribe el Excel del catálogo en la raíz del espejo. Imprime una línea por cada curso que cambió y la línea del catálogo escrito en el espejo. Con `mirror.provider: none` imprime `sin carpeta espejo (project.yaml › mirror.provider: none): nada que publicar` y termina con 0, porque los comandos de los agentes lo llaman en todos los proyectos. Con un proveedor pero sin `MIRROR_DIR`, o con una carpeta que no existe, termina con código 1.
 
-Antes de tocar el espejo actualiza también el catálogo del proyecto en `courses/` (igual que `coursekit catalog`; imprime antes su línea `escrito courses/... (N cursos, M unidades)`, salvo con `--only-if-configured`), así que funciona también en proyectos sin espejo.
+Antes de tocar el espejo actualiza también el catálogo del proyecto en `courses/` (igual que `coursekit catalog`; imprime antes su línea `escrito courses/... (N cursos, M unidades)`, o `... sin cambios` cuando sus datos no han cambiado desde la última escritura, salvo con `--only-if-configured`, donde no imprime nada de eso), así que funciona también en proyectos sin espejo.
 
 Rara vez hace falta ejecutarlo a mano: cuando el proyecto tiene carpeta espejo, los comandos que cambian un curso lo publican al terminar (mira [Publicación automática](08-assembly-and-delivery.md#publicación-automática)).
 
@@ -1123,7 +1123,7 @@ coursekit catalog [--output OUTPUT]
 |---|---|---|
 | `--output OUTPUT` | ruta; por defecto `courses/course-catalog.xlsx` en un proyecto en inglés y `courses/catalogo-cursos.xlsx` en los demás (el idioma es `ui_language`, si no `content_language`) | Fichero que escribir. |
 
-Imprime `escrito <ruta> (N cursos, M unidades)`. `coursekit publish` escribe el mismo catálogo en la carpeta espejo.
+Imprime `escrito <ruta> (N cursos, M unidades)`; siempre escribe (la actualización automática tras otros comandos solo escribe cuando los datos cambiaron). `coursekit publish` escribe el mismo catálogo en la carpeta espejo, y dice `sin cambios` cuando no tiene nada nuevo que escribir.
 
 ```
 coursekit catalog --output build/catalog.xlsx

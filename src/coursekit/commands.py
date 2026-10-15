@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import sys
 from pathlib import Path
@@ -58,9 +59,13 @@ def _local_catalog(project: Project) -> Path:
 def _mirror(project: Project, code: str) -> None:
     """Bring the catalog of the project and the mirror folder up to date after a command that changed the course.
 
-    The catalog in `courses/` is always written, silently. Nothing else happens when the project has no mirror; a
-    catalog or a mirror that cannot be written is a warning, never a failure of the command that already did its work.
+    The catalog in `courses/` is kept up to date, silently (and only written when its data changed). Nothing else happens when
+    the project has no mirror; a catalog or a mirror that cannot be written is a warning, never a failure of the command that
+    already did its work. The sessions of the agents without an interface (`COURSEKIT_MIRROR=deferred`) leave it to whoever
+    started them, which does it once when the session ends instead of after every command the agent runs.
     """
+    if os.environ.get("COURSEKIT_MIRROR") == "deferred":
+        return
     try:
         catalogmod.build(project, _local_catalog(project))
     except OSError as exc:
@@ -492,6 +497,7 @@ def cmd_unit_agent(args: argparse.Namespace) -> int:
         print(t("commands", key, command=args.command, code=course["code"], n=n, label=agent.label), flush=True)
         result = launch.run_unit(project, args.code, role, n, agent, args.headless, full, parts)
         _launch_report(result, project)
+        _mirror(project, course["code"])  # the session itself did not (`COURSEKIT_MIRROR=deferred`)
         failed = result.exit_code if not args.headless else (0 if launch.done(role, result.status) else (result.exit_code or 1))
         if failed:
             if len(units) > 1:
@@ -525,11 +531,13 @@ def _split_run_arguments(args: argparse.Namespace) -> None:
 def cmd_run(args: argparse.Namespace) -> int:
     _split_run_arguments(args)
     project = _project()
+    worked_on = None
     if args.name in launch.COMMAND_ROLE and args.name not in ("new-course", "course-status"):
         first = next((a for a in args.arguments if a.strip() and not a.startswith("-")), None)
         code = first.split()[0].strip("\"'") if first else None  # the course the command works on (all may come in one string)
         if code and (project.course_dir(code) / "course.yaml").exists():
             statesmod.ensure_active(coursemod.load(project, code))  # a course on hold does not start an agent session
+            worked_on = code
     role = args.role or launch.COMMAND_ROLE.get(args.name, "design")
     agent = launch.agent_for(role, args.agent, args.model)
     # the shell took the quotes off: put them back around what has spaces, as the commands expect (`"<title>" <hours>`)
@@ -538,6 +546,8 @@ def cmd_run(args: argparse.Namespace) -> int:
     print(t("commands", key, name=args.name, arguments=arguments, role=role, label=agent.label), flush=True)
     text = launch.prompt(agent, args.name, arguments, args.headless)
     code, log, summary = launch.execute(project, agent, text, args.headless, f"{args.name}-{role}")
+    if worked_on:
+        _mirror(project, worked_on)  # the session itself did not (`COURSEKIT_MIRROR=deferred`)
     if summary:
         print(summary)
     if log:
@@ -882,11 +892,11 @@ def cmd_publish(args: argparse.Namespace) -> int:
         return 0
     output = _local_catalog(project)
     try:
-        courses, units = catalogmod.build(project, output)
+        courses, units, written = catalogmod.build(project, output)
     except PermissionError as exc:
         raise publishmod.PublishError(t("publish", "cannot_replace", output=output)) from exc
     if not args.only_if_configured:
-        print(t("commands", "catalog_wrote", path=output, courses=courses, units=units))
+        print(t("commands", "catalog_wrote" if written else "catalog_unchanged", path=output, courses=courses, units=units))
     for line in publishmod.publish(project, args.code, args.only_if_configured):
         print(line)
     return 0
@@ -931,7 +941,7 @@ def cmd_client(args: argparse.Namespace) -> int:
 def cmd_catalog(args: argparse.Namespace) -> int:
     project = _project()
     output = Path(args.output) if args.output else _local_catalog(project)
-    courses, units = catalogmod.build(project, output)
+    courses, units, _ = catalogmod.build(project, output, force=True)  # asked for: always written
     print(t("commands", "catalog_wrote", path=output, courses=courses, units=units))
     return 0
 

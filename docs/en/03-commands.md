@@ -1103,7 +1103,7 @@ coursekit publish [--check] [--only-if-configured] [code]
 
 The mirror is `project.yaml › mirror` (provider and web address) plus `MIRROR_DIR` in `.env` (local path). Per course it copies `course.yaml`, `design/`, `content/`, `reviews/` and `delivery/` to `<MIRROR_DIR>/courses/<CODE>/`, only when the content changed, removes files that no longer exist in git (tracked in `.published.json`), and never deletes `delivery/` packages. Then writes the catalog Excel in the root of the mirror. Prints one line per course that changed and the line of the catalog written in the mirror. With `mirror.provider: none` it prints `no mirror folder (project.yaml › mirror.provider: none): nothing to publish` and exits with 0, because the commands of the agents call it in every project. With a provider but no `MIRROR_DIR`, or with a folder that does not exist, it exits with code 1.
 
-Before touching the mirror it also refreshes the catalog of the project in `courses/` (the same as `coursekit catalog`; it prints its `wrote courses/... (N courses, M units)` line first, except with `--only-if-configured`), so it works in projects without a mirror too.
+Before touching the mirror it also refreshes the catalog of the project in `courses/` (the same as `coursekit catalog`; it prints its `wrote courses/... (N courses, M units)` line first, or `... unchanged` when its data did not change since the last write, except with `--only-if-configured`, where it prints nothing about it), so it works in projects without a mirror too.
 
 You rarely need to run it yourself: when the project has a mirror folder, the commands that change a course publish it when they finish (see [Automatic publication](08-assembly-and-delivery.md#automatic-publication)).
 
@@ -1123,7 +1123,7 @@ coursekit catalog [--output OUTPUT]
 |---|---|---|
 | `--output OUTPUT` | path; default `courses/course-catalog.xlsx` in an English project and `courses/catalogo-cursos.xlsx` otherwise (the language is `ui_language`, else `content_language`) | File to write. |
 
-Prints `wrote <path> (N courses, M units)`. `coursekit publish` writes the same catalog in the mirror folder.
+Prints `wrote <path> (N courses, M units)`; it always writes (the automatic refresh after other commands writes only when the data changed). `coursekit publish` writes the same catalog in the mirror folder, and says `unchanged` when it has nothing new to write.
 
 ```
 coursekit catalog --output build/catalog.xlsx

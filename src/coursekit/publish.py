@@ -203,8 +203,10 @@ def publish(project: Project, code: str | None = None, only_if_configured: bool 
             lines.append(t("publish", "published", name=course_dir.name, copied=copied, removed=removed, unchanged=unchanged))
     output = root / catalog.file_name(project)
     try:
-        n_courses, n_units = catalog.build(project, output, folder_link(provider, url))
+        n_courses, n_units, written = catalog.build(project, output, folder_link(provider, url))
     except PermissionError as exc:
         raise PublishError(t("publish", "cannot_replace", output=output)) from exc
-    lines.append(t("publish", "wrote_catalog", output=output, courses=n_courses, units=n_units))
+    if not only_if_configured:  # asked for: say what happened; after another command, only what changed is worth a line
+        lines.append(t("publish", "wrote_catalog" if written else "catalog_unchanged", output=output, courses=n_courses,
+                       units=n_units))
     return lines

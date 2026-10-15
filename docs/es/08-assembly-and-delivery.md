@@ -556,10 +556,10 @@ coursekit publish PWD        # un curso
 
 Rara vez ejecutas `coursekit publish` tú. Cuando el proyecto tiene carpeta espejo, estos comandos publican el curso que han cambiado en cuanto terminan: `coursekit new`, `sync` (sin `--check`), `verify` (sin `--no-update`), `reviewed`, `approve`, `assemble applied`, `assemble link`, `assemble build`, `media set`, `delivery add`, `hold`, `resume`, `client` y `handoff` (tras cada paso). Por eso los enlaces de preview y review, el estado y los paquetes llegan al espejo y al catálogo sin que nadie lo pida.
 
-- El catálogo del proyecto (`courses/catalogo-cursos.xlsx`) se actualiza siempre, en silencio.
+- El catálogo del proyecto (`courses/catalogo-cursos.xlsx`) se actualiza en silencio y solo se escribe cuando sus datos cambiaron desde la última vez (las filas de cada curso se guardan en `.cache/catalog/`, así que una actualización lee solo el curso que cambió, tenga el proyecto los cursos que tenga).
 - Sin espejo (`mirror.provider: none`, o sin `MIRROR_DIR`) no ocurre nada más y no se imprime nada.
 - Si el espejo no se puede actualizar (la carpeta no existe, el Excel está abierto), el comando imprime un aviso por la salida de error y conserva su propio código de salida: su trabajo está hecho y `coursekit publish` lo reintenta.
-- La única publicación que ejecuta un agente es la posterior a exportar el diseño instruccional: descargar el Excel no es un comando de `coursekit` que pueda hacerlo.
+- En una sesión de un agente sin interfaz (el handoff, `--headless`) los comandos que ejecuta el agente no publican (`COURSEKIT_MIRROR=deferred`): quien lanzó la sesión publica una vez al terminar, y el handoff después de cada paso. En una sesión que abres tú todo funciona como arriba.
 
 Qué hace `publish`:
 

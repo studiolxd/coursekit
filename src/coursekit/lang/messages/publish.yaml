@@ -27,3 +27,4 @@ cannot_replace:
   es: "no se puede reemplazar {output} (¿está abierto en Excel?)"
   en: "cannot replace {output} (is it open in Excel?)"
 wrote_catalog: {es: "escrito {output} ({courses} cursos, {units} unidades)", en: "wrote {output} ({courses} courses, {units} units)"}
+catalog_unchanged: {es: "{output} sin cambios ({courses} cursos, {units} unidades)", en: "{output} unchanged ({courses} courses, {units} units)"}

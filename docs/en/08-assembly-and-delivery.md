@@ -554,10 +554,10 @@ coursekit publish PWD        # one course
 
 You rarely run `coursekit publish` yourself. When the project has a mirror folder, these commands publish the course they changed as soon as they finish: `coursekit new`, `sync` (without `--check`), `verify` (without `--no-update`), `reviewed`, `approve`, `assemble applied`, `assemble link`, `assemble build`, `media set`, `delivery add`, `hold`, `resume`, `client` and `handoff` (after each step). That is why the preview and review links, the status and the packages reach the mirror and the catalog without anyone asking.
 
-- The catalog of the project (`courses/course-catalog.xlsx`) is always refreshed, silently.
+- The catalog of the project (`courses/course-catalog.xlsx`) is refreshed, silently, and only written when its data changed since the last time (the rows of each course are cached in `.cache/catalog/`, so a refresh reads only the course that changed, however many courses the project has).
 - Without a mirror (`mirror.provider: none`, or no `MIRROR_DIR`) nothing else happens and nothing is printed.
 - If the mirror cannot be updated (the folder does not exist, the Excel is open), the command prints a warning on the error output and keeps its own exit code: its work is done and `coursekit publish` tries again.
-- The only publication an agent runs is the one after exporting the instructional design: downloading the Excel is not a `coursekit` command that could do it.
+- In a session of an agent without an interface (the handoff, `--headless`) the commands the agent runs do not publish (`COURSEKIT_MIRROR=deferred`): whoever started the session publishes once when it ends, and the handoff after each step. In a session you open yourself everything works as above.
 
 What `publish` does:
 
