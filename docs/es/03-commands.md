@@ -775,7 +775,7 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
                 [--alt ALT] [--transcript TRANSCRIPT] [--subtitles-path SUBTITLES_PATH]
                 [--made-with MADE_WITH] [--download DOWNLOAD] [--download-title DOWNLOAD_TITLE]
                 [--download-asset-path DOWNLOAD_ASSET_PATH] [--depicts {interface,concept}] [--force]
-                [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all] [--size SIZE]
+                [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all] [--clean] [--size SIZE]
                 {extract,plan,providers,set,upload,redo,embed,fit,render,narrate,optimize,adopt} [code] [id] [more ...]
 ```
 
@@ -801,6 +801,7 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
 | `--method METHOD` | por defecto `PUT` | `upload`: método HTTP. |
 | `--size SIZE` | `ANCHOxALTO` | `fit` (obligatorio) y `render`: el tamaño, p. ej. `1920x1080`. |
 | `--all` | indicador | Solo en `redo`: rehace todos los recursos que usan el tema, no solo los hechos con otros tokens. |
+| `--clean` | indicador | Solo en `redo`: los recursos olvidan además su fichero, texto alternativo, transcripción, subtítulos y la herramienta que los hizo (los ficheros se quedan en disco), para lo que se hace de nuevo desde cero, como un recurso que mostraba una interfaz inventada. |
 | `--force` | indicador | Solo en `set`: marca como `produced` o `uploaded` un recurso que usa los tokens del tema aunque los tokens falten o estén escritos a mano (ver más abajo). |
 
 Acciones:

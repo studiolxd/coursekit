@@ -508,10 +508,15 @@ def adopt(course: dict, asset_id: str, source: str, alt: str | None = None) -> s
                      made_with="imported", force=True)
 
 
-def redo(course: dict, ids: list[str] | None = None, everything: bool = False) -> list[str]:
+STALE = ("file", "alt", "transcript", "subtitles_path", "made_with")
+
+
+def redo(course: dict, ids: list[str] | None = None, everything: bool = False, clean: bool = False) -> list[str]:
     """Marks assets to be produced again: the ones named, else those that use the theme and were made with other tokens than the
     current ones (every one that uses the theme with `everything`). They go back to `scripted`, forgetting the fingerprint and
-    the uploaded path; their script and file stay for the agent to start from."""
+    the uploaded path; their script and file stay for the agent to start from. With `clean` they also forget the file, the alt
+    text, the transcript, the captions and the tool that made them (the files stay on disk): for what is made again from
+    nothing, as a resource that showed an interface that was invented."""
     cfg = config(course=course)
     ry, path, data = load_manifest(course["_dir"])
     found = thememod.status(course["_project"], course)
@@ -531,6 +536,11 @@ def redo(course: dict, ids: list[str] | None = None, everything: bool = False) -
             asset["status"] = "scripted"
             asset.pop("theme", None)
             asset["asset_path"] = None
+            if clean:
+                for key in STALE:
+                    asset[key] = None
+                for download in asset.get("downloads") or []:
+                    download["asset_path"] = None
             for download in asset.get("downloads") or []:
                 download["asset_path"] = None
             chosen.append(asset["id"])

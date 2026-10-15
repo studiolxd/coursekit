@@ -775,7 +775,7 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
                 [--alt ALT] [--transcript TRANSCRIPT] [--subtitles-path SUBTITLES_PATH]
                 [--made-with MADE_WITH] [--download DOWNLOAD] [--download-title DOWNLOAD_TITLE]
                 [--download-asset-path DOWNLOAD_ASSET_PATH] [--depicts {interface,concept}] [--force]
-                [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all] [--size SIZE]
+                [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all] [--clean] [--size SIZE]
                 {extract,plan,providers,set,upload,redo,embed,fit,render,narrate,optimize,adopt} [code] [id] [more ...]
 ```
 
@@ -801,6 +801,7 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
 | `--method METHOD` | default `PUT` | `upload`: HTTP method. |
 | `--size SIZE` | `WIDTHxHEIGHT` | `fit` (required) and `render`: the size, e.g. `1920x1080`. |
 | `--all` | flag | `redo` only: redo every asset that uses the theme, not only those made with other tokens. |
+| `--clean` | flag | `redo` only: the assets also forget their file, alt text, transcript, captions and the tool that made them (the files stay on disk), for what is made again from nothing, such as a resource that showed an invented interface. |
 | `--force` | flag | `set` only: mark an asset that uses the theme tokens as `produced` or `uploaded` even though the tokens are missing or were written by hand (see below). |
 
 Actions:

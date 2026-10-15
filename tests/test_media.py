@@ -294,3 +294,18 @@ def test_a_resource_waiting_for_a_recording_does_not_hold_the_handoff(course, ca
     assert [a["id"] for a in handoff.awaiting_recordings(loaded)] == ["U1-S2-M1"]
     assert main(["media", "set", "PWD", "U1-S2-M1", "--recipe", "agent-svg"]) == 0  # a generated recipe: the media agent's again
     assert [a["id"] for a in handoff._pending_media(coursemod.load(find_project(), "PWD"))] == ["U1-S2-M1"]
+
+
+def test_redo_clean_forgets_what_the_discarded_version_left(course, capsys):  # noqa: F811
+    prepare_asset(course, capsys)
+    assert main(["media", "set", "PWD", "U1-S2-M1", "--status", "uploaded", "--recipe", "agent-svg", "--depicts", "concept",
+                 "--file", "media/files/a.svg", "--alt", "Parts", "--transcript", "T", "--made-with", "tool",
+                 "--asset-path", "p/a.svg"]) == 0
+    assert main(["media", "redo", "PWD", "U1-S2-M1"]) == 0  # as before: the file and the rest stay for the agent to start from
+    kept = manifest(course)[0]
+    assert kept["status"] == "scripted" and kept["file"] == "media/files/a.svg" and kept["asset_path"] is None
+    assert main(["media", "redo", "PWD", "U1-S2-M1", "--clean"]) == 0
+    clean = manifest(course)[0]
+    assert clean["status"] == "scripted"
+    assert all(clean[k] is None for k in ("file", "alt", "transcript", "subtitles_path", "made_with", "asset_path"))
+    assert clean["depicts"] == "concept"  # what it shows does not change
