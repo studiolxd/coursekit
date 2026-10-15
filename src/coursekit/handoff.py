@@ -253,7 +253,10 @@ def _write(ctx: Context, course: dict) -> None:
 
 def _update_unit(ctx: Context, n: int) -> None:
     """The optional currency check (`update.mode` of the rules) before the AI review, once per unit; a failure does not stop."""
-    mode = str((coursemod.rules(ctx.course()).get("update") or {}).get("mode") or "off")
+    try:
+        mode = coursemod.update_mode(coursemod.rules(ctx.course()))
+    except coursemod.RuleError as exc:
+        raise _stuck(ctx, "bad_rule", text=exc) from exc
     if mode not in ("propose", "apply") or (ctx.course()["_dir"] / "reviews" / f"unit-{n:02d}-currency.md").exists():
         return
     code, log, _ = _agent(ctx, "reviewer", "update-unit", f"{ctx.code} {n}" + (" --apply" if mode == "apply" else ""), f"u{n:02d}-update")

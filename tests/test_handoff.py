@@ -510,3 +510,24 @@ def test_unchecked_videos_stop_the_handoff_before_the_content_goes_into_creator(
     assert main(["handoff", "PWD"]) == 0  # carries on from where it stopped
     assert data(project)["status"] == "delivered"
     assert "videos proposed by the agent not yet checked" not in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(("written", "mode"), [(None, "off"), (False, "off"), ("no", "off"), ("Propose", "propose"), ("apply", "apply")])
+def test_update_mode_reads_what_the_yaml_gives(written, mode):
+    from coursekit import course as coursemod
+
+    assert coursemod.update_mode({} if written is None else {"update": {"mode": written}}) == mode
+
+
+def test_update_mode_default_is_off_not_false(project):
+    from coursekit import config
+    from coursekit.project import find_project
+
+    assert config.effective("rules", find_project()).value["update"]["mode"] == "off"  # quoted in the defaults: not a YAML boolean
+
+
+def test_a_wrong_update_mode_stops_the_handoff(project, monkeypatch, capsys):
+    set_update_mode(project, "sometimes")
+    Agents(project, monkeypatch)
+    assert main(["handoff", "Contraseñas seguras", "1", "--code", "PWD"]) == 1
+    assert "invalid rule" in capsys.readouterr().err

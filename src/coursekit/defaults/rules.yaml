@@ -93,7 +93,7 @@ brief:
 
 # The optional check of a unit for out-of-date content (`/update-unit`, a reviewer session that reads official sources).
 update:
-  mode: off                    # off | propose | apply
+  mode: "off"                  # "off" | propose | apply (quoted: an unquoted off is a boolean in YAML)
                                #   off      the step does not run by itself (`/update-unit CODE N` still works, and `--apply` writes)
                                #   propose  the handoff runs it before the AI review and writes reviews/unit-NN-currency.md only
                                #   apply    the handoff runs it and writes the plain-fact changes that have an official source

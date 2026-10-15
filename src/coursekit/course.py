@@ -30,6 +30,23 @@ class CourseNotFound(Exception):
     pass
 
 
+UPDATE_MODES = ("off", "propose", "apply")
+
+
+def update_mode(rules: dict) -> str:
+    """`rules › update › mode`, as one of `off`, `propose`, `apply`. An unquoted `off` or `no` in a YAML file is the boolean false:
+    it means off, as a missing value does."""
+    value = (rules.get("update") or {}).get("mode")
+    if value is None or value is False:
+        return "off"
+    mode = str(value).strip().lower()
+    if mode in ("no", "false"):
+        return "off"
+    if mode not in UPDATE_MODES:
+        raise RuleError(t("course", "bad_update_mode", value=value, valid=", ".join(UPDATE_MODES)))
+    return mode
+
+
 class RuleError(Exception):
     pass
 
