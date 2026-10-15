@@ -58,6 +58,9 @@ itself. The instructions that coursekit generates for course projects live in
   `docs/*/03-commands.md` mentions every command and every option of the CLI.
 - Skills, commands and agents are edited only in `src/coursekit/agentkit/`; every `{{token}}` must
   exist in `agents.context()` (a test fails otherwise).
+- The PyPI distribution is `slxd-coursekit` (the package and the command stay `coursekit`). The PyPI
+  name `coursekit` belongs to an unrelated project: check published versions at
+  `https://pypi.org/pypi/slxd-coursekit/json`.
 - Do not commit or push unless the maintainer asks. Never force-push without explicit permission.
 - No emojis anywhere (only `★ ✔ ✘ · — ‹ ›`).
 - Do not install software on the maintainer's machine; say what to run.
