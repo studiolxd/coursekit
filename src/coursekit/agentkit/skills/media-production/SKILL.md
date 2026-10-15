@@ -119,6 +119,8 @@ character) and the house style before producing. They must look **high quality a
 8. **Sizes and SVG, locally and without credits:** `coursekit media fit <CODE> <id> --size 1920x1080` brings a file to
    the size of its specs (scaled and cropped from the centre; never pay a provider to resize); `coursekit media render
    <CODE> <id>` draws an SVG as a PNG next to it, to look at it before marking it `produced` (and the PNG creator needs).
+   Before uploading to creator, run `coursekit media optimize <CODE>`: it scales down and recompresses images and re-encodes
+   MP4 videos in place (the html backend does it by itself when it builds the package).
 9. **Look at every image** before marking it `produced`: style, consistency with the sheet and with the other images of the
    same character, deformed hands or objects, text that slipped in, contrast with what goes on top. Redo what fails.
 

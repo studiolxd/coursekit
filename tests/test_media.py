@@ -204,3 +204,27 @@ def test_fit_and_render_work_locally(course, tmp_path, capsys):  # noqa: F811
     assert main(["media", "set", "PWD", asset, "--file", "media/files/d.svg"]) == 0
     assert main(["media", "render", "PWD", asset]) == 0
     assert Image.open(folder / "d.png").size == (200, 100)
+
+
+def test_optimize_scales_and_recompresses_images(course, capsys):  # noqa: F811
+    from PIL import Image
+
+    from coursekit import mediaopt
+
+    big = course / "media" / "files" / "big.png"
+    big.parent.mkdir(parents=True, exist_ok=True)
+    Image.effect_noise((3000, 1500), 80).convert("RGB").save(big)
+    before = big.stat().st_size
+    line = mediaopt.shrink(big, {"optimize": {"image": {"max_width": 1000, "quality": 80}}})
+    with Image.open(big) as im:
+        assert im.size == (1000, 500)
+    assert big.stat().st_size < before and line and big.name in line
+    assert mediaopt.shrink(course / "media" / "files" / "a.svg", {}) is None
+
+
+def test_optimize_command_skips_unproduced(course, capsys):  # noqa: F811
+    import_theme(course)
+    assert main(["media", "extract", "PWD"]) == 0
+    capsys.readouterr()
+    assert main(["media", "optimize", "PWD"]) == 0
+    assert "nothing to optimise" in capsys.readouterr().out

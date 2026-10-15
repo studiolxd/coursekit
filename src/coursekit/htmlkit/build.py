@@ -21,7 +21,8 @@ from pathlib import Path
 from coursekit import assemble as assemblemod
 from coursekit import course as coursemod
 from coursekit import delivery as deliverymod
-from coursekit import store
+from coursekit import media as mediamod
+from coursekit import mediaopt, store
 from coursekit import theme as thememod
 from coursekit.htmlkit import check, manifest, render
 from coursekit.i18n import t
@@ -73,20 +74,15 @@ def _copy(source: Path, target: Path) -> None:
         shutil.copy2(source, target)
 
 
-WEBP_FROM = 200_000  # bytes: a PNG or JPEG above this goes into the package as WebP (the source file is not touched)
-
-
-def _optimisable(source: Path) -> bool:
-    return source.suffix.lower() in (".png", ".jpg", ".jpeg") and source.stat().st_size > WEBP_FROM
-
-
-def _to_webp(source: Path, target: Path) -> None:
-    """A lighter copy for the package: WebP keeps the transparency of the portraits and weighs a fraction of the PNG."""
-    from PIL import Image
-
-    target.parent.mkdir(parents=True, exist_ok=True)
-    with Image.open(source) as im:
-        im.save(target, "WEBP", quality=82, method=6)
+def _optimisable(source: Path, cfg: dict) -> str | None:
+    """`image` or `video` when the copy for the package is made lighter: by its kind and above the weight the configuration sets."""
+    image_cfg, video_cfg = mediaopt.settings(cfg)
+    size = source.stat().st_size
+    if source.suffix.lower() in (".png", ".jpg", ".jpeg") and size > int(image_cfg.get("webp_from_kb", 200)) * 1000:
+        return "image"
+    if mediaopt.is_video(source) and size > float(video_cfg.get("from_mb", 8)) * 1_000_000 and shutil.which("ffmpeg"):
+        return "video"
+    return None
 
 
 def _prune_media(out_dir: Path, document: str) -> None:
@@ -109,6 +105,7 @@ def prepare_assets(course: dict, out_dir: Path) -> tuple[dict[str, dict], list[s
     """Copy the produced media into the package; the entries come back as the plan reads them (`asset_path` inside the package)."""
     warnings: list[str] = []
     prepared: dict[str, dict] = {}
+    cfg = mediamod.config(course=course)
     for asset_id, asset in assemblemod.manifest_assets(course).items():
         entry = dict(asset)
         if asset.get("status") in ("produced", "uploaded"):
@@ -119,9 +116,12 @@ def prepare_assets(course: dict, out_dir: Path) -> tuple[dict[str, dict], list[s
                 if source.is_file() and source.name == "index.html":
                     source = source.parent  # a package of a simulation or a demo: its folder
                 name = asset_id if source.is_dir() else f"{asset_id}{source.suffix}"
-                if source.is_file() and _optimisable(source):
+                kind = _optimisable(source, cfg) if source.is_file() else None
+                if kind == "image":
                     name = f"{asset_id}.webp"
-                    _to_webp(source, out_dir / "media" / name)
+                    mediaopt.image_to_webp(source, out_dir / "media" / name, mediaopt.settings(cfg)[0])
+                elif kind == "video":
+                    mediaopt.video_to_mp4(source, out_dir / "media" / name, mediaopt.settings(cfg)[1])
                 else:
                     _copy(source, out_dir / "media" / name)
                 entry["status"], entry["asset_path"] = "uploaded", f"media/{name}"

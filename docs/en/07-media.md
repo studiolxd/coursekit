@@ -133,6 +133,25 @@ coursekit assemble build PWD --unit 1
 
 An asset that is `produced` but whose file does not exist is a warning in the output of `build` (`the asset U1-S2-M2 is produced but its file does not exist (coursekit media set … --file): the placeholder stays`), and the placeholder stays in the page as a visible note with its description, like an asset that is not produced yet. The media of the theme (infographics, diagrams, simulations, videos) use the same tokens as the package: [Theme tokens](#theme-tokens).
 
+## Lighter media
+
+Heavy images and videos slow the course down in the LMS, so coursekit makes them lighter locally, without spending credits. The limits are in `media.yaml › optimize` (a project overrides them in `config/media.yaml`, a course in `course.yaml › media › optimize`):
+
+| Key | Default | Meaning |
+|---|---|---|
+| `image.max_width` | `1920` | Wider images are scaled down keeping their proportions (`0` never scales). |
+| `image.quality` | `82` | JPEG and WebP quality. |
+| `image.webp_from_kb` | `200` | html backend: a PNG or JPEG above this weight goes into the package as WebP. |
+| `video.max_height` | `1080` | Taller videos are scaled down (`0` never scales). |
+| `video.crf` | `26` | H.264 quality: lower is sharper and heavier. |
+| `video.preset` | `medium` | ffmpeg speed: slower is lighter at the same quality. |
+| `video.audio_kbps` | `128` | AAC bitrate. |
+| `video.from_mb` | `8` | html backend: an MP4 above this weight is re-encoded for the package (needs `ffmpeg`; without it the file is copied). |
+
+- **Creator backend:** run `coursekit media optimize CODE [ID…]` before uploading. It works in place on the file of each `produced` asset and keeps the result only if it weighs less. Creator does not optimise what it receives.
+- **html backend:** `coursekit assemble build` optimises the copy it puts in the package and leaves the source file alone; there is nothing to run.
+- SVG, GIF, audio and packages are never touched. Only `.mp4` videos are re-encoded (what Remotion and VHS write), so the name in the manifest stays valid.
+
 ## Upload to creator
 
 With the creator backend the assets are uploaded to the content of their unit, which the assembly creates, and the course is assembled again so that they replace their placeholders (the handoff does it by itself: [Handoff mode](02-workflow.md#handoff-mode)). The agent asks creator for an upload address (`request_asset_upload`, or `request_embed_upload` for packages) and sends the file with `coursekit media upload CODE --file F --url "<uploadUrl>" --content-type MIME`; then it records the path with `coursekit media set CODE ID --status uploaded --asset-path <path>`.

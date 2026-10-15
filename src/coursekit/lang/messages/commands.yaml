@@ -306,6 +306,7 @@ help_media_method: {es: "upload: método HTTP (por defecto PUT)", en: "upload: H
 media_redo:
   es: "para producir de nuevo: {assets} (ejecuta /produce-media o `coursekit handoff`)"
   en: "to produce again: {assets} (run /produce-media or `coursekit handoff`)"
+media_optimize_none: {es: "nada que aligerar: ningún recurso producido tiene una imagen o un MP4", en: "nothing to optimise: no produced asset has an image or an MP4"}
 media_redo_none:
   es: "ningún recurso se hizo con otros tokens del tema; con --all se rehacen todos los que usan el tema"
   en: "no asset was made with other theme tokens; with --all every one that uses the theme is redone"

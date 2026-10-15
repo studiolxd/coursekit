@@ -439,6 +439,31 @@ def image_tool(course: dict, asset_id: str, action: str, size: str | None = None
     return mediatools.render_svg(path, path.with_suffix(".png"), mediatools.parse_size(size) if size else None)
 
 
+def optimize(course: dict, ids: list[str] | None = None) -> list[str]:
+    """Makes the files of the produced assets lighter, in place (images scaled and recompressed, MP4 re-encoded): the ones named,
+    else all. What cannot be made lighter (SVG, GIF, audio, packages) stays as it is. One line per file."""
+    from coursekit import mediaopt
+
+    cfg = config(course=course)
+    _, _, data = load_manifest(course["_dir"])
+    known = {a["id"] for a in data["assets"]}
+    for asset_id in ids or []:
+        if asset_id not in known:
+            raise MediaError(t("media", "asset_not_found", asset_id=asset_id))
+    lines = []
+    for asset in data["assets"]:
+        if (ids and asset["id"] not in ids) or asset.get("status") not in ("produced", "uploaded") or not asset.get("file"):
+            continue
+        path = next((base / str(asset["file"]) for base in (course["_dir"], course["_dir"] / "media")
+                     if (base / str(asset["file"])).is_file()), None)
+        if path is None:
+            continue
+        line = mediaopt.shrink(path, cfg)
+        if line:
+            lines.append(f"{asset['id']}: {line}")
+    return lines
+
+
 def redo(course: dict, ids: list[str] | None = None, everything: bool = False) -> list[str]:
     """Marks assets to be produced again: the ones named, else those that use the theme and were made with other tokens than the
     current ones (every one that uses the theme with `everything`). They go back to `scripted`, forgetting the fingerprint and

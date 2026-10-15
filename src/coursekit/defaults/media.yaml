@@ -64,6 +64,21 @@ types:
   simulation:
     - {id: agent-html, needs: none, how: "Self-contained HTML/JS with the theme tokens.css → request_embed_upload (EMBED)"}
 
+# Lighter media, locally and without credits. `coursekit media optimize CODE [ID…]` applies it in place to the file of the
+# produced assets (run it before uploading to creator); the html backend applies it to the copy it puts in the package (the
+# source file is not touched), to the images and videos above the threshold.
+optimize:
+  image:
+    max_width: 1920       # px: a wider image is scaled down keeping its proportions (0 = never scale)
+    quality: 82           # JPEG and WebP quality, 1-100
+    webp_from_kb: 200     # html backend: a PNG or JPEG above this weight goes into the package as WebP
+  video:
+    max_height: 1080      # px: a taller video is scaled down (0 = never scale)
+    crf: 26               # H.264 quality: lower is sharper and heavier (18 near lossless, 28 light)
+    preset: medium        # ffmpeg speed: ultrafast … veryslow (slower is lighter at the same quality)
+    audio_kbps: 128       # AAC audio bitrate
+    from_mb: 8            # html backend: an MP4 above this weight is re-encoded for the package (needs ffmpeg)
+
 # Types whose production uses the tokens of the theme (theme/tokens.json, or the course's own): `coursekit media plan`
 # warns when the tokens are missing or were not derived from the theme of the platform (`/define-theme`), and
 # `coursekit media set --status produced` refuses (unless --force) and remembers which tokens the asset was made with.

@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from coursekit import config, directives, theme
+from coursekit import config, directives, mediaopt, theme
 from coursekit.cli import main
 from coursekit.htmlkit import build as htmlbuild
 from coursekit.htmlkit import check, manifest, render
@@ -428,10 +428,12 @@ def test_the_package_keeps_only_its_media_and_lighter_images(tmp_path):
     image.putalpha(Image.new("L", (900, 900), 0).point(lambda _: 0).resize((900, 900)))
     image.paste((200, 50, 50, 255), (300, 200, 600, 900))  # an opaque figure on a transparent background, like a portrait
     image.save(portrait)
-    assert htmlbuild._optimisable(portrait)
-    htmlbuild._to_webp(portrait, tmp_path / "portrait.webp")
+    cfg = {"optimize": {"image": {"max_width": 600, "quality": 82, "webp_from_kb": 200}}}
+    assert htmlbuild._optimisable(portrait, cfg) == "image"
+    assert htmlbuild._optimisable(portrait, {"optimize": {"image": {"webp_from_kb": 100_000}}}) is None
+    mediaopt.image_to_webp(portrait, tmp_path / "portrait.webp", cfg["optimize"]["image"])
     copy = Image.open(tmp_path / "portrait.webp")
-    assert copy.mode == "RGBA" and copy.size == (900, 900)
+    assert copy.mode == "RGBA" and copy.size == (600, 600)  # scaled down to max_width, transparency kept
 
 
 def test_the_scripts_of_the_player_are_valid_javascript():

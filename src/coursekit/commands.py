@@ -671,6 +671,16 @@ def cmd_media(args: argparse.Namespace) -> int:
             return 2
         print(mediamod.image_tool(course, args.id, args.action, args.size))
         return 0
+    if args.action == "optimize":
+        statesmod.ensure_active(course)
+        try:
+            lines = mediamod.optimize(course, [args.id, *args.more] if args.id else None)
+        except (mediamod.MediaError, mediatools.ToolError) as exc:
+            print(t("commands", "error_line", text=exc), file=sys.stderr)
+            return 1
+        print("\n".join(lines) if lines else t("commands", "media_optimize_none"))
+        _mirror(course["_project"], course["code"])
+        return 0
     if args.action == "redo":
         statesmod.ensure_active(course)
         chosen = mediamod.redo(course, [args.id, *args.more] if args.id else None, args.all)
@@ -1004,7 +1014,8 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.set_defaults(func=cmd_directives)
 
     p = sub.add_parser("media", help=t("commands", "help_media"))
-    p.add_argument("action", choices=("extract", "plan", "providers", "set", "upload", "redo", "embed", "fit", "render", "narrate"))
+    p.add_argument("action", choices=("extract", "plan", "providers", "set", "upload", "redo", "embed", "fit", "render", "narrate",
+                                      "optimize"))
     p.add_argument("code", nargs="?")
     p.add_argument("id", nargs="?")
     p.add_argument("more", nargs="*", help=t("commands", "help_media_more"))

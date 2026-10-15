@@ -133,6 +133,25 @@ coursekit assemble build PWD --unit 1
 
 Un recurso `produced` cuyo fichero no existe es un aviso en la salida de `build` (`el recurso U1-S2-M2 está producido pero su fichero no existe (coursekit media set … --file): se deja el marcador`), y el recurso reservado se queda en la página como una nota visible con su descripción, igual que un recurso que aún no está producido. Los recursos que usan el tema (infografías, esquemas, simulaciones, vídeos) usan los mismos tokens que el paquete: [Tokens del tema](#tokens-del-tema).
 
+## Medios más ligeros
+
+Las imágenes y los vídeos pesados ralentizan el curso en el LMS, así que coursekit los aligera en local, sin gastar créditos. Los límites están en `media.yaml › optimize` (un proyecto los cambia en `config/media.yaml`, un curso en `course.yaml › media › optimize`):
+
+| Clave | Por defecto | Significado |
+|---|---|---|
+| `image.max_width` | `1920` | Las imágenes más anchas se reducen conservando la proporción (`0` no reduce nunca). |
+| `image.quality` | `82` | Calidad de JPEG y WebP. |
+| `image.webp_from_kb` | `200` | Backend html: un PNG o JPEG que pese más va al paquete como WebP. |
+| `video.max_height` | `1080` | Los vídeos más altos se reducen (`0` no reduce nunca). |
+| `video.crf` | `26` | Calidad H.264: menor es más nítido y más pesado. |
+| `video.preset` | `medium` | Velocidad de ffmpeg: más lento pesa menos con la misma calidad. |
+| `video.audio_kbps` | `128` | Tasa de audio AAC. |
+| `video.from_mb` | `8` | Backend html: un MP4 que pese más se recodifica para el paquete (necesita `ffmpeg`; sin él se copia tal cual). |
+
+- **Backend creator:** ejecuta `coursekit media optimize CODE [ID…]` antes de subir. Actúa en su sitio sobre el fichero de cada recurso `produced` y conserva el resultado solo si pesa menos. Creator no optimiza lo que recibe.
+- **Backend html:** `coursekit assemble build` optimiza la copia que pone en el paquete y no toca el fichero original; no hay nada que ejecutar.
+- Los SVG, GIF, audios y paquetes no se tocan nunca. Solo se recodifican los vídeos `.mp4` (lo que escriben Remotion y VHS), así el nombre del manifiesto sigue siendo válido.
+
 ## Subida a creator
 
 Con el backend creator los recursos se suben al contenido de su unidad, que crea el montaje, y el curso se monta otra vez para que sustituyan a sus recuadros (el handoff lo hace solo: [Modo handoff](02-workflow.md#modo-handoff)). El agente pide a creator una dirección de subida (`request_asset_upload`, o `request_embed_upload` para los paquetes) y envía el fichero con `coursekit media upload CODE --file F --url "<uploadUrl>" --content-type MIME`; después registra la ruta con `coursekit media set CODE ID --status uploaded --asset-path <ruta>`.
