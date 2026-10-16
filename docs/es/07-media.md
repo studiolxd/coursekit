@@ -455,10 +455,32 @@ tools/remotion/
 └── src/
     ├── index.ts        registra la raíz
     ├── Root.tsx        composición de ejemplo "title-card" (1920×1080, 30 fps, 120 fotogramas)
+    ├── Screencast.tsx  una grabación real de la pantalla con zooms que siguen a la locución
     └── theme.ts        importa theme/tokens.json: color, font
 ```
 
-`theme.ts` lee los tokens del proyecto; para un curso con tema propio, apunta la composición a `courses/<CODE>/theme/tokens.json`. El agente de multimedia añade una composición por cada vídeo en `src/videos/<id-del-recurso>.tsx` y la registra en `Root.tsx`. Desde `tools/remotion/`, `npm run studio` abre la vista previa y `npm run render -- <id-de-composición> <salida>` la renderiza. El proyecto conserva solo las fuentes: las dependencias están en el almacén de coursekit y las comparten todos los proyectos ([Remotion se instala una sola vez](#remotion-se-instala-una-sola-vez)). La opción `remotion` solo está disponible si `node` está instalado y existe `tools/remotion/node_modules`; un enlace que apunta a nada no cuenta (`coursekit setup --media` lo repara). Remotion es gratuito para equipos pequeños; las empresas más grandes necesitan licencia (remotion.dev/license).
+`theme.ts` lee los tokens del proyecto; para un curso con tema propio, apunta la composición a `courses/<CODE>/theme/tokens.json`. El agente de multimedia añade una composición por cada vídeo en `src/videos/<id-del-recurso>.tsx` y la registra en `Root.tsx`. Desde `tools/remotion/`, `npm run studio` abre la vista previa y `npm run render -- <id-de-composición> <salida>` la renderiza. El proyecto conserva solo las fuentes: las dependencias están en el almacén de coursekit y las comparten todos los proyectos ([Remotion se instala una sola vez](#remotion-se-instala-una-sola-vez)). La opción `remotion` solo está disponible si `node` está instalado y existe `tools/remotion/node_modules`; un enlace que apunta a nada no cuenta (`coursekit setup --media` lo repara). Remotion es gratuito para equipos pequeños; las empresas más grandes necesitan licencia (remotion.dev/license). `coursekit setup --media` añade también a un `tools/remotion/` que ya existe los ficheros que la plantilla ha ganado desde entonces (como `Screencast.tsx`), nunca sobre los que tiene el proyecto.
+
+### El componente Screencast
+
+`Screencast` es la composición de un tutorial sobre una grabación real (receta `screen-recording`): la grabación no se redibuja, y sus zooms se calculan a partir de datos, no van cocidos en el vídeo, así que un zoom se cambia cambiando un número y volviendo a renderizar. Usa los eventos de la grabación (`media/recordings/<id>.events.json`, que escribe `coursekit capture replay`) y las palabras de la locución (`<audio>.words.json`, que escriben `coursekit subtitles` o la voz de ElevenLabs). El zoom sigue a lo que nombra la locución, no a cada clic: un foco entra cuando se dicen sus palabras, se mantiene hasta el final de la frase (o `hold` segundos) y vuelve a la pantalla entera; dos focos cercanos en el tiempo pasan de uno a otro sin alejarse. Sin focos, los clics cercanos en el tiempo y en la pantalla se unen en un solo zoom sostenido. Escalar alrededor de un punto dentro del encuadre siempre lo cubre entero, así que nunca se ven los bordes.
+
+```tsx
+import { Screencast } from "../Screencast";
+import events from "../../../../courses/PWD/media/recordings/U1-S2-M1.events.json";
+import words from "../../../../courses/PWD/media/files/u1-s2-m1.words.json";
+
+<Screencast src={staticFile("U1-S2-M1.mp4")} events={events} words={words}
+  focus={[{ word: "longitud mínima", event: "la longitud mínima" }, { word: "guardar", event: "Guardar", hold: 1.5 }]} ring />
+```
+
+| Prop | Significado |
+|---|---|
+| `src` | La grabación. |
+| `events`, `words` | Los dos ficheros de arriba. |
+| `focus` | Los zooms: `word` (las palabras de la locución con las que entra, la primera vez que se dicen tras el foco anterior) o `at` (un segundo); dónde: `event` (la etiqueta o la nota de un evento) o `fx`/`fy` (fracciones de la pantalla); `scale` y `hold`. Un foco cuyas palabras no se dicen no hace zoom. |
+| `auto` | Zoom sobre los grupos de clics cuando no hay focos (por defecto `true`). |
+| `startFrom`, `scale`, `ring` | Segundo de la grabación desde el que empieza; cuánto se acerca el zoom (por defecto 1,8); un anillo en el punto de cada foco. |
 
 ## Herramientas necesarias por tipo
 

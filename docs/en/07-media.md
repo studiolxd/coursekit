@@ -455,10 +455,32 @@ tools/remotion/
 └── src/
     ├── index.ts        registers the root
     ├── Root.tsx        example composition "title-card" (1920×1080, 30 fps, 120 frames)
+    ├── Screencast.tsx  a real screen recording with zooms that follow the narration
     └── theme.ts        imports theme/tokens.json: color, font
 ```
 
-`theme.ts` reads the project tokens; for a course with its own theme, point the composition at `courses/<CODE>/theme/tokens.json`. The media agent adds one composition per video asset in `src/videos/<asset-id>.tsx` and registers it in `Root.tsx`. From `tools/remotion/`, `npm run studio` opens the preview and `npm run render -- <composition-id> <output>` renders it. The project keeps only the sources: the dependencies are in the coursekit store and shared by every project ([Remotion is installed once](#remotion-is-installed-once)). The `remotion` option is available only when `node` is installed and `tools/remotion/node_modules` exists; a link that points at nothing does not count (`coursekit setup --media` repairs it). Remotion is free for small teams; larger companies need a licence (remotion.dev/license).
+`theme.ts` reads the project tokens; for a course with its own theme, point the composition at `courses/<CODE>/theme/tokens.json`. The media agent adds one composition per video asset in `src/videos/<asset-id>.tsx` and registers it in `Root.tsx`. From `tools/remotion/`, `npm run studio` opens the preview and `npm run render -- <composition-id> <output>` renders it. The project keeps only the sources: the dependencies are in the coursekit store and shared by every project ([Remotion is installed once](#remotion-is-installed-once)). The `remotion` option is available only when `node` is installed and `tools/remotion/node_modules` exists; a link that points at nothing does not count (`coursekit setup --media` repairs it). Remotion is free for small teams; larger companies need a licence (remotion.dev/license). `coursekit setup --media` also adds to an existing `tools/remotion/` the files the template gained since (such as `Screencast.tsx`), never over the ones the project has.
+
+### The Screencast component
+
+`Screencast` is the composition of a tutorial over a real recording (recipe `screen-recording`): the recording is not redrawn, and its zooms are computed from data, not baked into the video, so a zoom is changed by changing a number and rendering again. It uses the events of the recording (`media/recordings/<id>.events.json`, written by `coursekit capture replay`) and the words of the narration (`<audio>.words.json`, written by `coursekit subtitles` or by the ElevenLabs voice). The zoom follows what the narration names, not every click: a focus enters when its words are said, holds until the end of the sentence (or `hold` seconds) and goes back to the whole screen; two focuses close in time move from one to the other without zooming out. Without focuses, the clicks close in time and space are joined into one sustained zoom. Scaling around a point inside the frame always covers the whole frame, so the edges never show.
+
+```tsx
+import { Screencast } from "../Screencast";
+import events from "../../../../courses/PWD/media/recordings/U1-S2-M1.events.json";
+import words from "../../../../courses/PWD/media/files/u1-s2-m1.words.json";
+
+<Screencast src={staticFile("U1-S2-M1.mp4")} events={events} words={words}
+  focus={[{ word: "minimum length", event: "the minimum length" }, { word: "save", event: "Save", hold: 1.5 }]} ring />
+```
+
+| Prop | Meaning |
+|---|---|
+| `src` | The recording. |
+| `events`, `words` | The two files above. |
+| `focus` | The zooms: `word` (the words of the narration it enters with, the first time they are said after the previous focus) or `at` (a second); where: `event` (the label or the note of an event) or `fx`/`fy` (fractions of the screen); `scale` and `hold`. A focus whose words are not said makes no zoom. |
+| `auto` | Zoom on the groups of clicks when there is no focus (default `true`). |
+| `startFrom`, `scale`, `ring` | Second of the recording it starts from; how close the zoom goes (default 1.8); a ring on the point of each focus. |
 
 ## Tools required per type
 

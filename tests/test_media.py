@@ -100,6 +100,10 @@ def test_tts_and_subtitles_with_fake_tools(course, monkeypatch, tmp_path):  # no
         calls.append(cmd)
         if "-f" in cmd:  # piper writes the wav
             open(cmd[cmd.index("-f") + 1], "wb").write(b"RIFF")
+        if "--align" in cmd:  # stable-ts writes its result as JSON
+            segments = [{"start": 0.0, "end": 0.6, "text": " Hola.", "words": [{"word": " Hola.", "start": 0.0, "end": 0.6}]},
+                        {"start": 0.8, "end": 1.5, "text": " Adiós.", "words": [{"word": " Adiós.", "start": 0.8, "end": 1.5}]}]
+            Path(cmd[cmd.index("-o") + 1]).write_text(json.dumps({"segments": segments}), encoding="utf-8")
 
         class Done:
             returncode = 0
@@ -110,14 +114,22 @@ def test_tts_and_subtitles_with_fake_tools(course, monkeypatch, tmp_path):  # no
     script = tmp_path / "s.txt"
     script.write_text("Hola.  Adiós.", encoding="utf-8")
     assert main(["tts", "--course", "PWD", "--engine", "piper", "--in", str(script), "--out", str(tmp_path / "a.wav")]) == 0
-    from pathlib import Path
-
     assert calls[0][:3] == ["/fake/piper", "-m", str(Path("/voices/v.onnx"))]
     assert (tmp_path / "a.wav").exists()
     (tmp_path / "a.mp3").write_bytes(b"ID3")
     assert main(["subtitles", "--course", "PWD", "--audio", str(tmp_path / "a.mp3"), "--text", str(script), "--out", "a.vtt"]) == 0
     assert calls[-1][:2] == ["/fake/stable-ts", str(tmp_path / "a.mp3")]
     assert calls[-1][calls[-1].index("--language") + 1] == "es"
+    vtt = (course.parent.parent / "a.vtt").read_text(encoding="utf-8")
+    assert vtt.startswith("WEBVTT") and "00:00:00.800 --> 00:00:01.500\nAdiós." in vtt
+    words = json.loads((course.parent.parent / "a.words.json").read_text(encoding="utf-8"))["words"]
+    assert words == [{"w": "Hola.", "start": 0.0, "end": 0.6}, {"w": "Adiós.", "start": 0.8, "end": 1.5}]
+
+
+def test_the_words_of_the_character_timings():
+    text = "Abre los ajustes"
+    words = mediatools.words_from_characters(list(text), [i * 0.1 for i in range(len(text))], [i * 0.1 + 0.1 for i in range(len(text))])
+    assert [w["w"] for w in words] == ["Abre", "los", "ajustes"] and words[1]["start"] == 0.5
 
 
 def test_vtt_from_characters():

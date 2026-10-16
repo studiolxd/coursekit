@@ -23,9 +23,11 @@ of the application that moved a button is still repeated; the position is the fa
 
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 import tempfile
+import time
 from pathlib import Path
 
 from coursekit import capture as capturemod
@@ -34,7 +36,62 @@ from coursekit import redact as redactmod
 from coursekit.i18n import t
 from coursekit.mcpserver import ToolError
 
-KINDS = ("click", "fill", "move", "drag", "scroll", "type", "key", "wait", "navigate", "shot", "record")
+KINDS = ("click", "fill", "point", "move", "drag", "scroll", "type", "key", "wait", "navigate", "shot", "record")
+
+
+class Timeline:
+    """When and where each click and each point happens in the video (seconds from its start; position as fractions of the
+    screen): what a zoom of the video follows, so its coordinates are never guessed."""
+
+    def __init__(self, viewport: tuple[int, int]):
+        self.viewport = viewport
+        self.events: list[dict] = []
+        self.offset = 0.0  # seconds of the stretches already recorded
+        self.started: float | None = None
+        self._part: list[dict] = []
+
+    def start(self) -> None:
+        self.started, self._part = time.time(), []
+
+    def stop(self, duration: float, first_frame: float | None = None) -> None:
+        """Closes a stretch of `duration` seconds; `first_frame`, when known, is when its first frame appeared."""
+        shift = (first_frame - self.started) if first_frame and self.started else 0.0
+        for event in self._part:
+            event["t"] = round(max(0.0, min(duration, event["t"] - shift)) + self.offset, 3)
+        self.events += self._part
+        self.offset += duration
+        self.started, self._part = None, []
+
+    def note(self, kind: str, x: float, y: float, label: str = "") -> None:
+        if self.started is None:
+            return  # not recording
+        w, h = self.viewport
+        event = {"t": time.time() - self.started, "kind": kind, "fx": round(x / w, 4), "fy": round(y / h, 4)}
+        if label:
+            event["label"] = label
+        self._part.append(event)
+
+    def write(self, path: Path, video: Path) -> None:
+        data = {"video": video.name, "width": self.viewport[0], "height": self.viewport[1], "duration": round(self.offset, 3),
+                "events": self.events}
+        path.write_text(json.dumps(data, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
+
+
+def events_path(video: Path) -> Path:
+    """`U1-S2-M1.mp4` → `U1-S2-M1.events.json`."""
+    return video.with_suffix(".events.json")
+
+
+def duration_of(video: Path) -> float | None:
+    probe = shutil.which("ffprobe")
+    if not probe:
+        return None
+    done = subprocess.run([probe, "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(video)],
+                          capture_output=True, text=True, check=False)
+    try:
+        return float(done.stdout.strip())
+    except ValueError:
+        return None
 
 
 class ReplayError(Exception):
@@ -101,10 +158,16 @@ def _join(parts: list[Path], target: Path) -> None:
         raise ReplayError(t("redact", "encode_failed", reason=redactmod._last_line(done.stderr)))
 
 
-def run_steps(session, steps: list, pace: dict, record) -> list[Path]:
+def _label(spec: dict) -> str:
+    target = _target(spec)
+    return str(spec.get("note") or target.get("name") or target.get("label") or "")
+
+
+def run_steps(session, steps: list, pace: dict, record, timeline: Timeline | None = None) -> list[Path]:
     """Does every step at the pace of a person. `record(on)` starts or stops a stretch of video; returns the shots saved."""
     pause, move_ms, delay = int(pace.get("pause_ms") or 0), int(pace.get("move_ms") or 0), int(pace.get("type_delay_ms") or 0)
     backend, shots = session.backend, []
+    timeline = timeline or Timeline(backend.viewport)
     for n, raw in enumerate(steps, 1):
         if not isinstance(raw, dict) or len(raw) != 1 or next(iter(raw)) not in KINDS:
             raise ReplayError(t("capture", "replay_bad_step", n=n, step=raw, kinds=", ".join(KINDS)))
@@ -114,12 +177,16 @@ def run_steps(session, steps: list, pace: dict, record) -> list[Path]:
             spec = step if isinstance(step, dict) else {"label": str(step)}
             x, y = _point(session, spec, n)
             backend.glide(x, y, move_ms)
+            timeline.note("click", x, y, _label(spec))
             backend.click(x, y, spec.get("button", "left"), int(spec.get("count", 1)))
             if kind == "fill":
                 if backend.focused_is_secret():
                     raise ToolError(t("capture", "secret_field"))
                 backend.key("ControlOrMeta+A")
                 backend.type_slowly(str(spec.get("value", "")), delay)
+        elif kind == "point":  # a place of the screen, marked without touching it, for a zoom of the video
+            spec = step if isinstance(step, dict) else {"label": str(step)}
+            timeline.note("point", *_point(session, spec, n), _label(spec))
         elif kind == "move":
             backend.glide(*_point(session, step, n), move_ms)
         elif kind == "drag":
@@ -145,7 +212,7 @@ def run_steps(session, steps: list, pace: dict, record) -> list[Path]:
             session.steps.pop()
         elif kind == "record":
             record(str(step) == "start")
-        if kind not in ("wait", "record"):
+        if kind not in ("wait", "record", "point"):
             backend.wait(pause)
     return shots
 
@@ -164,19 +231,25 @@ def replay(project, code: str, asset_id: str, backend_factory=None) -> dict:
     recordings = course["_dir"] / "media" / "recordings"
     parts: list[Path] = []
     recording = {"on": False}
+    timeline = Timeline(session.backend.viewport)
     fps = int(pace.get("fps") or 30)
 
     def record(on: bool) -> None:
         if on and not recording["on"]:
             session.backend.start_recording()
+            timeline.start()
         elif not on and recording["on"]:
             part = recordings / f"{asset_id}.part{len(parts)}.mp4"
+            stopped = time.time()
             recorded = session.backend.stop_recording()
+            first = None
             if isinstance(recorded, Path):  # the desktop records a video by itself
                 part.parent.mkdir(parents=True, exist_ok=True)
                 shutil.move(str(recorded), part)
             else:
+                first = next((at for at, data in recorded if data), None)
                 encode(recorded, part, fps)
+            timeline.stop(duration_of(part) or max(0.0, stopped - (timeline.started or stopped)), first)
             parts.append(part)
         recording["on"] = on
 
@@ -184,7 +257,7 @@ def replay(project, code: str, asset_id: str, backend_factory=None) -> dict:
         if not steps:
             raise ReplayError(t("capture", "replay_no_steps", path=sessionmod.brief_file(course, asset_id).name))
         try:
-            shots = run_steps(session, steps, pace, record)
+            shots = run_steps(session, steps, pace, record, timeline)
             if recording["on"]:
                 record(False)  # a record: start with no stop records until the end
         except ToolError as exc:
@@ -194,6 +267,7 @@ def replay(project, code: str, asset_id: str, backend_factory=None) -> dict:
             video = recordings / f"{asset_id}.mp4"
             _join(parts, video)
             parts.clear()
+            timeline.write(events_path(video), video)
             if session.redactor is not None:
                 covered = video.with_suffix(".covered.mp4")
                 try:
@@ -230,7 +304,8 @@ def replay(project, code: str, asset_id: str, backend_factory=None) -> dict:
                         "findings": findings, "warnings": session.warnings,
                         "file": main.relative_to(course["_dir"]).as_posix() if main else None, "masks": previous.get("masks")}
     capturemod.save_manifest(ry, path, data)
-    return {"video": video, "shots": shots, "findings": findings, "warnings": session.warnings, "review": review}
+    return {"video": video, "shots": shots, "findings": findings, "warnings": session.warnings, "review": review,
+            "events": events_path(video) if video else None}
 
 
 def _sample_frames(video: Path, folder: Path) -> None:

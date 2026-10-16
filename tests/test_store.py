@@ -185,6 +185,18 @@ def test_two_projects_share_one_install_of_remotion(project, tmp_path, monkeypat
     assert any("shared from" in line for line in said)
 
 
+def test_a_workspace_gets_what_the_template_gained_but_keeps_what_it_has(project, monkeypatch):
+    Fakes(monkeypatch)
+    target = project.root / "tools" / "remotion"
+    (target / "src").mkdir(parents=True)
+    (target / "src" / "Root.tsx").write_text("// mine\n", encoding="utf-8")
+    said = []
+    setup.remotion(project, said.append)
+    assert (target / "src" / "Root.tsx").read_text(encoding="utf-8") == "// mine\n"
+    assert (target / "src" / "Screencast.tsx").exists() and (target / "package.json").exists()
+    assert any("added tools/remotion/src/Screencast.tsx" in line for line in said)
+
+
 def test_without_a_link_the_project_installs_its_own(project, monkeypatch):
     fakes = Fakes(monkeypatch)
     monkeypatch.setattr(store, "_make_link", lambda link, target: False)

@@ -111,6 +111,34 @@ def vtt_from_characters(chars: list[str], starts: list[float], ends: list[float]
     return "\n".join(lines)
 
 
+def words_path(path: Path) -> Path:
+    """Where the timings of the words of a voice-over or its captions go: `u1.mp3`/`u1.vtt` → `u1.words.json`."""
+    return path.with_suffix(".words.json")
+
+
+def write_words(words: list[dict], out: Path) -> None:
+    """The words said, each with when it starts and ends (seconds): what anchors a zoom or a layer to a word."""
+    clean = [{"w": str(w["w"]).strip(), "start": round(float(w["start"]), 3), "end": round(float(w["end"]), 3)}
+             for w in words if str(w["w"]).strip()]
+    out.write_text(json.dumps({"words": clean}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
+
+
+def words_from_characters(chars: list[str], starts: list[float], ends: list[float]) -> list[dict]:
+    words, current, start, end = [], "", None, None
+    for ch, st, en in zip(chars, starts, ends, strict=False):
+        if ch.isspace():
+            if current:
+                words.append({"w": current, "start": start, "end": end})
+            current, start = "", None
+            continue
+        if start is None:
+            start = st
+        current, end = current + ch, en
+    if current:
+        words.append({"w": current, "start": start, "end": end})
+    return words
+
+
 def tts_piper(text: str, out: Path, voice: str | None, speaker: str | None = None, language: str = "es") -> None:
     model = voice or os.environ.get("PIPER_VOICE", "")
     if not model:
@@ -143,6 +171,8 @@ def tts_elevenlabs(text: str, out: Path, voice: str | None, speaker: str | None 
     if al:
         vtt = vtt_from_characters(al["characters"], al["character_start_times_seconds"], al["character_end_times_seconds"])
         out.with_suffix(".vtt").write_text(vtt, encoding="utf-8")
+        write_words(words_from_characters(al["characters"], al["character_start_times_seconds"],
+                                          al["character_end_times_seconds"]), words_path(out))
 
 
 
@@ -216,8 +246,25 @@ def subtitles(audio: Path, text_path: Path, out: Path, model_name: str = "base",
     exe = shutil.which("stable-ts")
     if not exe:
         raise ToolError(t("mediatools", "stable_ts_missing"))
-    run([exe, str(audio), "--align", str(text_path), "--language", language, "--model", model_name,
-         "--regroup", "sp=./?/!_sl=84", "--word_level", "false", "-o", str(out)])
+    with tempfile.TemporaryDirectory() as tmp:
+        result = Path(tmp) / "aligned.json"  # one output per audio: the JSON, which has both the sentences and the words
+        run([exe, str(audio), "--align", str(text_path), "--language", language, "--model", model_name,
+             "--regroup", "sp=./?/!_sl=84", "-o", str(result)])
+        try:
+            data = json.loads(result.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            raise ToolError(t("mediatools", "program_failed", program="stable-ts", code="?")) from None
+    segments = [s for s in data.get("segments") or [] if str(s.get("text") or "").strip()]
+    lines = ["WEBVTT", ""]
+    for i, seg in enumerate(segments, 1):
+        start = float(seg["start"])
+        end = max(float(seg["end"]), start + 0.5)  # the alignment can give a stretch no time: it must still show
+        if i < len(segments):
+            end = min(end, max(float(segments[i]["start"]), start + 0.1))
+        lines += [str(i), f"{vtt_time(start)} --> {vtt_time(end)}", str(seg["text"]).strip(), ""]
+    out.write_text("\n".join(lines), encoding="utf-8", newline="\n")
+    write_words([{"w": w.get("word", ""), "start": w["start"], "end": w["end"]} for seg in segments
+                 for w in seg.get("words") or []], words_path(out))
 
 
 ENGINES = {"elevenlabs": tts_elevenlabs, "azure": tts_azure, "google": tts_google, "piper": tts_piper}

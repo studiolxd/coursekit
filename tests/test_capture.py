@@ -958,3 +958,32 @@ def test_the_x11_backend_reads_what_xdotool_says(monkeypatch):
     monkeypatch.setenv("XDG_SESSION_TYPE", "wayland")
     with pytest.raises(mcpserver.ToolError, match="Wayland"):
         capture_x11.X11Backend("contraseñas")
+
+
+def test_replay_writes_when_and_where_each_click_and_point_happens(allowed, monkeypatch):
+    import shutil as sh
+
+    if not sh.which("ffmpeg"):
+        pytest.skip("ffmpeg is not installed")
+    configure(allowed.parent.parent, profiles={"acme-admin": PROFILE}, redact={"pixel_check": False},
+              replay={"pause_ms": 1, "move_ms": 1, "fps": 10})
+    clock = iter([100.0 + i * 0.25 for i in range(400)])
+    monkeypatch.setattr(capture_replay.time, "time", lambda: next(clock))
+    write_steps(allowed, [{"record": "start"}, {"point": {"label": "Longitud mínima", "note": "the minimum length"}},
+                          {"click": {"role": "button", "name": "Guardar"}}, {"record": "stop"}])
+    result = capture_replay.replay(find_project(), "PWD", "U1-S2-M1", ReplayBrowser)
+    data = json.loads(result["events"].read_text(encoding="utf-8"))
+    assert data["video"] == "U1-S2-M1.mp4" and (data["width"], data["height"]) == (1440, 900)
+    point, click = data["events"]
+    assert point["kind"] == "point" and point["label"] == "the minimum length" and (point["fx"], point["fy"]) == (0.3472, 0.2889)
+    assert click["kind"] == "click" and click["label"] == "Guardar" and point["t"] < click["t"] <= data["duration"]
+
+
+def test_the_agent_marks_a_place_without_clicking_it(allowed):
+    manager = capture_session.Manager(find_project(), FakeBrowser)
+    tools = {tool.name: tool for tool in manager.tools()}
+    tools["session_start"].run({"code": "PWD", "asset_id": "U1-S2-M1"})
+    assert tools["point"].run({"x": 960, "y": 600, "note": "the save button"}) == [{"type": "text", "text": "OK"}]
+    assert manager.session.steps[-1] == {"point": {"x": 720, "y": 450, "target": {"role": "button", "name": "Guardar"},
+                                                   "note": "the save button"}}
+    assert not [c for c in manager.session.backend.calls if c[0] == "click"]

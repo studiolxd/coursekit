@@ -65,7 +65,10 @@ What you may do with an `interface` resource, in this order:
    replace the placeholder with it (`coursekit videos propose`). Never put an address in the content yourself.
 2. **Real material that a person provides**, in `courses/<CODE>/media/recordings/<id>.mp4` (or `.png` for a capture). If it is
    there, work from it: for a **video**, the recipe `screen-recording` (Remotion over the real recording: narration with the
-   voice of the course, captions, zooms, highlights, the cursor of the recording; nothing of the screen is redrawn); for an
+   voice of the course, captions, zooms, highlights, the cursor of the recording; nothing of the screen is redrawn), with
+   the `Screencast` component of `tools/remotion/src/Screencast.tsx`: its zooms follow what the narration names (`focus` with
+   the `word` said and the `event` of `media/recordings/<id>.events.json`, or `fx`/`fy`), with the words of the narration
+   (`<audio>.words.json`, written by `coursekit subtitles`); never guess a coordinate when there is an event; for an
    **image**, the recipe `screenshot` (crop it and mark it with numbers, frames or arrows; never redraw it); for a **GIF**, cut
    and convert the recording with ffmpeg. Record it with the recipe and `--depicts interface`. When the project captures
    (`coursekit config capture` › `enabled`), first cover the personal data of what the person provided:
@@ -75,7 +78,7 @@ What you may do with an `interface` resource, in this order:
    it (`coursekit capture allow`; you may not run it, nor `login`): write first the brief of item 4 and, in it, a `capture`
    block with where it starts (`start: /path`) and what must always be hidden (`mask: [{selector: ...}, {text: ...}]`). Then
    `session_start` with the code and the id, follow the steps of the brief looking at each `screenshot` (use `zoom` to read
-   small text), `save_shot` when the screen is the one the resource needs (for a video, `record_start` and `record_stop`
+   small text; `point`, with a `note`, on each thing the narration will name, so the video can zoom there), `save_shot` when the screen is the one the resource needs (for a video, `record_start` and `record_stop`
    around the steps it shows), and `session_end`. The personal data on screen is already replaced with invented data: never
    try to undo it, never log in or type a password or a code, never leave the application. If a tool says that the
    permission or the session is gone, stop and tell the person what to run. The capture then waits for a person

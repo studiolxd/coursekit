@@ -248,10 +248,18 @@ def remotion(project: Project, say: Say) -> None:
     from importlib import resources
 
     target = project.root / "tools" / "remotion"
+    source = Path(str(resources.files("coursekit.templates.remotion")))
     if not target.exists():
-        source = Path(str(resources.files("coursekit.templates.remotion")))
         shutil.copytree(source, target, ignore=shutil.ignore_patterns("__init__.py", "__pycache__"))
         say(t("setup", "remotion_workspace"))
+    else:  # what the template gained since (a component), never over what the project has
+        for item in sorted(source.rglob("*")):
+            relative = item.relative_to(source)
+            if item.is_file() and "__pycache__" not in relative.parts and item.name != "__init__.py" \
+                    and not (target / relative).exists():
+                (target / relative).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(item, target / relative)
+                say(t("setup", "remotion_added", path=f"tools/remotion/{relative.as_posix()}"))
     if not shutil.which("npm"):
         say(t("setup", "npm_missing"))
         return

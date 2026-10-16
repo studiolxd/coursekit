@@ -89,6 +89,18 @@ class Backend(Protocol):
 
     def screenshot(self) -> bytes: ...
     def click(self, x: float, y: float, button: str, count: int) -> None: ...
+    def point(self, x: float, y: float, note: str = "") -> None:
+        """Marks a place of the screen without touching it: on replay it is written down, for a zoom of the video."""
+        self.check()
+        cx, cy = self._to_css(x, y)
+        step = {"x": round(cx), "y": round(cy)}
+        target = self.backend.target_at(cx, cy)
+        if target:
+            step["target"] = target
+        if note.strip():
+            step["note"] = note.strip()
+        self.steps.append({"point": step})
+
     def move(self, x: float, y: float) -> None: ...
     def drag(self, x1: float, y1: float, x2: float, y2: float) -> None: ...
     def scroll(self, x: float, y: float, dx: float, dy: float) -> None: ...
@@ -705,6 +717,9 @@ class Manager:
                  act(lambda s: lambda x, y: s.click(x, y, count=2), "x", "y")),
             Tool("right_click", "Right click at a point.", schema(xy, ["x", "y"]),
                  act(lambda s: lambda x, y: s.click(x, y, button="right"), "x", "y")),
+            Tool("point", "Mark a place of the screen without clicking it, where the video should zoom when the narration names it "
+                 "(say what it is in note).", schema({**xy, "note": string}, ["x", "y"]),
+                 lambda a: [self._guarded(lambda: self._current().point(a["x"], a["y"], str(a.get("note") or ""))) or text("OK")]),
             Tool("mouse_move", "Move the pointer to a point (hover).", schema(xy, ["x", "y"]),
                  act(lambda s: s.move, "x", "y")),
             Tool("drag", "Drag from one point to another.", schema({"x1": num, "y1": num, "x2": num, "y2": num},
