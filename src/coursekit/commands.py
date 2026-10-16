@@ -275,6 +275,21 @@ def cmd_capture(args: argparse.Namespace) -> int:
                         review=result["review"].relative_to(project.root).as_posix()))
             elif args.action == "review":
                 print(capturemod.review(course, asset_id).relative_to(project.root).as_posix())
+            elif args.action == "replay":
+                from coursekit import capture_replay
+
+                statesmod.ensure_active(course)
+                try:
+                    result = capture_replay.replay(project, course["code"], asset_id)
+                except capture_replay.ReplayError as exc:
+                    raise capturemod.CaptureError(str(exc)) from None
+                for warning in result["warnings"]:
+                    print(t("commands", "warning_line", text=warning))
+                made = [p.relative_to(project.root).as_posix() for p in ([result["video"]] if result["video"] else [])]
+                made += [p.relative_to(project.root).as_posix() for p in result["shots"][-1:]]
+                found = ", ".join(f"{kind} {n}" for kind, n in result["findings"].items()) or t("capture", "review_nothing")
+                print(t("capture", "replayed", id=asset_id, files=", ".join(made), found=found,
+                        review=result["review"].relative_to(project.root).as_posix()))
             else:
                 state = capturemod.decide(project, course, asset_id, args.action == "approve", args.note, args.mask)
                 print(t("capture", f"decided_{state['state']}", id=asset_id, code=course["code"]))
@@ -1237,7 +1252,7 @@ def register(sub: argparse._SubParsersAction) -> None:
 
     p = sub.add_parser("capture", help=t("commands", "help_capture"))
     p.add_argument("action", choices=("login", "logout", "profiles", "allow", "revoke", "redact", "review", "approve", "reject",
-                                      "serve"))
+                                      "serve", "replay"))
     p.add_argument("target", nargs="?", help=t("commands", "help_capture_target"))
     p.add_argument("ids", nargs="*", help=t("commands", "help_capture_ids"))
     p.add_argument("--mode", choices=capturemod.MODES, help=t("commands", "help_capture_mode"))

@@ -66,3 +66,9 @@ session_ended: {es: "pasos escritos en {brief}; datos sustituidos: {found}", en:
 session_waits: {es: "{file} espera a que una persona lo revise (coursekit capture review {code} {id}) y lo apruebe", en: "{file} waits for a person to review it (coursekit capture review {code} {id}) and approve it"}
 session_replay: {es: "el vídeo se graba al repetir los pasos: coursekit capture replay {code} {id}", en: "the video is recorded when the steps are repeated: coursekit capture replay {code} {id}"}
 shot_saved: {es: "captura guardada en {path}", en: "capture saved in {path}"}
+replay_not_found: {es: "paso {n}: no se encuentra {target} en la pantalla (ni hay una posición a la que volver): ajusta el bloque capture del guion", en: "step {n}: {target} is not found on screen (and there is no position to fall back on): adjust the capture block of the brief"}
+replay_bad_step: {es: "paso {n}: {step} no es un paso (uno de: {kinds})", en: "step {n}: {step} is not a step (one of: {kinds})"}
+replay_no_steps: {es: "el bloque capture de {path} no tiene steps: escríbelos o haz antes una sesión de captura", en: "the capture block of {path} has no steps: write them or run a capture session first"}
+replay_no_frames: {es: "el navegador no ha dado ningún fotograma entre record start y record stop", en: "the browser gave no frame between record start and record stop"}
+replay_nothing: {es: "los pasos de {path} no guardan nada: añade record start/stop (vídeo) o shot (imagen)", en: "the steps of {path} save nothing: add record start/stop (video) or shot (image)"}
+replayed: {es: "{id}: repetido; {files}; datos sustituidos: {found}; revísalo en {review} y apruébalo con coursekit capture approve", en: "{id}: replayed; {files}; data replaced: {found}; review it in {review} and approve it with coursekit capture approve"}

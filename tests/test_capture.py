@@ -617,3 +617,139 @@ def test_the_page_script_replaces_text_and_never_touches_what_can_be_edited(tmp_
     assert ">Para Ana López</div>" in dom and 'id="e" class="ck-blur-field"' in dom
     assert 'class="secret ck-blur"' in dom and 'class="user-avatar ck-blur"' in dom
     assert 'data-pending="0"' in dom and 'data-hidden=""' in dom
+
+
+# ── replay ───────────────────────────────────────────────────────────────────────────────────
+
+from coursekit import capture_replay  # noqa: E402
+
+
+class ReplayBrowser(FakeBrowser):
+    """A fake browser that also finds elements by name and records frames."""
+
+    elements = {("button", "Guardar"): (300.0, 200.0), ("label", "Longitud mínima"): (500.0, 260.0)}
+
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.recording = False
+
+    def glide(self, x, y, ms):
+        self.calls.append(("glide", x, y, ms))
+
+    def locate(self, target):
+        if target.get("role") and target.get("name"):
+            return self.elements.get((target["role"], target["name"]))
+        return self.elements.get(("label", target.get("label") or target.get("name")))
+
+    def type_slowly(self, text, delay):
+        self.calls.append(("type_slowly", text, delay))
+
+    def start_recording(self):
+        self.recording = True
+        self.calls.append(("record", True))
+
+    def stop_recording(self):
+        import io
+
+        self.recording = False
+        self.calls.append(("record", False))
+        frames = []
+        for i, shade in enumerate((255, 200, 150)):
+            out = io.BytesIO()
+            Image.new("RGB", (64, 48), (shade, shade, shade)).save(out, "JPEG")
+            frames.append((100.0 + i * 0.5, out.getvalue()))
+        return [*frames, (102.0, b"")]
+
+
+def write_steps(course_dir, steps):
+    capture_session.write_block({"_dir": course_dir}, "U1-S2-M1", {"start": "/settings", "steps": steps})
+
+
+def test_replay_finds_targets_by_name_first_and_at_the_pace_of_a_person(allowed, monkeypatch):
+    configure(allowed.parent.parent, profiles={"acme-admin": PROFILE}, redact={"pixel_check": False},
+              replay={"pause_ms": 5, "move_ms": 40, "type_delay_ms": 9})
+    write_steps(allowed, [{"click": {"x": 10, "y": 10, "target": {"role": "button", "name": "Guardar"}}},
+                          {"click": {"x": 11, "y": 12, "target": {"role": "button", "name": "Moved away"}}},
+                          {"fill": {"label": "Longitud mínima", "value": "12"}}, {"key": "enter"}, {"shot": True}])
+    result = capture_replay.replay(find_project(), "PWD", "U1-S2-M1", ReplayBrowser)
+    assert result["video"] is None and [p.name for p in result["shots"]] == ["U1-S2-M1.png"]
+    state = asset_capture(allowed)
+    assert state["state"] == "captured" and state["source"] == "replay" and state["file"] == "media/recordings/U1-S2-M1.png"
+
+
+def test_replay_moves_the_pointer_before_acting(allowed, monkeypatch):
+    configure(allowed.parent.parent, profiles={"acme-admin": PROFILE}, redact={"pixel_check": False},
+              replay={"pause_ms": 5, "move_ms": 40, "type_delay_ms": 9})
+    seen = {}
+    real_start = capture_session.start
+
+    def start(*args, **kwargs):
+        seen["session"] = real_start(*args, **kwargs)
+        seen["cursor"] = seen["session"].backend.page_config.get("cursor")
+        return seen["session"]
+
+    monkeypatch.setattr(capture_replay.sessionmod, "start", start)
+    write_steps(allowed, [{"click": {"x": 10, "y": 10, "target": {"role": "button", "name": "Guardar"}}},
+                          {"click": {"x": 11, "y": 12, "target": {"role": "button", "name": "Moved away"}}},
+                          {"fill": {"label": "Longitud mínima", "value": "12"}}, {"shot": True}])
+    capture_replay.replay(find_project(), "PWD", "U1-S2-M1", ReplayBrowser)
+    calls = [c for c in seen["session"].backend.calls if c[0] in ("glide", "click", "type_slowly", "key")]
+    assert calls[:2] == [("glide", 300.0, 200.0, 40), ("click", 300.0, 200.0, "left", 1)]  # by its name
+    assert calls[2:4] == [("glide", 11.0, 12.0, 40), ("click", 11.0, 12.0, "left", 1)]  # the name is gone: by position
+    assert calls[4:] == [("glide", 500.0, 260.0, 40), ("click", 500.0, 260.0, "left", 1), ("key", "ControlOrMeta+A"),
+                         ("type_slowly", "12", 9)]
+    assert seen["cursor"] is True
+
+
+def test_replay_stops_on_a_target_it_cannot_find_or_a_step_it_does_not_know(allowed):
+    configure(allowed.parent.parent, profiles={"acme-admin": PROFILE}, redact={"pixel_check": False})
+    write_steps(allowed, [{"click": {"label": "Nowhere"}}])
+    with pytest.raises(capture_replay.ReplayError, match="step 1: .* is not found on screen"):
+        capture_replay.replay(find_project(), "PWD", "U1-S2-M1", ReplayBrowser)
+    write_steps(allowed, [{"dance": True}])
+    with pytest.raises(capture_replay.ReplayError, match="step 1: .* is not a step"):
+        capture_replay.replay(find_project(), "PWD", "U1-S2-M1", ReplayBrowser)
+    write_steps(allowed, [{"wait": 10}])
+    with pytest.raises(capture_replay.ReplayError, match="save nothing"):
+        capture_replay.replay(find_project(), "PWD", "U1-S2-M1", ReplayBrowser)
+
+
+def test_replay_needs_the_permission_too(allowed):
+    write_steps(allowed, [{"shot": True}])
+    assert main(["capture", "revoke", "PWD"]) == 0
+    with pytest.raises(capture_replay.ReplayError, match="no permission in force"):
+        capture_replay.replay(find_project(), "PWD", "U1-S2-M1", ReplayBrowser)
+
+
+def test_replay_records_the_stretches_marked_as_a_video(allowed, capsys, monkeypatch):
+    import shutil as sh
+
+    if not sh.which("ffmpeg"):
+        pytest.skip("ffmpeg is not installed")
+    configure(allowed.parent.parent, profiles={"acme-admin": PROFILE}, redact={"pixel_check": False},
+              replay={"pause_ms": 1, "move_ms": 1, "fps": 10})
+    write_steps(allowed, [{"record": "start"}, {"click": {"label": "Longitud mínima"}}, {"record": "stop"},
+                          {"record": "start"}, {"key": "enter"}])  # the last stretch records until the end
+    monkeypatch.setattr(capture_session, "BrowserBackend", ReplayBrowser)
+    capsys.readouterr()
+    assert main(["capture", "replay", "PWD", "U1-S2-M1"]) == 0
+    assert "U1-S2-M1: replayed; courses/PWD/media/recordings/U1-S2-M1.mp4" in capsys.readouterr().out
+    video = allowed / "media" / "recordings" / "U1-S2-M1.mp4"
+    assert video.stat().st_size > 0
+    assert not list(video.parent.glob("*.part*"))
+    probe = subprocess_duration(video)
+    assert 3.5 <= probe <= 4.5  # two stretches of two seconds each
+    assert asset_capture(allowed)["file"] == "media/recordings/U1-S2-M1.mp4"
+    assert list((allowed.parent.parent / ".cache" / "capture" / "PWD" / "U1-S2-M1").glob("t*.png"))
+
+
+def subprocess_duration(path):
+    import shutil as sh
+    import subprocess
+
+    probe = sh.which("ffprobe")
+    if not probe:
+        pytest.skip("ffprobe is not installed")
+    out = subprocess.run([probe, "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(path)],
+                         capture_output=True, text=True, check=True).stdout
+    return float(out.strip())

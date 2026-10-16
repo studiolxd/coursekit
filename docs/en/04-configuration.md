@@ -353,6 +353,11 @@ The profiles of the web applications, the permissions of [`coursekit capture`](0
 | `redact.padding` | `4` | Pixels of margin around what is covered. |
 | `redact.ocr` | `auto` | Who reads the text of the pixels: `rapidocr` (installed with the `capture` extra), `tesseract` (the program of the machine, with the Spanish data for a Spanish course if installed) or `auto` (rapidocr if installed, else tesseract). |
 | `redact.video_fps` | `4` | Readings per second of a video; what one finds stays covered until the next one. |
+| `replay.pause_ms` | `700` | `coursekit capture replay`: milliseconds of pause after each step. |
+| `replay.move_ms` | `450` | Milliseconds the pointer takes to travel to each target. |
+| `replay.type_delay_ms` | `70` | Milliseconds between letters. |
+| `replay.fps` | `30` | Frames per second of the video. |
+| `replay.cursor` | `true` | A visible pointer and a ring on each click (the screencast does not draw the one of the system). |
 | `raw.keep_days` | `7` | Days the original of a recording is kept outside the project (to cover it again after a rejection); it is deleted when the capture is approved. |
 
 ```yaml

@@ -60,6 +60,16 @@ redact:
   ocr: auto                    # who reads the pixels: auto (rapidocr if installed, else tesseract) | rapidocr | tesseract
   video_fps: 4                 # frames read per second of a video; what is found stays covered until the next one read
 
+# `coursekit capture replay`: the steps of the brief repeated at the pace of a person, and the video of the stretches between
+# `record: start` and `record: stop` (a session of the agent only writes the steps: it thinks between actions, and its video
+# would be full of pauses).
+replay:
+  pause_ms: 700                # after each step
+  move_ms: 450                 # the pointer travels to each target in this time
+  type_delay_ms: 70            # between letters
+  fps: 30                      # frames per second of the video
+  cursor: true                 # a visible pointer and a ring on each click (the screencast does not draw the system one)
+
 raw:
   keep_days: 7                 # the original of a recording, kept outside the project to cover it again after a rejection;
                                # deleted when the capture is approved, or after these days

@@ -79,7 +79,9 @@ What you may do with an `interface` resource, in this order:
    around the steps it shows), and `session_end`. The personal data on screen is already replaced with invented data: never
    try to undo it, never log in or type a password or a code, never leave the application. If a tool says that the
    permission or the session is gone, stop and tell the person what to run. The capture then waits for a person
-   (`coursekit capture review` and `approve`); compose the resource from it only once approved.
+   (`coursekit capture review` and `approve`); compose the resource from it only once approved. For a video, after
+   `session_end` run `coursekit capture replay <CODE> <id>`: it repeats the steps at the pace of a person and records the
+   stretches you marked (if a step is not found, fix the `capture` block of the brief and run it again).
 4. **Nothing of the above exists yet: do not produce it.** Write the **brief for the person** in
    `courses/<CODE>/media/scripts/<id>.md` and leave the asset waiting:
    `coursekit media set <CODE> <id> --status scripted --recipe screen-recording|screenshot --depicts interface`.

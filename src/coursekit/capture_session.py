@@ -325,7 +325,7 @@ def _now() -> str:
 
 # ── starting one ─────────────────────────────────────────────────────────────────────────────
 
-def start(project, code: str, asset_id: str, backend_factory=None) -> Session:
+def start(project, code: str, asset_id: str, backend_factory=None, cursor: bool = False) -> Session:
     cfg = capturemod.settings(project)
     if not cfg.get("enabled"):
         raise ToolError(t("capture", "not_enabled"))
@@ -373,7 +373,8 @@ def start(project, code: str, asset_id: str, backend_factory=None) -> Session:
     session._scale = 1 / (device * min(1.0, session.max_edge / (max(size) * device)))
     factory = backend_factory or BrowserBackend
     session.backend = factory(capturemod.profile_dir(project, grant["profile"]), start_url, profile["allow_domains"], size, device,
-                              lambda texts: session.note_texts(texts, who, terms), {"selectors": selectors, "avatars": True})
+                              lambda texts: session.note_texts(texts, who, terms),
+                              {"selectors": selectors, "avatars": True, **({"cursor": True} if cursor else {})})
     return session
 
 
@@ -423,6 +424,10 @@ class BrowserBackend:
             raise ToolError(t("capture", "no_browser"))
         self.viewport = viewport
         self.allow_domains = allow_domains
+        self.scale = scale
+        self._frames: list[tuple[float, bytes]] = []
+        self._cdp = None
+        self._pointer = (0.0, 0.0)
         self._pw = sync_playwright().start()
         try:
             self.context = self._pw.chromium.launch_persistent_context(
@@ -431,6 +436,8 @@ class BrowserBackend:
             self.context.expose_function("__ckRedact", redact)
             self.context.add_init_script(script=f"window.__ckConfig = {json.dumps(page_config)};")
             self.context.add_init_script(path=str(resources.files("coursekit.tools").joinpath("capture-dom.js")))
+            if page_config.get("cursor"):
+                self.context.add_init_script(path=str(resources.files("coursekit.tools").joinpath("capture-cursor.js")))
             self.context.route("**/*", self._guard)
             self.page = self.context.pages[0] if self.context.pages else self.context.new_page()
             self.navigate(start_url)
@@ -461,6 +468,7 @@ class BrowserBackend:
 
     def click(self, x, y, button, count) -> None:
         self.page.mouse.click(x, y, button=button, click_count=count)
+        self._pointer = (x, y)
         self._settle()
 
     def move(self, x, y) -> None:
@@ -485,6 +493,9 @@ class BrowserBackend:
         self.page.keyboard.press(combo)
         self._settle()
 
+    def type_slowly(self, text, delay) -> None:
+        self.page.keyboard.type(text, delay=delay)
+
     def wait(self, ms) -> None:
         self.page.wait_for_timeout(ms)
 
@@ -496,6 +507,67 @@ class BrowserBackend:
         except PlaywrightError as exc:
             raise ToolError(t("capture", "browser_failed", reason=str(exc).splitlines()[0])) from None
         self._settle()
+
+    # ── what only the replay uses ──
+
+    def glide(self, x, y, ms) -> None:
+        """Moves the pointer to (x, y) in about `ms` milliseconds, so the video shows it travel."""
+        x0, y0 = self._pointer
+        steps = max(1, int(ms) // 16)
+        for i in range(1, steps + 1):
+            self.page.mouse.move(x0 + (x - x0) * i / steps, y0 + (y - y0) * i / steps)
+            self.page.wait_for_timeout(16)
+        self._pointer = (x, y)
+
+    def locate(self, target: dict) -> tuple[float, float] | None:
+        """The centre of the element a step names (by role and name, by label or by text), when there is exactly one."""
+        from playwright.sync_api import Error as PlaywrightError
+
+        candidates = []
+        if target.get("role") and target.get("name"):
+            candidates.append(self.page.get_by_role(target["role"], name=target["name"], exact=True))
+        for text in (target.get("label"), target.get("name")):
+            if text:
+                candidates += [self.page.get_by_label(text, exact=True), self.page.get_by_text(text, exact=True)]
+        for locator in candidates:
+            try:
+                visible = [item for item in locator.all() if item.is_visible()]
+                if len(visible) == 1:
+                    visible[0].scroll_into_view_if_needed(timeout=3000)
+                    box = visible[0].bounding_box()
+                    if box:
+                        return box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+            except PlaywrightError:
+                continue
+        return None
+
+    def start_recording(self) -> None:
+        self._cdp = self.context.new_cdp_session(self.page)
+        self._cdp.on("Page.screencastFrame", self._frame)
+        self._cdp.send("Page.startScreencast", {"format": "jpeg", "quality": 92, "everyNthFrame": 1,
+                                                "maxWidth": round(self.viewport[0] * self.scale),
+                                                "maxHeight": round(self.viewport[1] * self.scale)})
+
+    def _frame(self, event: dict) -> None:
+        import base64
+
+        self._frames.append((float(event["metadata"]["timestamp"]), base64.b64decode(event["data"])))
+        try:
+            self._cdp.send("Page.screencastFrameAck", {"sessionId": event["sessionId"]})
+        except Exception:  # noqa: BLE001 — the screencast may already be stopping
+            pass
+
+    def stop_recording(self) -> list[tuple[float, bytes]]:
+        """The frames recorded since `start_recording`, with the time each one appeared, and the time it stopped."""
+        import time
+
+        self.page.wait_for_timeout(300)  # the last frames
+        self._cdp.send("Page.stopScreencast")
+        frames, self._frames = self._frames, []
+        frames.append((time.time(), b""))  # when it stopped: the last frame lasts until then
+        self._cdp.detach()
+        self._cdp = None
+        return frames
 
     def target_at(self, x, y) -> dict:
         return self.page.evaluate(TARGET_JS, [x, y]) or {}

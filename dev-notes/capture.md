@@ -167,7 +167,7 @@ mask: [{selector: ".account-email"}, {text: "Ana García"}]
 3. Modo navegador, `dom.js`, servidor MCP, sesiones y `replay`.
 4. Handoff (lista lo que espera revisión), registro del servidor en `agents`, skill de `/produce-media`.
 5. Escritorio: macOS, después Windows y X11.
-6. Vídeo: screencast, ffmpeg en escritorio y anonimización con seguimiento.
+6. Vídeo de escritorio con ffmpeg (el de navegador ya está, en `replay`).
 
 ## Por comprobar
 
@@ -197,5 +197,8 @@ mask: [{selector: ".account-email"}, {text: "Ana García"}]
   `coursekit capture serve`, registro de `coursekit-capture` en los tres ficheros, herramientas permitidas al agente de
   multimedia sin interfaz, skill de `/produce-media`. El vídeo se graba en `replay` (3b), no durante la sesión: el modelo
   piensa entre acciones y el vídeo saldría con pausas. Falta probar a mano una sesión real con Playwright.
-- [ ] Paso 3b: `coursekit capture replay` (repite los pasos a ritmo humano, cursor visible inyectado, graba con el
-  screencast de CDP → ffmpeg, `pixel_check` sobre el vídeo), y entonces `screen-recording` queda completo.
+- [x] Paso 3b (sin commit todavía): `capture_replay.py` y `coursekit capture replay`: pasos del bloque a ritmo humano
+  (`capture.yaml › replay`), destino por nombre primero y posición como recurso, `tools/capture-cursor.js` (probado en
+  Chrome), screencast de CDP → ffmpeg (montaje probado con el ffmpeg de la máquina), tramos unidos, `pixel_check` sobre el
+  vídeo. Falta probar a mano el screencast real con Playwright.
+- [ ] Paso 5: escritorio (macOS, después Windows y X11).
