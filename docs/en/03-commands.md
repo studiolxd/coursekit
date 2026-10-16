@@ -82,7 +82,7 @@ While a course is `on_hold`, the commands that change its work are refused with 
 | Verification and sign-off | `coursekit verify`, `coursekit paths`, `coursekit reviewed`, `coursekit approve` |
 | Course state and client review | `coursekit hold`, `coursekit resume`, `coursekit client` |
 | Launching agents | `coursekit write`, `coursekit review`, `coursekit run` |
-| Media | `coursekit media`, `coursekit voice`, `coursekit tts`, `coursekit subtitles`, `coursekit theme`, `coursekit capture` |
+| Media | `coursekit media`, `coursekit video`, `coursekit voice`, `coursekit tts`, `coursekit subtitles`, `coursekit theme`, `coursekit capture` |
 | Assembly and delivery | `coursekit assemble`, `coursekit preview`, `coursekit directives`, `coursekit delivery`, `coursekit publish`, `coursekit catalog` |
 
 ## Project and machine
@@ -834,6 +834,40 @@ With the html backend there is no upload: a `produced` asset with its `--file` i
 
 ```
 coursekit media set PWD U1-S2-M1 --status produced --recipe agent-svg --file media/files/u1-s2-m1.svg --alt "Password strength meter"
+```
+
+### `coursekit video`
+
+A video as data: a montage of scenes (`media/scripts/<id>.video.yaml`) rendered with the library of scenes of coursekit in Remotion, in the theme of the course; see [Video montage](07-media.md#video-montage). Who: agents (the media agent) and people.
+
+```
+coursekit video {new,check,voice,preview,render,catalog} code [id]
+```
+
+| Argument | Values / default | Meaning |
+|---|---|---|
+| `action` | `new`, `check`, `voice`, `preview`, `render`, `catalog` | See below. |
+| `code` | course code or folder | Course. |
+| `id` | asset id | The video resource; every action but `catalog` needs it (exit code 2 without it). |
+
+Actions:
+
+- `new`: a first montage for the resource (an opening with its title, a scene to fill and a close) in `media/scripts/<id>.video.yaml`. It never writes over one that exists.
+- `check`: the montage before its voice and its render: the format; each scene has an id, a known `type`, its required props, its media in the media folder of the course, and `says` or `duration`; texts longer than the scene fits (`TEXT_LONG`); text on screen that the narration does not say (`NOT_SAID`, unless the scene describes it with `shows`). One line per finding, `ERROR` or `WARNING`, with the scene and a code; exit code 1 while there is an error.
+- `voice`: the narration of each scene with the voice of the course, and the timings of its words (`media/files/<id>/<scene>.mp3` and `.words.json`); only the scenes whose text or voice changed are made again. It needs a voice (see [`coursekit voice`](#coursekit-voice)) and, except with ElevenLabs, `stable-ts`.
+- `preview`: a frame of each scene (at 70 % of it, when what enters has entered), small, in one image: `.cache/media/<CODE>/<id>-preview.png`, before the whole render.
+- `render`: the video in `media/files/<id>.mp4`, with its captions (`.vtt`, a cue per sentence that stays until the next one), its words (`.words.json`), its scenes described (`media/scripts/<id>.scenes.yaml`) and its accessible transcript and track of descriptions ([Accessibility of videos](07-media.md#accessibility-of-videos)); the asset becomes `produced` with the recipe `montage` (`screen-recording` when it shows a real interface and has a `screencast` of a real recording). Like any generated resource, it says first what it shows (`coursekit media set CODE ID --depicts`).
+- `catalog`: the scenes the course can use, from the library, the project and the course (which hides which), with what each one is, what it is built from and its props (type, required, maximum characters, on screen); and the atoms and molecules of the library.
+
+`voice`, `preview` and `render` are refused while the course is on hold. `preview` and `render` need the Remotion workspace (`coursekit setup --media`) and refuse a montage with errors (`coursekit video check`).
+
+```
+coursekit video new PWD U1-S2-M1
+coursekit video check PWD U1-S2-M1
+coursekit video voice PWD U1-S2-M1
+coursekit video preview PWD U1-S2-M1
+coursekit video render PWD U1-S2-M1
+coursekit video catalog PWD
 ```
 
 ### `coursekit voice`

@@ -4,7 +4,8 @@ The scenes of a video are described next to its brief, in `media/scripts/<id>.sc
 
     words: media/files/u1-s2-m1.words.json     # the timings of the narration (default: <file of the video>.words.json)
     scenes:
-      - text: "Minimum length: 12"             # the text on screen (one or a list)
+      - text: "Minimum length: 12"             # the text on screen (one or a list); `labels`: what need not be said
+        at: 0                                  # optional: the second it starts (else, when its first words are said)
         shows: "The security settings, with the minimum length field"   # what is seen, in a sentence
         says: "Open the security settings and set the minimum length to twelve."
 
@@ -108,10 +109,14 @@ def _words(course: dict, asset: dict, data: dict) -> list[dict]:
 
 
 def starts(scenes: list[dict], words: list[dict]) -> list[float | None]:
-    """When the narration of each scene starts: its first words, the first time they are said after the scene before."""
+    """When each scene starts: its `at` (seconds), else the first words of its narration, the first time they are said after
+    the scene before."""
     said_words = [_normal(w["w"]).strip() for w in words]
     out, cursor = [], 0
     for scene in scenes:
+        if scene.get("at") is not None:
+            out.append(float(scene["at"]))
+            continue
         first = [w for w in _normal(str(scene.get("says") or "")).split() if w][:3]
         found = None
         if first:
@@ -139,7 +144,7 @@ def transcript(course: dict, asset: dict) -> tuple[str, str]:
     parts, cues = [], []
     end_of_all = float(words[-1]["end"]) if words else None
     for i, scene in enumerate(scenes):
-        seen = str(scene.get("shows") or "") or ". ".join(_texts(scene.get("text")))
+        seen = str(scene.get("shows") or "") or ". ".join([*_texts(scene.get("labels")), *_texts(scene.get("text"))])
         lines = [f"[{_minute(times[i])}]"] if times[i] is not None else []
         if seen:
             lines.append(f"{label}: {seen}")

@@ -138,7 +138,29 @@ credits.
   package, see step 4.
 - **Interactive terminal demo** — asciinema recording of the script's commands and an EMBED
   package (`media/src/<id>/index.html` with the player and `tokens.css`).
-- **Video** — Remotion composition with the script's scenes, diagrams and tokens; voice-over with
+- **Video** — a **montage** first (recipe `montage`, `coursekit video`): the video as data in
+  `media/scripts/<id>.video.yaml`, scenes one after another, each with its `type`, its `props` and what it `says`; each lasts
+  what its voice lasts, in the theme of the course. The order of decision for each scene:
+  1. a scene that exists tells the idea well: use it (`coursekit video catalog <CODE>` lists the scenes of the library, of
+     the project and of the course, their props, their limits and what each one is built from);
+  2. none does: **create one**, composed from the atoms and molecules of the library (`Heading`, `Text`, `Enter`, `Stagger`,
+     `Underline`, `Counter`, `MediaSlot`, `Ring`, `Background`, `TitleBlock`, `BulletList`, `StatBlock`, `ScreenRecording`;
+     read the scenes of `tools/remotion/kit/scenes/` to see how they are put together). A scene is a folder with
+     `index.tsx` (`export default` a component that receives `{props}`, importing from `"../../../kit"`) and `scene.yaml`
+     (`description`, `built_from`, and its `props` with `type`, `required`, `max_chars`, `on_screen`, `label`). It goes in
+     `tools/remotion/src/scenes/<name>/` when other courses can use it, or in `courses/<CODE>/video/scenes/<name>/` when it
+     only makes sense in this course; the same name hides the scene of the library (or of the project);
+  3. an atom is missing: write it inside your scene, with the same rules.
+  The library is a starting point, not a limit: if the idea asks for another visual (a diagram that builds itself, a
+  timeline, a before and after), create it. The rules of every scene: everything moves with the frame
+  (`useCurrentFrame`, no CSS animations or timers); colours and fonts only from the theme (`useColor`, `useTheme`); what
+  enters with a word enters when the narration says it (`useAt("…")`); media by their path in the media folder of the
+  course; nothing from the network. Never edit `tools/remotion/kit/` (coursekit writes it). The steps:
+  `coursekit video new <CODE> <id>`, fill it, `coursekit video check <CODE> <id>` until it passes, `coursekit video voice`,
+  `coursekit video preview` (open the image it prints and look at every scene), `coursekit video render`, which leaves the
+  video, its captions, its words and its accessible transcript and marks it `produced`. A video made by hand as a Remotion
+  composition (recipe `remotion`) is still fine when a montage cannot tell it.
+- **Video made by hand** — Remotion composition with the script's scenes, diagrams and tokens; voice-over with
   `coursekit tts`; captions (`.vtt`) always. Describe its scenes in `media/scripts/<id>.scenes.yaml` (the `text` on screen,
   what it `shows`, what it `says`): what matters on screen is also said. Look at the render with
   `coursekit media sheet <CODE> <id>` (open the image it prints) instead of guessing, and once it is produced,

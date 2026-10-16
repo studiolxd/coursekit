@@ -167,6 +167,55 @@ Heavy images and videos slow the course down in the LMS, so coursekit makes them
 - **html backend:** `coursekit assemble build` optimises the copy it puts in the package and leaves the source file alone; there is nothing to run.
 - SVG, GIF, audio and packages are never touched. Only `.mp4` videos are re-encoded (what Remotion and VHS write), so the name in the manifest stays valid.
 
+## Video montage
+
+A video can be data instead of code: a montage of scenes, `media/scripts/<id>.video.yaml`, that [`coursekit video`](03-commands.md#coursekit-video) voices, checks and renders with a library of scenes in the theme of the course (recipe `montage`, the first option for a video). Each scene lasts what its narration lasts, so changing a text changes the timing, not the code. A video made by hand as a Remotion composition (recipe `remotion`) is still fine.
+
+```yaml
+version: 1
+format: {width: 1920, height: 1080, fps: 30}
+scenes:
+  - id: opening
+    type: title
+    props: {kicker: "Unit 1", title: "Long passwords", stress: "Long"}
+    says: "Today we see why long passwords protect more."
+  - id: length
+    type: split
+    props:
+      title: "Length first"
+      points: [{text: "Twelve characters or more", say: "twelve characters"}]
+      media: files/u1-lock.png
+    says: "Length first: twelve characters or more."
+  - id: close
+    type: outro
+    props: {title: "Long and unique"}
+    duration: 3
+    shows: "The close, on the accent colour: «Long and unique»"
+```
+
+A scene has an `id`, a `type`, its `props`, what it `says` (or a `duration` when it says nothing) and, optionally, `shows` (what is seen, when the narration does not say it).
+
+**The pieces.** Everything is built in levels, each one only from the one below:
+
+| Level | What | In the library |
+|---|---|---|
+| Tokens | the theme of the course (its own, else the project's) and the tokens of motion | colours, fonts, radius; how long things take to enter |
+| Atoms | the smallest pieces, moved by the frame | `Heading`, `Text`, `Enter`, `Stagger`, `Underline`, `Counter`, `MediaSlot`, `Ring`, `Background`, `ScreenRecording`; `useAt("word")`: when the narration says it |
+| Molecules | small combinations | `TitleBlock`, `BulletList`, `StatBlock` |
+| Scenes | whole compositions | `title`, `split`, `stat`, `outro`, `screencast` |
+
+The tokens reach the video as data, so a course with another theme gives another video with no change. A scene is a folder with `index.tsx` (its component) and `scene.yaml` (what it is, what it is built from, and its props: type, required, maximum characters, on screen, label); `coursekit video catalog` lists them all, so the pieces and how they are put together can be seen.
+
+**Where the scenes are, and which one wins.** A scene of the course hides one of the project with the same name, and one of the project hides one of the library:
+
+| Where | What |
+|---|---|
+| `courses/<CODE>/video/scenes/<name>/` | scenes of one course |
+| `tools/remotion/src/scenes/<name>/` | scenes of the project, for every course |
+| `tools/remotion/kit/` | the library of coursekit: every `coursekit video` command writes it from the package; it is ignored by git and never edited |
+
+When no scene tells an idea, the media agent creates one, composed from the atoms and molecules (importing them from `"../../../kit"`, the same in a scene of the project and of a course), so the library of the project grows with use. The rules of a scene: everything moves with the frame; colours and fonts only from the theme; what enters with a word enters when the narration says it; media by their path inside the media folder of the course; nothing from the network.
+
 ## Accessibility of videos
 
 What a video shows also exists as text, so that whoever cannot see it gets it (WCAG 1.2.3, 1.2.5 and 1.2.8). The scenes of a video are described next to its brief, in `media/scripts/<id>.scenes.yaml`:

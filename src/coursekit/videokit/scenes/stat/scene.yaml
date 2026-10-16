@@ -1,0 +1,11 @@
+description: A figure that counts up when the narration says it, with what it measures and where it comes from.
+built_from: [Background, StatBlock (Counter, Heading, Text, Enter)]
+props:
+  value: {type: number, required: true, on_screen: true}
+  prefix: {type: text, max_chars: 3}
+  suffix: {type: text, max_chars: 6}
+  decimals: {type: number}
+  label: {type: text, required: true, max_chars: 70, on_screen: true}
+  source: {type: text, required: true, max_chars: 80, help: "a figure is never shown without its source"}
+  say: {type: text, help: "the words of the narration that say the figure: it counts up then"}
+  locale: {type: text, help: "how the number is written (default the language of the course)"}

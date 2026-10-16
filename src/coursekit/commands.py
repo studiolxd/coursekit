@@ -41,6 +41,7 @@ from coursekit import publish as publishmod
 from coursekit import setup as setupmod
 from coursekit import states as statesmod
 from coursekit import theme as thememod
+from coursekit import video as videomod
 from coursekit import videos as videosmod
 from coursekit.htmlkit.build import HtmlBuildError
 from coursekit.i18n import t, tn
@@ -297,6 +298,46 @@ def cmd_capture(args: argparse.Namespace) -> int:
                 print(t("capture", f"decided_{state['state']}", id=asset_id, code=course["code"]))
                 _mirror(project, course["code"])
     except capturemod.CaptureError as exc:
+        print(t("commands", "error_line", text=exc), file=sys.stderr)
+        return 1
+    return 0
+
+
+def cmd_video(args: argparse.Namespace) -> int:
+    project = _project()
+    course = coursemod.load(project, args.code)
+    root = project.root
+    if args.action != "catalog" and not args.id:
+        print(t("video", "needs_id", action=args.action), file=sys.stderr)
+        return 2
+    try:
+        if args.action == "catalog":
+            print("\n".join(videomod.catalog(course)))
+            return 0
+        if args.action == "check":
+            findings = videomod.check(course, args.id)
+            for f in findings:
+                line = t("video", "finding", where=f.where, code=f.code, text=f.text)
+                print(t("commands", "error_line" if f.level == "error" else "warning_line", text=line))
+            if not findings:
+                print(t("video", "check_ok", id=args.id))
+            return 1 if any(f.level == "error" for f in findings) else 0
+        if args.action == "new":
+            path = videomod.new(course, args.id)
+            print(t("video", "created", path=path.relative_to(root).as_posix()))
+            return 0
+        statesmod.ensure_active(course)
+        if args.action == "voice":
+            made = videomod.voice(course, args.id)
+            print(t("video", "voice_done", count=made))
+        elif args.action == "preview":
+            print(t("video", "preview", path=videomod.preview(course, args.id).relative_to(root).as_posix()))
+        elif args.action == "render":
+            done = videomod.render(course, args.id)
+            print(t("video", "rendered", path=done["video"].relative_to(root).as_posix(), seconds=f"{done['seconds']:.1f}",
+                    scenes=done["scenes"]))
+            _mirror(project, course["code"])
+    except (videomod.VideoError, mediaaccess.AccessError, mediacheck.CheckError) as exc:
         print(t("commands", "error_line", text=exc), file=sys.stderr)
         return 1
     return 0
@@ -1285,6 +1326,12 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--fix", action="store_true", help=t("commands", "help_media_fix"))
     p.add_argument("--frames", type=int, help=t("commands", "help_media_frames"))
     p.set_defaults(func=cmd_media)
+
+    p = sub.add_parser("video", help=t("commands", "help_video"))
+    p.add_argument("action", choices=("new", "check", "voice", "preview", "render", "catalog"))
+    p.add_argument("code")
+    p.add_argument("id", nargs="?")
+    p.set_defaults(func=cmd_video)
 
     p = sub.add_parser("capture", help=t("commands", "help_capture"))
     p.add_argument("action", choices=("login", "logout", "profiles", "allow", "revoke", "redact", "review", "approve", "reject",

@@ -391,6 +391,7 @@ help_capture_note: {es: "reject: qué faltó tapar o qué está mal", en: "rejec
 help_capture_mask: {es: "reject: un texto que hay que tapar siempre en este recurso (se puede repetir)", en: "reject: a text to always cover in this resource (can be repeated)"}
 help_media_fix: {es: "check: lleva a su sonoridad los audios y vídeos que no la tienen", en: "check: bring to their loudness the audios and videos that do not have it"}
 help_media_frames: {es: "sheet: cuántos fotogramas tiene la hoja de contactos (por defecto media › checks › sheet_frames)", en: "sheet: how many frames the contact sheet has (default media › checks › sheet_frames)"}
+help_video: {es: "vídeos como datos (montaje de escenas con el tema del curso): crear, comprobar, voz, vista previa, render y catálogo", en: "videos as data (a montage of scenes in the theme of the course): create, check, voice, preview, render and catalog"}
 help_videos: {es: "vídeos de sitios prohibidos que son de un canal oficial: comprobar, proponer, aprobar o rechazar", en: "videos on forbidden sites that come from an official channel: check, propose, approve or reject"}
 help_videos_why: {es: "propose: la evidencia de que el canal del vídeo es oficial", en: "propose: the evidence that the channel of the video is official"}
 help_videos_replaces: {es: "propose: la dirección del vídeo que sustituye", en: "propose: the address of the video it replaces"}

@@ -1,0 +1,39 @@
+import React from "react";
+import { AbsoluteFill, Audio, interpolate, Sequence, staticFile, useCurrentFrame } from "remotion";
+import { ThemeProvider, type Motion, type Tokens } from "./theme";
+import { SceneTimeProvider, type Word } from "./timing";
+import { scenes as registry } from "./registry.generated";
+
+// The montage: the scenes one after another, each with its narration, its words and its duration (computed by coursekit from
+// the voice: changing a text changes the timing, not the code), in the theme of the course.
+
+export type ResolvedScene = { id: string; type: string; from: number; frames: number; props: Record<string, unknown>;
+  audio?: string | null; words: Word[] };
+export type MontageProps = { fps: number; width: number; height: number; frames: number; tokens: Tokens; motion: Motion;
+  scenes: ResolvedScene[] };
+
+const Fade: React.FC<{ frames: number; fade: number; children: React.ReactNode }> = ({ frames, fade, children }) => {
+  const frame = useCurrentFrame();
+  const opacity = interpolate(frame, [0, fade, frames - fade, frames], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  return <AbsoluteFill style={{ opacity }}>{children}</AbsoluteFill>;
+};
+
+export const Montage: React.FC<MontageProps> = ({ tokens, motion, scenes }) => (
+  <ThemeProvider theme={{ tokens, motion }}>
+    <AbsoluteFill style={{ background: tokens.color.background }}>
+      {scenes.map((scene) => {
+        const Scene = registry[scene.type];
+        return (
+          <Sequence key={scene.id} from={scene.from} durationInFrames={scene.frames} name={scene.id}>
+            <SceneTimeProvider value={{ words: scene.words, frames: scene.frames }}>
+              <Fade frames={scene.frames} fade={motion.fade}>
+                {Scene ? <Scene id={scene.id} props={scene.props} /> : null}
+              </Fade>
+              {scene.audio ? <Audio src={staticFile(scene.audio)} /> : null}
+            </SceneTimeProvider>
+          </Sequence>
+        );
+      })}
+    </AbsoluteFill>
+  </ThemeProvider>
+);

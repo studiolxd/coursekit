@@ -1,0 +1,5 @@
+description: The close of a video, on the accent colour of the theme; what to keep, in a line, and what comes next.
+built_from: [Background, Heading, Text, Enter]
+props:
+  title: {type: text, required: true, max_chars: 48, on_screen: true}
+  next: {type: text, max_chars: 70, on_screen: true}

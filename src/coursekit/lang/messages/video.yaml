@@ -1,0 +1,42 @@
+# Messages of `coursekit video` (a video as a montage of scenes).
+needs_id: {es: "{action} necesita el código del curso y el recurso", en: "{action} needs the code of the course and the resource"}
+no_montage: {es: "no hay montaje en {path}: créalo con coursekit video new {code} {id}", en: "there is no montage in {path}: create it with coursekit video new {code} {id}"}
+bad_yaml: {es: "{path} no es YAML válido: {error}", en: "{path} is not valid YAML: {error}"}
+newer_version: {es: "el montaje es de la versión {version}, y este coursekit entiende hasta la {supported}: actualiza coursekit", en: "the montage is of version {version}, and this coursekit understands up to {supported}: update coursekit"}
+bad_format: {es: "format necesita width, height y fps enteros y mayores que cero", en: "format needs width, height and fps as whole numbers above zero"}
+no_scenes: {es: "el montaje no tiene escenas", en: "the montage has no scenes"}
+bad_scene: {es: "una escena es un mapa con id, type, props y says (o duration)", en: "a scene is a mapping with id, type, props and says (or duration)"}
+bad_id: {es: "«{id}» no es un id de escena: minúsculas, cifras y guiones", en: "«{id}» is not a scene id: lowercase letters, digits and hyphens"}
+repeated_id: {es: "el id {id} está repetido", en: "the id {id} is repeated"}
+unknown_scene: {es: "no hay ninguna escena {type} (hay: {known}); para una nueva, créala en tools/remotion/src/scenes/<nombre>/ (o en el curso, video/scenes/<nombre>/)", en: "there is no scene {type} (there are: {known}); for a new one, create it in tools/remotion/src/scenes/<name>/ (or in the course, video/scenes/<name>/)"}
+bad_props: {es: "props tiene que ser un mapa", en: "props must be a mapping"}
+prop_missing: {es: "falta {prop}", en: "{prop} is missing"}
+media_missing: {es: "{prop}: no existe {path}", en: "{prop}: {path} does not exist"}
+too_many: {es: "{prop} tiene {n} elementos; la escena cabe con {max}", en: "{prop} has {n} items; the scene fits {max}"}
+unknown_prop: {es: "la escena {type} no tiene {prop} (coursekit video catalog lista sus props)", en: "the scene {type} has no {prop} (coursekit video catalog lists its props)"}
+text_long: {es: "{prop} tiene {n} caracteres y caben {max}: lo que sobra va a la locución", en: "{prop} has {n} characters and {max} fit: what is left over goes to the narration"}
+no_duration: {es: "una escena sin locución (says) dice cuánto dura (duration, en segundos)", en: "a scene without narration (says) says how long it lasts (duration, seconds)"}
+not_said: {es: "{prop} («{text}») está en pantalla y la locución no lo dice: dilo, o describe lo que se ve con shows", en: "{prop} («{text}») is on screen and the narration does not say it: say it, or describe what is seen with shows"}
+voice_failed: {es: "la voz de la escena {scene} falló: {error}", en: "the voice of the scene {scene} failed: {error}"}
+voice_made: {es: "  voz de {scene}: {seconds} s", en: "  voice of {scene}: {seconds} s"}
+voice_done: {es: "{count} locución(es) nueva(s); las que no cambiaron se conservan", en: "{count} new narration(s); the ones that did not change are kept"}
+voice_pending: {es: "la escena {scene} todavía no tiene su voz: coursekit video voice {code} {id}", en: "the scene {scene} has no voice yet: coursekit video voice {code} {id}"}
+has_errors: {es: "el montaje tiene {count} error(es): coursekit video check {code} {id}", en: "the montage has {count} error(s): coursekit video check {code} {id}"}
+no_workspace: {es: "falta el espacio de Remotion (tools/remotion con sus dependencias): coursekit setup --media", en: "the Remotion workspace is missing (tools/remotion with its dependencies): coursekit setup --media"}
+render_failed: {es: "Remotion no pudo renderizar: {reason}", en: "Remotion could not render: {reason}"}
+kit_readme: {es: "Biblioteca de escenas de coursekit: la escribe cada comando coursekit video desde el paquete. No la edites: una escena tuya va en src/scenes/<nombre>/ (o en el curso, video/scenes/<nombre>/), y con el mismo nombre tapa a la de aquí.", en: "Library of scenes of coursekit: every coursekit video command writes it from the package. Do not edit it: a scene of your own goes in src/scenes/<name>/ (or in the course, video/scenes/<name>/), and with the same name it hides the one here."}
+exists: {es: "ya hay un montaje en {path}", en: "there is already a montage in {path}"}
+skeleton_header: {es: "# Montaje del vídeo (coursekit video). Cada escena: id, type (coursekit video catalog), props y says (la locución), o duration si es muda.", en: "# Montage of the video (coursekit video). Each scene: id, type (coursekit video catalog), props and says (the narration), or duration if it has none."}
+created: {es: "montaje creado en {path}", en: "montage created in {path}"}
+finding: {es: "{where} [{code}] {text}", en: "{where} [{code}] {text}"}
+check_ok: {es: "{id}: el montaje está bien", en: "{id}: the montage is fine"}
+preview: {es: "vista previa (un fotograma por escena) en {path}", en: "preview (a frame per scene) in {path}"}
+rendered: {es: "vídeo en {path} ({seconds} s, {scenes} escenas), con subtítulos, palabras y transcripción accesible", en: "video in {path} ({seconds} s, {scenes} scenes), with captions, words and accessible transcript"}
+hides: {es: " (tapa la de {origin})", en: " (hides the one of {origin})"}
+catalog_scene: {es: "{name} [{origin}]{hides}: {description}", en: "{name} [{origin}]{hides}: {description}"}
+catalog_built: {es: "    hecha con: {parts}", en: "    built from: {parts}"}
+catalog_required: {es: "obligatoria", en: "required"}
+catalog_max: {es: "máx. {n}", en: "max {n}"}
+catalog_on_screen: {es: "en pantalla", en: "on screen"}
+catalog_atoms: {es: "átomos: {names}", en: "atoms: {names}"}
+catalog_molecules: {es: "moléculas: {names}", en: "molecules: {names}"}

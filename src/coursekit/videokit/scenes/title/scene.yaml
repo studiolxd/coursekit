@@ -1,0 +1,6 @@
+description: The opening of a video or of a part of it, a kicker over a title; the title is underlined when the narration says `stress`.
+built_from: [Background, TitleBlock (Text, Heading, Enter, Underline)]
+props:
+  kicker: {type: text, max_chars: 40, on_screen: true, label: true, help: "a label over the title: it need not be said"}
+  title: {type: text, required: true, max_chars: 60, on_screen: true}
+  stress: {type: text, help: "a word of the title the narration stresses: it is underlined when it is said"}

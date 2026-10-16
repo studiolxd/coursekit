@@ -167,6 +167,55 @@ Las imágenes y los vídeos pesados ralentizan el curso en el LMS, así que cour
 - **Backend html:** `coursekit assemble build` optimiza la copia que pone en el paquete y no toca el fichero original; no hay nada que ejecutar.
 - Los SVG, GIF, audios y paquetes no se tocan nunca. Solo se recodifican los vídeos `.mp4` (lo que escriben Remotion y VHS), así el nombre del manifiesto sigue siendo válido.
 
+## Montaje de vídeo
+
+Un vídeo puede ser datos en lugar de código: un montaje de escenas, `media/scripts/<id>.video.yaml`, que [`coursekit video`](03-commands.md#coursekit-video) locuta, comprueba y renderiza con una biblioteca de escenas en el tema del curso (receta `montage`, la primera opción para un vídeo). Cada escena dura lo que dura su locución, así que cambiar un texto cambia los tiempos, no el código. Un vídeo hecho a mano como composición de Remotion (receta `remotion`) sigue siendo válido.
+
+```yaml
+version: 1
+format: {width: 1920, height: 1080, fps: 30}
+scenes:
+  - id: opening
+    type: title
+    props: {kicker: "Unidad 1", title: "Contraseñas largas", stress: "largas"}
+    says: "Hoy vemos por qué las contraseñas largas protegen más."
+  - id: length
+    type: split
+    props:
+      title: "La longitud manda"
+      points: [{text: "Doce caracteres o más", say: "doce caracteres"}]
+      media: files/u1-candado.png
+    says: "La longitud manda: doce caracteres o más."
+  - id: close
+    type: outro
+    props: {title: "Larga y única"}
+    duration: 3
+    shows: "El cierre, sobre el color de acento: «Larga y única»"
+```
+
+Una escena tiene un `id`, un `type`, sus `props`, lo que `says` (o una `duration` cuando no dice nada) y, si hace falta, `shows` (lo que se ve, cuando la locución no lo dice).
+
+**Las piezas.** Todo se construye por niveles, cada uno solo con el de abajo:
+
+| Nivel | Qué | En la biblioteca |
+|---|---|---|
+| Tokens | el tema del curso (el suyo, o si no el del proyecto) y los tokens de movimiento | colores, tipografías, radio; cuánto tardan las cosas en entrar |
+| Átomos | las piezas mínimas, movidas por el fotograma | `Heading`, `Text`, `Enter`, `Stagger`, `Underline`, `Counter`, `MediaSlot`, `Ring`, `Background`, `ScreenRecording`; `useAt("palabra")`: cuándo la dice la locución |
+| Moléculas | combinaciones pequeñas | `TitleBlock`, `BulletList`, `StatBlock` |
+| Escenas | composiciones completas | `title`, `split`, `stat`, `outro`, `screencast` |
+
+Los tokens llegan al vídeo como datos, así que un curso con otro tema da otro vídeo sin cambiar nada. Una escena es una carpeta con `index.tsx` (su componente) y `scene.yaml` (qué es, de qué está hecha y sus props: tipo, obligatoria, máximo de caracteres, en pantalla, etiqueta); `coursekit video catalog` las lista todas, para que se vean las piezas y cómo se arman.
+
+**Dónde están las escenas y cuál gana.** Una escena del curso tapa a la del proyecto con el mismo nombre, y una del proyecto a la de la biblioteca:
+
+| Dónde | Qué |
+|---|---|
+| `courses/<CODE>/video/scenes/<nombre>/` | escenas de un curso |
+| `tools/remotion/src/scenes/<nombre>/` | escenas del proyecto, para todos sus cursos |
+| `tools/remotion/kit/` | la biblioteca de coursekit: la escribe cada comando `coursekit video` desde el paquete; git la ignora y nunca se edita |
+
+Cuando ninguna escena cuenta una idea, el agente de multimedia crea una, compuesta con los átomos y las moléculas (importándolos de `"../../../kit"`, igual en una escena del proyecto que en una del curso), así que la biblioteca del proyecto crece con el uso. Las reglas de una escena: todo se mueve con el fotograma; colores y tipografías solo del tema; lo que entra con una palabra entra cuando la locución la dice; medios por su ruta dentro de la carpeta de medios del curso; nada de la red.
+
 ## Accesibilidad de los vídeos
 
 Lo que muestra un vídeo existe también como texto, para que lo tenga quien no puede verlo (WCAG 1.2.3, 1.2.5 y 1.2.8). Las escenas de un vídeo se describen junto a su guion, en `media/scripts/<id>.scenes.yaml`:

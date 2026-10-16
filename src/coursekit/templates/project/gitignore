@@ -17,3 +17,5 @@ courses/*/assembly/html/
 .coursekit/agents/
 .coursekit/refreshed.json
 .coursekit/docs/
+tools/remotion/kit/
+tools/remotion/src/.course/

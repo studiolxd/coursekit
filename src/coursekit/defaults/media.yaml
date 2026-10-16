@@ -63,6 +63,7 @@ types:
     - {id: asciinema, needs: {bin: asciinema}, only: terminal, how: ".cast recording + web player in an EMBED package (copyable text)"}
     - {id: vhs, needs: {bin: vhs}, only: terminal, how: "Video alternative: .tape script → MP4"}
   video:
+    - {id: montage, needs: {bin: node, path: tools/remotion/node_modules}, how: "A montage of scenes as data (media/scripts/<id>.video.yaml, `coursekit video`): the scenes of the library, of the project or of the course, in the theme of the course, each lasting what its voice lasts; a new scene, composed from the atoms of the library, when none tells the idea"}
     - {id: remotion, needs: {bin: node, path: tools/remotion/node_modules}, how: "Programmed video (React) with diagrams, theme tokens, voice-over (voice) and captions (subtitles). Remotion is free for small teams; larger companies need a licence (remotion.dev/license)"}
     - {id: vhs, needs: {bin: vhs}, only: terminal, how: "Terminal video"}
     - {id: screen-recording, needs: {bin: node, path: tools/remotion/node_modules}, shows: interface, how: "Tutorial of a real application over a real screen recording that a person provides (media/recordings/<id>.mp4): the agent adds narration, captions, zooms and highlights with Remotion and draws nothing of the interface. Without the recording the asset stays scripted with a recording brief (media/scripts/<id>.md). An official-channel video (coursekit videos) is the alternative"}
