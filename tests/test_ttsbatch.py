@@ -168,7 +168,6 @@ def test_tts_puts_a_script_in_the_queue_of_a_course_and_only_with_the_gemini_voi
     assert item["kind"] == "tts" and item["asset"] == "U1-S2-M1" and item["out"].endswith("media/files/U1-S2-M1.mp3")
     assert main(["tts", "--course", "PWD", "--in", str(script), "--out", str(out), "--batch"]) == 0
     assert "already in the queue" in capsys.readouterr().out
-    monkeypatch.setenv("PIPER_VOICE", "es_ES-x")
     assert main(["voice", "set", "PWD", "piper", "--voice", "es_ES-x"]) == 0
     capsys.readouterr()
     assert main(["tts", "--course", "PWD", "--in", str(script), "--out", str(course / "media" / "b.mp3"), "--batch"]) == 1

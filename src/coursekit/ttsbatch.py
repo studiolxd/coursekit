@@ -80,6 +80,9 @@ def add(course: dict, kind: str, ident: str, text: str, out: Path, *, asset: str
     has a batch."""
     from coursekit import voices
 
+    chosen = voices.course_voice(course).get("provider")
+    if chosen and chosen != "gemini":  # before resolving it: a provider missing on this machine is not the point
+        raise BatchError(t("ttsbatch", "only_gemini", provider=chosen, code=course["code"]))
     try:
         provider, voice, _ = voices.resolve_character(course, character) if character else voices.resolve(course)
     except voices.VoiceError as exc:
