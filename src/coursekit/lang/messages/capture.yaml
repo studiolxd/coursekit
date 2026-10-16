@@ -84,3 +84,9 @@ not_our_window: {es: "bajo el puntero hay una ventana de {owner}, no del program
 bad_key: {es: "{key} no es una tecla que se pueda pulsar aquí", en: "{key} is not a key that can be pressed here"}
 desktop_no_navigate: {es: "en una ventana de escritorio no se navega a direcciones: usa clics y teclas", en: "a desktop window does not navigate to addresses: use clicks and keys"}
 window_off_main_screen: {es: "la ventana de «{name}» tiene que estar entera en la pantalla principal para grabarla", en: "the window of «{name}» must be entirely on the main screen to be recorded"}
+no_login_needed: {es: "el perfil {name} no necesita iniciar sesión (login: false)", en: "the profile {name} needs no login (login: false)"}
+no_login: {es: "sin inicio de sesión", en: "no login"}
+course_needs_unit: {es: "el perfil course graba el propio curso: el bloque capture del guion necesita start: unit:N", en: "the profile course records the course itself: the capture block of the brief needs start: unit:N"}
+bad_unit: {es: "{start} no es una unidad del curso (start: unit:N)", en: "{start} is not a unit of the course (start: unit:N)"}
+no_package: {es: "la unidad {n} no está construida: coursekit assemble build {code} --unit {n}", en: "unit {n} is not built: coursekit assemble build {code} --unit {n}"}
+no_review_link: {es: "la unidad {n} no tiene enlace de revisión en creator todavía: lo crea el agente de montaje (/assemble)", en: "unit {n} has no review link in creator yet: the assembly agent creates it (/assemble)"}

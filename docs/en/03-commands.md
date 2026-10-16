@@ -965,6 +965,7 @@ Nothing works until the project turns it on (`enabled: true` in `config/capture.
 
 - `login PROFILE`: opens the Chrome, Edge or Chromium of the machine, visible, with a browser profile of its own kept in the per-machine store (`capture/<project>/profiles/<name>/`, readable only by its owner), on the `start_url` of the profile. The person logs in (single sign-on and a second factor included) and closes the browser; the session stays in the profile. coursekit never sees or stores the password, and every project has its own profiles. It needs the `capture` extra of the package (`uv tool install "slxd-coursekit[capture]"`); no browser is downloaded.
 - `logout PROFILE`: deletes the profile and its session.
+- A profile with `login: false` opens a site that needs no account: there is no `login`, and `allow` does not ask for a session. The profile `course` is built in: it records the course itself (a video of how the course is navigated, a demo for the client), with no login and no data of anyone. The `capture` block of the brief says `start: unit:N` (optionally followed by a path): with the html backend, the package of unit N (`assembly/html/unit-NN/`, built with `coursekit assemble build`) is served on this machine (`127.0.0.1`, a free port, only while the session lasts); with creator, the session opens the review link of unit N (the one the assembly agent creates and `coursekit client` uses), and its domain is the only one allowed. If the review page shows comments with names, they are replaced like any personal data; better hide that panel with a `selector` of the `mask` of the block.
 - `profiles`: lists the profiles of `capture.yaml › profiles` with the label of their account, where they start and whether they have a session (and since when); a session whose profile is no longer configured is listed too, so it can be deleted.
 - `allow CODE [ID…]`: gives the permission to capture, signed with the identity of the `.env`, until it expires. It names the mode and the profile or the window. A new permission replaces the one the course had. A resource that does not show an interface is refused.
 - `revoke CODE`: takes the permission back before it expires.
@@ -982,6 +983,7 @@ Covering on the pixels finds what has the shape of personal data, not everything
 coursekit capture login acme-admin
 coursekit capture allow PWD U1-S2-M1 --mode browser --profile acme-admin --minutes 30
 coursekit capture allow PWD --mode desktop --window "Password Manager"
+coursekit capture allow PWD U1-S1-M1 --mode browser --profile course
 coursekit capture revoke PWD
 coursekit capture redact PWD U1-S2-M1
 coursekit capture review PWD U1-S2-M1

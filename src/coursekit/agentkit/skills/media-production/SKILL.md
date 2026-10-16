@@ -76,7 +76,8 @@ What you may do with an `interface` resource, in this order:
    person approved it (`coursekit capture approve`, which you may not run: tell them `coursekit capture review <CODE> <id>`).
 3. **A capture you make yourself**, when the tools of the `coursekit-capture` MCP server are available and a person allowed
    it (`coursekit capture allow`; you may not run it, nor `login`): write first the brief of item 4 and, in it, a `capture`
-   block with where it starts (`start: /path`) and what must always be hidden (`mask: [{selector: ...}, {text: ...}]`). Then
+   block with where it starts (`start: /path`; for a resource that shows the course itself, the profile `course` and
+   `start: unit:N`, its package or its review link) and what must always be hidden (`mask: [{selector: ...}, {text: ...}]`). Then
    `session_start` with the code and the id, follow the steps of the brief looking at each `screenshot` (use `zoom` to read
    small text; `point`, with a `note`, on each thing the narration will name, so the video can zoom there), `save_shot` when the screen is the one the resource needs (for a video, `record_start` and `record_stop`
    around the steps it shows), and `session_end`. The personal data on screen is already replaced with invented data: never

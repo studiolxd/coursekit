@@ -285,7 +285,7 @@ def replay(project, code: str, asset_id: str, backend_factory=None) -> dict:
     finally:
         for part in parts:
             part.unlink(missing_ok=True)
-        session.backend.close()
+        session.close()
     findings = {kind: len(values) for kind, values in sorted(session.seen.items())}
     if session.redactor is not None:
         for kind, n in session.redactor.report.findings.items():

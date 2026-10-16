@@ -124,26 +124,42 @@ def domain_allowed(host: str, domains: list[str]) -> bool:
     return any(host == d or host.endswith("." + d) for d in (str(d).lower().strip().rstrip(".") for d in domains) if d)
 
 
+COURSE_PROFILE = "course"  # built in: the course itself, its package of the html backend or its review link in creator
+
+
 def profile_config(cfg: dict, name: str) -> dict:
-    """The configuration of a profile, checked: where it starts and the domains it may open."""
+    """The configuration of a profile, checked: where it starts, the domains it may open and whether it needs a login.
+
+    `course` is built in: the course that coursekit produces (the package of the html backend served on this machine, or the
+    review link of a unit in creator), with no login and no data of anyone; its start and its domain come from the unit
+    (`start: unit:N` in the `capture` block). A configured profile with `login: false` opens a site that needs no account."""
     check_name(name)
+    if name == COURSE_PROFILE:
+        return {"start_url": "", "allow_domains": [], "account": "", "login_url": "", "login": False, "builtin": True}
     profile = (cfg.get("profiles") or {}).get(name)
     if not isinstance(profile, dict):
-        known = ", ".join(sorted(cfg.get("profiles") or {})) or "—"
+        known = ", ".join(sorted([*(cfg.get("profiles") or {}), COURSE_PROFILE])) or "—"
         raise CaptureError(t("capture", "unknown_profile", name=name, known=known))
+    needs_login = profile.get("login", True) is not False
     url = str(profile.get("start_url") or "").strip()
     parts = urlsplit(url)
-    if parts.scheme not in ("https", "http") or not parts.hostname:
+    if (url or needs_login) and (parts.scheme not in ("https", "http") or not parts.hostname):
         raise CaptureError(t("capture", "bad_start_url", name=name, url=url or "—"))
     domains = [str(d) for d in (profile.get("allow_domains") or []) if str(d).strip()]
     if not domains:
         raise CaptureError(t("capture", "no_domains", name=name))
-    if not domain_allowed(parts.hostname, domains):
+    if url and not domain_allowed(parts.hostname, domains):
         raise CaptureError(t("capture", "start_outside", name=name, host=parts.hostname))
     login = str(profile.get("login_url") or "").strip()
     if login and urlsplit(login).scheme not in ("https", "http"):
         raise CaptureError(t("capture", "bad_login_url", name=name, url=login))
-    return {"start_url": url, "allow_domains": domains, "account": str(profile.get("account") or ""), "login_url": login}
+    return {"start_url": url, "allow_domains": domains, "account": str(profile.get("account") or ""), "login_url": login,
+            "login": needs_login}
+
+
+def ready(project: Project, name: str, profile: dict) -> bool:
+    """Whether a profile can be opened: it needs no login, or a person logged in."""
+    return not profile.get("login", True) or logged_in(project, name)
 
 
 def _launch_login(folder: Path, url: str) -> None:
@@ -174,6 +190,8 @@ def login(project: Project, name: str, launch: Launcher | None = None) -> dict:
     cfg = settings(project)
     _require_enabled(cfg)
     profile = profile_config(cfg, name)
+    if not profile["login"]:
+        raise CaptureError(t("capture", "no_login_needed", name=name))
     folder = _private_dir(profile_dir(project, name))
     (launch or _launch_login)(folder, profile["start_url"])
     who = identity.current()
@@ -203,7 +221,7 @@ def profiles(project: Project) -> list[dict]:
         meta = _read_json(_profile_meta(project, name)) or {}
         entry = configured.get(name) if isinstance(configured.get(name), dict) else {}
         out.append({"name": name, "configured": name in configured, "start_url": entry.get("start_url") or meta.get("start_url", ""),
-                    "account": entry.get("account") or meta.get("account", ""),
+                    "account": entry.get("account") or meta.get("account", ""), "login": entry.get("login", True) is not False,
                     "logged_in_at": meta.get("logged_in_at") if profile_dir(project, name).exists() else None})
     return out
 
@@ -233,8 +251,7 @@ def allow(project: Project, course: dict, ids: list[str], mode: str, profile: st
     if mode == "browser":
         if not profile:
             raise CaptureError(t("capture", "browser_needs_profile"))
-        profile_config(cfg, profile)
-        if not logged_in(project, profile):
+        if not ready(project, profile, profile_config(cfg, profile)):
             raise CaptureError(t("capture", "not_logged_in", name=profile))
         window = None
     else:

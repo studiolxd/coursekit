@@ -229,8 +229,8 @@ def cmd_capture(args: argparse.Namespace) -> int:
         if args.action == "profiles":
             entries = capturemod.profiles(project)
             for entry in entries:
-                state = (t("capture", "session_since", at=entry["logged_in_at"]) if entry["logged_in_at"]
-                         else t("capture", "no_session"))
+                state = (t("capture", "no_login") if not entry["login"] else
+                         t("capture", "session_since", at=entry["logged_in_at"]) if entry["logged_in_at"] else t("capture", "no_session"))
                 if not entry["configured"]:
                     state += " · " + t("capture", "not_configured")
                 print(t("capture", "profile_line", name=entry["name"], account=entry["account"] or "—",

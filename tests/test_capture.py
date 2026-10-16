@@ -987,3 +987,71 @@ def test_the_agent_marks_a_place_without_clicking_it(allowed):
     assert manager.session.steps[-1] == {"point": {"x": 720, "y": 450, "target": {"role": "button", "name": "Guardar"},
                                                    "note": "the save button"}}
     assert not [c for c in manager.session.backend.calls if c[0] == "click"]
+
+
+# ── the course itself: its html package or its review link in creator ────────────────────────
+
+from tests.test_exelearning import edit_course  # noqa: E402
+
+
+class StartBrowser(FakeBrowser):
+    opened: list = []
+
+    def __init__(self, profile, start_url, domains, *rest):
+        super().__init__(profile, start_url, domains, *rest)
+        StartBrowser.opened.append((start_url, list(domains)))
+
+
+def course_capture(course_dir, capsys, start):
+    configure(course_dir.parent.parent, redact={"pixel_check": False})
+    interface_asset(course_dir, capsys)
+    assert main(["capture", "allow", "PWD", "U1-S2-M1", "--mode", "browser", "--profile", "course"]) == 0  # no login
+    capture_session.write_block({"_dir": course_dir}, "U1-S2-M1", {"start": start, "steps": []})
+    capsys.readouterr()
+
+
+def test_the_package_of_the_html_backend_is_served_on_this_machine(course, capsys):  # noqa: F811
+    import urllib.request
+
+    edit_course(course, lambda d: d.update(assembly={"backend": "html"}))
+    course_capture(course, capsys, "unit:1")
+    with pytest.raises(mcpserver.ToolError, match="unit 1 is not built: coursekit assemble build PWD --unit 1"):
+        capture_session.start(find_project(), "PWD", "U1-S2-M1", StartBrowser)
+    package = course / "assembly" / "html" / "unit-01"
+    package.mkdir(parents=True)
+    (package / "index.html").write_text("<h1>Contraseñas seguras</h1>", encoding="utf-8")
+    session = capture_session.start(find_project(), "PWD", "U1-S2-M1", StartBrowser)
+    url, domains = StartBrowser.opened[-1]
+    assert url.startswith("http://127.0.0.1:") and url.endswith("/index.html") and domains == ["127.0.0.1"]
+    with urllib.request.urlopen(url, timeout=5) as answer:  # noqa: S310 — the local server of the test
+        assert "Contraseñas seguras" in answer.read().decode("utf-8")
+    session.close()
+    with pytest.raises(OSError):
+        urllib.request.urlopen(url, timeout=2)  # noqa: S310 — it stopped with the session
+
+
+def test_a_course_in_creator_is_recorded_from_the_review_link_of_its_unit(course, capsys):  # noqa: F811
+    course_capture(course, capsys, "unit:1")
+    with pytest.raises(mcpserver.ToolError, match="unit 1 has no review link in creator yet"):
+        capture_session.start(find_project(), "PWD", "U1-S2-M1", StartBrowser)
+    link = "https://creator.acme.example/review/u1-token"
+    edit_course(course, lambda d: d["units"][0].update(links={"review": link}))
+    capture_session.start(find_project(), "PWD", "U1-S2-M1", StartBrowser).close()
+    assert StartBrowser.opened[-1] == (link, ["creator.acme.example"])
+    capture_session.write_block({"_dir": course}, "U1-S2-M1", {"start": "unit:9", "steps": []})
+    with pytest.raises(mcpserver.ToolError, match="unit:9 is not a unit of the course"):
+        capture_session.start(find_project(), "PWD", "U1-S2-M1", StartBrowser)
+    capture_session.write_block({"_dir": course}, "U1-S2-M1", {"start": "/settings", "steps": []})
+    with pytest.raises(mcpserver.ToolError, match="needs start: unit:N"):
+        capture_session.start(find_project(), "PWD", "U1-S2-M1", StartBrowser)
+
+
+def test_a_profile_without_login_opens_with_no_session(course, browser, capsys):  # noqa: F811
+    public = {"start_url": "https://docs.acme.example/", "allow_domains": ["docs.acme.example"], "login": False}
+    configure(course.parent.parent, profiles={"docs": public})
+    interface_asset(course, capsys)
+    assert main(["capture", "login", "docs"]) == 1
+    assert "needs no login" in capsys.readouterr().err and not browser
+    assert main(["capture", "allow", "PWD", "U1-S2-M1", "--mode", "browser", "--profile", "docs"]) == 0
+    assert main(["capture", "profiles"]) == 0
+    assert "docs · — · https://docs.acme.example/ · no login" in capsys.readouterr().out

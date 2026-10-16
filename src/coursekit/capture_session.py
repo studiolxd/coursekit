@@ -137,6 +137,7 @@ class Session:
     warnings: list[str] = field(default_factory=list)
     redactor: redactmod.Redactor | None = None
     started_at: str = ""
+    server: object | None = None  # the local server of the package of the course, when it is what is recorded
     _scale: float = 1.0  # model pixels → css pixels
 
     # the agent sees the screen at most `max_edge` wide or tall: these are its coordinates
@@ -146,6 +147,16 @@ class Session:
         if not (0 <= cx <= w and 0 <= cy <= h):
             raise ToolError(t("capture", "outside_screen", x=round(x), y=round(y)))
         return cx, cy
+
+    def close(self) -> None:
+        """Closes the browser (or the window) and the local server, if there is one."""
+        try:
+            if self.backend is not None:
+                self.backend.close()
+        finally:
+            if self.server is not None:
+                self.server.shutdown()
+                self.server = None
 
     def check(self) -> None:
         """Before every action: the permission is still in force and the session of the profile has not expired."""
@@ -337,7 +348,7 @@ class Session:
             return {"brief": brief, "findings": findings, "file": asset["capture"]["file"], "review": review,
                     "replay": recorded}
         finally:
-            self.backend.close()
+            self.close()
 
 
 def _now() -> str:
@@ -366,11 +377,14 @@ def start(project, code: str, asset_id: str, backend_factory=None, cursor: bool 
         profile = capturemod.profile_config(cfg, grant["profile"])
     except capturemod.CaptureError as exc:
         raise ToolError(str(exc)) from None
-    if not capturemod.logged_in(project, grant["profile"]):
+    if not capturemod.ready(project, grant["profile"], profile):
         raise ToolError(t("capture", "not_logged_in", name=grant["profile"]))
     block = read_block(course, asset_id)
-    start_url = urljoin(profile["start_url"], str(block.get("start") or "")) if block.get("start") else profile["start_url"]
+    start_url, domains, server = resolve_start(course, profile, str(block.get("start") or ""))
+    profile = {**profile, "allow_domains": [*profile["allow_domains"], *domains]}
     if not capturemod.domain_allowed(domain_of(start_url), profile["allow_domains"]):
+        if server:
+            server.shutdown()
         raise ToolError(t("capture", "domain_blocked", host=domain_of(start_url)))
     viewport = block.get("viewport") or {}
     size = (int(viewport.get("width") or 1440), int(viewport.get("height") or 900))
@@ -378,7 +392,7 @@ def start(project, code: str, asset_id: str, backend_factory=None, cursor: bool 
     selectors = [*(rules.get("selectors") or []), *(str(m["selector"]) for m in block.get("mask") or []
                                                       if isinstance(m, dict) and m.get("selector"))]
     session = Session(project, course, asset_id, grant, None, rules, int((cfg.get("screenshot") or {}).get("max_edge") or 1920),
-                      start_url, profile["allow_domains"], profile["login_url"], started_at=_now())
+                      start_url, profile["allow_domains"], profile["login_url"], started_at=_now(), server=server)
     if rules.get("pixel_check"):
         try:
             session.redactor = _redactor(rules, course, who, terms)
@@ -388,10 +402,56 @@ def start(project, code: str, asset_id: str, backend_factory=None, cursor: bool 
     device = float((cfg.get("screenshot") or {}).get("device_scale") or 1)
     session._scale = 1 / (device * min(1.0, session.max_edge / (max(size) * device)))
     factory = backend_factory or BrowserBackend
-    session.backend = factory(capturemod.profile_dir(project, grant["profile"]), start_url, profile["allow_domains"], size, device,
-                              lambda texts: session.note_texts(texts, who, terms),
-                              {"selectors": selectors, "avatars": True, **({"cursor": True} if cursor else {})})
+    try:
+        session.backend = factory(capturemod._private_dir(capturemod.profile_dir(project, grant["profile"])), start_url,
+                                  profile["allow_domains"], size, device, lambda texts: session.note_texts(texts, who, terms),
+                                  {"selectors": selectors, "avatars": True, **({"cursor": True} if cursor else {})})
+    except Exception:
+        if server:
+            server.shutdown()
+        raise
     return session
+
+
+def resolve_start(course: dict, profile: dict, start: str):
+    """Where a session opens: (address, domains it adds, the local server it started, if any).
+
+    `unit:N` (optionally followed by a path) is the course itself: with the html backend, the package of unit N
+    (`assembly/html/unit-NN/`) served on this machine; with creator, the review link of unit N. Anything else is a path
+    joined to the `start_url` of the profile."""
+    match = re.fullmatch(r"unit:(\d+)(/.*)?", start.strip())
+    if not match:
+        if profile.get("builtin"):
+            raise ToolError(t("capture", "course_needs_unit"))
+        return (urljoin(profile["start_url"], start) if start else profile["start_url"]), [], None
+    n, rest = int(match.group(1)), (match.group(2) or "").lstrip("/")
+    if not any(int(u.get("n", 0)) == n for u in course.get("units") or []):
+        raise ToolError(t("capture", "bad_unit", start=start))
+    if coursemod.backend(course) == "html":
+        folder = course["_dir"] / "assembly" / "html" / f"unit-{n:02d}"
+        if not (folder / "index.html").exists():
+            raise ToolError(t("capture", "no_package", n=n, code=course["code"]))
+        server = serve_folder(folder)
+        return f"http://127.0.0.1:{server.server_address[1]}/{rest or 'index.html'}", ["127.0.0.1"], server
+    link = next((((u.get("links") or {}).get("review") or "") for u in course.get("units") or [] if int(u.get("n", 0)) == n), "")
+    if not link:
+        raise ToolError(t("capture", "no_review_link", n=n))
+    return (urljoin(link, rest) if rest else link), [domain_of(link)], None
+
+
+def serve_folder(folder: Path):
+    """A quiet HTTP server of a folder on 127.0.0.1 (a free port), in a thread; `shutdown()` stops it."""
+    import functools
+    import http.server
+    import threading
+
+    class Quiet(http.server.SimpleHTTPRequestHandler):
+        def log_message(self, *args) -> None:
+            pass
+
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Quiet, directory=str(folder)))
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    return server
 
 
 def _rules(cfg: dict, course: dict, asset: dict, block: dict) -> tuple[dict, pii.People, list[str]]:
@@ -664,7 +724,7 @@ class Manager:
             return action()
         except SessionGone:
             if self.session is not None:
-                self.session.backend.close()
+                self.session.close()
                 self.session = None
             raise
 
