@@ -68,7 +68,8 @@ _BASE_TOOLS = ["Read", "Edit", "Write", "Glob", "Grep", "Skill", "TodoWrite",
 CLAUDE_DENY = ["Bash(git commit:*)", "Bash(git push:*)", "Bash(coursekit approve:*)", "Bash(coursekit videos approve:*)",
                "Bash(coursekit videos reject:*)", "Bash(coursekit client:*)", "Bash(coursekit hold:*)",
                "Bash(coursekit resume:*)", "Bash(coursekit handoff:*)", "Bash(coursekit reviewed*--by*)",
-               "Edit(courses/*/assembly/*.json)"]
+               "Bash(coursekit capture login:*)", "Bash(coursekit capture logout:*)", "Bash(coursekit capture allow:*)",
+               "Bash(coursekit capture revoke:*)", "Edit(courses/*/assembly/*.json)"]
 
 
 class LaunchError(Exception):

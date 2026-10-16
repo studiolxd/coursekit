@@ -1,0 +1,33 @@
+# Messages of `coursekit capture` (real captures of an application, with the permission of a person).
+not_enabled: {es: "la captura está desactivada en este proyecto: activa capture.yaml › enabled (config/capture.yaml)", en: "capture is turned off in this project: turn on capture.yaml › enabled (config/capture.yaml)"}
+bad_name: {es: "«{name}» no es un nombre de perfil: minúsculas, cifras y guiones", en: "«{name}» is not a profile name: lowercase letters, digits and hyphens"}
+unknown_profile: {es: "el perfil {name} no está en capture.yaml › profiles (hay: {known})", en: "the profile {name} is not in capture.yaml › profiles (there are: {known})"}
+bad_start_url: {es: "el perfil {name} necesita una start_url http(s) completa (tiene: {url})", en: "the profile {name} needs a full http(s) start_url (it has: {url})"}
+no_domains: {es: "el perfil {name} necesita allow_domains: los únicos dominios que la captura puede abrir", en: "the profile {name} needs allow_domains: the only domains the capture may open"}
+start_outside: {es: "la start_url del perfil {name} ({host}) no está en sus allow_domains", en: "the start_url of the profile {name} ({host}) is not in its allow_domains"}
+playwright_missing: {es: "la captura necesita el extra capture de coursekit: uv tool install \"slxd-coursekit[capture]\" (o pip install \"slxd-coursekit[capture]\")", en: "capture needs the capture extra of coursekit: uv tool install \"slxd-coursekit[capture]\" (or pip install \"slxd-coursekit[capture]\")"}
+no_browser: {es: "no hay Chrome, Edge ni Chromium instalado: la captura abre el navegador de la máquina", en: "there is no Chrome, Edge or Chromium installed: capture opens the browser of the machine"}
+browser_failed: {es: "el navegador no se pudo abrir o se cerró con un error: {reason}", en: "the browser could not open or closed with an error: {reason}"}
+no_identity: {es: "el permiso de captura lo firma una persona: define COURSEKIT_USER_NAME y COURSEKIT_USER_EMAIL (coursekit setup --identity)", en: "the permission to capture is signed by a person: set COURSEKIT_USER_NAME and COURSEKIT_USER_EMAIL (coursekit setup --identity)"}
+mode_not_allowed: {es: "el modo {mode} no está permitido en este proyecto (capture.yaml › modes: {modes})", en: "the mode {mode} is not allowed in this project (capture.yaml › modes: {modes})"}
+browser_needs_profile: {es: "--mode browser necesita --profile: el perfil con el que se abre la aplicación", en: "--mode browser needs --profile: the profile the application opens with"}
+not_logged_in: {es: "el perfil {name} no tiene sesión: una persona inicia sesión con coursekit capture login {name}", en: "the profile {name} has no session: a person logs in with coursekit capture login {name}"}
+desktop_needs_window: {es: "--mode desktop necesita --window: el nombre de la única ventana que se puede capturar", en: "--mode desktop needs --window: the name of the only window that may be captured"}
+not_interface: {es: "{ids} no son recursos de {code} que muestren una interfaz (coursekit media set CODE ID --depicts interface)", en: "{ids} are not resources of {code} that show an interface (coursekit media set CODE ID --depicts interface)"}
+no_interface_assets: {es: "{code} no tiene recursos que muestren una interfaz: no hay nada que capturar", en: "{code} has no resources that show an interface: there is nothing to capture"}
+bad_minutes: {es: "la duración del permiso tiene que ser mayor que cero", en: "the permission has to last more than zero minutes"}
+needs_target: {es: "{action} necesita el perfil o el código del curso", en: "{action} needs the profile or the code of the course"}
+needs_mode: {es: "allow necesita --mode browser o --mode desktop", en: "allow needs --mode browser or --mode desktop"}
+login_open: {es: "se abre el navegador con el perfil {name}: inicia sesión y ciérralo cuando termines (coursekit no ve la contraseña)", en: "the browser opens with the profile {name}: log in and close it when you are done (coursekit never sees the password)"}
+login_done: {es: "sesión guardada en el perfil {name} ({at})", en: "session kept in the profile {name} ({at})"}
+logout_done: {es: "perfil {name} borrado con su sesión", en: "profile {name} deleted with its session"}
+logout_none: {es: "el perfil {name} no tenía sesión", en: "the profile {name} had no session"}
+allowed: {es: "permiso de captura para {code}: {mode} ({what}), recursos: {assets}; caduca {until}", en: "permission to capture for {code}: {mode} ({what}), resources: {assets}; expires {until}"}
+every_interface_asset: {es: "todos los que muestran una interfaz", en: "every one that shows an interface"}
+revoked: {es: "permiso de captura de {code} retirado", en: "permission to capture of {code} taken back"}
+revoke_none: {es: "{code} no tenía permiso de captura", en: "{code} had no permission to capture"}
+profile_line: {es: "{name} · {account} · {url} · {state}", en: "{name} · {account} · {url} · {state}"}
+session_since: {es: "sesión desde {at}", en: "session since {at}"}
+no_session: {es: "sin sesión", en: "no session"}
+not_configured: {es: "ya no está en capture.yaml (coursekit capture logout lo borra)", en: "no longer in capture.yaml (coursekit capture logout deletes it)"}
+no_profiles: {es: "no hay perfiles en capture.yaml › profiles", en: "there are no profiles in capture.yaml › profiles"}

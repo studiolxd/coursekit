@@ -18,6 +18,7 @@ dependencies = [
 
 [project.optional-dependencies]
 media = []
+capture = ["playwright>=1.48"]
 
 [project.urls]
 Repository = "https://github.com/studiolxd/coursekit"

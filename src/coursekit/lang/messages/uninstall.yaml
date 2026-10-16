@@ -4,6 +4,9 @@ nothing: {es: "No hay nada instalado por coursekit fuera de los proyectos.", en:
 group_workspaces:
   es: "Dependencias de Node compartidas por los proyectos (Remotion, constructor html):"
   en: "Node dependencies shared by the projects (Remotion, html builder):"
+group_capture:
+  es: "Perfiles de navegador y permisos de coursekit capture, por proyecto (guardan sesiones iniciadas):"
+  en: "Browser profiles and permissions of coursekit capture, per project (they hold logged-in sessions):"
 group_tools: {es: "Herramientas de multimedia instaladas con uv:", en: "Media tools installed with uv:"}
 group_files: {es: "Ficheros descargados (voces de Piper):", en: "Downloaded files (Piper voices):"}
 group_shell:
@@ -19,6 +22,7 @@ item_lines: {es: "{path}: {count} bloque(s) de coursekit", en: "{path}: {count} 
 ask_remove: {es: "¿Quitar esto?", en: "Remove this?"}
 kept: {es: "  se deja como está", en: "  left as it is"}
 removed_workspaces: {es: "quitadas {count} carpeta(s) de dependencias", en: "removed {count} dependency folder(s)"}
+removed_capture: {es: "quitados los perfiles y permisos de captura de {count} proyecto(s)", en: "removed the capture profiles and permissions of {count} project(s)"}
 tool_removed: {es: "quitada {package}", en: "removed {package}"}
 tool_failed: {es: "no se pudo quitar {package} (uv tool uninstall {package})", en: "could not remove {package} (uv tool uninstall {package})"}
 removed_files: {es: "quitados {count} fichero(s)", en: "removed {count} file(s)"}

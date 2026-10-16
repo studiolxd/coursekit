@@ -188,7 +188,7 @@ A provider is used only if its key is set. See [Media](07-media.md) for how cour
 
 ## The `config/` files
 
-The five configurations are `rules`, `directives`, `media`, `delivery` and `import`. Every project gets `config/<name>.example.yaml` with the complete package defaults (a reference, never read). To change something, create `config/<name>.yaml` with **only the keys you change**; `coursekit init --update` refreshes the examples without touching your overrides.
+The six configurations are `rules`, `directives`, `media`, `delivery`, `import` and `capture`. Every project gets `config/<name>.example.yaml` with the complete package defaults (a reference, never read). To change something, create `config/<name>.yaml` with **only the keys you change**; `coursekit init --update` refreshes the examples without touching your overrides.
 
 The same keys can be written in a `<name>:` section of `project.yaml` (wins over `config/`) or of a course's `course.yaml` (wins over both, for that course only).
 
@@ -331,6 +331,27 @@ What `coursekit import` and the `.elp` files dropped in `brief/sources/` become.
 
 The default rules drop the prompt that comes before an interactive (`click`; ours bring their own), and turn warning, definition, example, "did you know" and reflection boxes into `:::note`, `:::highlight` and `:::reflection`. A list is replaced whole: to add a rule for your template, copy the default list into `config/import.yaml` and add yours. Details of the conversion: [Import from eXeLearning](02-workflow.md#import-from-exelearning).
 
+### `capture`: real captures of an application
+
+The profiles of the web applications and the permissions of [`coursekit capture`](03-commands.md#coursekit-capture). Nothing is captured until a project turns it on.
+
+| Key | Default | Meaning |
+|---|---|---|
+| `enabled` | `false` | Whether the project captures at all. |
+| `grant_minutes` | `60` | How long a permission of `coursekit capture allow` lasts unless it says `--minutes`. |
+| `modes` | `[browser, desktop]` | The ways of capturing the project allows: `browser` (a web application in a browser coursekit opens) and `desktop` (a window of a program of the machine). |
+| `profiles` | `{}` | The web applications, one profile each. The key is the name `coursekit capture login` uses (lowercase letters, digits and hyphens). Each one has `start_url` (where it opens), `allow_domains` (the only domains it may open; a domain covers its subdomains, and the single sign-on domain goes here too if the login goes through one) and `account` (only a label of which account it is, never a user name or a password). |
+
+```yaml
+# config/capture.yaml
+enabled: true
+profiles:
+  acme-admin:
+    start_url: https://app.acme.example/
+    allow_domains: [app.acme.example, sso.acme.example]
+    account: demo administrator
+```
+
 ## `course.yaml`: what a person may set per course
 
 `course.yaml` is the record of a course and is mostly maintained by commands. These are the keys that a person may edit by hand:
@@ -433,6 +454,7 @@ What it holds:
 | Path (inside the store) | Written by | Content |
 |---|---|---|
 | `workspaces/<name>-<hash>/` | `coursekit setup --media` (Remotion); `coursekit setup` and `coursekit assemble build` (html builder); `coursekit assemble check` (html checker) | A Node workspace installed once with `npm install`: the Remotion one (`workspaces/remotion-<hash>/`), the builder of the html backend (`workspaces/html-builder-<hash>/`, with `@studiolxd/scorm` and `esbuild`) and its checker (`workspaces/html-checker-<hash>/`, with `playwright-core` and `axe-core`; it uses the installed browser and downloads none). `<hash>` is computed from its `package.json` and `package-lock.json`: projects with the same dependencies share the folder, and a project that edits its `package.json` gets another one. The html builder takes its `package.json` from coursekit, so every project of the same version shares it. |
+| `capture/<project>-<hash>/` | `coursekit capture login`, `coursekit capture allow` | The browser profiles of a project (`profiles/<name>/`, with the logged-in session, and `profiles/<name>.json`, when and by whom) and its permissions to capture (`grants/<CODE>.json`). Readable only by its owner; `coursekit capture logout` deletes a profile. |
 | `installed.json` | `coursekit setup`, `coursekit assemble build` | The record of what coursekit installed outside the projects, so that `coursekit uninstall` can take it away. |
 
 `installed.json` is a JSON file with one list per kind of thing:

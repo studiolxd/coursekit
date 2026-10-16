@@ -27,6 +27,7 @@ from coursekit import (
 )
 from coursekit import assemble as assemblemod
 from coursekit import brief as briefmod
+from coursekit import capture as capturemod
 from coursekit import catalog as catalogmod
 from coursekit import course as coursemod
 from coursekit import delivery as deliverymod
@@ -213,6 +214,50 @@ def cmd_videos(args: argparse.Namespace) -> int:
     print(t("videos", "summary", path=path.relative_to(project.root).as_posix(), **counts))
     _mirror(project, course["code"])
     return 1 if counts["pending"] or counts["rejected"] else 0
+
+
+def cmd_capture(args: argparse.Namespace) -> int:
+    project = _project()
+    try:
+        if args.action == "profiles":
+            entries = capturemod.profiles(project)
+            for entry in entries:
+                state = (t("capture", "session_since", at=entry["logged_in_at"]) if entry["logged_in_at"]
+                         else t("capture", "no_session"))
+                if not entry["configured"]:
+                    state += " · " + t("capture", "not_configured")
+                print(t("capture", "profile_line", name=entry["name"], account=entry["account"] or "—",
+                        url=entry["start_url"] or "—", state=state))
+            if not entries:
+                print(t("capture", "no_profiles"))
+            return 0
+        if not args.target:
+            print(t("capture", "needs_target", action=args.action), file=sys.stderr)
+            return 2
+        if args.action == "login":
+            print(t("capture", "login_open", name=args.target))
+            meta = capturemod.login(project, args.target)
+            print(t("capture", "login_done", name=args.target, at=meta["logged_in_at"]))
+        elif args.action == "logout":
+            done = capturemod.logout(project, args.target)
+            print(t("capture", "logout_done" if done else "logout_none", name=args.target))
+        elif args.action == "allow":
+            if not args.mode:
+                print(t("capture", "needs_mode"), file=sys.stderr)
+                return 2
+            course = coursemod.load(project, args.target)
+            statesmod.ensure_active(course)
+            grant = capturemod.allow(project, course, args.ids, args.mode, args.profile, args.window, args.minutes)
+            print(t("capture", "allowed", code=grant["code"], mode=grant["mode"], what=grant["profile"] or grant["window"],
+                    assets=", ".join(grant["assets"] or []) or t("capture", "every_interface_asset"),
+                    until=grant["expires_at"]))
+        elif args.action == "revoke":
+            done = capturemod.revoke(project, args.target)
+            print(t("capture", "revoked" if done else "revoke_none", code=args.target))
+    except capturemod.CaptureError as exc:
+        print(t("commands", "error_line", text=exc), file=sys.stderr)
+        return 1
+    return 0
 
 
 def cmd_status(args: argparse.Namespace) -> int:
@@ -1164,6 +1209,16 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--clean", action="store_true", help=t("commands", "help_media_clean"))
     p.add_argument("--size", help=t("commands", "help_media_size"))
     p.set_defaults(func=cmd_media)
+
+    p = sub.add_parser("capture", help=t("commands", "help_capture"))
+    p.add_argument("action", choices=("login", "logout", "profiles", "allow", "revoke"))
+    p.add_argument("target", nargs="?", help=t("commands", "help_capture_target"))
+    p.add_argument("ids", nargs="*", help=t("commands", "help_capture_ids"))
+    p.add_argument("--mode", choices=capturemod.MODES, help=t("commands", "help_capture_mode"))
+    p.add_argument("--profile", help=t("commands", "help_capture_profile"))
+    p.add_argument("--window", help=t("commands", "help_capture_window"))
+    p.add_argument("--minutes", type=float, help=t("commands", "help_capture_minutes"))
+    p.set_defaults(func=cmd_capture)
 
     p = sub.add_parser("download", help=t("commands", "help_download"))
     p.add_argument("url", help=t("commands", "help_download_url"))

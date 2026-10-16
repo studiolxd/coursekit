@@ -43,7 +43,7 @@ Commands load `.env` (at the project root) into the process environment before r
 
 | Marker | Meaning |
 |---|---|
-| People only | The command signs or changes something that belongs to a person. The generated agent configurations deny it (`coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff`, `coursekit reviewed --by`). |
+| People only | The command signs or changes something that belongs to a person. The generated agent configurations deny it (`coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff`, `coursekit reviewed --by`, `coursekit capture login`, `logout`, `allow` and `revoke`). |
 | Agents | The agent of a role runs it as part of a skill or slash command. People can run it too. |
 | Both | Everyday commands for people and agents alike. |
 
@@ -82,7 +82,7 @@ While a course is `on_hold`, the commands that change its work are refused with 
 | Verification and sign-off | `coursekit verify`, `coursekit paths`, `coursekit reviewed`, `coursekit approve` |
 | Course state and client review | `coursekit hold`, `coursekit resume`, `coursekit client` |
 | Launching agents | `coursekit write`, `coursekit review`, `coursekit run` |
-| Media | `coursekit media`, `coursekit voice`, `coursekit tts`, `coursekit subtitles`, `coursekit theme` |
+| Media | `coursekit media`, `coursekit voice`, `coursekit tts`, `coursekit subtitles`, `coursekit theme`, `coursekit capture` |
 | Assembly and delivery | `coursekit assemble`, `coursekit preview`, `coursekit directives`, `coursekit delivery`, `coursekit publish`, `coursekit catalog` |
 
 ## Project and machine
@@ -258,6 +258,7 @@ It starts by printing the path of the store (see [The per-machine store](04-conf
 | Group | What it holds |
 |---|---|
 | Shared Node dependencies | The workspaces in `workspaces/` of the store (the Remotion one and the html builder), with the size of each. |
+| Capture profiles | The browser profiles and permissions of `coursekit capture`, one folder per project, with its size. They hold logged-in sessions. |
 | Media tools installed with `uv` | `piper-tts` and `stable-ts`. Each one is marked as *installed by coursekit setup* (it is in the record) or as *detected* (it is installed but not recorded, so coursekit may not have installed it: you are asked before it is removed). |
 | Downloaded files | The Piper voice files that `setup` downloaded, with their size. |
 | Shell-file blocks | The lines that `setup` added to `~/.zshrc` or `~/.bashrc` for the proxy certificate, marked `# coursekit (TLS-inspecting proxy)`, with the number of blocks per file. Only the marker and the line after it are removed. |
@@ -932,6 +933,41 @@ coursekit theme import .cache/theme/get_theme.json --course PWD
 coursekit theme import theme/maqueta.css
 coursekit theme show --course PWD
 coursekit theme check
+```
+
+### `coursekit capture`
+
+Prepares the real captures of an application that coursekit makes itself, for the resources that show a real interface (`depicts: interface`, recipes `screenshot` and `screen-recording`): the profiles of the web applications and the permission to capture. The capture itself (an agent driving the application, with the real data hidden before the agent sees anything) comes in a later version; until then the recording is still provided by a person in `media/recordings/`. Who: people (`login`, `logout`, `allow` and `revoke` are denied to the agents); `profiles`: both.
+
+```
+coursekit capture [--mode {browser,desktop}] [--profile PROFILE] [--window WINDOW] [--minutes MINUTES] {login,logout,profiles,allow,revoke} [target] [ids ...]
+```
+
+| Argument | Values / default | Meaning |
+|---|---|---|
+| `action` | `login`, `logout`, `profiles`, `allow`, `revoke` | See below. |
+| `target` | profile name or course code | `login` and `logout`: the profile; `allow` and `revoke`: the course. |
+| `ids` | resource ids | `allow`: the resources that may be captured. Without ids, every resource of the course that shows an interface. |
+| `--mode MODE` | `browser`, `desktop` | `allow`: a web application opened in a browser (`browser`) or a window of a program of the machine (`desktop`). Required. It must be in `capture.yaml › modes`. |
+| `--profile PROFILE` | profile name | `allow --mode browser`: the profile it opens with. Required in that mode; the profile must have a session. |
+| `--window WINDOW` | window name | `allow --mode desktop`: the only window that may be captured and driven. Required in that mode. |
+| `--minutes MINUTES` | number; default `capture.yaml › grant_minutes` | `allow`: how long the permission lasts. |
+
+Nothing works until the project turns it on (`enabled: true` in `config/capture.yaml`, see [`capture`](04-configuration.md#capture-real-captures-of-an-application)). Actions:
+
+- `login PROFILE`: opens the Chrome, Edge or Chromium of the machine, visible, with a browser profile of its own kept in the per-machine store (`capture/<project>/profiles/<name>/`, readable only by its owner), on the `start_url` of the profile. The person logs in (single sign-on and a second factor included) and closes the browser; the session stays in the profile. coursekit never sees or stores the password, and every project has its own profiles. It needs the `capture` extra of the package (`uv tool install "slxd-coursekit[capture]"`); no browser is downloaded.
+- `logout PROFILE`: deletes the profile and its session.
+- `profiles`: lists the profiles of `capture.yaml › profiles` with the label of their account, where they start and whether they have a session (and since when); a session whose profile is no longer configured is listed too, so it can be deleted.
+- `allow CODE [ID…]`: gives the permission to capture, signed with the identity of the `.env`, until it expires. It names the mode and the profile or the window. A new permission replaces the one the course had. A resource that does not show an interface is refused.
+- `revoke CODE`: takes the permission back before it expires.
+
+Use an account or an environment of tests with invented data: hiding the real data is a safety net, not the main measure. Exit codes: `0` on success; `2` when `target` or `--mode` is missing; `1`, with a message, when capture is off, the profile is not configured or has no session, the mode is not allowed, a resource does not show an interface, or there is no identity.
+
+```
+coursekit capture login acme-admin
+coursekit capture allow PWD U1-S2-M1 --mode browser --profile acme-admin --minutes 30
+coursekit capture allow PWD --mode desktop --window "Password Manager"
+coursekit capture revoke PWD
 ```
 
 ## Assembly and delivery

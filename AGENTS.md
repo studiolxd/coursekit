@@ -57,8 +57,11 @@ itself. The instructions that coursekit generates for course projects live in
   `tests/test_docs.py` checks that both trees have the same files, that links resolve, and that
   `docs/*/03-commands.md` mentions every command and every option of the CLI.
 - `README.md` / `README.es.md` carry the status of the project (what is solid, what is new, what is not done) and
-  `docs/*/08-assembly-and-delivery.md` the known limits of the creator platform: update them when something changes, and
-  keep no maintainers' notes in the repository outside `docs/` and the READMEs.
+  `docs/*/08-assembly-and-delivery.md` the known limits of the creator platform: update them when something changes.
+- Development notes (the plan of a feature in progress, its open decisions) go in `dev-notes/<feature>.md`, in Spanish
+  (Spain), under the same public-repository rules. They are working material, not documentation: once the feature is
+  validated and published, what lasts is in `docs/` and the READMEs and its note is deleted. No maintainers' notes anywhere
+  else in the repository.
 - Skills, commands and agents are edited only in `src/coursekit/agentkit/`; every `{{token}}` must
   exist in `agents.context()` (a test fails otherwise).
 - The PyPI distribution is `slxd-coursekit` (the package and the command stay `coursekit`). The PyPI

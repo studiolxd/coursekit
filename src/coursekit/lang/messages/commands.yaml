@@ -379,6 +379,13 @@ help_import_hours: {es: "horas del curso (cuando se importa una sola carpeta)", 
 help_import_title: {es: "título del curso (cuando se importa una sola carpeta)", en: "title of the course (when importing a single folder)"}
 help_import_handoff: {es: "tras importar cada curso, lo lleva hasta la entrega en modo handoff", en: "after importing each course, take it to delivery in handoff mode"}
 media_adopt_needs: {es: "adopt necesita el id del recurso y --file con la imagen que ya existe", en: "adopt needs the asset id and --file with the image that already exists"}
+help_capture: {es: "capturas reales de una aplicación que hace coursekit con permiso: iniciar sesión, perfiles, dar o retirar el permiso", en: "real captures of an application that coursekit makes with permission: log in, profiles, give or take back the permission"}
+help_capture_target: {es: "login/logout: el perfil; allow/revoke: el código del curso", en: "login/logout: the profile; allow/revoke: the code of the course"}
+help_capture_ids: {es: "allow: los recursos que se pueden capturar (por defecto, todos los que muestran una interfaz)", en: "allow: the resources that may be captured (default: every one that shows an interface)"}
+help_capture_mode: {es: "allow: browser (una aplicación web) o desktop (una ventana de un programa)", en: "allow: browser (a web application) or desktop (a window of a program)"}
+help_capture_profile: {es: "allow --mode browser: el perfil de capture.yaml con el que se abre", en: "allow --mode browser: the profile of capture.yaml it opens with"}
+help_capture_window: {es: "allow --mode desktop: el nombre de la única ventana que se puede capturar y manejar", en: "allow --mode desktop: the name of the only window that may be captured and driven"}
+help_capture_minutes: {es: "allow: cuántos minutos dura el permiso (por defecto capture.yaml › grant_minutes)", en: "allow: how many minutes the permission lasts (default capture.yaml › grant_minutes)"}
 help_videos: {es: "vídeos de sitios prohibidos que son de un canal oficial: comprobar, proponer, aprobar o rechazar", en: "videos on forbidden sites that come from an official channel: check, propose, approve or reject"}
 help_videos_why: {es: "propose: la evidencia de que el canal del vídeo es oficial", en: "propose: the evidence that the channel of the video is official"}
 help_videos_replaces: {es: "propose: la dirección del vídeo que sustituye", en: "propose: the address of the video it replaces"}

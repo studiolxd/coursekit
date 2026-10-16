@@ -1,0 +1,25 @@
+# Real captures of an application that coursekit makes itself (`coursekit capture`), for the resources that show a real
+# interface (`depicts: interface`, recipes `screenshot` and `screen-recording`): instead of waiting for a person to drop the
+# file in media/recordings/<id>, an agent drives the application and coursekit captures it, with the permission of a person.
+#
+# Nothing is captured until a project turns it on. Then a person, never an agent:
+#   - logs in once per application with `coursekit capture login PROFILE` (a browser of their own machine opens with a
+#     profile kept outside the project; coursekit never sees or stores the password);
+#   - gives a permission that expires with `coursekit capture allow CODE [ID…] --mode browser|desktop`.
+# Use an account or an environment of tests with invented data: what hides real data is a safety net, not the main measure.
+enabled: false
+
+grant_minutes: 60              # how long a permission of `coursekit capture allow` lasts unless it says --minutes
+
+modes: [browser, desktop]      # the ways of capturing a project allows: browser (a web application, driven in a browser
+                               # coursekit opens) and desktop (a window of a program of the machine)
+
+# The web applications, one profile each: the key is the name `coursekit capture login NAME` uses (lowercase letters,
+# digits and hyphens). Every address the capture opens must be on one of its `allow_domains` (a domain covers its
+# subdomains), so it never wanders to other sites; put the single sign-on domain there too if the login goes through one.
+# `account` is only a label of which account it is (e.g. "demo admin"), never a user name or a password.
+#   acme-admin:
+#     start_url: https://app.acme.example/
+#     allow_domains: [app.acme.example, sso.acme.example]
+#     account: demo administrator
+profiles: {}

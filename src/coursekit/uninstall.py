@@ -93,6 +93,16 @@ def collect() -> Report:
         report.groups.append(Group("group_workspaces", [t("uninstall", "item_size", path=f.as_posix(), size=store.human(store.size(f)))
                                                         for f in folders], remove_workspaces, len(folders)))
 
+    capture = store.home() / "capture"
+    sessions = [p for p in sorted(capture.glob("*")) if p.is_dir()] if capture.is_dir() else []
+    if sessions:
+        def remove_capture() -> list[str]:
+            shutil.rmtree(capture, ignore_errors=True)
+            return [t("uninstall", "removed_capture", count=len(sessions))]
+
+        report.groups.append(Group("group_capture", [t("uninstall", "item_size", path=f.as_posix(), size=store.human(store.size(f)))
+                                                     for f in sessions], remove_capture, len(sessions)))
+
     installed = _uv_tools()
     packages = [p for p in dict.fromkeys([*data["uv_tools"], *MEDIA_TOOLS.values()]) if p in installed]
     if packages:
@@ -199,6 +209,7 @@ def _tidy_store() -> None:
         return
     folder = store.home()
     left = [p for p in folder.glob("*") if p.name not in ("installed.json", "workspaces")] if folder.is_dir() else []
+    # (the profiles of `coursekit capture` are in capture/: their own group removes them)
     workspaces = store.workspaces_dir()
     if left or (workspaces.is_dir() and any(workspaces.iterdir())):
         return
