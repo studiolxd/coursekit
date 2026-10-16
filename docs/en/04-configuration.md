@@ -290,7 +290,7 @@ types:
     - {id: creator-stock, needs: {mcp: search_stock_images}, how: "Licensed stock only"}
 ```
 
-Each option has `id`, `how` (description), `needs` (requirements) and optionally `only` (restricts the option to some content, for example `terminal`) and, for a generator, `model`, `resolution` and `variants` (versions generated per image to choose from; 1 when absent), which the media agent must use: they keep the cost in credits under control. `coursekit media plan` prints them. `needs` can combine:
+Each option has `id`, `how` (description), `needs` (requirements) and optionally `only` (restricts the option to some content: `terminal` or `decorative`) and, for a generator, `model`, `resolution` and `variants` (versions generated per image to choose from; 1 when absent), which the media agent must use: they keep the cost in credits under control. `coursekit media plan` prints them. `needs` can combine:
 
 | Requirement | Met when |
 |---|---|

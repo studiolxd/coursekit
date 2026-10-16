@@ -38,8 +38,9 @@ extra elements to fill the gap. It only needs what is in the project: anything i
    those. Generate **one version per image** unless `variants` says more, look at it and generate again only the ones that
    fail; never several versions "to choose from" by default. Before a batch, estimate its cost with the provider's simulator
    when it has one and say it in the summary.
-6. Options marked `only: terminal` (VHS, asciinema) are only for assets that show a terminal;
-   decide from the placeholder's description.
+6. Options marked `only: terminal` (VHS, asciinema) are only for assets that show a terminal, and options marked
+   `only: decorative` only for decorative images (see **Image** below); decide from the placeholder's description. When a
+   limited option does not apply, or gives nothing that fits, go on with the next one.
 
 ## 1.1 What a resource shows: the interface of a real application is never invented
 
@@ -136,9 +137,19 @@ credits.
   a flat illustration drawn as SVG and exported to PNG, an image generated with the configured provider, or a licensed photograph of a
   person (`search_stock_images`). Alt text describes the person briefly («Retrato ilustrado de Marta, responsable de proyecto»).
   Once uploaded (step 4), the assembly puts it in the dialogue as the avatar of the character.
-- **Image** — generated with the configured provider (prompt from the description and
-  specifications, sober and coherent style, no embedded text) or licensed stock
-  (`search_stock_images` + `import_stock_image`).
+- **Image** — first decide what it is, from its description and the text around it:
+  - **Decorative**: it sets the scene and explains nothing (the header of a unit, people at work, a place, a generic
+    object). Search the licensed catalog first (`search_stock_images` + `import_stock_image`): no credits. Take a result only
+    if it fits the visual style of the course (`visual.style`) and the other images of the unit (one stock photograph
+    among illustrations stands out), shows nothing that contradicts the text and, when it shows people, varied people. If
+    nothing fits, generate it as a necessary one.
+  - **Necessary**: it shows something specific of the content (a situation the text describes, a scene of the story, a
+    character who must look the same in every image, something a catalog will not have). Generate it with the configured
+    provider (prompt from the description and specifications, sober and coherent style, no embedded text), or draw it
+    as SVG without a generator.
+  - The portraits of characters and the images of the simulations are never decorative: they follow their own rules
+    (above, and the style sheet of the simulations).
+  Record in the manifest the recipe actually used (`creator-stock` or the generator).
 - **Infographic, Diagram** — SVG written by you, with the colours and fonts of `tokens.json`,
   real text in {{language_name}}, `<title>` and `<desc>` for accessibility, readable at 1280 px.
   If the learner should keep it, also a PDF (`media set --download`). With the creator backend the

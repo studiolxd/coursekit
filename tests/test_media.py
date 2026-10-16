@@ -426,3 +426,20 @@ def test_the_flex_tier_tries_again_and_then_goes_on_in_the_standard_one(monkeypa
     monkeypatch.setattr(mediatools, "post", broken)
     with pytest.raises(mediatools.ToolError, match="bad key"):  # not a matter of capacity: no attempts and no fallback
         mediatools.gemini_post("u", payload, "k", {"tier": "flex"}, sleep=waits.append)
+
+
+def test_a_decorative_image_comes_from_the_catalog_first_and_the_rest_is_generated(monkeypatch):
+    from coursekit import i18n, media
+
+    monkeypatch.setenv("MAGNIFIC_API_KEY", "mg")
+    chain = media.options_for("image", media.config())
+    ids = [o["id"] for o in chain]
+    assert ids[:2] == ["creator-stock", "magnific-api"] and ids.count("creator-stock") == 2
+    assert chain[0]["only"] == "decorative" and "only for decorative content" in chain[0]["available"]
+    assert "only" not in chain[ids.index("creator-stock", 1)]  # lower down, for any image
+    i18n.use("es")
+    try:
+        assert "solo para contenido decorativo" in media.options_for("image", media.config())[0]["available"]
+        assert "solo para contenido de terminal" in media.options_for("video", media.config())[-1]["available"]
+    finally:
+        i18n.use(None)

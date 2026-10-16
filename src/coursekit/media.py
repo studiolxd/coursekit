@@ -20,7 +20,7 @@ import yaml
 
 from coursekit import config as configmod
 from coursekit import course as coursemod
-from coursekit import lang
+from coursekit import i18n, lang
 from coursekit import story as storymod
 from coursekit import theme as thememod
 from coursekit.i18n import t
@@ -71,7 +71,8 @@ def options_for(kind: str, cfg: dict, root: Path | None = None) -> list[dict]:
         if met is not False:
             only = option.get("only")
             if only:
-                available = t("media", "available_yes_only" if met else "available_mcp_only", only=only)
+                label = t("media", f"only_{only}") if f"only_{only}" in i18n.catalog("media") else only
+                available = t("media", "available_yes_only" if met else "available_mcp_only", only=label)
             else:
                 available = t("media", "available_yes" if met else "available_mcp")
             chain.append({**option, "available": available})

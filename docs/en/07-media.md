@@ -8,7 +8,7 @@ A media placeholder is written in `content.md` (format in [06-content.md](06-con
 
 | Id | Meaning | Options, in order of preference (what each one needs) |
 |---|---|---|
-| `image` | Image | `magnific-api` (`MAGNIFIC_API_KEY`) · `magnific-mcp` (agent MCP tool `images_generate`) · `creator-stock` (agent MCP tool `search_stock_images`) |
+| `image` | Image | `creator-stock` (agent MCP tool `search_stock_images`; only decorative images) · `magnific-api` (`MAGNIFIC_API_KEY`) · `magnific-mcp` (agent MCP tool `images_generate`) · `agent-svg` (nothing) · `creator-stock` (any image) · `screenshot` (only a real interface: a capture from a person) |
 | `infographic` | Infographic | `agent-svg` (nothing) · `magnific-api` |
 | `diagram` | Diagram | `agent-svg` |
 | `animated_gif` | Animated GIF | `vhs` (command `vhs`; terminal content only) · `agent-svg-animated` (nothing; with the creator backend it goes up as an EMBED package, see [Upload](#upload-to-creator)) · `remotion-gif` (`node` and `tools/remotion/node_modules`) |
@@ -114,11 +114,13 @@ For each asset, `media plan` takes the options of its type from `src/coursekit/d
 | `mcp: TOOL` | Only the agent can know whether it has that MCP tool; shown as `if the agent has the MCP tool` |
 | `none` | Always |
 
-An option with several `needs:` must meet all of them. `only: terminal` limits an option to assets that show a terminal; the agent decides from the placeholder's description. If nothing is available, `media plan` prints `no option available: install a tool or set a key (coursekit config media)`.
+An option with several `needs:` must meet all of them. `only:` limits an option to some assets, and the agent decides from the placeholder's description: `only: terminal`, to those that show a terminal; `only: decorative`, to the decorative images, those that set the scene and explain nothing (a header, people at work, a place, a generic object). That is why an image comes first from the licensed catalog of creator when it is decorative, and is generated when it shows something specific of the content (a situation the text describes, a scene of the story, a character); a decorative one with nothing in the catalog that fits the style of the course is generated too. An id may appear twice in a list, once limited and higher, once without the limit and lower. If nothing is available, `media plan` prints `no option available: install a tool or set a key (coursekit config media)`.
 
 ```text
 U1-S1-M1 [image] Sticky note on a monitor
+  - creator-stock (if the agent has the MCP tool, only for decorative content): Licensed stock from creator (Pexels, Pixabay, Unsplash, Freepik) + import_stock_image; nothing that fits the style of the course: go on with the next option
   - magnific-mcp (if the agent has the MCP tool): Claude's Magnific connector
+  - agent-svg (yes): Illustration drawn by the agent as SVG with the theme colours and exported to PNG (creator does not take SVG as an image); portraits of characters as flat busts
   - creator-stock (if the agent has the MCP tool): Licensed stock from creator (Pexels, Pixabay, Unsplash, Freepik) + import_stock_image
 U1-S2-M1 [video] Building a passphrase
   - vhs (yes, only for terminal content): Terminal video
@@ -602,7 +604,7 @@ import words from "../../../../courses/PWD/media/files/u1-s2-m1.words.json";
 
 | Type (id) | Tools |
 |---|---|
-| `image` | `MAGNIFIC_API_KEY`, or the Magnific connector, or the creator stock tools (agent MCP) |
+| `image` | The creator stock tools (agent MCP) for decorative images; `MAGNIFIC_API_KEY`, or the Magnific connector, to generate the rest (without them, drawn as SVG) |
 | `infographic`, `diagram` | None (SVG by the agent with the theme tokens); `MAGNIFIC_API_KEY` for generated illustrations |
 | `animated_gif` | `vhs` (terminal), or none (animated SVG), or `node` + Remotion |
 | `terminal_demo` | `asciinema` (not on Windows) or `vhs` |

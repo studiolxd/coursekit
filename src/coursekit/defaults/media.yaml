@@ -7,8 +7,10 @@
 #   media: X   the command X is on the PATH (`coursekit setup --media` installs piper and stable-ts)
 #   path: P    the path exists inside the project (e.g. tools/remotion/node_modules)
 #   none       always available (the agent does it itself)
-# `only:` limits an option to some content (e.g. terminal) — the agent decides from the
-# placeholder's description.
+# `only:` limits an option to some content — the agent decides from the placeholder's description: `terminal` (it shows a
+# terminal), `decorative` (an image that sets the scene and explains nothing: a header, people at work, a place, a generic
+# object; what shows something specific of the content is generated or drawn).
+# An id may appear twice: once limited with `only:` and higher, once without it and lower.
 # `shows: interface` marks an option that works from real material of an application (a capture or a recording that a person
 # provides): it is offered only for a resource that `depicts` a real interface (see `depicts` below).
 # The agent uses the first option it can actually run and records it in the manifest.
@@ -60,6 +62,8 @@ subtitles:
 
 types:
   image:
+    # decorative images come from the catalog first (licensed, no credits); what is specific to the content is generated
+    - {id: creator-stock, needs: {mcp: search_stock_images}, only: decorative, how: "Licensed stock from creator (Pexels, Pixabay, Unsplash, Freepik) + import_stock_image; nothing that fits the style of the course: go on with the next option"}
     - {id: magnific-api, needs: {env: MAGNIFIC_API_KEY}, how: "Image generated with the Magnific API"}
     - {id: magnific-mcp, needs: {mcp: images_generate}, how: "Claude's Magnific connector"}
     - {id: agent-svg, needs: none, how: "Illustration drawn by the agent as SVG with the theme colours and exported to PNG (creator does not take SVG as an image); portraits of characters as flat busts"}

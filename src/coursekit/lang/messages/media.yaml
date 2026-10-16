@@ -2,6 +2,8 @@
 available_yes: {es: "sí", en: "yes"}
 available_mcp: {es: "si el agente tiene la herramienta MCP", en: "if the agent has the MCP tool"}
 available_yes_only: {es: "sí, solo para contenido {only}", en: "yes, only for {only} content"}
+only_terminal: {es: "de terminal", en: "terminal"}
+only_decorative: {es: "decorativo", en: "decorative"}
 available_mcp_only:
   es: "si el agente tiene la herramienta MCP, solo para contenido {only}"
   en: "if the agent has the MCP tool, only for {only} content"

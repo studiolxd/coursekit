@@ -8,7 +8,7 @@ Un recurso multimedia se escribe en `content.md` (formato en [06-content.md](06-
 
 | Id | Significado | Opciones, por orden de preferencia (qué necesita cada una) |
 |---|---|---|
-| `image` | Imagen | `magnific-api` (`MAGNIFIC_API_KEY`) · `magnific-mcp` (herramienta MCP del agente `images_generate`) · `creator-stock` (herramienta MCP del agente `search_stock_images`) |
+| `image` | Imagen | `creator-stock` (herramienta MCP del agente `search_stock_images`; solo imágenes decorativas) · `magnific-api` (`MAGNIFIC_API_KEY`) · `magnific-mcp` (herramienta MCP del agente `images_generate`) · `agent-svg` (nada) · `creator-stock` (cualquier imagen) · `screenshot` (solo una interfaz real: una captura de una persona) |
 | `infographic` | Infografía | `agent-svg` (nada) · `magnific-api` |
 | `diagram` | Esquema o diagrama | `agent-svg` |
 | `animated_gif` | GIF animado | `vhs` (comando `vhs`; solo contenido de terminal) · `agent-svg-animated` (nada; con el backend creator se sube como paquete EMBED, mira [Subida](#subida-a-creator)) · `remotion-gif` (`node` y `tools/remotion/node_modules`) |
@@ -114,14 +114,16 @@ Por cada recurso, `media plan` toma las opciones de su tipo de `src/coursekit/de
 | `mcp: TOOL` | Solo el agente puede saber si tiene esa herramienta MCP; se muestra como `si el agente tiene la herramienta MCP` |
 | `none` | Siempre |
 
-Una opción con varios `needs:` debe cumplirlos todos. `only: terminal` limita una opción a los recursos que muestran un terminal; lo decide el agente a partir de la descripción del recurso. Si no hay nada disponible, `media plan` imprime `ninguna opción disponible: instala una herramienta o define una clave (coursekit config media)`.
+Una opción con varios `needs:` debe cumplirlos todos. `only:` limita una opción a algunos recursos, y lo decide el agente a partir de la descripción del recurso: `only: terminal`, a los que muestran un terminal; `only: decorative`, a las imágenes decorativas, las que ambientan y no explican nada (una cabecera, gente trabajando, un lugar, un objeto genérico). Por eso una imagen sale primero del catálogo con licencia de creator cuando es decorativa, y se genera cuando muestra algo concreto del contenido (una situación que describe el texto, una escena de la historia, un personaje); una decorativa sin nada en el catálogo que encaje con el estilo del curso también se genera. Un id puede aparecer dos veces en una lista, una limitado y más arriba, otra sin límite y más abajo. Si no hay nada disponible, `media plan` imprime `ninguna opción disponible: instala una herramienta o define una clave (coursekit config media)`.
 
 ```text
 U1-S1-M1 [image] Nota adhesiva en un monitor
+  - creator-stock (si el agente tiene la herramienta MCP, solo para contenido decorativo): Licensed stock from creator (Pexels, Pixabay, Unsplash, Freepik) + import_stock_image; nothing that fits the style of the course: go on with the next option
   - magnific-mcp (si el agente tiene la herramienta MCP): Claude's Magnific connector
+  - agent-svg (sí): Illustration drawn by the agent as SVG with the theme colours and exported to PNG (creator does not take SVG as an image); portraits of characters as flat busts
   - creator-stock (si el agente tiene la herramienta MCP): Licensed stock from creator (Pexels, Pixabay, Unsplash, Freepik) + import_stock_image
 U1-S2-M1 [video] Construir una frase de paso
-  - vhs (sí, solo para contenido terminal): Terminal video
+  - vhs (sí, solo para contenido de terminal): Terminal video
     voz: elevenlabs-mcp
     subtítulos: stable-ts
 ```
@@ -602,7 +604,7 @@ import words from "../../../../courses/PWD/media/files/u1-s2-m1.words.json";
 
 | Tipo (id) | Herramientas |
 |---|---|
-| `image` | `MAGNIFIC_API_KEY`, o el conector de Magnific, o las herramientas de stock de creator (MCP del agente) |
+| `image` | Las herramientas de stock de creator (MCP del agente) para las imágenes decorativas; `MAGNIFIC_API_KEY`, o el conector de Magnific, para generar el resto (sin ellos, dibujadas en SVG) |
 | `infographic`, `diagram` | Ninguna (SVG del agente con los tokens del tema); `MAGNIFIC_API_KEY` para ilustraciones generadas |
 | `animated_gif` | `vhs` (terminal), o ninguna (SVG animado), o `node` + Remotion |
 | `terminal_demo` | `asciinema` (no en Windows) o `vhs` |
