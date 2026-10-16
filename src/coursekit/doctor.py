@@ -143,6 +143,15 @@ def collect(project: Project) -> list[Section]:
     return [*sections, capture] if capture else sections
 
 
+def _imports(module: str) -> bool:
+    """Whether a module can be imported (installed is not enough: OpenCV on Linux also needs a library of the system)."""
+    try:
+        importlib.import_module(module)
+    except Exception:  # noqa: BLE001 — any failure to load it means it is not usable here
+        return False
+    return True
+
+
 def capture_section(project: Project) -> Section | None:
     """What `coursekit capture` needs on this machine, when the project captures."""
     cfg = config.effective("capture", project).value
@@ -158,7 +167,7 @@ def capture_section(project: Project) -> Section | None:
         s.add(bool(find_browser()), t("doctor", "capture_browser"), t("doctor", "html_browser_hint"))
     ocr = importlib.util.find_spec("rapidocr_onnxruntime") is not None or shutil.which("tesseract") is not None
     s.add(ocr, t("doctor", "capture_ocr"), hint)
-    s.add(importlib.util.find_spec("cv2") is not None, t("doctor", "capture_opencv"), hint)
+    s.add(_imports("cv2"), t("doctor", "capture_opencv"), t("doctor", "capture_opencv_hint") if sys.platform.startswith("linux") else hint)
     s.add(shutil.which("ffmpeg") is not None, t("doctor", "capture_ffmpeg"), "coursekit setup --media")
     if "desktop" in modes:
         if sys.platform == "darwin":
