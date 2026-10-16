@@ -404,7 +404,7 @@ def _start_desktop(project, cfg, course, asset, asset_id, grant, backend_factory
     except redactmod.RedactError:
         raise ToolError(t("capture", "desktop_needs_ocr")) from None
     if backend_factory is None:
-        from coursekit.capture_desktop import DesktopBackend as backend_factory
+        from coursekit.capture_window import make_backend as backend_factory
     session = Session(project, course, asset_id, grant, None, rules, int((cfg.get("screenshot") or {}).get("max_edge") or 1920),
                       "", [], started_at=_now(), redactor=redactor, warnings=list(redactor.report.warnings))
     session.backend = backend_factory(str(grant["window"]))

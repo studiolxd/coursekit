@@ -161,14 +161,18 @@ def capture_section(project: Project) -> Section | None:
     s.add(importlib.util.find_spec("cv2") is not None, t("doctor", "capture_opencv"), hint)
     s.add(shutil.which("ffmpeg") is not None, t("doctor", "capture_ffmpeg"), "coursekit setup --media")
     if "desktop" in modes:
-        if sys.platform != "darwin":
-            s.add(None, t("doctor", "capture_desktop_macos"))
-        else:
-            from coursekit import capture_desktop
+        if sys.platform == "darwin":
+            from coursekit import capture_macos
 
-            granted = capture_desktop.permissions()
+            granted = capture_macos.permissions()
             s.add(granted["screen"], t("doctor", "capture_screen"), t("doctor", "capture_screen_hint"))
             s.add(granted["accessibility"], t("doctor", "capture_accessibility"), t("doctor", "capture_accessibility_hint"))
+        elif sys.platform.startswith("linux"):
+            wayland = os.environ.get("XDG_SESSION_TYPE", "").lower() == "wayland"
+            s.add(not wayland and bool(os.environ.get("DISPLAY")), t("doctor", "capture_x11"), t("doctor", "capture_x11_hint"))
+            s.add(shutil.which("xdotool") is not None, "xdotool", t("doctor", "capture_xdotool_hint"))
+        elif sys.platform == "win32":
+            s.add(None, t("doctor", "capture_windows"))
     return s
 
 

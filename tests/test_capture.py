@@ -758,7 +758,7 @@ def subprocess_duration(path):
 
 # ── a window of a desktop program ────────────────────────────────────────────────────────────
 
-from coursekit import capture_desktop  # noqa: E402
+from coursekit import capture_macos, capture_window, capture_windows, capture_x11  # noqa: E402
 
 
 class FakeWindow:
@@ -866,17 +866,17 @@ def test_a_desktop_replay_never_keeps_a_video_it_could_not_cover(desktop, monkey
 
 
 def test_keys_and_windows_of_the_mac_are_understood():
-    assert capture_desktop.parse_combo("Control+Shift+A") == (0, 0x40000 | 0x20000)
-    assert capture_desktop.parse_combo("ControlOrMeta+A") == (0, 0x100000)
-    assert capture_desktop.parse_combo("A") == (0, 0x20000) and capture_desktop.parse_combo("Enter") == (36, 0)
+    assert capture_macos.parse_combo("Control+Shift+A") == (0, 0x40000 | 0x20000)
+    assert capture_macos.parse_combo("ControlOrMeta+A") == (0, 0x100000)
+    assert capture_macos.parse_combo("A") == (0, 0x20000) and capture_macos.parse_combo("Enter") == (36, 0)
     with pytest.raises(mcpserver.ToolError, match="not a key"):
-        capture_desktop.parse_combo("Hyper+Q")
+        capture_macos.parse_combo("Hyper+Q")
     windows = [{"id": 1, "pid": 9, "layer": 25, "bounds": (0, 0, 1000, 800)},  # an overlay of the system
                {"id": 2, "pid": 7, "layer": 0, "bounds": (50, 50, 100, 100)},  # another program, in front
                {"id": 3, "pid": 5, "layer": 101, "bounds": (0, 0, 10, 10)},  # a menu of ours
                {"id": 4, "pid": 5, "layer": 0, "bounds": (0, 0, 400, 300)}]
-    assert [w["id"] for w in capture_desktop.covering(windows, 5)] == [2, 3, 4]
-    image = capture_desktop.paint_out(Image.new("RGB", (800, 600), "white"), (0, 0), 2, [(50, 50, 100, 100)])
+    assert [w["id"] for w in capture_macos.covering(windows, 5)] == [2, 3, 4]
+    image = capture_window.paint_out(Image.new("RGB", (800, 600), "white"), (0, 0), 2, [(50, 50, 100, 100)])
     assert image.getpixel((150, 150)) == (24, 24, 24) and image.getpixel((90, 90)) == (255, 255, 255)
 
 
@@ -885,9 +885,9 @@ def test_the_windows_of_this_mac_can_be_listed():
 
     if sys.platform != "darwin":
         pytest.skip("macOS only")
-    windows = capture_desktop.quartz().windows()
+    windows = capture_macos.quartz().windows()
     assert all({"id", "owner", "pid", "title", "layer", "bounds"} <= set(w) for w in windows)
-    assert set(capture_desktop.permissions()) == {"screen", "accessibility"}
+    assert set(capture_macos.permissions()) == {"screen", "accessibility"}
 
 
 def test_doctor_says_what_capture_needs_only_when_the_project_captures(course, capsys):  # noqa: F811
@@ -899,3 +899,62 @@ def test_doctor_says_what_capture_needs_only_when_the_project_captures(course, c
     labels = [c.label for c in doctor.capture_section(project).checks]
     assert any("Playwright" in label for label in labels) and any("OCR" in label for label in labels)
     assert not any("Accessibility" in label for label in labels)
+
+
+def test_keys_of_windows_and_x11_are_understood():
+    assert capture_windows.virtual_keys("Control+Shift+A") == [0x11, 0x10, ord("A")]
+    assert capture_windows.virtual_keys("ControlOrMeta+A") == [0x11, ord("A")] and capture_windows.virtual_keys("Enter") == [0x0D]
+    assert capture_windows.virtual_keys(";", scan=lambda ch: 0x1BA) == [0xBA]
+    with pytest.raises(mcpserver.ToolError, match="not a key"):
+        capture_windows.virtual_keys("Hyper+Q")
+    assert capture_x11.xdotool_keys("Control+Shift+A") == "ctrl+shift+a"
+    assert capture_x11.xdotool_keys("Enter") == "Return" and capture_x11.xdotool_keys("ControlOrMeta+-") == "ctrl+minus"
+    assert capture_x11.shell_values("X=10\nY=20\nWIDTH=800\n") == {"X": "10", "Y": "20", "WIDTH": "800"}
+
+
+def test_a_window_is_found_only_when_one_program_matches():
+    every = [{"pid": 1, "owner": "Gestor", "title": "Bóveda — Gestor", "bounds": (0, 0, 800, 600)},
+             {"pid": 1, "owner": "Gestor", "title": "Ajustes", "bounds": (0, 0, 400, 300)},
+             {"pid": 2, "owner": "Notes", "title": "Gestor de tareas", "bounds": (0, 0, 800, 600)}]
+    assert capture_window.one_program([w for w in every if capture_window.matches(w, "bóveda")], "bóveda", every)["pid"] == 1
+    with pytest.raises(mcpserver.ToolError, match="several programs"):
+        capture_window.one_program([w for w in every if capture_window.matches(w, "gestor")], "gestor", every)
+    with pytest.raises(mcpserver.ToolError, match="no open window"):
+        capture_window.one_program([], "nada", every)
+
+
+def test_the_x11_backend_reads_what_xdotool_says(monkeypatch):
+    """No X server here: xdotool answers from a table."""
+    answers = {
+        ("search", "--onlyvisible", "--name", "."): "11\n12\n",
+        ("getwindowgeometry", "--shell", "11"): "WINDOW=11\nX=100\nY=50\nWIDTH=800\nHEIGHT=600\n",
+        ("getwindowgeometry", "--shell", "12"): "WINDOW=12\nX=0\nY=0\nWIDTH=300\nHEIGHT=200\n",
+        ("getwindowpid", "11"): "4242\n", ("getwindowpid", "12"): "77\n",
+        ("getwindowname", "11"): "Gestor de contraseñas\n", ("getwindowname", "12"): "Terminal\n",
+        ("getmouselocation", "--shell"): "X=150\nY=60\nSCREEN=0\nWINDOW=12\n",
+    }
+    calls = []
+
+    def run(self, *args, check=True):
+        calls.append(args)
+        return answers.get(args, "")
+
+    monkeypatch.setenv("DISPLAY", ":0")
+    monkeypatch.delenv("XDG_SESSION_TYPE", raising=False)
+    monkeypatch.setattr(capture_x11.shutil, "which", lambda name: f"/usr/bin/{name}")
+    monkeypatch.setattr(capture_x11.X11Backend, "_run", run)
+    backend = capture_x11.X11Backend("contraseñas")
+    assert backend.window["id"] == "11" and backend.viewport == (800, 600)
+    with pytest.raises(mcpserver.ToolError, match="not of the allowed program"):
+        backend.click(50, 10, "left", 1)  # what is under the pointer is the terminal
+    assert not any(a[0] == "mousedown" for a in calls)
+    answers[("getmouselocation", "--shell")] = "WINDOW=11\n"
+    backend.click(50, 10, "left", 2)
+    assert [a for a in calls if a[0] in ("mousedown", "mouseup")] == [("mousedown", "1"), ("mouseup", "1")] * 2
+    assert ("mousemove", "150", "60") in calls
+    backend.key("Control+Shift+A")
+    assert calls[-1] == ("key", "--clearmodifiers", "ctrl+shift+a")
+    assert backend.record_args(backend.bounds())[0][-1] == ":0+100,50"
+    monkeypatch.setenv("XDG_SESSION_TYPE", "wayland")
+    with pytest.raises(mcpserver.ToolError, match="Wayland"):
+        capture_x11.X11Backend("contraseñas")

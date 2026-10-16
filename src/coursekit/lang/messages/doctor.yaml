@@ -66,7 +66,10 @@ capture_browser: {es: "Chrome, Edge o Chromium instalado", en: "Chrome, Edge or 
 capture_ocr: {es: "OCR para leer los píxeles (rapidocr del extra capture, o tesseract)", en: "OCR to read the pixels (rapidocr of the capture extra, or tesseract)"}
 capture_opencv: {es: "OpenCV (extra capture: caras y vídeo)", en: "OpenCV (capture extra: faces and video)"}
 capture_ffmpeg: {es: "ffmpeg (vídeo de una captura)", en: "ffmpeg (video of a capture)"}
-capture_desktop_macos: {es: "el modo desktop de momento solo funciona en macOS", en: "desktop mode only works on macOS for now"}
+capture_x11: {es: "sesión X11 (el modo desktop no funciona en Wayland)", en: "X11 session (desktop mode does not work on Wayland)"}
+capture_x11_hint: {es: "entra en una sesión X11 (en la pantalla de acceso, «GNOME en Xorg» o similar)", en: "log in to an X11 session (on the login screen, «GNOME on Xorg» or similar)"}
+capture_xdotool_hint: {es: "sudo apt install xdotool (o el gestor de paquetes de tu distribución)", en: "sudo apt install xdotool (or the package manager of your distribution)"}
+capture_windows: {es: "modo desktop en Windows: no necesita permisos del sistema", en: "desktop mode on Windows: it needs no permission of the system"}
 capture_screen: {es: "permiso de grabación de pantalla para la terminal", en: "Screen Recording permission for the terminal"}
 capture_screen_hint: {es: "Ajustes del Sistema › Privacidad y seguridad › Grabación de pantalla", en: "System Settings › Privacy & Security › Screen Recording"}
 capture_accessibility: {es: "permiso de accesibilidad para la terminal (ratón y teclado)", en: "Accessibility permission for the terminal (mouse and keyboard)"}

@@ -1,35 +1,29 @@
-"""Desktop mode of `coursekit capture` on macOS: one window of a program, driven and captured with the permission of a person.
+"""Desktop mode of `coursekit capture` on macOS (see `capture_window` for what every system shares).
 
-The person names the window when giving the permission (`coursekit capture allow CODE --mode desktop --window NAME`); the
-session finds it among the windows on screen (by the name of the program or the title of the window: exactly one must
-match). What the agent sees is only the area of that window, with the program brought to the front, and any window of
-another program over it painted out; every screen is read on the pixels and its personal data covered before it is shown
-(there is no page to clean here, so an OCR is required). A click or a key goes to the system only after checking that what
-is under the pointer belongs to that program: nothing outside it can be clicked. A password field is never typed into.
-
-It speaks to the system through its own libraries (CoreGraphics, Accessibility) with ctypes, and captures with the
-`screencapture` and `ffmpeg` programs: no package is needed. The terminal that runs coursekit needs two permissions of
-macOS (System Settings › Privacy & Security): Screen Recording and Accessibility.
+It speaks to the system through its own libraries (CoreGraphics, CoreFoundation, Accessibility) with ctypes, and captures
+with the `screencapture` and `ffmpeg` programs: no package is needed. Coordinates are points. The terminal that runs
+coursekit needs two permissions of macOS (System Settings › Privacy & Security): Screen Recording and Accessibility. When
+the focused field cannot be known, nothing is typed.
 """
 
 from __future__ import annotations
 
 import ctypes
-import ctypes.util
-import io
 import re
 import shutil
-import signal
 import subprocess
 import sys
 import tempfile
 import time
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image
 
+from coursekit.capture_window import Bounds, WindowBackend, one_program, paint_out
 from coursekit.i18n import t
 from coursekit.mcpserver import ToolError
+
+__all__ = ["MacBackend", "covering", "paint_out", "parse_combo", "permissions", "quartz"]
 
 FRAMEWORKS = "/System/Library/Frameworks"
 
@@ -53,7 +47,7 @@ class _Quartz:
 
     def __init__(self):
         if sys.platform != "darwin":
-            raise ToolError(t("capture", "desktop_macos_only"))
+            raise ToolError(t("capture", "desktop_unsupported", system=sys.platform))
         self.cf = ctypes.CDLL(f"{FRAMEWORKS}/CoreFoundation.framework/CoreFoundation")
         self.cg = ctypes.CDLL(f"{FRAMEWORKS}/CoreGraphics.framework/CoreGraphics")
         self.ax = ctypes.CDLL(f"{FRAMEWORKS}/ApplicationServices.framework/ApplicationServices")
@@ -173,15 +167,11 @@ def permissions() -> dict[str, bool]:
 
 def find_window(name: str) -> dict:
     """The one window whose program or title contains `name` (normal windows only, the frontmost when a program has several)."""
-    wanted = name.strip().casefold()
-    found = [w for w in quartz().windows() if w["layer"] == 0 and w["bounds"][2] > 40 and w["bounds"][3] > 40
-             and (wanted in w["owner"].casefold() or wanted in w["title"].casefold())]
-    programs = {w["pid"] for w in found}
-    if len(programs) != 1:
-        names = sorted({f"{w['owner']} — {w['title']}".rstrip(" —") for w in quartz().windows() if w["layer"] == 0})
-        raise ToolError(t("capture", "window_not_found" if not found else "window_ambiguous", name=name,
-                          windows="; ".join(names[:20]) or "—"))
-    return found[0]  # front to back: the frontmost window of the program
+    from coursekit.capture_window import matches
+
+    every = [w for w in quartz().windows() if w["layer"] == 0]
+    found = [w for w in every if w["bounds"][2] > 40 and w["bounds"][3] > 40 and matches(w, name)]
+    return one_program(found, name, every)
 
 
 # ── keys ─────────────────────────────────────────────────────────────────────────────────────
@@ -224,64 +214,46 @@ def covering(windows: list[dict], pid: int) -> list[dict]:
     return [w for w in windows if w["layer"] == 0 or w["pid"] == pid]
 
 
-def paint_out(image: Image.Image, origin: tuple[float, float], scale: float, others: list[tuple]) -> Image.Image:
-    """The capture of the area of the window with the windows of other programs over it painted out."""
-    draw = ImageDraw.Draw(image)
-    for x, y, w, h in others:
-        box = ((x - origin[0]) * scale, (y - origin[1]) * scale, (x - origin[0] + w) * scale, (y - origin[1] + h) * scale)
-        draw.rectangle(box, fill=(24, 24, 24))
-    return image
-
-
-class DesktopBackend:
+class MacBackend(WindowBackend):
     """One window of a program of the Mac. Coordinates are points inside the window (its top-left corner is 0, 0)."""
+
+    when_unknown_secret = True
 
     def __init__(self, window_name: str):
         if not shutil.which("screencapture"):
-            raise ToolError(t("capture", "desktop_macos_only"))
+            raise ToolError(t("capture", "desktop_unsupported", system=sys.platform))
         granted = permissions()
         if not granted["screen"]:
             raise ToolError(t("capture", "need_screen_permission"))
         if not granted["accessibility"]:
             raise ToolError(t("capture", "need_accessibility_permission"))
-        self.name = window_name
-        self.window = find_window(window_name)
-        self.viewport = (round(self.window["bounds"][2]), round(self.window["bounds"][3]))
-        self._pointer = (self.viewport[0] / 2, self.viewport[1] / 2)
-        self._ffmpeg: subprocess.Popen | None = None
-        self._video: Path | None = None
+        self._held: str | None = None
+        super().__init__(window_name)
 
-    # where the window is now, and the program in front
-    def _refresh(self) -> tuple[float, float, float, float]:
+    def find(self, name: str) -> dict:
+        return find_window(name)
+
+    def bounds(self) -> Bounds:
         current = next((w for w in quartz().windows() if w["id"] == self.window["id"]), None)
         if current is None:
             raise ToolError(t("capture", "window_gone", name=self.name))
         self.window = current
         return current["bounds"]
 
-    def _front(self) -> None:
+    def front(self) -> None:
         script = f'tell application "System Events" to set frontmost of (first process whose unix id is {self.window["pid"]}) to true'
         subprocess.run(["osascript", "-e", script], capture_output=True, check=False)
         time.sleep(0.15)
 
-    def _global(self, x: float, y: float) -> CGPoint:
-        bx, by, bw, bh = self._refresh()
-        if not (0 <= x <= bw and 0 <= y <= bh):
-            raise ToolError(t("capture", "outside_screen", x=round(x), y=round(y)))
-        return CGPoint(bx + x, by + y)
-
-    def _ours_at(self, point: CGPoint) -> None:
-        """What is under the pointer belongs to the program of the window (its menus and dialogs too), or nothing happens."""
+    def owner_at(self, x, y):
         for w in covering(quartz().windows(), self.window["pid"]):
-            x, y, ww, wh = w["bounds"]
-            if x <= point.x < x + ww and y <= point.y < y + wh:
-                if w["pid"] != self.window["pid"]:
-                    raise ToolError(t("capture", "not_our_window", owner=w["owner"] or "?"))
-                return
+            wx, wy, ww, wh = w["bounds"]
+            if wx <= x < wx + ww and wy <= y < wy + wh:
+                return w["pid"], w["owner"]
+        return None
 
-    def screenshot(self) -> bytes:
-        self._front()
-        bx, by, bw, bh = self._refresh()
+    def grab(self, area: Bounds) -> Image.Image:
+        bx, by, bw, bh = area
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "screen.png"
             done = subprocess.run(["screencapture", "-x", "-R", f"{bx:.0f},{by:.0f},{bw:.0f},{bh:.0f}", str(path)],
@@ -290,69 +262,36 @@ class DesktopBackend:
                 raise ToolError(t("capture", "need_screen_permission"))
             image = Image.open(path)
             image.load()
-        scale = image.width / bw
+        return image
+
+    def others_above(self) -> list[Bounds]:
         above = []
         for w in covering(quartz().windows(), self.window["pid"]):  # front to back, until the window itself
             if w["id"] == self.window["id"]:
                 break
             if w["pid"] != self.window["pid"]:
                 above.append(w["bounds"])
-        image = paint_out(image.convert("RGB"), (bx, by), scale, above)
-        out = io.BytesIO()
-        image.save(out, "PNG")
-        return out.getvalue()
+        return above
 
-    def _mouse(self, kind: int, point: CGPoint, button: int = 0, clicks: int = 1) -> None:
+    def _mouse(self, kind: int, x: float, y: float, button: int = 0, clicks: int = 1) -> None:
         q = quartz()
-        event = q.cg.CGEventCreateMouseEvent(None, kind, point, button)
+        event = q.cg.CGEventCreateMouseEvent(None, kind, CGPoint(x, y), button)
         if clicks > 1:
             q.cg.CGEventSetIntegerValueField(event, 1, clicks)  # kCGMouseEventClickState
         q.post(event)
 
-    def click(self, x, y, button, count) -> None:
-        self._front()
-        point = self._global(x, y)
-        self._ours_at(point)
-        down, up, which = (3, 4, 1) if button == "right" else (1, 2, 0)
-        self._mouse(5, point)
-        for n in range(1, count + 1):
-            self._mouse(down, point, which, n)
-            self._mouse(up, point, which, n)
-        self._pointer = (x, y)
-        time.sleep(0.3)
+    def mouse_move(self, x, y) -> None:
+        dragged = {"left": 6, "right": 7}.get(self._held or "")
+        self._mouse(dragged or 5, x, y, 1 if self._held == "right" else 0)
 
-    def move(self, x, y) -> None:
-        self._mouse(5, self._global(x, y))
-        self._pointer = (x, y)
+    def mouse_button(self, button, down, x, y, clicks=1) -> None:
+        kind = {("left", True): 1, ("left", False): 2, ("right", True): 3, ("right", False): 4}[(button, down)]
+        self._mouse(kind, x, y, 1 if button == "right" else 0, clicks)
+        self._held = button if down else None
 
-    def glide(self, x, y, ms) -> None:
-        x0, y0 = self._pointer
-        steps = max(1, int(ms) // 16)
-        for i in range(1, steps + 1):
-            self._mouse(5, self._global(x0 + (x - x0) * i / steps, y0 + (y - y0) * i / steps))
-            time.sleep(0.016)
-        self._pointer = (x, y)
-
-    def drag(self, x1, y1, x2, y2) -> None:
-        self._front()
-        start, end = self._global(x1, y1), self._global(x2, y2)
-        self._ours_at(start)
-        self._ours_at(end)
-        self._mouse(5, start)
-        self._mouse(1, start)
-        for i in range(1, 13):
-            self._mouse(6, CGPoint(start.x + (end.x - start.x) * i / 12, start.y + (end.y - start.y) * i / 12))
-            time.sleep(0.016)
-        self._mouse(2, end)
-        self._pointer = (x2, y2)
-
-    def scroll(self, x, y, dx, dy) -> None:
-        point = self._global(x, y)
-        self._ours_at(point)
-        self._mouse(5, point)
+    def wheel(self, x, y, dx, dy) -> None:
         q = quartz()
         q.post(q.cg.CGEventCreateScrollWheelEvent2(None, 0, 2, int(-dy), int(-dx), 0))  # pixels; positive goes up there
-        time.sleep(0.3)
 
     def _key_event(self, code: int, flags: int, down: bool, text: str | None = None) -> None:
         q = quartz()
@@ -365,47 +304,32 @@ class DesktopBackend:
             q.cg.CGEventKeyboardSetUnicodeString(event, len(units) // 2, chars)
         q.post(event)
 
-    def type(self, text) -> None:
-        self.type_slowly(text, 20)
-
-    def type_slowly(self, text, delay) -> None:
-        self._front()
+    def type_text(self, text, delay_ms) -> None:
         for ch in text:
             self._key_event(0, 0, True, ch)
             self._key_event(0, 0, False, ch)
-            time.sleep(max(0, delay) / 1000)
+            time.sleep(delay_ms / 1000)
 
-    def key(self, combo) -> None:
-        self._front()
+    def press(self, combo) -> None:
         code, flags = parse_combo(combo)
         self._key_event(code, flags, True)
         self._key_event(code, flags, False)
-        time.sleep(0.3)
 
-    def wait(self, ms) -> None:
-        time.sleep(ms / 1000)
-
-    def navigate(self, url) -> None:
-        raise ToolError(t("capture", "desktop_no_navigate"))
-
-    def url(self) -> str:
-        return ""
-
-    def _element(self, point: CGPoint | None = None):
+    def _element(self, point: tuple[float, float] | None = None):
         q = quartz()
         system = q.ax.AXUIElementCreateSystemWide()
         try:
             if point is None:
                 return q.attribute(system, "AXFocusedUIElement")
             element = ctypes.c_void_p()
-            err = q.ax.AXUIElementCopyElementAtPosition(system, point.x, point.y, ctypes.byref(element))
+            err = q.ax.AXUIElementCopyElementAtPosition(system, point[0], point[1], ctypes.byref(element))
             return element.value if err == 0 else None
         finally:
             q.cf.CFRelease(system)
 
-    def target_at(self, x, y) -> dict:
+    def element_at(self, x, y) -> dict:
         q = quartz()
-        element = self._element(self._global(x, y))
+        element = self._element((x, y))
         if not element:
             return {}
         try:
@@ -415,12 +339,12 @@ class DesktopBackend:
             q.cf.CFRelease(element)
         return {k: v for k, v in (("role", role), ("name", name.strip()[:80])) if v}
 
-    def focused_is_secret(self) -> bool:
-        """A secure text field (a password), or a field whose name says it is a code. When it cannot be known: yes."""
+    def focused_secret(self) -> bool | None:
+        """A secure text field (a password), or a field whose name says it is a code; None when it cannot be known."""
         q = quartz()
         element = self._element()
         if not element:
-            return True
+            return None
         try:
             role, subrole = q.text(element, "AXRole"), q.text(element, "AXSubrole")
             hint = " ".join(q.text(element, a) for a in ("AXTitle", "AXDescription", "AXPlaceholderValue"))
@@ -429,53 +353,22 @@ class DesktopBackend:
         return role == "AXSecureTextField" or subrole == "AXSecureTextField" or bool(
             re.search(r"password|contraseña|passcode|one-time|otp|verification|código", hint, re.I))
 
-    def locate(self, target: dict):
-        return None  # on the desktop a replay goes by the position inside the window
-
-    # ── the video of a replay: the screen recorded with ffmpeg, cut to the window ──
-
-    def start_recording(self) -> None:
-        ffmpeg = shutil.which("ffmpeg")
-        if not ffmpeg:
-            raise ToolError(t("redact", "ffmpeg_missing"))
+    def record_args(self, area: Bounds) -> tuple[list[str], str]:
+        """The main screen with avfoundation, cut to the window (it must be entirely on that screen)."""
         q = quartz()
         display = q.cg.CGMainDisplayID()
         screen = q.cg.CGDisplayBounds(display)
-        bx, by, bw, bh = self._refresh()
+        bx, by, bw, bh = area
         if bx < screen.origin.x or by < screen.origin.y or bx + bw > screen.origin.x + screen.size.width \
                 or by + bh > screen.origin.y + screen.size.height:
             raise ToolError(t("capture", "window_off_main_screen", name=self.name))
         scale = q.cg.CGDisplayPixelsWide(display) / screen.size.width
-        listing = subprocess.run([ffmpeg, "-hide_banner", "-f", "avfoundation", "-list_devices", "true", "-i", ""],
+        listing = subprocess.run([shutil.which("ffmpeg"), "-hide_banner", "-f", "avfoundation", "-list_devices", "true", "-i", ""],
                                  capture_output=True, text=True, check=False).stderr
         index = next((m.group(1) for m in re.finditer(r"\[(\d+)\] Capture screen 0", listing)), None)
         if index is None:
             raise ToolError(t("capture", "need_screen_permission"))
         crop = f"crop={int(bw * scale) // 2 * 2}:{int(bh * scale) // 2 * 2}:{int((bx - screen.origin.x) * scale)}:" \
                f"{int((by - screen.origin.y) * scale)}"
-        self._video = Path(tempfile.mkdtemp()) / "screen.mp4"
-        self._ffmpeg = subprocess.Popen(
-            [ffmpeg, "-y", "-loglevel", "error", "-f", "avfoundation", "-capture_cursor", "1", "-capture_mouse_clicks", "1",
-             "-framerate", "30", "-i", f"{index}:none", "-vf", crop, "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
-             "-pix_fmt", "yuv420p", str(self._video)], stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
-        time.sleep(0.8)  # the recording starts
-
-    def stop_recording(self) -> Path:
-        """The video recorded since `start_recording` (an MP4 of the area of the window)."""
-        process, video = self._ffmpeg, self._video
-        self._ffmpeg = self._video = None
-        if process is None or video is None:
-            raise ToolError(t("capture", "replay_no_frames"))
-        try:
-            process.communicate(b"q", timeout=15)
-        except subprocess.TimeoutExpired:
-            process.send_signal(signal.SIGINT)
-            process.wait(timeout=10)
-        if not video.exists() or video.stat().st_size == 0:
-            raise ToolError(t("capture", "replay_no_frames"))
-        return video
-
-    def close(self) -> None:
-        if self._ffmpeg is not None:
-            self._ffmpeg.kill()
-            self._ffmpeg = None
+        return ["-f", "avfoundation", "-capture_cursor", "1", "-capture_mouse_clicks", "1", "-framerate", "30", "-i",
+                f"{index}:none"], crop

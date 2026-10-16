@@ -209,4 +209,11 @@ mask: [{selector: ".account-email"}, {text: "Ana García"}]
   sección Captura. Probado aquí lo que no toca la pantalla: lista de ventanas y permisos con ctypes. Las capas del sistema
   (Dock, barra de menús, superposiciones del tamaño de la pantalla) se ignoran al decidir qué hay encima. Falta probar a
   mano clics, teclado, `screencapture` y la grabación con avfoundation.
-- [ ] Paso 5, Windows (mss + `SendInput`) y X11 (mss + `xdotool`); Wayland fuera.
+- [x] Paso 5, Windows y X11 (sin commit todavía), escritos y SIN PROBAR en máquinas reales: `capture_window.py` (lo
+  común: qué se ve, qué se tapa, puntero, grabación con ffmpeg), `capture_macos.py` (antes `capture_desktop.py`),
+  `capture_windows.py` (user32/dwmapi/kernel32 con ctypes, Pillow `ImageGrab`, `SendInput`, `gdigrab`; sin permisos;
+  contraseña solo detectable en cuadros de edición clásicos) y `capture_x11.py` (`xdotool`, Pillow `ImageGrab`, `x11grab`;
+  Wayland rechazado; no se conocen las ventanas de encima ni el campo activo). Probados solo con fakes (teclas, búsqueda de
+  la ventana, lo que dice xdotool). Por corregir en las pruebas: el foco de Windows (SetForegroundWindow puede negarse),
+  el escalado de pantalla en `gdigrab`, `ImageGrab` en Linux sin XCB, y la ventana bajo el puntero con distintos gestores
+  de ventanas.

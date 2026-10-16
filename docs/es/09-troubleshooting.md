@@ -77,7 +77,7 @@ Mira [Multimedia](07-media.md).
 
 ### Captura
 
-Solo aparece con `capture.yaml › enabled` activado. Playwright, el OCR (rapidocr) y OpenCV vienen con el extra `capture` del paquete: `uv tool install "slxd-coursekit[capture]"`; tesseract, instalado a mano, es el otro OCR. No se descarga ningún navegador: usa el Chrome, Edge o Chromium de la máquina. Para `--mode desktop` en macOS, la terminal que ejecuta coursekit necesita Grabación de pantalla y Accesibilidad en Ajustes del Sistema › Privacidad y seguridad; después de activarlos, cierra la terminal y ábrela de nuevo. Mira [`coursekit capture`](03-commands.md#coursekit-capture).
+Solo aparece con `capture.yaml › enabled` activado. Playwright, el OCR (rapidocr) y OpenCV vienen con el extra `capture` del paquete: `uv tool install "slxd-coursekit[capture]"`; tesseract, instalado a mano, es el otro OCR. No se descarga ningún navegador: usa el Chrome, Edge o Chromium de la máquina. Para `--mode desktop` en macOS, la terminal que ejecuta coursekit necesita Grabación de pantalla y Accesibilidad en Ajustes del Sistema › Privacidad y seguridad; después de activarlos, cierra la terminal y ábrela de nuevo. En Windows no necesita nada. En Linux necesita una sesión X11 (Wayland no deja que un programa maneje otro: elige una sesión en Xorg en la pantalla de acceso) y `xdotool` (`sudo apt install xdotool`). Mira [`coursekit capture`](03-commands.md#coursekit-capture).
 
 ## coursekit setup
 
