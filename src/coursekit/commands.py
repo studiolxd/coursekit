@@ -208,7 +208,7 @@ def cmd_videos(args: argparse.Namespace) -> int:
                 print(t("videos", "need_url", action=args.action), file=sys.stderr)
                 return 2
             if args.action == "propose":
-                videosmod.propose(course, args.url, args.why or "", args.replaces)
+                videosmod.propose(course, args.url, args.why or "", args.replaces, args.asset)
             else:
                 entry = videosmod.decide(course, args.url, "approved" if args.action == "approve" else "rejected")
                 print(t("videos", "decided", url=entry["url"], status=entry["status"]))
@@ -536,6 +536,11 @@ def cmd_approve(args: argparse.Namespace) -> int:
         print(approve.approve_design(course, confirm, do_commit=not args.no_commit))
     elif args.gate == "style":
         print(approve.approve_style(course, confirm, do_commit=not args.no_commit))
+    elif args.gate == "script":
+        if not args.asset:
+            print(t("commands", "approve_needs_asset"), file=sys.stderr)
+            return 2
+        print(approve.approve_script(course, args.asset, confirm, do_commit=not args.no_commit))
     else:
         if args.unit is None:
             print(t("commands", "approve_needs_unit"), file=sys.stderr)
@@ -1198,6 +1203,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("url", nargs="?")
     p.add_argument("--why", help=t("commands", "help_videos_why"))
     p.add_argument("--replaces", help=t("commands", "help_videos_replaces"))
+    p.add_argument("--for", dest="asset", metavar="ASSET", help=t("commands", "help_videos_for"))
     p.set_defaults(func=cmd_videos)
 
     p = sub.add_parser("handoff", help=t("commands", "help_handoff"))
@@ -1260,9 +1266,10 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.set_defaults(func=cmd_reviewed)
 
     p = sub.add_parser("approve", help=t("commands", "help_approve"))
-    p.add_argument("gate", choices=("design", "content", "style"))
+    p.add_argument("gate", choices=("design", "content", "style", "script"))
     p.add_argument("code")
     p.add_argument("--unit", type=int, help=t("commands", "help_approve_unit"))
+    p.add_argument("--asset", help=t("commands", "help_approve_asset"))
     p.add_argument("--yes", action="store_true", help=t("commands", "help_approve_yes"))
     p.add_argument("--no-commit", action="store_true", help=t("commands", "help_approve_no_commit"))
     p.add_argument("--force", action="store_true", help=t("commands", "help_approve_force"))

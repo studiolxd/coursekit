@@ -100,6 +100,20 @@ def awaiting_recording(asset: dict) -> bool:
             and asset.get("recipe") in ("screen-recording", "screenshot") and not (asset.get("capture") or {}).get("state"))
 
 
+def _script_lines(course: dict, asset: dict) -> list[str]:
+    """What waits for a person before a resource is made: an official video that stands in for it, or its script."""
+    from coursekit import mediascript, videos
+
+    official = videos.standing_in(course, str(asset["id"]))
+    if official:
+        return ["  " + t("videos", f"stands_in_{official['status']}", id=asset["id"], url=official["url"], code=course["code"])]
+    if mediascript.required(course):
+        state = mediascript.state(course, str(asset["id"]))
+        if state in ("pending", "changed"):
+            return [t("mediascript", "plan_line" if state == "pending" else "plan_changed", code=course["code"], id=asset["id"])]
+    return []
+
+
 def scan(course: dict) -> list[dict]:
     tk = coursemod.tokens(course)
     section_re = re.compile(rf"^## {re.escape(tk['section'])} (\d+)\s*[—-]")
@@ -355,6 +369,7 @@ def plan(course: dict) -> tuple[list[str], list[str]]:
         chain = [o for o in chain if (o["id"] in real or o.get("shows") == "interface")] if real_interface \
             else [o for o in chain if o.get("shows") != "interface"]
         lines.append(f"{a['id']} [{a['type']}] {a.get('title', '')}")
+        lines += _script_lines(course, a)
         if real_interface:
             lines.append(t("media", "interface_line"))
             waiting = capture_waiting(a)

@@ -62,7 +62,9 @@ What you may do with an `interface` resource, in this order:
    channels of `rules › forbidden › allow_channels` (`coursekit config rules --course <CODE>`) and the official site of the
    application, and write in the brief of the resource the candidates you find: address, channel, why it is official (the
    official page that links to it), what it shows and whether it covers the same steps, so that the writer or a person can
-   replace the placeholder with it (`coursekit videos propose`). Never put an address in the content yourself.
+   replace the placeholder with it (`coursekit videos propose <CODE> <address> --why "…" --for <id>`). While it waits for a
+   person, and once approved, the resource is not made (the capture and the voice refuse it): go on with the other resources.
+   Never put an address in the content yourself.
 2. **Real material that a person provides**, in `courses/<CODE>/media/recordings/<id>.mp4` (or `.png` for a capture). If it is
    there, work from it: for a **video**, the recipe `screen-recording` (Remotion over the real recording: narration with the
    voice of the course, captions, zooms, highlights, the cursor of the recording; nothing of the screen is redrawn), with
@@ -75,7 +77,9 @@ What you may do with an `interface` resource, in this order:
    `coursekit capture redact <CODE> <id>` (the original leaves the project), and work from the covered file only after a
    person approved it (`coursekit capture approve`, which you may not run: tell them `coursekit capture review <CODE> <id>`).
 3. **A capture you make yourself**, when the tools of the `coursekit-capture` MCP server are available and a person allowed
-   it (`coursekit capture allow`; you may not run it, nor `login`): write first the brief of item 4 and, in it, a `capture`
+   it (`coursekit capture allow`; you may not run it, nor `login`): write first the brief of item 4 (its steps and its
+   narration: the script a person approves with `coursekit approve script <CODE> --asset <id>`, which you may not run; tell them,
+   and go on with the other resources until it is signed) and, in it, a `capture`
    block with where it starts (`start: /path`; for a resource that shows the course itself, the profile `course` and
    `start: unit:N`, its package or its review link) and what must always be hidden (`mask: [{selector: ...}, {text: ...}]`). Then
    `session_start` with the code and the id, follow the steps of the brief looking at each `screenshot` (use `zoom` to read
@@ -164,7 +168,9 @@ credits.
   timeline, a before and after), create it. The rules of every scene: everything moves with the frame
   (`useCurrentFrame`, no CSS animations or timers); colours and fonts only from the theme (`useColor`, `useTheme`); what
   enters with a word enters when the narration says it (`useAt("…")`); media by their path in the media folder of the
-  course; nothing from the network. Never edit `tools/remotion/kit/` (coursekit writes it). The steps:
+  course; nothing from the network. Never edit `tools/remotion/kit/` (coursekit writes it). The montage is the script of the
+  video: a person approves it (`coursekit approve script <CODE> --asset <id>`, which you may not run) before its voice; if you
+  change its texts after, it is approved again. The steps:
   `coursekit video new <CODE> <id>`, fill it, `coursekit video check <CODE> <id>` until it passes, `coursekit video voice`,
   `coursekit video preview` (open the image it prints and look at every scene), `coursekit video render`, which leaves the
   video, its captions, its words and its accessible transcript and marks it `produced`. A video made by hand as a Remotion

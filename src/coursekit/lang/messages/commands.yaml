@@ -38,6 +38,7 @@ confirm_prompt: {es: "[s/N] ", en: "[y/N] "}
 approve_no_terminal:
   es: "coursekit: no hay terminal interactiva. Firma en tu propia terminal, o desde el chat del agente con\n  `! coursekit approve … --yes` (el `!` lo ejecuta como tú, no como el agente)"
   en: "coursekit: no interactive terminal. Sign in your own terminal, or from the agent chat with\n  `! coursekit approve … --yes` (the `!` runs it as you, not as the agent)"
+approve_needs_asset: {es: "coursekit: la aprobación de un guion necesita --asset ID", en: "coursekit: the approval of a script needs --asset ID"}
 approve_needs_unit: {es: "coursekit: las aprobaciones de contenido necesitan --unit N", en: "coursekit: content approvals need --unit N"}
 
 # brief
@@ -191,6 +192,7 @@ help_reviewed_note: {es: "nota de la revisión de la persona (con --by)", en: "n
 help_reviewed_report: {es: "informe de la revisión de la persona, dentro de la carpeta del curso (con --by)", en: "report of the person's review, inside the course folder (with --by)"}
 reviewed_needs_by: {es: "coursekit: --note y --report necesitan --by", en: "coursekit: --note and --report need --by"}
 help_approve: {es: "firma el diseño o una unidad (solo personas, nunca un agente)", en: "sign off the design or a unit (people only, never an agent)"}
+help_approve_asset: {es: "id del recurso (aprobación de su guion)", en: "id of the resource (script gate)"}
 help_approve_unit: {es: "número de unidad (aprobación de contenido)", en: "unit number (content gate)"}
 help_approve_yes:
   es: "confirma sin preguntar (para `!` en el chat de un agente)"
@@ -394,6 +396,7 @@ help_media_frames: {es: "sheet: cuántos fotogramas tiene la hoja de contactos (
 help_video: {es: "vídeos como datos (montaje de escenas con el tema del curso): crear, comprobar, voz, vista previa, render y catálogo", en: "videos as data (a montage of scenes in the theme of the course): create, check, voice, preview, render and catalog"}
 help_videos: {es: "vídeos de sitios prohibidos que son de un canal oficial: comprobar, proponer, aprobar o rechazar", en: "videos on forbidden sites that come from an official channel: check, propose, approve or reject"}
 help_videos_why: {es: "propose: la evidencia de que el canal del vídeo es oficial", en: "propose: the evidence that the channel of the video is official"}
+help_videos_for: {es: "propose: el recurso del manifiesto al que sustituiría (mientras espera, o si se aprueba, ese recurso no se captura ni se locuta)", en: "propose: the resource of the manifest it would stand in for (while it waits, or once approved, that resource is neither captured nor voiced)"}
 help_videos_replaces: {es: "propose: la dirección del vídeo que sustituye", en: "propose: the address of the video it replaces"}
 help_media_depicts: {es: "set: qué muestra el recurso (interface: la interfaz de una aplicación real; concept: una idea, un diagrama, una escena)", en: "set: what the resource shows (interface: the interface of a real application; concept: an idea, a diagram, a scene)"}
 help_media_clean: {es: "redo: además olvida el fichero, el texto alternativo, la transcripción, los subtítulos y la herramienta del recurso (los ficheros se quedan en disco)", en: "redo: also forget the file, the alt text, the transcript, the captions and the tool of the asset (the files stay on disk)"}

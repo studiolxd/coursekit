@@ -353,6 +353,15 @@ def _logo(course: dict) -> dict | None:
             "size": int(cfg.get("size") or 64)}
 
 
+def _ready(course: dict, asset_id: str) -> None:
+    from coursekit import mediascript
+
+    try:
+        mediascript.ready(course, asset_id)
+    except mediascript.ScriptError as exc:
+        raise VideoError(str(exc)) from None
+
+
 # ── the voice ────────────────────────────────────────────────────────────────────────────────
 
 def _normal_words(text: str) -> list[str]:
@@ -396,6 +405,7 @@ def voice(course: dict, asset_id: str, say=print) -> int:
     from coursekit import voices
 
     data = load(course, asset_id)
+    _ready(course, asset_id)
     folder = voice_dir(course, asset_id)
     folder.mkdir(parents=True, exist_ok=True)
     record = _voice_record(course, asset_id)
@@ -618,6 +628,7 @@ def _captions(resolved: dict) -> tuple[str, list[dict]]:
 
 def render(course: dict, asset_id: str) -> dict:
     """The video, its captions, its words, its scenes described and its accessible transcript; the asset becomes produced."""
+    _ready(course, asset_id)
     resolved = resolve(course, asset_id)
     root = sync(course)
     props = _props_file(course, asset_id, resolved)

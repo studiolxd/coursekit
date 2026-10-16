@@ -194,7 +194,7 @@ The detail lists each unit with its status and, if known, the tool that wrote it
 | `units[].written_with`, `reviewed_with` | tool and model of the writer and of the reviewer |
 | `units[].review` | how the unit was reviewed: `kind` (`ai`, `human` with `by`, `at`, `note`, `report`, or `skipped`) |
 | `units[].reviewed_parts` | fingerprint of every section and activity at the time of the AI review |
-| `approvals` | every sign-off: gate (`design` or `content`), who, when and the hashes of what was approved |
+| `approvals` | every sign-off: gate (`design`, `content`, `style` or `script`), who, when and the hashes of what was approved |
 | `units[].links.preview`, `units[].links.review` | live preview of the unit (no comments) and its client review link, written by `coursekit assemble link` |
 | `client_review` | the rounds of client review: `round`, `sent_at`, `sent_by`, `to`, `links`, `outcome`, `closed_at`, `by`, `note` |
 | `hold` | present only while `on_hold`: `previous` status, `reason`, `by` and `at` |
@@ -364,7 +364,7 @@ Signing requires: the design still signed and unchanged, no verification errors,
 /produce-media PWD
 ```
 
-The media agent extracts the placeholders of the content into a manifest (`coursekit media extract`), shows the plan (`coursekit media plan`, which names each type by its English id: `image`, `infographic`, `video`…) and tells you what it will produce and with what before spending credits of paid APIs. Infographics, diagrams, animated GIFs, simulations and videos are made with the design tokens of the theme, so they need `/define-theme` first: see [Theme and design tokens](#theme-and-design-tokens). See [Media](07-media.md).
+The media agent extracts the placeholders of the content into a manifest (`coursekit media extract`), shows the plan (`coursekit media plan`, which names each type by its English id: `image`, `infographic`, `video`…) and tells you what it will produce and with what before spending credits of paid APIs. Infographics, diagrams, animated GIFs, simulations and videos are made with the design tokens of the theme, so they need `/define-theme` first: see [Theme and design tokens](#theme-and-design-tokens). A screen recording and a video made as a montage have a script (their steps and the narration the learner will hear): the agent writes it and you approve it, `coursekit approve script PWD --asset <id>`, before it is captured or voiced (`rules › review › scripts`). For a tutorial of a real application, an official video goes first: while one the agent proposed waits for you (`coursekit videos`), the resource is not made. See [Media](07-media.md).
 
 ### 7. Assembly
 

@@ -192,18 +192,25 @@ def check(course: dict) -> list[dict]:
     return videos
 
 
-def propose(course: dict, url: str, why: str, replaces: str | None = None) -> dict:
-    """The agent registers a video from a channel it found official, with its evidence, for a person to check."""
+def propose(course: dict, url: str, why: str, replaces: str | None = None, asset: str | None = None) -> dict:
+    """The agent registers a video from a channel it found official, with its evidence, for a person to check. `asset` is the
+    resource of the media manifest it would stand in for (a tutorial of a real application): while the proposal waits, or once
+    it is approved, that resource is neither captured nor voiced."""
     if not why.strip():
         raise VideoError(t("videos", "why_needed"))
     videos = load(course["_dir"])
     info = oembed(url)
     entry = {"url": url, "title": (info or {}).get("title", ""), "channel": {"name": info["name"], "url": info["url"]} if info else None,
              "status": "proposed", "why": why.strip(), "checked": today(), "in_content": True,
-             **({"replaces": replaces} if replaces else {})}
+             **({"replaces": replaces} if replaces else {}), **({"asset": asset} if asset else {})}
     videos = [v for v in videos if key(v["url"]) != key(url)] + [entry]
     save(course["_dir"], videos)
     return entry
+
+
+def standing_in(course: dict, asset_id: str) -> dict | None:
+    """The official video proposed (waiting for a person) or approved for a resource: while there is one, it is not made."""
+    return next((v for v in load(course["_dir"]) if v.get("asset") == asset_id and v.get("status") in ("proposed", "approved")), None)
 
 
 def decide(course: dict, url: str, status: str) -> dict:

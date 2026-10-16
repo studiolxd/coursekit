@@ -194,7 +194,7 @@ El detalle lista cada unidad con su estado y, si se conoce, la herramienta que l
 | `units[].written_with`, `reviewed_with` | herramienta y modelo del redactor y del revisor |
 | `units[].review` | cómo se revisó la unidad: `kind` (`ai`, `human` con `by`, `at`, `note`, `report`, o `skipped`) |
 | `units[].reviewed_parts` | huella de cada apartado y actividad en el momento de la revisión con IA |
-| `approvals` | cada firma: puerta (`design` o `content`), quién, cuándo y los hashes de lo aprobado |
+| `approvals` | cada firma: puerta (`design`, `content`, `style` o `script`), quién, cuándo y los hashes de lo aprobado |
 | `units[].links.preview`, `units[].links.review` | vista previa en vivo de la unidad (sin comentarios) y su enlace de revisión del cliente, que escribe `coursekit assemble link` |
 | `client_review` | las rondas de revisión del cliente: `round`, `sent_at`, `sent_by`, `to`, `links`, `outcome`, `closed_at`, `by`, `note` |
 | `hold` | solo mientras está en `on_hold`: estado `previous`, `reason`, `by` y `at` |
@@ -364,7 +364,7 @@ Para firmar se exige: el diseño sigue firmado y sin cambios, ningún error de v
 /produce-media PWD
 ```
 
-El agente de multimedia extrae los recursos del contenido a un manifiesto (`coursekit media extract`), muestra el plan (`coursekit media plan`, que nombra cada tipo por su id en inglés: `image`, `infographic`, `video`…) y te dice qué va a producir y con qué antes de gastar créditos de APIs de pago. Las infografías, los esquemas, los GIF animados, las simulaciones y los vídeos se hacen con los tokens de diseño del theme, así que antes hace falta `/define-theme`: mira [Theme y tokens de diseño](#theme-y-tokens-de-diseño). Mira [Multimedia](07-media.md).
+El agente de multimedia extrae los recursos del contenido a un manifiesto (`coursekit media extract`), muestra el plan (`coursekit media plan`, que nombra cada tipo por su id en inglés: `image`, `infographic`, `video`…) y te dice qué va a producir y con qué antes de gastar créditos de APIs de pago. Las infografías, los esquemas, los GIF animados, las simulaciones y los vídeos se hacen con los tokens de diseño del theme, así que antes hace falta `/define-theme`: mira [Theme y tokens de diseño](#theme-y-tokens-de-diseño). Mira [Multimedia](07-media.md). Una grabación de pantalla y un vídeo hecho como montaje tienen guion (sus pasos y la locución que oirá el alumno): el agente lo escribe y tú lo apruebas, `coursekit approve script PWD --asset <id>`, antes de capturarlo o locutarlo (`rules › review › scripts`). Para un tutorial de una aplicación real va primero un vídeo oficial: mientras uno que propuso el agente espera tu decisión (`coursekit videos`), el recurso no se hace.
 
 ### 7. Montaje
 

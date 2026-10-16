@@ -25,6 +25,9 @@ review:
   ai: required                 # required: an AI review (coursekit review, then `coursekit reviewed`) comes before the sign-off
                                # skip: a unit that verifies counts as reviewed and the person's sign-off is the review
                                # (either way a person can record their own review of a unit: coursekit reviewed CODE N --by NAME)
+  scripts: required            # required: a person approves the brief of a screen recording and the montage of a video (its steps
+                               # and the narration the learner will hear) with `coursekit approve script CODE --asset ID` before it is
+                               # captured or voiced, and again if it changes; none: they are made without (the handoff signs them)
 
 # `coursekit handoff`: the whole production of a course by itself, signing as "Coursekit Handoff" (no person reviews it).
 handoff:

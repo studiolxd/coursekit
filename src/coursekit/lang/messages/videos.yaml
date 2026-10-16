@@ -19,3 +19,5 @@ report_rejected: {es: "## Rechazados (no pueden estar en el contenido)", en: "##
 report_replaces: {es: "sustituye a {url}.", en: "replaces {url}."}
 report_unused: {es: "ya no está en el contenido", en: "no longer in the content"}
 report_none: {es: "No hay vídeos de sitios prohibidos en el contenido.", en: "There are no videos on forbidden sites in the content."}
+stands_in_proposed: {es: "para {id} hay un vídeo oficial propuesto ({url}) que espera a una persona: no se hace hasta que se rechace (coursekit videos approve|reject {code} URL)", en: "for {id} there is an official video proposed ({url}) that waits for a person: it is not made until it is rejected (coursekit videos approve|reject {code} URL)"}
+stands_in_approved: {es: "para {id} se aprobó un vídeo oficial ({url}): va en el contenido en lugar del recurso, que no se hace", en: "for {id} an official video was approved ({url}): it goes in the content instead of the resource, which is not made"}

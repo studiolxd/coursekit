@@ -1,0 +1,6 @@
+# Messages of the approval of the script of a resource (a screen recording, the montage of a video).
+no_script: {es: "{id} todavía no tiene guion: escríbelo en {path} (o el montaje en .video.yaml)", en: "{id} has no script yet: write it in {path} (or the montage in .video.yaml)"}
+pending: {es: "el guion de {id} espera a que una persona lo apruebe (pasos y locución): coursekit approve script {code} --asset {id}", en: "the script of {id} waits for a person to approve it (steps and narration): coursekit approve script {code} --asset {id}"}
+changed: {es: "el guion de {id} ha cambiado desde que se aprobó: una persona lo aprueba de nuevo con coursekit approve script {code} --asset {id}", en: "the script of {id} changed since it was approved: a person approves it again with coursekit approve script {code} --asset {id}"}
+plan_line: {es: "  guion por aprobar: coursekit approve script {code} --asset {id}", en: "  script to approve: coursekit approve script {code} --asset {id}"}
+plan_changed: {es: "  el guion cambió desde su aprobación: coursekit approve script {code} --asset {id}", en: "  the script changed since it was approved: coursekit approve script {code} --asset {id}"}

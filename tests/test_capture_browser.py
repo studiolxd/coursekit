@@ -14,6 +14,15 @@ from coursekit.project import find_project
 from tests.test_assemble import course  # noqa: F401 — the approved sample course fixture
 from tests.test_capture import asset_capture, configure, interface_asset
 
+
+@pytest.fixture(autouse=True)
+def no_script_gate(request, monkeypatch):
+    """These tests are about what is made, not about its sign-off: the approval of the script is tested in test_media_script."""
+    from coursekit import mediascript
+
+    monkeypatch.setattr(mediascript, "required", lambda _course: False)
+
+
 pytest.importorskip("playwright.sync_api")
 if not find_browser():
     pytest.skip("no Chrome, Edge or Chromium", allow_module_level=True)

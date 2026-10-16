@@ -499,7 +499,7 @@ coursekit import ../exe/catalog --default-hours 20 --handoff
 Keeps the videos of a course that are hosted on a site `rules › forbidden` lists (YouTube, Vimeo…) when they come from an **official channel**, and manages the replacements for the rest. Who: both (the agents check and propose; only a person approves or rejects).
 
 ```
-coursekit videos [--why WHY] [--replaces REPLACES] {check,propose,approve,reject} code [url]
+coursekit videos [--why WHY] [--replaces REPLACES] [--for ASSET] {check,propose,approve,reject} code [url]
 ```
 
 | Argument | Values / default | Meaning |
@@ -509,6 +509,7 @@ coursekit videos [--why WHY] [--replaces REPLACES] {check,propose,approve,reject
 | `url` | video address | Required by `propose`, `approve` and `reject` (any form of the address of the same video). |
 | `--why WHY` | text | `propose`: the evidence that the channel is official (for example the official page that links to it). Required. |
 | `--replaces REPLACES` | video address | `propose`: the video it replaces. |
+| `--for ASSET` | resource id | `propose`: the resource of the media manifest it would stand in for (a tutorial of a real application). While the proposal waits, and once it is approved, that resource is neither captured nor voiced; rejected, it is made. |
 
 Actions:
 
@@ -595,14 +596,15 @@ coursekit reviewed PWD 1 --by "Ana Pérez" --note "Reviewed with the client's tr
 Signs off the instructional design or one unit, in the name of the person who runs it. People only: the generated agent configurations deny it, and the slash commands only prepare the sign-off. Who: people.
 
 ```
-coursekit approve [--unit UNIT] [--yes] [--no-commit] [--force] {design,content,style} code
+coursekit approve [--unit UNIT] [--asset ASSET] [--yes] [--no-commit] [--force] {design,content,style,script} code
 ```
 
 | Argument | Values / default | Meaning |
 |---|---|---|
-| `gate` | `design`, `content` or `style` | What to sign: the instructional design, the content of one unit, or the style sheet of the images of the simulations. |
+| `gate` | `design`, `content`, `style` or `script` | What to sign: the instructional design, the content of one unit, the style sheet of the images of the simulations, or the script of a resource. |
 | `code` | course code or folder | Course. |
 | `--unit UNIT` | unit number | Unit to sign (required with `content`; without it the command exits with code 2). |
+| `--asset ASSET` | resource id | The resource whose script is signed (required with `script`; exit code 2 without it). |
 | `--yes` | flag | Confirm without a prompt. Needed when there is no terminal; from an agent chat, type it with the `!` prefix so it runs as you. |
 | `--no-commit` | flag | Record the approval without making the git commit. |
 | `--force` | flag | `content` only: sign the unit even if its content changed after its AI review. |
@@ -614,6 +616,8 @@ Without `--yes` it needs an interactive terminal (otherwise exit code 1) and ask
 `style`: needs the samples of the style sheet in `courses/<CODE>/media/style/` (PNG, JPG, WebP or SVG) and a valid `media › visual`. Records the style signed (the configured one, or `visual.fallback` when there is no image generator) and the SHA-256 of every sample, and commits the course folder as `Style approval <CODE>`. Until it is signed, `coursekit media set … --status produced` (or `uploaded`) refuses the images of the simulations unless `--force` is given; it is signed again when the style changes. See [Images of the simulations](07-media.md#images-of-the-simulations).
 
 `content`: needs the design approved and unchanged, the unit passing `verify` without errors, unit status `reviewed` (or `approved`) and the AI review report, unless a person recorded their own review (`coursekit reviewed --by`) or the project skips the AI review (`rules › review › ai: skip`, where a `verified` unit is enough). It is refused when the content changed after the AI review: the baseline is the fingerprint of each section and activity stored by `coursekit reviewed`, and the message names the parts that changed (review them again with `coursekit review`, or sign anyway with `--force`). Records the SHA-256 of `content.md` and `assessment.md`, moves the unit to `approved`, and commits `course.yaml`, the unit folder and the review report as `Content approval <CODE> U<N>`.
+
+`script`: the script of a resource: the brief of a screen recording (`media/scripts/<id>.md`: its steps and the narration the learner will hear) and the montage of a video (`media/scripts/<id>.video.yaml`). Records a fingerprint of both (the `capture` block of the brief is left out: it holds the exact steps a capture session writes) and commits the course folder as `Script approval <CODE> <id>`. While `rules › review › scripts` is `required` (the default), a capture session, `coursekit capture replay` and `coursekit video voice` and `render` refuse a resource whose script is not signed, or changed after it was signed; `coursekit media plan` says which wait. A session of the handoff signs it by itself, as the handoff signs every gate.
 
 If git cannot commit, the approval stays recorded and the message says `(recorded, not committed)`; the exit code is still 0.
 

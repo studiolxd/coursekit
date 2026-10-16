@@ -499,7 +499,7 @@ coursekit import ../exe/catalogo --default-hours 20 --handoff
 Conserva los vídeos de un curso alojados en un sitio que `rules › forbidden` lista (YouTube, Vimeo…) cuando son de un **canal oficial**, y gestiona los reemplazos del resto. Quién: ambos (los agentes comprueban y proponen; solo una persona aprueba o rechaza).
 
 ```
-coursekit videos [--why WHY] [--replaces REPLACES] {check,propose,approve,reject} code [url]
+coursekit videos [--why WHY] [--replaces REPLACES] [--for ASSET] {check,propose,approve,reject} code [url]
 ```
 
 | Argumento | Valores / por defecto | Significado |
@@ -509,6 +509,7 @@ coursekit videos [--why WHY] [--replaces REPLACES] {check,propose,approve,reject
 | `url` | dirección del vídeo | Obligatoria en `propose`, `approve` y `reject` (vale cualquier forma de la dirección del mismo vídeo). |
 | `--why WHY` | texto | `propose`: la evidencia de que el canal es oficial (por ejemplo la página oficial que lo enlaza). Obligatoria. |
 | `--replaces REPLACES` | dirección de vídeo | `propose`: el vídeo al que sustituye. |
+| `--for ASSET` | id del recurso | `propose`: el recurso del manifiesto al que sustituiría (un tutorial de una aplicación real). Mientras la propuesta espera, y si se aprueba, ese recurso no se captura ni se locuta; si se rechaza, se hace. |
 
 Acciones:
 
@@ -595,14 +596,15 @@ coursekit reviewed PWD 1 --by "Ana Pérez" --note "Revisada con la formadora del
 Firma el diseño instruccional o una unidad, en nombre de la persona que lo ejecuta. Solo personas: las configuraciones de agente generadas lo deniegan y los comandos de barra solo preparan la firma. Quién: personas.
 
 ```
-coursekit approve [--unit UNIT] [--yes] [--no-commit] [--force] {design,content,style} code
+coursekit approve [--unit UNIT] [--asset ASSET] [--yes] [--no-commit] [--force] {design,content,style,script} code
 ```
 
 | Argumento | Valores / por defecto | Significado |
 |---|---|---|
-| `gate` | `design`, `content` o `style` | Qué firmar: el diseño instruccional, el contenido de una unidad o la lámina de estilo de las imágenes de las simulaciones. |
+| `gate` | `design`, `content`, `style` o `script` | Qué firmar: el diseño instruccional, el contenido de una unidad, la lámina de estilo de las imágenes de las simulaciones o el guion de un recurso. |
 | `code` | código o carpeta del curso | Curso. |
 | `--unit UNIT` | número de unidad | Unidad que firmar (obligatorio con `content`; sin él el comando termina con código 2). |
+| `--asset ASSET` | id del recurso | El recurso cuyo guion se firma (obligatorio con `script`; código de salida 2 sin él). |
 | `--yes` | indicador | Confirma sin preguntar. Hace falta cuando no hay terminal; desde el chat de un agente, escríbelo con el prefijo `!` para que se ejecute como tú. |
 | `--no-commit` | indicador | Registra la aprobación sin hacer el commit de git. |
 | `--force` | indicador | Solo con `content`: firma la unidad aunque su contenido haya cambiado después de la revisión con IA. |
@@ -614,6 +616,8 @@ Sin `--yes` necesita una terminal interactiva (si no, código de salida 1) y pre
 `style`: necesita las muestras de la lámina de estilo en `courses/<CODE>/media/style/` (PNG, JPG, WebP o SVG) y un `media › visual` válido. Registra el estilo firmado (el configurado, o `visual.fallback` cuando no hay generador de imágenes) y el SHA-256 de cada muestra, y hace commit de la carpeta del curso como `Style approval <CODE>`. Mientras no está firmada, `coursekit media set … --status produced` (o `uploaded`) rechaza las imágenes de las simulaciones salvo con `--force`; se vuelve a firmar cuando cambia el estilo. Ver [Imágenes de las simulaciones](07-media.md#imágenes-de-las-simulaciones).
 
 `content`: necesita el diseño aprobado y sin cambios, la unidad pasando `verify` sin errores, el estado de la unidad en `reviewed` (o `approved`) y el informe de la revisión con IA, salvo que una persona haya registrado su propia revisión (`coursekit reviewed --by`) o el proyecto omita la revisión con IA (`rules › review › ai: skip`, donde basta una unidad `verified`). Se rechaza si el contenido cambió después de la revisión con IA: la referencia es la huella de cada apartado y actividad que guardó `coursekit reviewed`, y el mensaje nombra las partes que cambiaron (revísalas de nuevo con `coursekit review`, o firma igualmente con `--force`). Registra el SHA-256 de `content.md` y `assessment.md`, mueve la unidad a `approved` y hace commit de `course.yaml`, la carpeta de la unidad y el informe de revisión como `Content approval <CODE> U<N>`.
+
+`script`: el guion de un recurso: el guion de una grabación de pantalla (`media/scripts/<id>.md`: sus pasos y la locución que oirá el alumno) y el montaje de un vídeo (`media/scripts/<id>.video.yaml`). Registra una huella de los dos (sin el bloque `capture` del guion: guarda los pasos exactos que escribe una sesión de captura) y hace commit de la carpeta del curso como `Script approval <CODE> <id>`. Mientras `rules › review › scripts` sea `required` (por defecto), una sesión de captura, `coursekit capture replay` y `coursekit video voice` y `render` rechazan un recurso cuyo guion no está firmado, o cambió después de firmarlo; `coursekit media plan` dice cuáles esperan. Una sesión del handoff lo firma por sí sola, como el handoff firma todas las puertas.
 
 Si git no puede hacer el commit, la aprobación queda registrada y el mensaje dice `(registrada, sin commit)`; el código de salida sigue siendo 0.
 

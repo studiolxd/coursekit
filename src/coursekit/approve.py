@@ -181,6 +181,30 @@ def approve_style(course: dict, confirm: Confirm, do_commit: bool = True, who: i
     return t("approve", "style_approved", who=who, style=signed_style)
 
 
+def approve_script(course: dict, asset_id: str, confirm: Confirm, do_commit: bool = True, who: identity.Identity | None = None,
+                   via: str | None = None) -> str:
+    """The sign-off of the script of a resource: the brief of a screen recording (its steps and its narration) and the montage
+    of a video. It is captured or voiced only once this is signed, and it is signed again if it changes."""
+    from coursekit import mediascript
+
+    found = mediascript.files(course, asset_id)
+    if not found:
+        raise ApprovalError(t("mediascript", "no_script", id=asset_id, path=f"media/scripts/{asset_id}.md"))
+    who = who or signer()
+    summary = t("approve", "script_summary", code=course["code"], id=asset_id, files=", ".join(p.name for p in found))
+    if not confirm(t("approve", "script_confirm", summary=summary, who=who)):
+        raise ApprovalError(t("approve", "cancelled"))
+    entry = {"gate": "script", "asset": asset_id, "by": str(who), "at": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
+             "fingerprint": mediascript.fingerprint(course, asset_id), "files": [p.name for p in found]}
+    if via:
+        entry["via"] = via
+    _record(course["_dir"], entry, None, f"Script of {asset_id} approved")
+    course.setdefault("approvals", []).append(entry)  # the course in memory sees it too (a session goes on with it)
+    if do_commit and not commit([course["_dir"]], f"Script approval {course['code']} {asset_id}", who, course["_dir"]):
+        return t("approve", "script_approved_uncommitted", who=who, id=asset_id)
+    return t("approve", "script_approved", who=who, id=asset_id)
+
+
 def approve_content(course: dict, n: int, confirm: Confirm, do_commit: bool = True, force: bool = False,
                     who: identity.Identity | None = None, via: str | None = None) -> str:
     problem = coursemod.approval_problem(course)

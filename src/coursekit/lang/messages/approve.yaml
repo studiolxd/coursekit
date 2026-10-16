@@ -80,3 +80,7 @@ report_not_found: {es: "no existe el informe {path}", en: "the report {path} doe
 report_outside:
   es: "el informe {path} debe estar dentro de la carpeta del curso {course} (lo normal: reviews/)"
   en: "the report {path} must be inside the folder of course {course} (usually reviews/)"
+script_summary: {es: "guion de {id} ({code}): {files}, en media/scripts/ (los pasos y la locución que oirá el alumno)", en: "script of {id} ({code}): {files}, in media/scripts/ (the steps and the narration the learner will hear)"}
+script_confirm: {es: "¿Aprobar el {summary}? Firmas como {who}", en: "Approve the {summary}? You sign as {who}"}
+script_approved: {es: "guion de {id} aprobado por {who}", en: "script of {id} approved by {who}"}
+script_approved_uncommitted: {es: "guion de {id} aprobado por {who} (sin commit: no es un repositorio git o no hay cambios)", en: "script of {id} approved by {who} (not committed: not a git repository or nothing changed)"}

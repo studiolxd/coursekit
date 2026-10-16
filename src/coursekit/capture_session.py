@@ -35,7 +35,7 @@ from PIL import Image
 
 from coursekit import capture as capturemod
 from coursekit import course as coursemod
-from coursekit import pii
+from coursekit import mediascript, pii
 from coursekit import redact as redactmod
 from coursekit.i18n import t
 from coursekit.mcpserver import ToolError
@@ -368,6 +368,10 @@ def start(project, code: str, asset_id: str, backend_factory=None, cursor: bool 
         raise ToolError(str(exc)) from None
     if asset.get("recipe") not in RECIPES:
         raise ToolError(t("capture", "bad_recipe", id=asset_id, recipes=", ".join(RECIPES)))
+    try:
+        mediascript.ready(course, asset_id)
+    except mediascript.ScriptError as exc:
+        raise ToolError(str(exc)) from None
     grant = capturemod.active_grant(project, course["code"], asset_id)
     if grant is None:
         raise ToolError(t("capture", "no_grant", code=course["code"], id=asset_id))
