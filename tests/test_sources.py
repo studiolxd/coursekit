@@ -68,3 +68,23 @@ def test_brief_find_and_section_print_the_passages_with_where_they_are(project, 
     assert "«1.2 Cómo es una contraseña robusta»" in out and "## 1 · courses/PWD/brief/text/files/guide.md:3-8 · Contraseñas" in out
     assert main(["brief", "PWD", "--section", "9.9"]) == 1
     assert main(["brief", "--find", "x"]) == 2
+
+
+def test_a_site_with_pages_that_failed_keeps_its_note_and_says_so(tmp_path, monkeypatch):
+    import subprocess
+
+    from coursekit import brief
+
+    (tmp_path / "links.md").write_text("- https://docs.acme.example/ — the ACME guide\n", encoding="utf-8")
+
+    def web2md(cmd, **kwargs):  # some pages of the site could not be downloaded: it ends with an error
+        out = tmp_path / "text" / "web" / brief.site_slug("https://docs.acme.example/")
+        out.mkdir(parents=True)
+        (out / "index.md").write_text("# ACME\n\nUna guía.\n", encoding="utf-8")
+        return subprocess.CompletedProcess(cmd, 1, "", "")
+
+    monkeypatch.setattr(brief.shutil, "which", lambda name: "node")
+    monkeypatch.setattr(brief.subprocess, "run", web2md)
+    rows, failed = brief.download_links(tmp_path, {}, refresh=False)
+    assert failed == 0 and rows[0]["note"] == "the ACME guide" and rows[0]["pages"] == 1
+    assert [key for key, _ in rows[0]["notes"]] == ["pages_failed"]

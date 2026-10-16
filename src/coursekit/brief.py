@@ -212,14 +212,14 @@ def download_links(brief: Path, state: dict, refresh: bool, log=None) -> tuple[l
     current, rows, failed = {}, [], 0
     links = parse_links(brief / "links.md")
     node = shutil.which("node")
-    for url, note in links:
+    for url, comment in links:
         slug = site_slug(url)
         folder = web_root / slug
         info = dict(previous.get(slug, {}), url=url)
         if refresh or not folder.exists():
             if node is None:
                 failed += 1
-                rows.append({"url": url, "note": note, "folder": None, "pages": 0, "words": 0,
+                rows.append({"url": url, "note": comment, "folder": None, "pages": 0, "words": 0,
                              "downloaded": None, "notes": [note("node_missing")]})
                 continue
             if folder.exists():
@@ -234,7 +234,7 @@ def download_links(brief: Path, state: dict, refresh: bool, log=None) -> tuple[l
         notes = [note("pages_failed")] if info.get("errors") else []
         if folder.exists() and not pages:
             notes.append(note("no_web_text"))
-        rows.append({"url": url, "note": note, "folder": folder.relative_to(brief).as_posix() if folder.exists() else None,
+        rows.append({"url": url, "note": comment, "folder": folder.relative_to(brief).as_posix() if folder.exists() else None,
                      "pages": len(pages), "words": sum(words(p.read_text(encoding="utf-8")) for p in pages),
                      "downloaded": info.get("downloaded"), "notes": notes})
         current[slug] = info
