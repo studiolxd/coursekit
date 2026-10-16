@@ -34,8 +34,21 @@ voice:
   - {id: elevenlabs-api, needs: {env: ELEVENLABS_API_KEY}, how: "TTS with per-character timestamps (exact captions without aligning)"}
   - {id: azure-api, needs: {env: [AZURE_SPEECH_KEY, AZURE_SPEECH_REGION]}, how: "Azure AI Speech, neural voices"}
   - {id: google-api, needs: {env: GOOGLE_TTS_API_KEY}, how: "Google Cloud TTS, Chirp 3 HD"}
+  - {id: gemini-api, needs: {env: GEMINI_API_KEY}, how: "Gemini TTS (Gemini API), voices with a style instruction"}
   - {id: elevenlabs-mcp, needs: {mcp: creative_generate_speech}, how: "Claude's ElevenLabs connector (without coursekit tts)"}
   - {id: piper, needs: {media: piper, env: PIPER_VOICE}, how: "Local draft, Piper voice (speakers 0 and 1 for multi-speaker voices)"}
+# The Gemini voice (provider `gemini`). A course changes them in course.yaml › media › gemini.
+gemini:
+  # Model of the Gemini API. `coursekit voice set CODE gemini` writes it in the course (course.yaml › media.voice.model), so a
+  # course keeps the model it started with when this default changes. gemini-3.8-flash-lite-tts costs less;
+  # gemini-3.1-flash-tts-preview is the earlier preview model.
+  model: gemini-3.8-flash-tts
+  # How to say it: emotions, delivery, pace, volume (e.g. "calm, warm and clear, like a teacher explaining"). It is sent with
+  # every piece of the script, so the tone does not change between them. Empty: the voice as it is.
+  style: ""
+  # Longest piece of a script per request, in UTF-8 bytes (a long script is split at the ends of its sentences). The model
+  # returns at most about ten minutes of audio per request; about 4500 bytes are three to four minutes of speech.
+  chunk_bytes: 4500
 subtitles:
   - {id: elevenlabs-timestamps, needs: {env: ELEVENLABS_API_KEY}, how: "VTT from the ElevenLabs timestamps"}
   - {id: stable-ts, needs: {media: stable-ts}, how: "Align the script with the audio (stable-ts, word by word) → VTT (coursekit subtitles)"}

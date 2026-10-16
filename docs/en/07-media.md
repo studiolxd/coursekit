@@ -261,9 +261,10 @@ A course uses **one** voice for all its narration, so a course never mixes voice
 | `elevenlabs` | `ELEVENLABS_API_KEY`; a voice in `ELEVENLABS_VOICE_ID` or `--voice` | none | Best quality; writes exact captions from its timestamps |
 | `azure` | `AZURE_SPEECH_KEY` and `AZURE_SPEECH_REGION` | `es-ES-ElviraNeural` / `en-GB-SoniaNeural`; `AZURE_SPEECH_VOICE` overrides | Neural voices |
 | `google` | `GOOGLE_TTS_API_KEY` | `es-ES-Chirp3-HD-Aoede` / `en-GB-Chirp3-HD-Aoede`; `GOOGLE_TTS_VOICE` overrides | Chirp 3 HD voices |
+| `gemini` | `GEMINI_API_KEY` (Gemini API, from Google AI Studio) | `Aoede` in both languages; `GEMINI_TTS_VOICE` overrides | Gemini TTS voices, with a style instruction ([The Gemini voice](#the-gemini-voice)) |
 | `piper` | `PIPER_VOICE` (path to a `.onnx` voice) and the `piper` command; `PIPER_SPEAKER` for multi-speaker voices | the file in `PIPER_VOICE` | Local draft voice |
 
-The default voice depends on the course language (`es` or `en`). In `media plan` and `media providers` the voice options are named `elevenlabs-api`, `azure-api`, `google-api` and `piper` (the providers above), plus `elevenlabs-mcp`, the agent using the ElevenLabs connector directly (without `coursekit tts`); that one is always listed, because only the agent can tell whether it has the connector. The subtitle options are `elevenlabs-timestamps` and `stable-ts`.
+The default voice depends on the course language (`es` or `en`). In `media plan` and `media providers` the voice options are named `elevenlabs-api`, `azure-api`, `google-api`, `gemini-api` and `piper` (the providers above), plus `elevenlabs-mcp`, the agent using the ElevenLabs connector directly (without `coursekit tts`); that one is always listed, because only the agent can tell whether it has the connector. The subtitle options are `elevenlabs-timestamps` and `stable-ts`.
 
 ```bash
 coursekit voice list PWD                   # providers, availability and the voice of the course
@@ -275,6 +276,25 @@ coursekit voice set PWD elevenlabs --voice <voice-id>
 **Voices of the characters.** The characters of the dialogues and the simulations can have their own voice, of the same provider: `coursekit voice set PWD azure --voice es-ES-AlvaroNeural --character Daniel` stores it in `course.yaml › media.voices`, and `coursekit tts --course PWD --character Daniel …` uses it. With Piper, a character without a voice of its own takes a speaker of the voice in turns, in the order of the cast of the story bible: enough for drafts.
 
 `voice set` needs both the course code and the provider. If the provider is not configured on this machine it warns (other people on the team may have it) but still saves it. With several providers available and none chosen, `tts` stops and asks you to run `voice set`; with none available it says which keys to set.
+
+### The Gemini voice
+
+The `gemini` provider uses the text-to-speech models of the Gemini API. They take a **style instruction** besides the text: how to say it (emotions, delivery, pace, volume), sent with every piece of the script so that the tone does not change between them. Its settings are in `media.yaml › gemini` ([Configuration](04-configuration.md#media-production-options)), and a course changes them in `course.yaml › media › gemini`:
+
+```yaml
+# course.yaml
+media:
+  gemini:
+    style: "calm, warm and clear, like a teacher explaining"
+```
+
+| Key | Default | Meaning |
+|---|---|---|
+| `model` | `gemini-3.8-flash-tts` | Model of the Gemini API. `gemini-3.8-flash-lite-tts` costs less; `gemini-3.1-flash-tts-preview` is the earlier preview model |
+| `style` | empty | How to say it. Empty: the voice as it is |
+| `chunk_bytes` | `4500` | Longest piece of a script per request, in UTF-8 bytes. The model returns at most about ten minutes of audio per request |
+
+`coursekit voice set PWD gemini` writes the model in force in the course (`course.yaml › media.voice.model`): the course keeps the model it started with when the default changes, so its narration never changes voice halfway. To move a course to another model, change that key and produce its narration again. The voices are the Gemini ones (`Aoede`, `Kore`, `Charon`, `Puck`…), without a language: the language is the course's. The Gemini API marks all the audio it generates with an inaudible SynthID watermark. On its free tier, Google may use what is sent to improve its products: for the content of a client, use a key with billing.
 
 ## `coursekit tts`
 
@@ -288,11 +308,11 @@ coursekit tts --course PWD --in courses/PWD/media/scripts/U1-S2-M1.md --out cour
 |---|---|
 | `--in FILE`, `--out FILE` | Script (whitespace is collapsed) and output audio; both required |
 | `--course CODE` | Use the voice of that course and its language. Without it, the language is `es` |
-| `--engine elevenlabs\|azure\|google\|piper` | Force a provider instead of the course's |
+| `--engine elevenlabs\|azure\|google\|gemini\|piper` | Force a provider instead of the course's |
 | `--voice V` | Force a voice. Otherwise: the course voice (if same provider), then the provider's environment variable, then the default for the language |
 | `--speaker N` | Speaker of a multi-speaker Piper voice |
 
-The provider is `--engine`, else the course's `media.voice.provider`, else the only provider available. Long scripts are split at sentence ends (Azure 4,000 bytes, Google 4,500) and joined with `ffmpeg`; Piper also needs `ffmpeg` to write MP3 (an `--out` ending in `.wav` keeps the WAV). ElevenLabs also writes `<out>.vtt` (same name, `.vtt`) with captions from its timestamps, grouped at sentence ends or about 84 characters.
+The provider is `--engine`, else the course's `media.voice.provider`, else the only provider available. Long scripts are split at sentence ends (Azure 4,000 bytes, Google 4,500, Gemini `media.yaml › gemini.chunk_bytes`); the pieces are asked for as uncompressed audio, joined one after the other and encoded to MP3 once with `ffmpeg`, so there are no gaps between them and no second pass of compression; Piper also needs `ffmpeg` to write MP3 (an `--out` ending in `.wav` keeps the WAV). ElevenLabs also writes `<out>.vtt` (same name, `.vtt`) with captions from its timestamps, grouped at sentence ends or about 84 characters.
 
 ## `coursekit subtitles`
 
@@ -333,6 +353,7 @@ The keys are asked one by one with hidden input (press Enter to skip). Those alr
 | ElevenLabs | `ELEVENLABS_API_KEY` | `ELEVENLABS_VOICE_ID` |
 | Azure Speech | `AZURE_SPEECH_KEY` | `AZURE_SPEECH_REGION` (required, `doctor` warns without it), `AZURE_SPEECH_VOICE` |
 | Google TTS | `GOOGLE_TTS_API_KEY` | `GOOGLE_TTS_VOICE` |
+| Gemini TTS | `GEMINI_API_KEY` | `GEMINI_TTS_VOICE` |
 | Magnific | `MAGNIFIC_API_KEY` | — |
 
 All of them go to `.env`, which is never committed. `coursekit doctor` shows the Media section: `ffmpeg`, `vhs`, `asciinema`, `piper`, `stable-ts`, the coursekit store (path and size), `Remotion dependencies (tools/remotion/node_modules)` when the project has a Remotion workspace, `PIPER_VOICE` and which keys are set.

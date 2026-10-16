@@ -207,7 +207,7 @@ If you accept (or run `coursekit setup --media` later):
 | Windows | `winget` installs ffmpeg, Node and vhs; asciinema has no Windows build, so terminal demos use VHS |
 | Linux | nothing is installed: it prints the `sudo apt install ...` line for your package manager and the VHS address |
 
-Then, on every system: `piper` and `stable-ts` as uv tools (Python 3.12), a draft Piper voice for the course language (stored in `~/.local/share/piper`, or `%LOCALAPPDATA%\piper` on Windows, and set as `PIPER_VOICE`), a Remotion workspace in `tools/remotion` (the sources stay in the project; its dependencies, `node_modules`, about 230 MB, are installed once per machine and each project links to them) and, in a terminal, optional API keys (ElevenLabs, Azure Speech, Google TTS, Magnific; Enter skips each one) saved in `.env`.
+Then, on every system: `piper` and `stable-ts` as uv tools (Python 3.12), a draft Piper voice for the course language (stored in `~/.local/share/piper`, or `%LOCALAPPDATA%\piper` on Windows, and set as `PIPER_VOICE`), a Remotion workspace in `tools/remotion` (the sources stay in the project; its dependencies, `node_modules`, about 230 MB, are installed once per machine and each project links to them) and, in a terminal, optional API keys (ElevenLabs, Azure Speech, Google TTS, Gemini TTS, Magnific; Enter skips each one) saved in `.env`.
 
 Each tool is installed once per machine, not once per project: see [Where the tools live](07-media.md#where-the-tools-live).
 

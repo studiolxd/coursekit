@@ -172,6 +172,8 @@ A provider is used only if its key is set. See [Media](07-media.md) for how cour
 | `AZURE_SPEECH_VOICE` | empty | Azure voice. Empty: `es-ES-ElviraNeural` (Spanish) or `en-GB-SoniaNeural` (English). |
 | `GOOGLE_TTS_API_KEY` | empty | Google Cloud Text-to-Speech key. |
 | `GOOGLE_TTS_VOICE` | empty | Google voice. Empty: `es-ES-Chirp3-HD-Aoede` (Spanish) or `en-GB-Chirp3-HD-Aoede` (English). |
+| `GEMINI_API_KEY` | empty | Gemini API key (Google AI Studio), for the `gemini` voice. |
+| `GEMINI_TTS_VOICE` | empty | Gemini voice. Empty: `Aoede`. |
 | `MAGNIFIC_API_KEY` | empty | Magnific key, for generated images. coursekit checks that it is set; the media agent uses it. |
 | `PIPER_VOICE` | empty | Path to a Piper voice model (`.onnx`) for local draft narration. `coursekit setup --media` downloads one and fills this in. |
 | `PIPER_SPEAKER` | `0` in `.env.example` | Speaker number of the Piper voice. |
@@ -299,7 +301,7 @@ Each option has `id`, `how` (description), `needs` (requirements) and optionally
 | `path: P` | the path exists inside the project (for example `tools/remotion/node_modules`) |
 | `none` | always |
 
-The default voice chain is `elevenlabs-api`, `azure-api`, `google-api`, `elevenlabs-mcp`, `piper`; subtitles: `elevenlabs-timestamps`, `stable-ts`. Remember that lists are replaced whole: to remove one voice option, write the complete `voice` list without it.
+The default voice chain is `elevenlabs-api`, `azure-api`, `google-api`, `gemini-api`, `elevenlabs-mcp`, `piper`; subtitles: `elevenlabs-timestamps`, `stable-ts`. Remember that lists are replaced whole: to remove one voice option, write the complete `voice` list without it. The `gemini` block (`model`, `style`, `chunk_bytes`) sets the Gemini voice ([The Gemini voice](07-media.md#the-gemini-voice)).
 
 ### `delivery`: SCORM export and client review
 

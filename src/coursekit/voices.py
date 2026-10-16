@@ -28,6 +28,10 @@ PROVIDERS = {
         "label": "Google Cloud TTS", "env": ["GOOGLE_TTS_API_KEY"], "voice_env": "GOOGLE_TTS_VOICE",
         "default_voice": {"es": "es-ES-Chirp3-HD-Aoede", "en": "en-GB-Chirp3-HD-Aoede"}, "note_key": "note_google",
     },
+    "gemini": {
+        "label": "Gemini TTS", "env": ["GEMINI_API_KEY"], "voice_env": "GEMINI_TTS_VOICE",
+        "default_voice": {"es": "Aoede", "en": "Aoede"}, "note_key": "note_gemini",
+    },
     "piper": {
         "label": "Piper (local)", "env": ["PIPER_VOICE"], "voice_env": "PIPER_VOICE", "speaker_env": "PIPER_SPEAKER",
         "default_voice": {}, "command": "piper", "note_key": "note_piper",
@@ -167,6 +171,11 @@ def set_voice(course: dict, provider: str, voice: str | None, speaker: str | Non
              "voice": voice or os.environ.get(spec["voice_env"], "").strip() or default_voice(provider, coursemod.language(course))}
     if speaker is not None:
         entry["speaker"] = int(speaker)
+    if provider == "gemini":  # the course keeps the model it starts with: a new default does not change its voice halfway
+        from coursekit.mediatools import gemini_settings
+
+        old = (data["media"].get("voice") or {}) if not character else {}
+        entry["model"] = (old.get("model") if old.get("provider") == "gemini" else None) or gemini_settings(course)["model"]
     if character:
         course_provider = (data["media"].get("voice") or {}).get("provider")
         if course_provider and course_provider != provider:

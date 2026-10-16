@@ -43,6 +43,7 @@ MEDIA_SERVICES = (
     ("ElevenLabs", "ELEVENLABS_API_KEY", ("ELEVENLABS_VOICE_ID",)),
     ("Azure Speech", "AZURE_SPEECH_KEY", ("AZURE_SPEECH_REGION", "AZURE_SPEECH_VOICE")),
     ("Google TTS", "GOOGLE_TTS_API_KEY", ("GOOGLE_TTS_VOICE",)),
+    ("Gemini TTS", "GEMINI_API_KEY", ("GEMINI_TTS_VOICE",)),
     ("Magnific", "MAGNIFIC_API_KEY", ()),
 )
 

@@ -72,7 +72,7 @@ def test_bad_status_and_unknown_asset(course, capsys):  # noqa: F811
 
 
 def test_voice_choice(course, monkeypatch, capsys):  # noqa: F811
-    for key in ("ELEVENLABS_API_KEY", "AZURE_SPEECH_KEY", "AZURE_SPEECH_REGION", "GOOGLE_TTS_API_KEY", "PIPER_VOICE"):
+    for key in ("ELEVENLABS_API_KEY", "AZURE_SPEECH_KEY", "AZURE_SPEECH_REGION", "GOOGLE_TTS_API_KEY", "GEMINI_API_KEY", "PIPER_VOICE"):
         monkeypatch.delenv(key, raising=False)
     monkeypatch.setenv("AZURE_SPEECH_KEY", "k")
     monkeypatch.setenv("AZURE_SPEECH_REGION", "westeurope")
@@ -126,6 +126,83 @@ def test_tts_and_subtitles_with_fake_tools(course, monkeypatch, tmp_path):  # no
     assert words == [{"w": "Hola.", "start": 0.0, "end": 0.6}, {"w": "Adiós.", "start": 0.8, "end": 1.5}]
 
 
+def _wav(samples: bytes, rate: int = 24000) -> bytes:
+    import io
+    import wave
+
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as wav:
+        wav.setnchannels(1)
+        wav.setsampwidth(2)
+        wav.setframerate(rate)
+        wav.writeframes(samples)
+    return buf.getvalue()
+
+
+def test_the_pieces_of_a_long_script_are_joined_as_samples_and_encoded_once(monkeypatch, tmp_path):
+    import base64
+
+    monkeypatch.setenv("GOOGLE_TTS_API_KEY", "g")
+    monkeypatch.setattr(mediatools, "sentence_chunks", lambda text, limit: text.split("|"))
+    answers = iter([_wav(b"\x01\x00" * 3), _wav(b"\x02\x00" * 2)])
+    sent = []
+
+    def fake_post(url, body, headers):
+        sent.append(json.loads(body))
+        return json.dumps({"audioContent": base64.b64encode(next(answers)).decode()}).encode()
+
+    encoded = []
+    monkeypatch.setattr(mediatools, "post", fake_post)
+    monkeypatch.setattr(mediatools, "run", lambda cmd, **kw: encoded.append((cmd, kw.get("input"))))
+    mediatools.tts_google("Uno.|Dos.", tmp_path / "a.mp3", "es-ES-Chirp3-HD-Aoede")
+    assert sent[0]["audioConfig"] == {"audioEncoding": "LINEAR16", "sampleRateHertz": 24000}
+    assert len(encoded) == 1  # one pass of the encoder for the whole script, without the WAV headers in between
+    cmd, pcm = encoded[0]
+    assert cmd[cmd.index("-f") + 1] == "s16le" and pcm == b"\x01\x00" * 3 + b"\x02\x00" * 2
+    mediatools.encode_pcm(pcm, tmp_path / "a.wav")
+    assert mediatools.wav_frames((tmp_path / "a.wav").read_bytes()) == (pcm, 24000)
+
+
+def test_the_gemini_voice(course, monkeypatch, tmp_path):  # noqa: F811
+    import base64
+
+    from coursekit import course as coursemod
+    from coursekit.project import find_project
+
+    for key in ("ELEVENLABS_API_KEY", "AZURE_SPEECH_KEY", "GOOGLE_TTS_API_KEY", "PIPER_VOICE"):
+        monkeypatch.delenv(key, raising=False)
+    monkeypatch.setenv("GEMINI_API_KEY", "gm")
+    assert main(["voice", "set", "PWD", "gemini"]) == 0
+    c = coursemod.load(find_project(), "PWD")
+    assert c["media"]["voice"] == {"provider": "gemini", "voice": "Aoede", "model": "gemini-3.8-flash-tts"}
+    assert voices.resolve(c) == ("gemini", "Aoede", None)
+    c["media"]["gemini"] = {"style": "calm and warm"}  # course.yaml › media › gemini
+    c["media"]["voice"]["model"] = "gemini-3.1-flash-tts-preview"  # the model the course started with wins
+    answers = iter([{"inlineData": {"mimeType": "audio/wav", "data": base64.b64encode(_wav(b"\x01\x00")).decode()}},
+                    {"inlineData": {"mimeType": "audio/L16;codec=pcm;rate=24000", "data": base64.b64encode(b"\x02\x00").decode()}}])
+    sent = []
+
+    def fake_post(url, body, headers):
+        sent.append((url, json.loads(body), headers))
+        return json.dumps({"candidates": [{"content": {"parts": [next(answers)]}}]}).encode()
+
+    encoded = []
+    monkeypatch.setattr(mediatools, "post", fake_post)
+    monkeypatch.setattr(mediatools, "sentence_chunks", lambda text, limit: ["Hola.", "Adiós."])
+    monkeypatch.setattr(mediatools, "run", lambda cmd, **kw: encoded.append(kw.get("input")))
+    script = tmp_path / "s.txt"
+    script.write_text("Hola. Adiós.", encoding="utf-8")
+    assert "gemini · Aoede" in mediatools.tts(c, None, script, tmp_path / "a.mp3")
+    url, body, headers = sent[0]
+    assert url.endswith("/models/gemini-3.1-flash-tts-preview:generateContent") and headers["x-goog-api-key"] == "gm"
+    assert body["contents"][0]["parts"][0] == {"text": "Hola.", "speechMetadata": {"style": "calm and warm"}}
+    speech = body["generationConfig"]["speechConfig"]
+    assert speech == {"languageCode": "es-ES", "voiceConfig": {"prebuiltVoiceConfig": {"voiceName": "Aoede"}}}
+    assert encoded == [b"\x01\x00\x02\x00"]
+    with pytest.raises(mediatools.ToolError, match="Gemini returned no audio .reason: SAFETY"):
+        mediatools.gemini_audio({"candidates": [{"finishReason": "SAFETY"}]})
+
+
 def test_the_words_of_the_character_timings():
     text = "Abre los ajustes"
     words = mediatools.words_from_characters(list(text), [i * 0.1 for i in range(len(text))], [i * 0.1 + 0.1 for i in range(len(text))])
@@ -141,7 +218,7 @@ def test_vtt_from_characters():
 
 
 def test_voices_of_the_characters(course, monkeypatch, capsys):  # noqa: F811
-    for key in ("ELEVENLABS_API_KEY", "GOOGLE_TTS_API_KEY", "PIPER_VOICE"):
+    for key in ("ELEVENLABS_API_KEY", "GOOGLE_TTS_API_KEY", "GEMINI_API_KEY", "PIPER_VOICE"):
         monkeypatch.delenv(key, raising=False)
     monkeypatch.setenv("AZURE_SPEECH_KEY", "k")
     monkeypatch.setenv("AZURE_SPEECH_REGION", "westeurope")
@@ -163,7 +240,7 @@ def test_voices_of_the_characters(course, monkeypatch, capsys):  # noqa: F811
 
 
 def test_piper_drafts_alternate_the_speakers(course, monkeypatch):  # noqa: F811
-    for key in ("ELEVENLABS_API_KEY", "AZURE_SPEECH_KEY", "GOOGLE_TTS_API_KEY"):
+    for key in ("ELEVENLABS_API_KEY", "AZURE_SPEECH_KEY", "GOOGLE_TTS_API_KEY", "GEMINI_API_KEY"):
         monkeypatch.delenv(key, raising=False)
     monkeypatch.setenv("PIPER_VOICE", "/voices/v.onnx")
     monkeypatch.setattr(voices.shutil, "which", lambda t: f"/fake/{t}")

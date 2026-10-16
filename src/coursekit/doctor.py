@@ -134,7 +134,7 @@ def collect(project: Project) -> list[Section]:
         media.add((remotion_dir / "node_modules").is_dir(), t("doctor", "remotion_deps"), "coursekit setup --media")
     voice = os.environ.get("PIPER_VOICE", "")
     media.add(bool(voice) and Path(voice).exists(), "PIPER_VOICE", "coursekit setup --media")
-    for key in ("ELEVENLABS_API_KEY", "AZURE_SPEECH_KEY", "GOOGLE_TTS_API_KEY", "MAGNIFIC_API_KEY"):
+    for key in ("ELEVENLABS_API_KEY", "AZURE_SPEECH_KEY", "GOOGLE_TTS_API_KEY", "GEMINI_API_KEY", "MAGNIFIC_API_KEY"):
         media.add(bool(os.environ.get(key)) or None, t("doctor", "key_optional", key=key))
     if os.environ.get("AZURE_SPEECH_KEY") and not os.environ.get("AZURE_SPEECH_REGION"):
         media.add(False, "AZURE_SPEECH_REGION", t("doctor", "azure_region_hint"))

@@ -4,6 +4,7 @@ note_elevenlabs:
   en: "best quality; exact captions from its timestamps"
 note_azure: {es: "voces neuronales; nivel gratuito", en: "neural voices; free tier"}
 note_google: {es: "voces Chirp 3 HD; nivel gratuito", en: "Chirp 3 HD voices; free tier"}
+note_gemini: {es: "voces de Gemini con indicación de estilo; nivel gratuito y modo batch", en: "Gemini voices with a style instruction; free tier and batch mode"}
 note_piper: {es: "voz local de borrador (coursekit setup --media)", en: "local draft voice (coursekit setup --media)"}
 unknown_provider:
   es: "proveedor de voz desconocido '{provider}' ({providers})"

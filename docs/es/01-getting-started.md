@@ -207,7 +207,7 @@ Si aceptas (o ejecutas `coursekit setup --media` más tarde):
 | Windows | `winget` instala ffmpeg, Node y vhs; asciinema no tiene versión para Windows, así que las demos de terminal usan VHS |
 | Linux | no se instala nada: imprime la línea `sudo apt install ...` para tu gestor de paquetes y la dirección de VHS |
 
-Después, en todos los sistemas: `piper` y `stable-ts` como herramientas de uv (Python 3.12), una voz de borrador de Piper para el idioma del curso (se guarda en `~/.local/share/piper`, o en `%LOCALAPPDATA%\piper` en Windows, y se fija como `PIPER_VOICE`), un espacio de Remotion en `tools/remotion` (las fuentes se quedan en el proyecto; sus dependencias, `node_modules`, unos 230 MB, se instalan una sola vez por equipo y cada proyecto las enlaza) y, en una terminal, claves de API opcionales (ElevenLabs, Azure Speech, Google TTS, Magnific; Intro omite cada una) que se guardan en `.env`.
+Después, en todos los sistemas: `piper` y `stable-ts` como herramientas de uv (Python 3.12), una voz de borrador de Piper para el idioma del curso (se guarda en `~/.local/share/piper`, o en `%LOCALAPPDATA%\piper` en Windows, y se fija como `PIPER_VOICE`), un espacio de Remotion en `tools/remotion` (las fuentes se quedan en el proyecto; sus dependencias, `node_modules`, unos 230 MB, se instalan una sola vez por equipo y cada proyecto las enlaza) y, en una terminal, claves de API opcionales (ElevenLabs, Azure Speech, Google TTS, Gemini TTS, Magnific; Intro omite cada una) que se guardan en `.env`.
 
 Cada herramienta se instala una vez por equipo, no una vez por proyecto: mira [Dónde están las herramientas](07-media.md#dónde-están-las-herramientas).
 

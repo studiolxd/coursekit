@@ -11,6 +11,9 @@ piper_missing:
 elevenlabs_needs:
   es: "hacen falta ELEVENLABS_API_KEY y una voz (ELEVENLABS_VOICE_ID o --voice)"
   en: "ELEVENLABS_API_KEY and a voice (ELEVENLABS_VOICE_ID or --voice) are needed"
+gemini_no_audio:
+  es: "Gemini no devolvió audio (motivo: {reason}): revisa el modelo, la voz y el texto del guion"
+  en: "Gemini returned no audio (reason: {reason}): check the model, the voice and the text of the script"
 stable_ts_missing:
   es: "stable-ts no está instalado (coursekit setup --media)"
   en: "stable-ts is not installed (coursekit setup --media)"

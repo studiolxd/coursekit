@@ -2,13 +2,14 @@
 
 Without --engine, the provider is the course's voice (course.yaml › media.voice) or the only one
 configured. ElevenLabs also writes <out>.vtt from the character timestamps the API returns; with
-Azure, Google or Piper, align the audio with `coursekit subtitles` (stable-ts, word by word
+Azure, Google, Gemini or Piper, align the audio with `coursekit subtitles` (stable-ts, word by word
 against the known script).
 """
 
 from __future__ import annotations
 
 import base64
+import io
 import json
 import os
 import re
@@ -17,12 +18,14 @@ import subprocess
 import tempfile
 import urllib.error
 import urllib.request
+import wave
 from pathlib import Path
 
 from coursekit import course as coursemod
 from coursekit.i18n import t
 from coursekit.util import USER_AGENT
 from coursekit.voices import LOCALES, resolve, resolve_character
+from coursekit.voices import course_voice as chosen_voice
 
 
 class ToolError(Exception):
@@ -139,7 +142,8 @@ def words_from_characters(chars: list[str], starts: list[float], ends: list[floa
     return words
 
 
-def tts_piper(text: str, out: Path, voice: str | None, speaker: str | None = None, language: str = "es") -> None:
+def tts_piper(text: str, out: Path, voice: str | None, speaker: str | None = None, language: str = "es",
+              course: dict | None = None) -> None:
     model = voice or os.environ.get("PIPER_VOICE", "")
     if not model:
         raise ToolError(t("mediatools", "piper_voice"))
@@ -156,7 +160,8 @@ def tts_piper(text: str, out: Path, voice: str | None, speaker: str | None = Non
         to_mp3(wav, out)
 
 
-def tts_elevenlabs(text: str, out: Path, voice: str | None, speaker: str | None = None, language: str = "es") -> None:
+def tts_elevenlabs(text: str, out: Path, voice: str | None, speaker: str | None = None, language: str = "es",
+                   course: dict | None = None) -> None:
     key = os.environ.get("ELEVENLABS_API_KEY", "").strip()
     voice_id = voice or os.environ.get("ELEVENLABS_VOICE_ID", "").strip()
     if not key or not voice_id:
@@ -191,21 +196,28 @@ def sentence_chunks(text: str, limit: int) -> list[str]:
     return chunks
 
 
-def concat_mp3(parts: list[bytes], out: Path) -> None:
-    if len(parts) == 1:
-        out.write_bytes(parts[0])
+GEMINI_API = "https://generativelanguage.googleapis.com/v1beta"
+PCM_RATE = 24000  # Hz: what Azure, Google and Gemini are asked for (16-bit mono)
+
+
+def wav_frames(data: bytes) -> tuple[bytes, int]:
+    """(samples, rate) of a 16-bit mono WAV, so that pieces are joined as samples and not as compressed files."""
+    with wave.open(io.BytesIO(data)) as wav:
+        return wav.readframes(wav.getnframes()), wav.getframerate()
+
+
+def encode_pcm(pcm: bytes, out: Path, rate: int = PCM_RATE) -> None:
+    """Writes 16-bit mono samples (the pieces of a long script, already one after the other) as one MP3, encoded once: no
+    silence of the encoder between the pieces and no second pass of compression. An `out` ending in .wav keeps a WAV."""
+    if out.suffix.lower() == ".wav":
+        with wave.open(str(out), "wb") as wav:
+            wav.setnchannels(1)
+            wav.setsampwidth(2)
+            wav.setframerate(rate)
+            wav.writeframes(pcm)
         return
-    with tempfile.TemporaryDirectory() as tmp:
-        names = []
-        for i, data in enumerate(parts):
-            name = Path(tmp) / f"part{i:03d}.mp3"
-            name.write_bytes(data)
-            names.append(name)
-        listing = Path(tmp) / "list.txt"
-        # Forward slashes: the concat list treats backslashes (Windows paths) as escapes.
-        listing.write_text("".join(f"file '{n.as_posix()}'\n" for n in names), encoding="utf-8")
-        run(["ffmpeg", "-loglevel", "error", "-y", "-f", "concat", "-safe", "0", "-i", str(listing),
-             "-codec:a", "libmp3lame", "-qscale:a", "3", str(out)])
+    run(["ffmpeg", "-loglevel", "error", "-y", "-f", "s16le", "-ar", str(rate), "-ac", "1", "-i", "pipe:0",
+         "-codec:a", "libmp3lame", "-qscale:a", "3", str(out)], input=pcm)
 
 
 def post(url: str, body: bytes, headers: dict) -> bytes:
@@ -213,30 +225,85 @@ def post(url: str, body: bytes, headers: dict) -> bytes:
     return fetch(req)
 
 
-def tts_azure(text: str, out: Path, voice: str | None, speaker: str | None = None, language: str = "es") -> None:
+def tts_azure(text: str, out: Path, voice: str | None, speaker: str | None = None, language: str = "es",
+              course: dict | None = None) -> None:
     from xml.sax.saxutils import escape
 
     key, region = os.environ["AZURE_SPEECH_KEY"].strip(), os.environ["AZURE_SPEECH_REGION"].strip()
     url = f"https://{region}.tts.speech.microsoft.com/cognitiveservices/v1"
     headers = {"Ocp-Apim-Subscription-Key": key, "Content-Type": "application/ssml+xml",
-               "X-Microsoft-OutputFormat": "audio-24khz-96kbitrate-mono-mp3", "User-Agent": "coursekit"}
+               "X-Microsoft-OutputFormat": "raw-24khz-16bit-mono-pcm", "User-Agent": "coursekit"}
     parts = []
     for chunk in sentence_chunks(text, 4000):
         ssml = f"<speak version='1.0' xml:lang='{LOCALES.get(language, language)}'><voice name='{voice}'>{escape(chunk)}</voice></speak>"
         parts.append(post(url, ssml.encode(), headers))
-    concat_mp3(parts, out)
+    encode_pcm(b"".join(parts), out)
 
 
-def tts_google(text: str, out: Path, voice: str | None, speaker: str | None = None, language: str = "es") -> None:
+def tts_google(text: str, out: Path, voice: str | None, speaker: str | None = None, language: str = "es",
+               course: dict | None = None) -> None:
     key = os.environ["GOOGLE_TTS_API_KEY"].strip()
     url = f"https://texttospeech.googleapis.com/v1/text:synthesize?key={key}"
     parts = []
     for chunk in sentence_chunks(text, 4500):  # API limit: 5000 bytes per request
         body = json.dumps({"input": {"text": chunk}, "voice": {"languageCode": LOCALES.get(language, language), "name": voice},
-                           "audioConfig": {"audioEncoding": "MP3"}}).encode()
+                           "audioConfig": {"audioEncoding": "LINEAR16", "sampleRateHertz": PCM_RATE}}).encode()
         data = json.loads(post(url, body, {"Content-Type": "application/json"}))
-        parts.append(base64.b64decode(data["audioContent"]))
-    concat_mp3(parts, out)
+        parts.append(wav_frames(base64.b64decode(data["audioContent"]))[0])  # LINEAR16 comes with a WAV header
+    encode_pcm(b"".join(parts), out)
+
+
+def gemini_settings(course: dict | None) -> dict:
+    """Model, style and size of the pieces of the Gemini voice: `media.yaml › gemini` (project, then course), with the model
+    the course fixed when its voice was chosen (course.yaml › media.voice.model), so a course never changes model halfway."""
+    from coursekit import config as configmod
+
+    project = (course or {}).get("_project")
+    settings = dict(configmod.effective("media", project, course).get("gemini") or {})
+    chosen = chosen_voice(course) if course else {}
+    if chosen.get("provider") == "gemini" and chosen.get("model"):
+        settings["model"] = chosen["model"]
+    return settings
+
+
+def gemini_request(text: str, voice: str | None, language: str, style: str) -> dict:
+    """The body of one generateContent request of the Gemini voice (also each line of a batch)."""
+    part: dict = {"text": text}
+    if style:
+        part["speechMetadata"] = {"style": style}
+    return {"contents": [{"role": "user", "parts": [part]}],
+            "generationConfig": {"responseModalities": ["AUDIO"],
+                                 "speechConfig": {"languageCode": LOCALES.get(language, language),
+                                                  "voiceConfig": {"prebuiltVoiceConfig": {"voiceName": voice}}}}}
+
+
+def gemini_audio(response: dict) -> tuple[bytes, int]:
+    """(samples, rate) of a Gemini response: a WAV (the 3.8 models) or headerless L16 (`audio/L16;rate=24000`, earlier ones)."""
+    for candidate in response.get("candidates") or []:
+        for part in (candidate.get("content") or {}).get("parts") or []:
+            blob = part.get("inlineData") or part.get("inline_data")
+            if blob and blob.get("data"):
+                data = base64.b64decode(blob["data"])
+                if data[:4] == b"RIFF":
+                    return wav_frames(data)
+                rate = re.search(r"rate=(\d+)", blob.get("mimeType") or blob.get("mime_type") or "")
+                return data, int(rate.group(1)) if rate else PCM_RATE
+    reason = next((c.get("finishReason") for c in response.get("candidates") or [] if c.get("finishReason")), None)
+    raise ToolError(t("mediatools", "gemini_no_audio", reason=reason or "?"))
+
+
+def tts_gemini(text: str, out: Path, voice: str | None, speaker: str | None = None, language: str = "es",
+               course: dict | None = None) -> None:
+    key = os.environ["GEMINI_API_KEY"].strip()
+    settings = gemini_settings(course)
+    url = f"{GEMINI_API}/models/{settings['model']}:generateContent"
+    headers = {"Content-Type": "application/json", "x-goog-api-key": key}
+    parts, rate = [], PCM_RATE
+    for chunk in sentence_chunks(text, int(settings["chunk_bytes"])):
+        body = json.dumps(gemini_request(chunk, voice, language, str(settings.get("style") or "").strip())).encode()
+        samples, rate = gemini_audio(json.loads(post(url, body, headers)))
+        parts.append(samples)
+    encode_pcm(b"".join(parts), out, rate)
 
 
 def subtitles(audio: Path, text_path: Path, out: Path, model_name: str = "base", language: str = "es") -> None:
@@ -267,7 +334,7 @@ def subtitles(audio: Path, text_path: Path, out: Path, model_name: str = "base",
                  for w in seg.get("words") or []], words_path(out))
 
 
-ENGINES = {"elevenlabs": tts_elevenlabs, "azure": tts_azure, "google": tts_google, "piper": tts_piper}
+ENGINES = {"elevenlabs": tts_elevenlabs, "azure": tts_azure, "google": tts_google, "gemini": tts_gemini, "piper": tts_piper}
 
 
 def tts(course: dict | None, engine: str | None, input_path: Path, out: Path, voice: str | None = None,
@@ -277,7 +344,7 @@ def tts(course: dict | None, engine: str | None, input_path: Path, out: Path, vo
     out.parent.mkdir(parents=True, exist_ok=True)
     provider, course_voice, course_speaker = resolve_character(course, character, engine) if character else resolve(course, engine)
     language = coursemod.language(course) if course else "es"
-    ENGINES[provider](text, out, voice or course_voice, speaker or course_speaker, language)
+    ENGINES[provider](text, out, voice or course_voice, speaker or course_speaker, language, course)
     used_voice = voice or course_voice or t("mediatools", "default_voice")
     if provider == "elevenlabs" and out.with_suffix(".vtt").exists():
         return t("mediatools", "wrote_vtt", out=out, vtt=out.with_suffix(".vtt").name, provider=provider, voice=used_voice)
