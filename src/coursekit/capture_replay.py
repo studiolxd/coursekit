@@ -171,7 +171,12 @@ def replay(project, code: str, asset_id: str, backend_factory=None) -> dict:
             session.backend.start_recording()
         elif not on and recording["on"]:
             part = recordings / f"{asset_id}.part{len(parts)}.mp4"
-            encode(session.backend.stop_recording(), part, fps)
+            recorded = session.backend.stop_recording()
+            if isinstance(recorded, Path):  # the desktop records a video by itself
+                part.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(recorded), part)
+            else:
+                encode(recorded, part, fps)
             parts.append(part)
         recording["on"] = on
 
@@ -197,6 +202,9 @@ def replay(project, code: str, asset_id: str, backend_factory=None) -> dict:
                     covered.replace(video)
                 except redactmod.RedactError as exc:
                     covered.unlink(missing_ok=True)
+                    if session.grant.get("mode") == "desktop":  # nothing cleaned it before: it is not kept uncovered
+                        video.unlink(missing_ok=True)
+                        raise ReplayError(str(exc)) from None
                     session.warnings.append(str(exc))
             else:
                 _sample_frames(video, capturemod.review_dir(course, asset_id))
@@ -210,7 +218,8 @@ def replay(project, code: str, asset_id: str, backend_factory=None) -> dict:
             findings[f"{kind} (pixels)"] = n
     if not video and not shots:
         raise ReplayError(t("capture", "replay_nothing", path=sessionmod.brief_file(course, asset_id).name))
-    report = {"engine": "page" + (f" + {session.redactor.report.engine}" if session.redactor else ""), "findings": findings,
+    engine = "pixels" if session.grant.get("mode") == "desktop" else "page"
+    report = {"engine": engine + (f" + {session.redactor.report.engine}" if session.redactor else ""), "findings": findings,
               "warnings": session.warnings, "frames": len(list(capturemod.review_dir(course, asset_id).glob("t*.png"))),
               "samples": []}
     review = capturemod.write_review(course, asset_id, report)

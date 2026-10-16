@@ -138,7 +138,38 @@ def collect(project: Project) -> list[Section]:
         media.add(bool(os.environ.get(key)) or None, t("doctor", "key_optional", key=key))
     if os.environ.get("AZURE_SPEECH_KEY") and not os.environ.get("AZURE_SPEECH_REGION"):
         media.add(False, "AZURE_SPEECH_REGION", t("doctor", "azure_region_hint"))
-    return [base, tool_sections(project), net, mirror, theme, media]
+    sections = [base, tool_sections(project), net, mirror, theme, media]
+    capture = capture_section(project)
+    return [*sections, capture] if capture else sections
+
+
+def capture_section(project: Project) -> Section | None:
+    """What `coursekit capture` needs on this machine, when the project captures."""
+    cfg = config.effective("capture", project).value
+    if not cfg.get("enabled"):
+        return None
+    from coursekit.htmlkit.playcheck import find_browser
+
+    hint = 'uv tool install "slxd-coursekit[capture]"'
+    s = Section(t("doctor", "section_capture"))
+    modes = cfg.get("modes") or []
+    if "browser" in modes:
+        s.add(importlib.util.find_spec("playwright") is not None, t("doctor", "capture_playwright"), hint)
+        s.add(bool(find_browser()), t("doctor", "capture_browser"), t("doctor", "html_browser_hint"))
+    ocr = importlib.util.find_spec("rapidocr_onnxruntime") is not None or shutil.which("tesseract") is not None
+    s.add(ocr, t("doctor", "capture_ocr"), hint)
+    s.add(importlib.util.find_spec("cv2") is not None, t("doctor", "capture_opencv"), hint)
+    s.add(shutil.which("ffmpeg") is not None, t("doctor", "capture_ffmpeg"), "coursekit setup --media")
+    if "desktop" in modes:
+        if sys.platform != "darwin":
+            s.add(None, t("doctor", "capture_desktop_macos"))
+        else:
+            from coursekit import capture_desktop
+
+            granted = capture_desktop.permissions()
+            s.add(granted["screen"], t("doctor", "capture_screen"), t("doctor", "capture_screen_hint"))
+            s.add(granted["accessibility"], t("doctor", "capture_accessibility"), t("doctor", "capture_accessibility_hint"))
+    return s
 
 
 def render(sections: list[Section]) -> str:

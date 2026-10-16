@@ -466,7 +466,7 @@ def allowed(course, browser, capsys, monkeypatch):  # noqa: F811
     return course
 
 
-def test_a_session_needs_the_permission_and_a_capture_recipe(course, browser, capsys):  # noqa: F811
+def test_a_session_needs_the_permission_and_a_capture_recipe(course, browser, capsys, monkeypatch):  # noqa: F811
     root = course.parent.parent
     project = find_project()
     with pytest.raises(mcpserver.ToolError, match="capture is turned off"):
@@ -480,7 +480,8 @@ def test_a_session_needs_the_permission_and_a_capture_recipe(course, browser, ca
     with pytest.raises(mcpserver.ToolError, match="no permission in force"):
         capture_session.start(project, "PWD", "U1-S2-M1", FakeBrowser)
     assert main(["capture", "allow", "PWD", "--mode", "desktop", "--window", "W"]) == 0
-    with pytest.raises(mcpserver.ToolError, match="desktop window is not available yet"):
+    monkeypatch.setattr(capture_session.redactmod, "reader", lambda *a: (_ for _ in ()).throw(redact.RedactError("no OCR")))
+    with pytest.raises(mcpserver.ToolError, match="an OCR is needed"):
         capture_session.start(project, "PWD", "U1-S2-M1", FakeBrowser)
 
 
@@ -753,3 +754,148 @@ def subprocess_duration(path):
     out = subprocess.run([probe, "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(path)],
                          capture_output=True, text=True, check=True).stdout
     return float(out.strip())
+
+
+# ── a window of a desktop program ────────────────────────────────────────────────────────────
+
+from coursekit import capture_desktop  # noqa: E402
+
+
+class FakeWindow:
+    """A window of 800 x 500 points on a Retina screen, with an email written at (100, 40) points."""
+
+    def __init__(self, name):
+        self.name, self.viewport, self.calls, self.secret = name, (800, 500), [], False
+
+    def screenshot(self):
+        import io
+
+        image = Image.new("RGB", (1600, 1000), "white")
+        image.paste((20, 20, 20), (200, 80, 600, 120))
+        out = io.BytesIO()
+        image.save(out, "PNG")
+        return out.getvalue()
+
+    def click(self, x, y, button, count):
+        self.calls.append(("click", x, y))
+
+    def glide(self, x, y, ms):
+        self.calls.append(("glide", x, y))
+
+    def locate(self, target):
+        return None
+
+    def wait(self, ms):
+        pass
+
+    def key(self, combo):
+        self.calls.append(("key", combo))
+
+    def focused_is_secret(self):
+        return self.secret
+
+    def target_at(self, x, y):
+        return {"role": "button", "name": "OK"}
+
+    def url(self):
+        return ""
+
+    def close(self):
+        self.calls.append(("close",))
+
+
+def window_reader(image):
+    return [redact._line_from_words([("ana.lopez@acme.example", (200, 80, 400, 40))])]
+
+
+@pytest.fixture
+def desktop(course, capsys, monkeypatch):  # noqa: F811
+    configure(course.parent.parent, redact={"faces": False, "pixels": "solid", "padding": 0})
+    interface_asset(course, capsys)
+    assert main(["capture", "allow", "PWD", "U1-S2-M1", "--mode", "desktop", "--window", "Password Manager"]) == 0
+    monkeypatch.setattr(capture_session.redactmod, "reader", lambda choice, language: ("fake", window_reader))
+    capsys.readouterr()
+    return course
+
+
+def test_a_desktop_window_is_covered_on_the_pixels_before_the_agent_sees_it(desktop):
+    import io
+
+    session = capture_session.start(find_project(), "PWD", "U1-S2-M1", FakeWindow)
+    assert session.backend.name == "Password Manager"
+    with Image.open(io.BytesIO(session.screenshot())) as seen:
+        assert seen.size == (1600, 1000) and seen.getpixel((400, 100)) == (40, 40, 40) and seen.getpixel((10, 10)) == (255,) * 3
+    session.click(800, 500)  # the pixels of the screenshot → points of the window
+    assert session.backend.calls[-1] == ("click", 400.0, 250.0)
+    with pytest.raises(mcpserver.ToolError, match="does not navigate"):
+        session.navigate("/x")
+    session.save_shot()
+    out = session.end()
+    block = capture_session.read_block({"_dir": desktop}, "U1-S2-M1")
+    assert block["mode"] == "desktop" and block["window"] == "Password Manager" and block["window_size"] == {"width": 800, "height": 500}
+    assert out["findings"] == {"email (pixels)": 1} and asset_capture(desktop)["engine"] == "pixels + fake"
+    with Image.open(desktop / "media" / "recordings" / "U1-S2-M1.png") as saved:
+        assert saved.getpixel((400, 100)) == (40, 40, 40)
+
+
+def test_a_desktop_replay_never_keeps_a_video_it_could_not_cover(desktop, monkeypatch, tmp_path):
+    import shutil as sh
+    import subprocess
+
+    ffmpeg = sh.which("ffmpeg")
+    if not ffmpeg:
+        pytest.skip("ffmpeg is not installed")
+    recorded = tmp_path / "screen.mp4"
+    subprocess.run([ffmpeg, "-loglevel", "error", "-f", "lavfi", "-i", "color=c=white:s=64x48:d=1", "-pix_fmt", "yuv420p",
+                    str(recorded)], check=True)
+
+    class RecordingWindow(FakeWindow):
+        def start_recording(self):
+            pass
+
+        def stop_recording(self):
+            return recorded
+
+    configure(desktop.parent.parent, redact={"faces": False, "pixels": "solid"}, replay={"pause_ms": 1, "move_ms": 1})
+    write_steps(desktop, [{"record": "start"}, {"click": {"x": 10, "y": 20}}, {"record": "stop"}])
+    monkeypatch.setattr(capture_replay.redactmod, "redact_video",
+                        lambda *a, **k: (_ for _ in ()).throw(redact.RedactError("covering a video needs the capture extra")))
+    with pytest.raises(capture_replay.ReplayError, match="needs the capture extra"):
+        capture_replay.replay(find_project(), "PWD", "U1-S2-M1", RecordingWindow)
+    assert not (desktop / "media" / "recordings" / "U1-S2-M1.mp4").exists()
+
+
+def test_keys_and_windows_of_the_mac_are_understood():
+    assert capture_desktop.parse_combo("Control+Shift+A") == (0, 0x40000 | 0x20000)
+    assert capture_desktop.parse_combo("ControlOrMeta+A") == (0, 0x100000)
+    assert capture_desktop.parse_combo("A") == (0, 0x20000) and capture_desktop.parse_combo("Enter") == (36, 0)
+    with pytest.raises(mcpserver.ToolError, match="not a key"):
+        capture_desktop.parse_combo("Hyper+Q")
+    windows = [{"id": 1, "pid": 9, "layer": 25, "bounds": (0, 0, 1000, 800)},  # an overlay of the system
+               {"id": 2, "pid": 7, "layer": 0, "bounds": (50, 50, 100, 100)},  # another program, in front
+               {"id": 3, "pid": 5, "layer": 101, "bounds": (0, 0, 10, 10)},  # a menu of ours
+               {"id": 4, "pid": 5, "layer": 0, "bounds": (0, 0, 400, 300)}]
+    assert [w["id"] for w in capture_desktop.covering(windows, 5)] == [2, 3, 4]
+    image = capture_desktop.paint_out(Image.new("RGB", (800, 600), "white"), (0, 0), 2, [(50, 50, 100, 100)])
+    assert image.getpixel((150, 150)) == (24, 24, 24) and image.getpixel((90, 90)) == (255, 255, 255)
+
+
+def test_the_windows_of_this_mac_can_be_listed():
+    import sys
+
+    if sys.platform != "darwin":
+        pytest.skip("macOS only")
+    windows = capture_desktop.quartz().windows()
+    assert all({"id", "owner", "pid", "title", "layer", "bounds"} <= set(w) for w in windows)
+    assert set(capture_desktop.permissions()) == {"screen", "accessibility"}
+
+
+def test_doctor_says_what_capture_needs_only_when_the_project_captures(course, capsys):  # noqa: F811
+    from coursekit import doctor
+
+    project = find_project()
+    assert doctor.capture_section(project) is None
+    configure(course.parent.parent, modes=["browser"])
+    labels = [c.label for c in doctor.capture_section(project).checks]
+    assert any("Playwright" in label for label in labels) and any("OCR" in label for label in labels)
+    assert not any("Accessibility" in label for label in labels)

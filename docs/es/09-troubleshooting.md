@@ -75,6 +75,10 @@ Opcional. Instala lo que falte con `coursekit setup --media`: `ffmpeg`, `vhs`, `
 
 Mira [Multimedia](07-media.md).
 
+### Captura
+
+Solo aparece con `capture.yaml › enabled` activado. Playwright, el OCR (rapidocr) y OpenCV vienen con el extra `capture` del paquete: `uv tool install "slxd-coursekit[capture]"`; tesseract, instalado a mano, es el otro OCR. No se descarga ningún navegador: usa el Chrome, Edge o Chromium de la máquina. Para `--mode desktop` en macOS, la terminal que ejecuta coursekit necesita Grabación de pantalla y Accesibilidad en Ajustes del Sistema › Privacidad y seguridad; después de activarlos, cierra la terminal y ábrela de nuevo. Mira [`coursekit capture`](03-commands.md#coursekit-capture).
+
 ## coursekit setup
 
 `setup` prepara este equipo para el proyecto y se puede repetir en cualquier momento. Mira [Primeros pasos](01-getting-started.md) para la lista completa de pasos.

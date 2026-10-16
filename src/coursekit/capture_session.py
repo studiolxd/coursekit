@@ -23,6 +23,7 @@ import hashlib
 import io
 import json
 import re
+from collections import Counter
 from dataclasses import dataclass, field
 from importlib import resources
 from pathlib import Path
@@ -172,7 +173,9 @@ class Session:
         if self.redactor is not None:
             boxes = self.redactor.boxes(image)
             if boxes:
-                self.redactor.report.findings.update(b.kind for b in boxes)
+                found = self.redactor.report.findings  # the most seen at once on one screen, kind by kind
+                for kind, n in Counter(b.kind for b in boxes).items():
+                    found[kind] = max(found[kind], n)
                 image = redactmod.cover(image, boxes, self.redactor.style, self.redactor.margin)
         width = self.backend.viewport[0]
         fit = min(1.0, self.max_edge / max(image.size))
@@ -259,6 +262,8 @@ class Session:
 
     def navigate(self, url: str) -> None:
         self.check()
+        if self.grant.get("mode") == "desktop":
+            raise ToolError(t("capture", "desktop_no_navigate"))
         full = urljoin(self.backend.url() or self.start_url, url)
         if not capturemod.domain_allowed(domain_of(full), self.allow_domains):
             raise ToolError(t("capture", "domain_blocked", host=domain_of(full) or url))
@@ -287,9 +292,12 @@ class Session:
     def end(self, notes: str = "") -> dict:
         """Writes the steps in the brief and leaves the capture waiting for a person."""
         try:
-            parts = urlsplit(self.start_url)
-            block = {"mode": "browser", "profile": self.grant.get("profile"), "start": parts.path or "/",
-                     "viewport": {"width": self.backend.viewport[0], "height": self.backend.viewport[1]}, "steps": self.steps}
+            size = {"width": self.backend.viewport[0], "height": self.backend.viewport[1]}
+            if self.grant.get("mode") == "desktop":
+                block = {"mode": "desktop", "window": self.grant.get("window"), "window_size": size, "steps": self.steps}
+            else:
+                block = {"mode": "browser", "profile": self.grant.get("profile"), "start": urlsplit(self.start_url).path or "/",
+                         "viewport": size, "steps": self.steps}
             previous = read_block(self.course, self.asset_id)
             if previous.get("mask"):
                 block["mask"] = previous["mask"]
@@ -303,7 +311,8 @@ class Session:
             recorded = any(s.get("record") for s in self.steps)
             if not self.shots and not recorded:
                 return {"brief": brief, "findings": findings, "file": None}
-            report = {"engine": "page" + (f" + {self.redactor.report.engine}" if self.redactor else ""), "findings": findings,
+            engine = "pixels" if self.grant.get("mode") == "desktop" else "page"
+            report = {"engine": engine + (f" + {self.redactor.report.engine}" if self.redactor else ""), "findings": findings,
                       "warnings": self.warnings, "frames": len(self.shots), "samples": []}
             review = capturemod.write_review(self.course, self.asset_id, report)
             ry, path, data, asset = capturemod.find_asset(self.course, self.asset_id)
@@ -339,8 +348,8 @@ def start(project, code: str, asset_id: str, backend_factory=None, cursor: bool 
     grant = capturemod.active_grant(project, course["code"], asset_id)
     if grant is None:
         raise ToolError(t("capture", "no_grant", code=course["code"], id=asset_id))
-    if grant["mode"] != "browser":
-        raise ToolError(t("capture", "desktop_later"))
+    if grant["mode"] == "desktop":
+        return _start_desktop(project, cfg, course, asset, asset_id, grant, backend_factory)
     try:
         profile = capturemod.profile_config(cfg, grant["profile"])
     except capturemod.CaptureError as exc:
@@ -353,19 +362,14 @@ def start(project, code: str, asset_id: str, backend_factory=None, cursor: bool 
         raise ToolError(t("capture", "domain_blocked", host=domain_of(start_url)))
     viewport = block.get("viewport") or {}
     size = (int(viewport.get("width") or 1440), int(viewport.get("height") or 900))
-    rules = dict(cfg.get("redact") or {})
-    language = coursemod.language(course)
-    who = pii.people(language)
-    terms = [str(m) for m in (asset.get("capture") or {}).get("masks") or []]
-    terms += [str(m.get("text")) for m in block.get("mask") or [] if isinstance(m, dict) and m.get("text")]
+    rules, who, terms = _rules(cfg, course, asset, block)
     selectors = [*(rules.get("selectors") or []), *(str(m["selector"]) for m in block.get("mask") or []
                                                       if isinstance(m, dict) and m.get("selector"))]
     session = Session(project, course, asset_id, grant, None, rules, int((cfg.get("screenshot") or {}).get("max_edge") or 1920),
                       start_url, profile["allow_domains"], profile["login_url"], started_at=_now())
     if rules.get("pixel_check"):
         try:
-            engine, read = redactmod.reader(str(rules.get("ocr") or "auto"), language)
-            session.redactor = redactmod.Redactor({**rules, "faces": rules.get("faces")}, who, terms, read, engine)
+            session.redactor = _redactor(rules, course, who, terms)
             session.warnings += session.redactor.report.warnings
         except redactmod.RedactError:
             session.warnings.append(t("capture", "pixel_check_off"))
@@ -375,6 +379,36 @@ def start(project, code: str, asset_id: str, backend_factory=None, cursor: bool 
     session.backend = factory(capturemod.profile_dir(project, grant["profile"]), start_url, profile["allow_domains"], size, device,
                               lambda texts: session.note_texts(texts, who, terms),
                               {"selectors": selectors, "avatars": True, **({"cursor": True} if cursor else {})})
+    return session
+
+
+def _rules(cfg: dict, course: dict, asset: dict, block: dict) -> tuple[dict, pii.People, list[str]]:
+    """What is replaced or covered, who replaces it, and the texts always hidden in this resource."""
+    rules = dict(cfg.get("redact") or {})
+    terms = [str(m) for m in (asset.get("capture") or {}).get("masks") or []]
+    terms += [str(m.get("text")) for m in block.get("mask") or [] if isinstance(m, dict) and m.get("text")]
+    return rules, pii.people(coursemod.language(course)), terms
+
+
+def _redactor(rules: dict, course: dict, who: pii.People, terms: list[str]) -> redactmod.Redactor:
+    engine, read = redactmod.reader(str(rules.get("ocr") or "auto"), coursemod.language(course))
+    return redactmod.Redactor(rules, who, terms, read, engine)
+
+
+def _start_desktop(project, cfg, course, asset, asset_id, grant, backend_factory) -> Session:
+    """A window of a program: there is no page to clean, so every screen is covered on the pixels and an OCR is required."""
+    block = read_block(course, asset_id)
+    rules, who, terms = _rules(cfg, course, asset, block)
+    try:
+        redactor = _redactor(rules, course, who, terms)
+    except redactmod.RedactError:
+        raise ToolError(t("capture", "desktop_needs_ocr")) from None
+    if backend_factory is None:
+        from coursekit.capture_desktop import DesktopBackend as backend_factory
+    session = Session(project, course, asset_id, grant, None, rules, int((cfg.get("screenshot") or {}).get("max_edge") or 1920),
+                      "", [], started_at=_now(), redactor=redactor, warnings=list(redactor.report.warnings))
+    session.backend = backend_factory(str(grant["window"]))
+    session.frame()  # the scale of the screen of the window (a Retina screen has two pixels per point)
     return session
 
 

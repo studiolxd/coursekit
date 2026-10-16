@@ -60,3 +60,14 @@ azure_region_hint:
   es: "con AZURE_SPEECH_KEY hace falta la región de tu recurso de Azure Speech en .env"
   en: "AZURE_SPEECH_KEY needs the region of your Azure Speech resource in .env"
 key_optional: {es: "{key} (opcional)", en: "{key} (optional)"}
+section_capture: {es: "Captura (capture.yaml › enabled)", en: "Capture (capture.yaml › enabled)"}
+capture_playwright: {es: "Playwright (extra capture: manejar el navegador)", en: "Playwright (capture extra: driving the browser)"}
+capture_browser: {es: "Chrome, Edge o Chromium instalado", en: "Chrome, Edge or Chromium installed"}
+capture_ocr: {es: "OCR para leer los píxeles (rapidocr del extra capture, o tesseract)", en: "OCR to read the pixels (rapidocr of the capture extra, or tesseract)"}
+capture_opencv: {es: "OpenCV (extra capture: caras y vídeo)", en: "OpenCV (capture extra: faces and video)"}
+capture_ffmpeg: {es: "ffmpeg (vídeo de una captura)", en: "ffmpeg (video of a capture)"}
+capture_desktop_macos: {es: "el modo desktop de momento solo funciona en macOS", en: "desktop mode only works on macOS for now"}
+capture_screen: {es: "permiso de grabación de pantalla para la terminal", en: "Screen Recording permission for the terminal"}
+capture_screen_hint: {es: "Ajustes del Sistema › Privacidad y seguridad › Grabación de pantalla", en: "System Settings › Privacy & Security › Screen Recording"}
+capture_accessibility: {es: "permiso de accesibilidad para la terminal (ratón y teclado)", en: "Accessibility permission for the terminal (mouse and keyboard)"}
+capture_accessibility_hint: {es: "Ajustes del Sistema › Privacidad y seguridad › Accesibilidad", en: "System Settings › Privacy & Security › Accessibility"}

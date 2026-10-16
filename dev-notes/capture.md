@@ -201,4 +201,12 @@ mask: [{selector: ".account-email"}, {text: "Ana García"}]
   (`capture.yaml › replay`), destino por nombre primero y posición como recurso, `tools/capture-cursor.js` (probado en
   Chrome), screencast de CDP → ffmpeg (montaje probado con el ffmpeg de la máquina), tramos unidos, `pixel_check` sobre el
   vídeo. Falta probar a mano el screencast real con Playwright.
-- [ ] Paso 5: escritorio (macOS, después Windows y X11).
+- [x] Paso 5, macOS (sin commit todavía): `capture_desktop.py` sin dependencias (ctypes sobre CoreGraphics,
+  CoreFoundation y Accessibility; `screencapture -R` de la zona de la ventana con el programa al frente y las ventanas de
+  otros programas encima pintadas; clics solo si bajo el puntero hay una ventana del programa; campo seguro o activo
+  desconocido → no se escribe; OCR obligatorio en cada pantalla). `replay` en escritorio: posición dentro de la ventana,
+  vídeo con `ffmpeg -f avfoundation` recortado a la ventana, siempre tapado sobre los píxeles o se borra. `doctor` con la
+  sección Captura. Probado aquí lo que no toca la pantalla: lista de ventanas y permisos con ctypes. Las capas del sistema
+  (Dock, barra de menús, superposiciones del tamaño de la pantalla) se ignoran al decidir qué hay encima. Falta probar a
+  mano clics, teclado, `screencapture` y la grabación con avfoundation.
+- [ ] Paso 5, Windows (mss + `SendInput`) y X11 (mss + `xdotool`); Wayland fuera.
