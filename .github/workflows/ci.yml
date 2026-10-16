@@ -21,3 +21,14 @@ jobs:
         run: |
           uv tool install .
           coursekit --version
+
+  # The capture with a real browser (Playwright and the Chrome of the runner, with no window) and the OCR, the faces and the
+  # video of `coursekit capture`: the capture extra, which the job above does not install (its tests are skipped there).
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: uv sync --group dev --extra capture
+      - run: uv run pytest -q tests/test_capture.py tests/test_capture_browser.py tests/test_media_checks.py

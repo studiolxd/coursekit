@@ -96,10 +96,16 @@ CHECKS = {
 
 # ── finding ──────────────────────────────────────────────────────────────────────────────────
 
+def _plain(word: str) -> str:
+    """A word without accents, lowercase: a reading that lost the accents (`Lucia`) still matches `Lucía`."""
+    return unicodedata.normalize("NFKD", word).encode("ascii", "ignore").decode().lower()
+
+
 def _names(text: str, known_first: frozenset[str]) -> list[Finding]:
+    known = {_plain(n) for n in known_first}
     found = []
     for match in re.finditer(rf"(?<![\w@.])({NAME_WORD})((?:[ ]{NAME_WORD}){{1,2}})(?![\w@])", text):
-        if match.group(1) in known_first:
+        if _plain(match.group(1)) in known:
             found.append(Finding("name", match.start(), match.end()))
     return found
 

@@ -1,6 +1,7 @@
 """Personal data hidden on the pixels of a capture or a recording (`coursekit capture redact`).
 
-The text on the image is read (OCR: rapidocr, installed with the `capture` extra, or the `tesseract` program of the machine),
+The text on the image is read (OCR: Apple Vision on macOS, or rapidocr, both installed with the `capture` extra, or the
+`tesseract` program of the machine),
 the stretches with personal data are found with `pii.find` (on the pixels every text with the shape counts, because the
 reading can be wrong), and each one is covered (`capture.yaml › redact › pixels`: pixelate, blur or solid) with some margin.
 Faces are found with the face detector OpenCV ships. A video is read `video_fps` times a second; what one reading finds stays
@@ -15,6 +16,7 @@ import csv
 import io
 import shutil
 import subprocess
+import sys
 import tempfile
 from collections import Counter
 from collections.abc import Callable
@@ -144,8 +146,60 @@ def _tesseract(language: str) -> Reader:
     return read
 
 
+VISION_LANGUAGES = {"es": ["es-ES", "en-US"], "en": ["en-US", "es-ES"]}
+
+
+def _vision(language: str) -> Reader:
+    """Apple Vision (macOS): accurate with the accents of Spanish, quick, on the machine, and with the exact box of each word."""
+    try:
+        import Vision
+        from Foundation import NSData
+    except ImportError:
+        raise RedactError(t("redact", "ocr_missing")) from None
+
+    def read(image: Image.Image) -> list[Line]:
+        buffer = io.BytesIO()
+        image.convert("RGB").save(buffer, "PNG")
+        raw = buffer.getvalue()
+        handler = Vision.VNImageRequestHandler.alloc().initWithData_options_(NSData.dataWithBytes_length_(raw, len(raw)), None)
+        request = Vision.VNRecognizeTextRequest.alloc().init()
+        request.setRecognitionLevel_(Vision.VNRequestTextRecognitionLevelAccurate)
+        request.setRecognitionLanguages_(VISION_LANGUAGES.get(language, ["en-US"]))
+        request.setUsesLanguageCorrection_(False)  # names and codes must be read as they are, not corrected
+        ok, _ = handler.performRequests_error_([request], None)
+        if not ok:
+            raise RedactError(t("redact", "ocr_failed", reason="Vision"))
+        width, height = image.size
+        lines = []
+        for observation in request.results() or []:
+            candidate = observation.topCandidates_(1)[0]
+            text = str(candidate.string())
+            words, cursor = [], 0
+            for word in text.split(" "):
+                if word:
+                    box, _ = candidate.boundingBoxForRange_error_((cursor, len(word)), None)
+                    if box is not None:
+                        b = box.boundingBox()  # normalised, from the bottom left
+                        x, w = b.origin.x * width, b.size.width * width
+                        y, h = (1 - b.origin.y - b.size.height) * height, b.size.height * height
+                        words.append((word, (round(x), round(y), max(1, round(w)), max(1, round(h)))))
+                cursor += len(word) + 1
+            if words:
+                lines.append(_line_from_words(words))
+        return lines
+
+    return read
+
+
 def reader(choice: str, language: str) -> tuple[str, Reader]:
-    """The OCR to use: `rapidocr`, `tesseract`, or `auto` (rapidocr when installed, else tesseract)."""
+    """The OCR to use: `vision` (Apple Vision, macOS), `rapidocr`, `tesseract`, or `auto` (Vision on macOS when it is
+    installed, else rapidocr, else tesseract)."""
+    if choice == "vision" or (choice == "auto" and sys.platform == "darwin"):
+        try:
+            return "vision", _vision(language)
+        except RedactError:
+            if choice == "vision":
+                raise
     if choice in ("auto", "rapidocr"):
         try:
             return "rapidocr", _rapidocr()

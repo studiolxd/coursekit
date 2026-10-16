@@ -133,6 +133,10 @@ def cmd_handoff(args: argparse.Namespace) -> int:
     if recordings:
         items = "; ".join(f"{a['id']} ({a.get('title', '')}) → media/scripts/{a['id']}.md" for a in recordings)
         print(t("handoff", "recordings_needed", count=len(recordings), list=items))
+    reviews = handoffmod.captures_to_review(course)
+    if reviews:
+        items = "; ".join(f"{a['id']} ({mediamod.capture_waiting(a)})" for a in reviews)
+        print(t("handoff", "captures_to_review", count=len(reviews), code=course["code"], list=items))
     waiting = handoffmod.unchecked_videos(course)
     if waiting:
         names = "; ".join(f"{(v.get('channel') or {}).get('name') or '—'} · {v['url']}" for v in waiting)

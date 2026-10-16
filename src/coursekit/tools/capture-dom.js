@@ -119,6 +119,7 @@
       }
     }
     for (const el of elements(node, "[data-ck-pending]")) el.removeAttribute("data-ck-pending");
+    if (node.removeAttribute) node.removeAttribute("data-ck-pending"); // the element itself, not only what is inside it
   }
 
   const observer = new MutationObserver((mutations) => {

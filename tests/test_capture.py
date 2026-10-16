@@ -519,7 +519,7 @@ def test_the_page_gets_its_texts_back_with_invented_data_counted_once(allowed):
     out = session.backend.redact(["Hola, Ana López", "ana@acme.example", "Hola, Ana López", "Guardar"])
     assert "Ana López" not in out[0] and out[0] == out[2] and "@example.com" in out[1] and out[3] == "Guardar"
     assert {k: len(v) for k, v in session.seen.items()} == {"name": 1, "email": 1}
-    assert session.backend.page_config == {"selectors": [], "avatars": True}
+    assert session.backend.page_config == {"selectors": [], "avatars": True, "visible": True}
 
 
 def test_the_session_ends_when_the_permission_goes_or_the_login_page_appears(allowed):
@@ -1055,3 +1055,48 @@ def test_a_profile_without_login_opens_with_no_session(course, browser, capsys):
     assert main(["capture", "allow", "PWD", "U1-S2-M1", "--mode", "browser", "--profile", "docs"]) == 0
     assert main(["capture", "profiles"]) == 0
     assert "docs · — · https://docs.acme.example/ · no login" in capsys.readouterr().out
+
+
+def test_the_plan_and_the_handoff_say_which_captures_wait_for_a_person(recording, capsys):
+    from coursekit import handoff, media
+    from coursekit.course import load as load_course
+
+    course_dir = recording
+    assert main(["capture", "redact", "PWD", "U1-S2-M1"]) == 0
+    capsys.readouterr()
+    assert main(["media", "plan", "PWD"]) == 0
+    out = capsys.readouterr().out
+    assert "waits for a person: coursekit capture review PWD U1-S2-M1" in out and "drop it in" not in out
+    loaded = load_course(find_project(), "PWD")
+    assert [a["id"] for a in handoff.captures_to_review(loaded)] == ["U1-S2-M1"]
+    assert handoff._pending_media(loaded) == [] and handoff.awaiting_recordings(loaded) == []
+    assert main(["capture", "reject", "PWD", "U1-S2-M1", "--note", "a name in the header"]) == 0
+    capsys.readouterr()
+    assert main(["media", "plan", "PWD"]) == 0
+    assert "capture rejected (a name in the header): cover it again" in capsys.readouterr().out
+    assert media.capture_waiting({"capture": asset_capture(course_dir), "status": "scripted"}) == "rejected"
+
+
+def test_a_name_read_without_its_accents_is_still_a_name():
+    assert kinds("Usuario: Lucia Munoz Pardo") == [("name", "Lucia Munoz Pardo")]
+
+
+def test_apple_vision_reads_the_words_and_where_each_one_is():
+    import sys
+
+    if sys.platform != "darwin":
+        pytest.skip("macOS only")
+    pytest.importorskip("Vision")
+    from PIL import ImageDraw, ImageFont
+
+    image = Image.new("RGB", (1200, 160), "white")
+    font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial.ttf", 36)
+    ImageDraw.Draw(image).text((40, 50), "Lucía Muñoz · lucia@acme.example", fill="black", font=font)
+    engine, read = redact.reader("auto", "es")
+    assert engine == "vision"
+    lines = read(image)
+    assert any("Lucía Muñoz" in line.text for line in lines)
+    boxes = redact.text_boxes(lines, RULES, pii.people("es"), [])
+    assert {b.kind for b in boxes} == {"name", "email"}
+    name = next(b for b in boxes if b.kind == "name")
+    assert 30 <= name.x <= 60 and 40 <= name.y <= 70 and name.w < 300  # the name only, not the whole line

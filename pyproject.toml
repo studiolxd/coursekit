@@ -18,7 +18,12 @@ dependencies = [
 
 [project.optional-dependencies]
 media = []
-capture = ["playwright>=1.48", "rapidocr-onnxruntime>=1.3", "opencv-python-headless>=4.8"]
+capture = [
+    "playwright>=1.48",
+    "rapidocr-onnxruntime>=1.3",
+    "opencv-python-headless>=4.8,<5",  # 5 drops the face detector (CascadeClassifier)
+    "pyobjc-framework-Vision>=10; sys_platform == 'darwin'",
+]
 
 [project.urls]
 Repository = "https://github.com/studiolxd/coursekit"

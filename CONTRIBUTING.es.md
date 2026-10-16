@@ -37,7 +37,7 @@ cd demo
 coursekit status
 ```
 
-Para trabajar en `coursekit capture`, añade su extra a los dos: `uv sync --group dev --extra capture` (sin él se saltan los tests que necesitan OpenCV) y `uv tool install --force --editable ".[capture]"`. `--editable` hace que el comando instalado siga tus cambios. Al terminar: `uv tool uninstall slxd-coursekit`. Si la terminal no encuentra `coursekit` tras instalarlo, ejecuta `uv tool update-shell` y abre una terminal nueva.
+Para trabajar en `coursekit capture`, añade su extra a los dos: `uv sync --group dev --extra capture` (sin él se saltan los tests que necesitan OpenCV, Playwright o Apple Vision; `tests/test_capture_browser.py` maneja el Chrome, Edge o Chromium de la máquina, sin ventana, sobre un panel inventado; el CI los ejecuta en un trabajo propio) y `uv tool install --force --editable ".[capture]"`. `--editable` hace que el comando instalado siga tus cambios. Al terminar: `uv tool uninstall slxd-coursekit`. Si la terminal no encuentra `coursekit` tras instalarlo, ejecuta `uv tool update-shell` y abre una terminal nueva.
 
 ### Windows, macOS y Linux
 

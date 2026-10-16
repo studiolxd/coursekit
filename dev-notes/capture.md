@@ -165,7 +165,7 @@ mask: [{selector: ".account-email"}, {text: "Ana García"}]
 2. Detección de datos personales, datos ficticios por idioma, anonimización por píxeles, `capture redact` y
    `review`/`approve`/`reject`.
 3. Modo navegador, `dom.js`, servidor MCP, sesiones y `replay`.
-4. Handoff (lista lo que espera revisión), registro del servidor en `agents`, skill de `/produce-media`.
+4. Handoff y `media plan` (lo que espera revisión: hecho), registro del servidor en `agents`, skill de `/produce-media`.
 5. Escritorio: macOS, después Windows y X11.
 6. Vídeo de escritorio con ffmpeg (el de navegador ya está, en `replay`).
 
@@ -189,7 +189,7 @@ mask: [{selector: ".account-email"}, {text: "Ana García"}]
   `capture redact|review|approve|reject` (adelantados del paso 4: sin ellos `redact` no sirve), `media set` rechaza
   `produced` mientras la captura espera revisión o está rechazada, denegaciones de `approve`/`reject`, extra con
   rapidocr-onnxruntime y opencv-python-headless. Falta probar a mano el OCR real y el vídeo (el test del vídeo se salta sin
-  OpenCV). Apple Vision en macOS queda pendiente.
+  OpenCV). Apple Vision en macOS: hecho después (primera opción de `ocr: auto` en macOS; nombres sin tildes también).
 - [x] Paso 3a (sin commit todavía): `mcpserver.py` (MCP mínimo por stdio, sin dependencias), `tools/capture-dom.js`
   (probado en el Chrome de la máquina con `--dump-dom`: texto, atributos, título, shadow DOM cerrado, lo que llega después,
   campos y áreas editables difuminados sin tocar su valor, selectores, avatares), `capture_session.py` (sesión, permiso
@@ -217,3 +217,9 @@ mask: [{selector: ".account-email"}, {text: "Ana García"}]
   la ventana, lo que dice xdotool). Por corregir en las pruebas: el foco de Windows (SetForegroundWindow puede negarse),
   el escalado de pantalla en `gdigrab`, `ImageGrab` en Linux sin XCB, y la ventana bajo el puntero con distintos gestores
   de ventanas.
+
+- [x] Revisión del plan: avisos de capturas pendientes de revisión en `media plan` y el handoff; test con navegador real
+  (`tests/test_capture_browser.py`, panel ACME servido en local, Chrome sin ventana, `browser.visible: false`) y trabajo
+  `capture` en el CI; Apple Vision. El navegador real sacó tres fallos ya corregidos: un teléfono al final de una frase no
+  se sustituía; el contenido que llegaba después a un elemento lo dejaba oculto para siempre; un enlace bloqueado dejaba la
+  página de error del navegador (ahora la navegación se cancela y el agente lo sabe).

@@ -308,7 +308,16 @@ def _sign(ctx: Context, course: dict) -> None:
 
 def _pending_media(course: dict) -> list[dict]:
     _, _, data = mediamod.load_manifest(course["_dir"])
-    return [a for a in data["assets"] if a.get("status") in ("pending", "scripted") and not mediamod.awaiting_recording(a)]
+    return [a for a in data["assets"] if a.get("status") in ("pending", "scripted") and not mediamod.awaiting_recording(a)
+            and mediamod.capture_waiting(a) != "captured"]  # a person reviews it: the agent has nothing to do with it
+
+
+def captures_to_review(course: dict) -> list[dict]:
+    """The captures whose personal data was covered and that wait for a person to review and approve them, or were rejected."""
+    if not course.get("_dir"):
+        return []
+    _, _, data = mediamod.load_manifest(course["_dir"])
+    return [a for a in data["assets"] if mediamod.capture_waiting(a)]
 
 
 def awaiting_recordings(course: dict) -> list[dict]:

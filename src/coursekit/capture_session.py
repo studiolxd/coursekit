@@ -405,7 +405,8 @@ def start(project, code: str, asset_id: str, backend_factory=None, cursor: bool 
     try:
         session.backend = factory(capturemod._private_dir(capturemod.profile_dir(project, grant["profile"])), start_url,
                                   profile["allow_domains"], size, device, lambda texts: session.note_texts(texts, who, terms),
-                                  {"selectors": selectors, "avatars": True, **({"cursor": True} if cursor else {})})
+                                  {"selectors": selectors, "avatars": True, **({"cursor": True} if cursor else {}),
+                                   "visible": (cfg.get("browser") or {}).get("visible", True) is not False})
     except Exception:
         if server:
             server.shutdown()
@@ -528,16 +529,19 @@ class BrowserBackend:
         executable = find_browser()
         if not executable:
             raise ToolError(t("capture", "no_browser"))
+        page_config = dict(page_config)
+        visible = page_config.pop("visible", True)  # not for the page: how the browser opens
         self.viewport = viewport
         self.allow_domains = allow_domains
         self.scale = scale
+        self._blocked: str | None = None
         self._frames: list[tuple[float, bytes]] = []
         self._cdp = None
         self._pointer = (0.0, 0.0)
         self._pw = sync_playwright().start()
         try:
             self.context = self._pw.chromium.launch_persistent_context(
-                str(profile), executable_path=executable, headless=False, viewport={"width": viewport[0], "height": viewport[1]},
+                str(profile), executable_path=executable, headless=not visible, viewport={"width": viewport[0], "height": viewport[1]},
                 device_scale_factor=scale)
             self.context.expose_function("__ckRedact", redact)
             self.context.add_init_script(script=f"window.__ckConfig = {json.dumps(page_config)};")
@@ -555,13 +559,22 @@ class BrowserBackend:
         request = route.request
         if request.is_navigation_request() and request.frame.parent_frame is None \
                 and not capturemod.domain_allowed(domain_of(request.url), self.allow_domains):
-            route.abort("blockedbyclient")
+            self._blocked = domain_of(request.url) or request.url
+            route.abort("aborted")  # cancelled: the page stays as it was (a blocked one would show an error page)
         else:
             route.continue_()
 
     def _settle(self) -> None:
         from playwright.sync_api import Error as PlaywrightError
 
+        if self._blocked:  # a link or a script tried to leave the application: back to where it was, and say so
+            blocked, self._blocked = self._blocked, None
+            if self.page.url.startswith("chrome-error://"):
+                try:
+                    self.page.go_back(wait_until="domcontentloaded")
+                except PlaywrightError:
+                    pass
+            raise ToolError(t("capture", "domain_blocked", host=blocked))
         try:
             self.page.wait_for_load_state("domcontentloaded", timeout=15000)
             self.page.wait_for_function("window.__ckPending === 0", timeout=15000)
@@ -575,6 +588,7 @@ class BrowserBackend:
     def click(self, x, y, button, count) -> None:
         self.page.mouse.click(x, y, button=button, click_count=count)
         self._pointer = (x, y)
+        self.page.wait_for_timeout(250)  # a navigation starts a moment after the click: so a blocked one is seen
         self._settle()
 
     def move(self, x, y) -> None:

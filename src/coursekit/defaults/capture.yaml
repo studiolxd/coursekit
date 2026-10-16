@@ -27,6 +27,10 @@ modes: [browser, desktop]      # the ways of capturing a project allows: browser
 #     account: demo administrator
 profiles: {}
 
+browser:
+  visible: true                # the browser is seen while it captures (a person can watch); false runs it hidden, for a
+                               # machine with no screen (a server, the tests of coursekit)
+
 screenshot:
   max_edge: 1920               # px: the largest side of what the agent sees (its coordinates are in that space)
   device_scale: 2              # browser: pixels per CSS pixel of the saved captures (2 = sharp on high-density screens)
@@ -46,7 +50,7 @@ redact:
     iban: '\b[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]{4}){2,7}(?:[ ]?[A-Z0-9]{1,4})?\b'
     card: '\b(?:\d[ -]?){12,18}\d\b'
     national_id: '\b(?:\d{8}|[XYZ]\d{7})[- ]?[A-Z]\b'
-    phone: '(?<![\w.])\+?\d[\d ().-]{7,}\d(?![\w.])'
+    phone: '(?<![\w.])\+?\d[\d ().-]{7,}\d(?!\w|\.\d)'
     ip: '\b(?:\d{1,3}\.){3}\d{1,3}\b'
   names: true                  # names of people: a known first name followed by one or two words in capitals
   extra_terms: []              # words always hidden, whatever case (a real company, a project, a place): ["Bravant"]
@@ -57,7 +61,8 @@ redact:
   faces: true                  # faces in photos and avatars (on the pixels: needs the capture extra)
   pixels: pixelate             # how it is covered on the pixels: pixelate | blur | solid
   padding: 4                   # px around what is covered
-  ocr: auto                    # who reads the pixels: auto (rapidocr if installed, else tesseract) | rapidocr | tesseract
+  ocr: auto                    # who reads the pixels: auto (Apple Vision on macOS, else rapidocr, else tesseract) | vision |
+                               # rapidocr | tesseract (Vision and rapidocr come with the capture extra)
   video_fps: 4                 # frames read per second of a video; what is found stays covered until the next one read
 
 # `coursekit capture replay`: the steps of the brief repeated at the pace of a person, and the video of the stretches between

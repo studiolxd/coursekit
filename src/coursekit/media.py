@@ -87,10 +87,17 @@ def depicts_rules(cfg: dict) -> tuple[list[str], list[str]]:
     return list(block.get("required_for") or []), list(block.get("interface_recipes") or [])
 
 
+def capture_waiting(asset: dict) -> str | None:
+    """`captured` (a capture whose personal data was covered waits for a person to review it) or `rejected` (a person rejected
+    it: it is covered again, or captured again); None otherwise."""
+    state = (asset.get("capture") or {}).get("state")
+    return state if state in ("captured", "rejected") and asset.get("status") not in ("produced", "uploaded") else None
+
+
 def awaiting_recording(asset: dict) -> bool:
     """A resource that shows a real interface and waits for a person to provide the capture or the recording."""
     return (asset.get("depicts") == "interface" and asset.get("status") == "scripted"
-            and asset.get("recipe") in ("screen-recording", "screenshot"))
+            and asset.get("recipe") in ("screen-recording", "screenshot") and not (asset.get("capture") or {}).get("state"))
 
 
 def scan(course: dict) -> list[dict]:
@@ -350,7 +357,11 @@ def plan(course: dict) -> tuple[list[str], list[str]]:
         lines.append(f"{a['id']} [{a['type']}] {a.get('title', '')}")
         if real_interface:
             lines.append(t("media", "interface_line"))
-            if awaiting_recording(a):
+            waiting = capture_waiting(a)
+            if waiting:
+                note = (a.get("capture") or {}).get("note") or "—"
+                lines.append(t("media", f"capture_{waiting}_line", code=course["code"], id=a["id"], note=note))
+            elif awaiting_recording(a):
                 lines.append(t("media", "awaiting_line", path=f"media/scripts/{a['id']}.md", folder=f"media/recordings/{a['id']}"))
         elif a["type"] in required and not a.get("depicts"):
             lines.append(t("media", "classify_line", id=a["id"]))

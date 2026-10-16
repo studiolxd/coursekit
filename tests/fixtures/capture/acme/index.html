@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>ACME · Seguridad de Ana López</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f6f7fb; color: #1b1f2a; }
+    header { display: flex; justify-content: space-between; padding: 18px 32px; background: #1d3f8f; color: #fff; }
+    main { padding: 40px 32px; max-width: 900px; }
+    .card { background: #fff; border-radius: 12px; padding: 28px; margin-bottom: 24px; box-shadow: 0 6px 18px rgba(0,0,0,.08); }
+    label { display: block; margin: 14px 0 6px; font-weight: bold; }
+    input { font-size: 18px; padding: 8px 10px; width: 320px; }
+    button { margin-top: 20px; font-size: 18px; padding: 10px 22px; background: #1d3f8f; color: #fff; border: 0; border-radius: 8px; }
+    img.user-avatar { width: 40px; height: 40px; border-radius: 50%; background: #ccc; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>ACME · Panel de seguridad</strong>
+    <span class="account"><img class="user-avatar" alt="" src="data:image/gif;base64,R0lGODlhAQABAAAAACw="> Ana López · ana.lopez@acme.example</span>
+  </header>
+  <main>
+    <section class="card">
+      <h1>Política de contraseñas</h1>
+      <p>Responsable: Ana López. Contacto: +34 612 345 678.</p>
+      <label for="length">Longitud mínima</label>
+      <input id="length" value="8">
+      <label for="email">Correo de avisos</label>
+      <input id="email" value="ana.lopez@acme.example">
+      <label for="current">Contraseña actual</label>
+      <input id="current" type="password" autocomplete="current-password">
+      <div><button id="save" type="button">Guardar</button></div>
+      <p id="status"></p>
+    </section>
+    <section class="card" id="billing"></section>
+    <a id="away" href="https://elsewhere.example/">Ir a otra web</a>
+  </main>
+  <script>
+    document.getElementById("save").addEventListener("click", () => {
+      document.getElementById("status").textContent = "Guardado: " + document.getElementById("length").value + " caracteres";
+    });
+    setTimeout(() => {
+      document.getElementById("billing").innerHTML = "<h2>Facturación</h2><p>IBAN ES91 2100 0418 4502 0005 1332</p>";
+    }, 300);
+  </script>
+</body>
+</html>
