@@ -440,6 +440,7 @@ def test_a_decorative_image_comes_from_the_catalog_first_and_the_rest_is_generat
     i18n.use("es")
     try:
         assert "solo para contenido decorativo" in media.options_for("image", media.config())[0]["available"]
-        assert "solo para contenido de terminal" in media.options_for("video", media.config())[-1]["available"]
+        terminal = {"types": {"video": [{"id": "vhs", "needs": "none", "only": "terminal", "how": "terminal video"}]}}
+        assert "solo para contenido de terminal" in media.options_for("video", terminal)[0]["available"]
     finally:
         i18n.use(None)
