@@ -49,6 +49,11 @@ gemini:
   # Longest piece of a script per request, in UTF-8 bytes (a long script is split at the ends of its sentences). The model
   # returns at most about ten minutes of audio per request; about 4500 bytes are three to four minutes of speech.
   chunk_bytes: 4500
+  # flex: half the price, the same request, and the answer in minutes instead of seconds (up to 15); when Google has no
+  # capacity it answers 429 or 503, and coursekit tries again a few times. standard: the full price and the quickest answer.
+  # For a whole course at once there is also the batch (`coursekit tts-batch`): the same half price, the audio in hours.
+  tier: flex
+  flex_fallback: true      # when flex still has no capacity after the attempts, the request goes in the standard tier
 subtitles:
   - {id: elevenlabs-timestamps, needs: {env: ELEVENLABS_API_KEY}, how: "VTT from the ElevenLabs timestamps"}
   - {id: stable-ts, needs: {media: stable-ts}, how: "Align the script with the audio (stable-ts, word by word) → VTT (coursekit subtitles)"}

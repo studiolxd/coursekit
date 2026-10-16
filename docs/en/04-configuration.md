@@ -301,7 +301,7 @@ Each option has `id`, `how` (description), `needs` (requirements) and optionally
 | `path: P` | the path exists inside the project (for example `tools/remotion/node_modules`) |
 | `none` | always |
 
-The default voice chain is `elevenlabs-api`, `azure-api`, `google-api`, `gemini-api`, `elevenlabs-mcp`, `piper`; subtitles: `elevenlabs-timestamps`, `stable-ts`. Remember that lists are replaced whole: to remove one voice option, write the complete `voice` list without it. The `gemini` block (`model`, `style`, `chunk_bytes`) sets the Gemini voice ([The Gemini voice](07-media.md#the-gemini-voice)).
+The default voice chain is `elevenlabs-api`, `azure-api`, `google-api`, `gemini-api`, `elevenlabs-mcp`, `piper`; subtitles: `elevenlabs-timestamps`, `stable-ts`. Remember that lists are replaced whole: to remove one voice option, write the complete `voice` list without it. The `gemini` block (`model`, `style`, `chunk_bytes`, `tier`, `flex_fallback`) sets the Gemini voice ([The Gemini voice](07-media.md#the-gemini-voice)).
 
 ### `delivery`: SCORM export and client review
 

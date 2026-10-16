@@ -293,8 +293,26 @@ media:
 | `model` | `gemini-3.8-flash-tts` | Model of the Gemini API. `gemini-3.8-flash-lite-tts` costs less; `gemini-3.1-flash-tts-preview` is the earlier preview model |
 | `style` | empty | How to say it. Empty: the voice as it is |
 | `chunk_bytes` | `4500` | Longest piece of a script per request, in UTF-8 bytes. The model returns at most about ten minutes of audio per request |
+| `tier` | `flex` | `flex`: half the price, the same request, and the answer in minutes instead of seconds (up to 15); when Google has no capacity it answers 429 or 503 and coursekit tries again a few times. `standard`: the full price and the quickest answer |
+| `flex_fallback` | `true` | When `flex` still has no capacity after the attempts, the request goes in the standard tier. `false`: it fails instead (exit code 1), and nothing is paid at the full price |
 
 `coursekit voice set PWD gemini` writes the model in force in the course (`course.yaml › media.voice.model`): the course keeps the model it started with when the default changes, so its narration never changes voice halfway. To move a course to another model, change that key and produce its narration again. The voices are the Gemini ones (`Aoede`, `Kore`, `Charon`, `Puck`…), without a language: the language is the course's. The Gemini API marks all the audio it generates with an inaudible SynthID watermark. On its free tier, Google may use what is sent to improve its products: for the content of a client, use a key with billing.
+
+### The batch of the Gemini voice
+
+Besides `flex`, the Gemini API has a **batch**: the requests of a whole course are sent together in one job and Google answers them within 24 hours (often within minutes), at the same half price. Nothing waits for the answer: the narrations are queued, the job is sent and they are collected later. A course keeps its queue in `media/tts-batch.yaml` (versioned: what was sent, with which model, voice and style, and how it went). It exists only with the Gemini voice.
+
+Three commands put narrations in the queue with `--batch`, instead of voicing them:
+
+| Command | What goes in the queue | What `collect` does with it |
+|---|---|---|
+| `coursekit video voice CODE ID --batch` | The scenes of a montage whose text or voice changed | Writes their audio, aligns their words (`stable-ts`) and records their length: `coursekit video render` goes on |
+| `coursekit media narrate CODE --batch` | The scenes of the simulations still to narrate | Writes `media/files/<id>.mp3` and marks the asset `produced` |
+| `coursekit tts --course CODE --in … --out … --batch` | A script | Writes the `--out` file |
+
+Then [`coursekit tts-batch`](03-commands.md#coursekit-tts-batch) `send CODE` uploads the queue (a long script is several requests, joined again when collected) and creates the job; `status CODE` says how it goes; `collect CODE` writes what arrived and leaves in the queue what failed, to be sent again. A job that does not finish in 48 hours expires with no results and everything goes back to the queue. Creating a job is not idempotent (sending again would be paid twice), so a second `send` is refused while one is under way. The assets of the queue are neither pending for the media agent nor produced: `media plan` and the handoff leave them be until they are collected.
+
+In [handoff mode](02-workflow.md#handoff-mode), when the media agent leaves narrations in the queue, the handoff sends them and stops, saying that they are on their way; `coursekit handoff CODE` later collects them (if the job has finished; otherwise it stops again) and carries on with what depended on them.
 
 ## `coursekit tts`
 

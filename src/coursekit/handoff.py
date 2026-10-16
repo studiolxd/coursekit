@@ -24,7 +24,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from coursekit import approve, clientreview, config, fixes, identity, launch, localdesign, new, verify
+from coursekit import approve, clientreview, config, fixes, identity, launch, localdesign, new, ttsbatch, verify
 from coursekit import assemble as assemblemod
 from coursekit import course as coursemod
 from coursekit import media as mediamod
@@ -308,8 +308,29 @@ def _sign(ctx: Context, course: dict) -> None:
 
 def _pending_media(course: dict) -> list[dict]:
     _, _, data = mediamod.load_manifest(course["_dir"])
+    voicing = ttsbatch.waiting(course)  # its narration is in the Gemini batch: nothing to do until it is collected
     return [a for a in data["assets"] if a.get("status") in ("pending", "scripted") and not mediamod.awaiting_recording(a)
-            and mediamod.capture_waiting(a) != "captured"]  # a person reviews it: the agent has nothing to do with it
+            and mediamod.capture_waiting(a) != "captured" and a["id"] not in voicing]  # a person reviews a capture
+
+
+def _tts_batch(ctx: Context, course: dict, send: bool) -> None:
+    """The Gemini batch of the course: a finished job is collected (what it narrated goes on), one under way stops the handoff
+    (`coursekit handoff CODE` carries on later) and, with `send`, what the media agent queued is sent."""
+    data = ttsbatch.load(course)
+    try:
+        if data.get("job"):
+            done = ttsbatch.collect(course, say=ctx.log)
+            if done["state"] not in ttsbatch.FINISHED:
+                raise _stuck(ctx, "tts_batch_waiting", state=done["state"])
+            ctx.log(t("handoff", "tts_batch_collected", code=ctx.code, done=done["done"], failed=done["failed"]))
+            ctx.mirror()
+        if send and any(i["state"] == "queued" for i in ttsbatch.load(course)["items"]):
+            sent = ttsbatch.send(course)
+            ctx.log(t("handoff", "tts_batch_sent", code=ctx.code, job=sent["job"], items=sent["items"]))
+            ctx.mirror()
+            raise _stuck(ctx, "tts_batch_waiting", state="pending")
+    except ttsbatch.BatchError as exc:
+        raise _stuck(ctx, "tts_batch_failed", error=exc) from exc
 
 
 def captures_to_review(course: dict) -> list[dict]:
@@ -454,8 +475,10 @@ def _videos(ctx: Context, course: dict) -> None:
 def _media(ctx: Context, course: dict) -> None:
     _videos(ctx, course)
     mediamod.extract(course)
-    if _pending_media(course):
-        _produce(ctx, course)
+    _tts_batch(ctx, course, send=False)
+    if _pending_media(ctx.course()):
+        _produce(ctx, ctx.course())
+    _tts_batch(ctx, ctx.course(), send=True)  # what the media agent left in the batch queue
     ctx.mirror()
     log = None
     for _ in range(ctx.rounds):

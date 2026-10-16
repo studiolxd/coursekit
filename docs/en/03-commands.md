@@ -82,7 +82,7 @@ While a course is `on_hold`, the commands that change its work are refused with 
 | Verification and sign-off | `coursekit verify`, `coursekit paths`, `coursekit reviewed`, `coursekit approve` |
 | Course state and client review | `coursekit hold`, `coursekit resume`, `coursekit client` |
 | Launching agents | `coursekit write`, `coursekit review`, `coursekit run` |
-| Media | `coursekit media`, `coursekit video`, `coursekit voice`, `coursekit tts`, `coursekit subtitles`, `coursekit theme`, `coursekit capture` |
+| Media | `coursekit media`, `coursekit video`, `coursekit voice`, `coursekit tts`, `coursekit tts-batch`, `coursekit subtitles`, `coursekit theme`, `coursekit capture` |
 | Assembly and delivery | `coursekit assemble`, `coursekit preview`, `coursekit directives`, `coursekit delivery`, `coursekit publish`, `coursekit catalog` |
 
 ## Project and machine
@@ -780,7 +780,7 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
                 [--alt ALT] [--transcript TRANSCRIPT] [--subtitles-path SUBTITLES_PATH]
                 [--made-with MADE_WITH] [--download DOWNLOAD] [--download-title DOWNLOAD_TITLE]
                 [--download-asset-path DOWNLOAD_ASSET_PATH] [--depicts {interface,concept}] [--force]
-                [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all] [--clean] [--size SIZE] [--fix] [--frames FRAMES]
+                [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all] [--clean] [--size SIZE] [--fix] [--frames FRAMES] [--batch]
                 {extract,plan,providers,set,upload,redo,embed,fit,render,narrate,optimize,adopt,check,sheet,transcript} [code] [id] [more ...]
 ```
 
@@ -806,6 +806,7 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
 | `--method METHOD` | default `PUT` | `upload`: HTTP method. |
 | `--fix` | flag | `check` only: bring to the target loudness the audios and videos out of it, in place. |
 | `--frames FRAMES` | number; default `media › checks › sheet_frames` | `sheet` only: frames of the contact sheet. |
+| `--batch` | flag | `narrate` only: put the scenes in the queue of the Gemini batch instead of voicing them ([`coursekit tts-batch`](#coursekit-tts-batch)). |
 | `--size SIZE` | `WIDTHxHEIGHT` | `fit` (required) and `render`: the size, e.g. `1920x1080`. |
 | `--all` | flag | `redo` only: redo every asset that uses the theme, not only those made with other tokens. |
 | `--clean` | flag | `redo` only: the assets also forget their file, alt text, transcript, captions and the tool that made them (the files stay on disk), for what is made again from nothing, such as a resource that showed an invented interface. |
@@ -823,7 +824,7 @@ Actions:
 - `render`: draws the `.svg` of the asset `id` as a PNG next to it (`<name>.png`), with the Chrome, Chromium or Edge of the machine and without interface, at the size of its `viewBox` or `--size`: to look at it before marking it produced, and the PNG creator needs. Exit code 1 if the file is not an SVG or there is no such browser.
 - `optimize`: makes the files of the `produced` or `uploaded` assets lighter, in place and locally: images (PNG, JPEG, WebP) are scaled down to `optimize.image.max_width` and recompressed, MP4 videos are re-encoded as H.264/AAC capped at `optimize.video.max_height` (needs `ffmpeg`); a file is replaced only if the result weighs less. SVG, GIF, audio and packages are left as they are. With ids, those assets; without, all. Prints `<id>: <file>: <before> → <after> bytes` per file, or `nothing to optimise`. Run it before uploading to creator; the html backend does the equivalent on the copy it puts in the package. The limits are in `media.yaml › optimize` ([Lighter media](07-media.md#lighter-media)). Exit code 1 if `ffmpeg` is missing or fails. Refused while the course is on hold.
 - `adopt`: takes an image that already exists, such as one of an imported eXeLearning package (`brief/text/media/<package>/<file>`), as the asset `id`: `--file` is the source (a path from the course or the project folder), it is copied to `media/files/<id>.<ext>` and the asset is marked `produced` with `--alt` and `recipe: imported`, so it is not made again. Exit code 2 without `id` or `--file`; exit code 1 if the file or the asset does not exist. Refused while the course is on hold.
-- `narrate`: produces the narration of the scenes of the simulations with `audio: true` (the `VO-…` assets) with the configured voices: the character of a conversation with its own voice (`coursekit voice set --character`), the rest with the voice of the course. By default the pending ones; with ids, those; with `--all`, all of them again. Each one goes to `media/files/<id>.mp3`, with the text as its transcript, and is marked `produced`. Prints `N scene narration(s) produced`; exit code 1 if the voice provider fails (what was produced before is kept).
+- `narrate`: produces the narration of the scenes of the simulations with `audio: true` (the `VO-…` assets) with the configured voices: the character of a conversation with its own voice (`coursekit voice set --character`), the rest with the voice of the course. By default the pending ones; with ids, those; with `--all`, all of them again. Each one goes to `media/files/<id>.mp3`, with the text as its transcript, and is marked `produced`. Prints `N scene narration(s) produced`; exit code 1 if the voice provider fails (what was produced before is kept). With `--batch` (only the Gemini voice) the scenes go to the queue of the batch and stay `pending` until [`coursekit tts-batch collect`](#coursekit-tts-batch) writes them and marks them `produced`.
 - `check`: looks at the audios and videos `produced` or `uploaded` (the ones named, or all): their loudness against `media › checks` (EBU R128 for the web: -16 LUFS, peak -1 dBTP, measured with ffmpeg); the cues of their captions (the `.vtt` or `.srt` next to the file, with its name) faster than `max_cps` characters per second; and, for a video whose scenes are described ([Accessibility of videos](07-media.md#accessibility-of-videos)), the text on screen its narration does not say. One `WARNING <id> [<code>] <what>` line each (codes `LOUDNESS`, `CAPTIONS_FAST`, `NOT_SAID`, `NOT_CHECKED`), and exit code 1 while there is one; `--fix` brings the loudness to its target in place (two passes of `loudnorm`; the picture of a video is copied, not encoded again). It needs `ffmpeg` and `ffprobe`.
 - `sheet`: the contact sheet of the video `id`: `--frames` frames (default 24) spread over its length in one image, with the time of each one, in `.cache/media/<CODE>/<id>-sheet.png`, to look at a video without playing it.
 - `transcript`: from the scenes described in `media/scripts/<id>.scenes.yaml`, writes the accessible transcript of the video `id` (scene by scene, the minute, what is seen and what is said) in `<file>.transcript.txt` and a WebVTT track of descriptions in `<file>.descriptions.vtt`, and makes that transcript the one of the asset (what the assembly puts in the course). See [Accessibility of videos](07-media.md#accessibility-of-videos).
@@ -845,7 +846,7 @@ coursekit media set PWD U1-S2-M1 --status produced --recipe agent-svg --file med
 A video as data: a montage of scenes (`media/scripts/<id>.video.yaml`) rendered with the library of scenes of coursekit in Remotion, in the theme of the course; see [Video montage](07-media.md#video-montage). Who: agents (the media agent) and people.
 
 ```
-coursekit video {new,check,voice,preview,render,catalog,export} code [id]
+coursekit video [--batch] {new,check,voice,preview,render,catalog,export} code [id]
 ```
 
 | Argument | Values / default | Meaning |
@@ -853,12 +854,13 @@ coursekit video {new,check,voice,preview,render,catalog,export} code [id]
 | `action` | `new`, `check`, `voice`, `preview`, `render`, `catalog`, `export` | See below. |
 | `code` | course code or folder | Course. |
 | `id` | asset id | The video resource; every action but `catalog` needs it (exit code 2 without it). |
+| `--batch` | flag | `voice` only: put the scenes in the queue of the Gemini batch instead of voicing them. |
 
 Actions:
 
 - `new`: a first montage for the resource (an opening with its title, a scene to fill and a close) in `media/scripts/<id>.video.yaml`. It never writes over one that exists.
 - `check`: the montage before its voice and its render: the format; each scene has an id, a known `type`, its required props, its media in the media folder of the course, and `says` or `duration`; texts longer than the scene fits (`TEXT_LONG`); text on screen that the narration does not say (`NOT_SAID`, unless the scene describes it with `shows`); layers of an unknown type (`UNKNOWN_LAYER`) or anchored to words its scene does not say (`ANCHOR_NOT_SAID`). One line per finding, `ERROR` or `WARNING`, with the scene and a code; exit code 1 while there is an error.
-- `voice`: the narration of each scene with the voice of the course, and the timings of its words (`media/files/<id>/<scene>.mp3` and `.words.json`); only the scenes whose text or voice changed are made again. It needs a voice (see [`coursekit voice`](#coursekit-voice)) and, except with ElevenLabs, `stable-ts`.
+- `voice`: the narration of each scene with the voice of the course, and the timings of its words (`media/files/<id>/<scene>.mp3` and `.words.json`); only the scenes whose text or voice changed are made again. It needs a voice (see [`coursekit voice`](#coursekit-voice)) and, except with ElevenLabs, `stable-ts`. With `--batch` (only the Gemini voice) the scenes whose text or voice changed go to the queue of the batch; [`coursekit tts-batch collect`](#coursekit-tts-batch) writes their audio and the timings of their words, and `render` goes on from there.
 - `preview`: a frame of each scene (at 70 % of it, when what enters has entered), small, in one image: `.cache/media/<CODE>/<id>-preview.png`, before the whole render.
 - `render`: the video in `media/files/<id>.mp4` (its voice at the loudness of `media › checks`), with its captions (`.vtt`, a cue per sentence that stays until the next one), its words (`.words.json`), its scenes described (`media/scripts/<id>.scenes.yaml`) and its accessible transcript and track of descriptions ([Accessibility of videos](07-media.md#accessibility-of-videos)); the asset becomes `produced` with the recipe `montage` (`screen-recording` when it shows a real interface and has a `screencast` of a real recording). Like any generated resource, it says first what it shows (`coursekit media set CODE ID --depicts`).
 - `catalog`: the scenes and the layers the course can use, from the library, the project and the course (which hides which), with what each one is, what it is built from and its props (type, required, maximum characters, on screen); and the atoms and molecules of the library, marking those the project or the course replaces.
@@ -905,23 +907,53 @@ coursekit voice set PWD azure --voice es-ES-ElviraNeural
 Produces the voice-over of a script. Who: agents (the media agent) and people.
 
 ```
-coursekit tts [--course COURSE] [--engine {elevenlabs,azure,google,piper}] --in INPUT --out OUT [--voice VOICE] [--speaker SPEAKER] [--character CHARACTER]
+coursekit tts [--course COURSE] [--engine {elevenlabs,azure,google,gemini,piper}] --in INPUT --out OUT [--voice VOICE] [--speaker SPEAKER] [--character CHARACTER] [--batch]
 ```
 
 | Argument | Values / default | Meaning |
 |---|---|---|
 | `--course COURSE` | course code or folder | Use the voice of that course (`course.yaml › media.voice`) and its language. |
-| `--engine {elevenlabs,azure,google,piper}` | default: the course voice, or the only configured provider | Provider for this run. |
+| `--engine {elevenlabs,azure,google,gemini,piper}` | default: the course voice, or the only configured provider | Provider for this run. |
 | `--in INPUT` | path (required) | Text file with the script. |
 | `--out OUT` | path (required) | Audio file to write (`.mp3`). |
 | `--voice VOICE` | text | Voice, overriding the course's. |
 | `--speaker SPEAKER` | integer | Speaker of multi-speaker Piper voices. |
 | `--character CHARACTER` | name | Use the voice of this character (`voice set --character`). With Piper and no voice of its own, the speakers of the voice take turns in the order of the cast of the story bible (a draft); with another provider and no voice of its own it fails, saying how to set it. |
+| `--batch` | flag | Instead of voicing the script, put it in the queue of the Gemini batch of the course ([`coursekit tts-batch`](#coursekit-tts-batch)). It needs `--course`, the Gemini voice and an `--out` inside the project, and refuses `--engine`, `--voice` and `--speaker` (exit code 2): the batch uses the voice of the course. |
 
 Fails with a message (exit code 1) when the provider is not configured, when several providers are available and none is chosen (use `coursekit voice set`), or when none is, when the `--in` file does not exist, when a program it needs (`ffmpeg`, `piper`) is not installed or fails (`<program> is not installed or not on the PATH (coursekit setup --media)`, `<program> failed (exit code N)`), and when the voice API answers with an error or cannot be reached (`<host> answered <status> <reason>: check the key, the region and the voice configured`, `could not reach <host>: <reason>`). ElevenLabs also writes a `.vtt` file (captions) next to the audio, with the name of `--out` and the extension `.vtt` (`u1.mp3` gives `u1.vtt`), from the character timestamps the API returns, and the timings of each word in `<name>.words.json` (`u1.words.json`); for the other providers use [`coursekit subtitles`](#coursekit-subtitles).
 
 ```
 coursekit tts --course PWD --in media/scripts/u1-s2-m1.txt --out media/files/u1-s2-m1.mp3
+```
+
+### `coursekit tts-batch`
+
+The batch of the Gemini voice: the narrations of a course sent together, at half the price, and collected hours later ([The batch of the Gemini voice](07-media.md#the-batch-of-the-gemini-voice)). Who: both (the handoff sends and collects it by itself).
+
+```
+coursekit tts-batch {list,send,status,collect} code
+```
+
+| Argument | Values / default | Meaning |
+|---|---|---|
+| `action` | `list`, `send`, `status`, `collect` | See below. |
+| `code` | course code or folder | Course. |
+
+Actions:
+
+- `list`: the job sent, if any, and each narration of the queue (`media/tts-batch.yaml`) with its kind (`tts`, `video`, `narrate`), its pieces and its state (`queued`, `sent`), and the error of the last attempt when it failed.
+- `send`: uploads what is queued and creates one job. Creating a job is not idempotent (sending again would be paid twice), so it is refused (exit code 1) while one is under way; and with nothing queued. One model per job: narrations of another model stay for the next one.
+- `status`: the state of the job (`pending`, `running`, `succeeded`, `failed`, `cancelled`, `expired`) and its counts.
+- `collect`: when the job finished, downloads its results, writes each narration where it was asked for and finishes what it was for (a scene of a simulation becomes `produced`; a scene of a montage gets the timings of its words). What failed, or a job that expired, goes back to the queue, to be sent again; exit code 1 when something failed. While the job has not finished it says so and changes nothing.
+
+Exit code 1 without `GEMINI_API_KEY`, or when the Gemini API answers with an error.
+
+```
+coursekit video voice PWD U1-S2-M1 --batch
+coursekit tts-batch send PWD
+coursekit tts-batch status PWD
+coursekit tts-batch collect PWD
 ```
 
 ### `coursekit subtitles`

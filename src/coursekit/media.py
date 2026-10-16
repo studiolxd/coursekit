@@ -445,13 +445,14 @@ def embed(course: dict, asset_id: str) -> str:
     return t("media", "embed_written", path=(folder / "index.html").as_posix(), asset=asset_id)
 
 
-def narrate(course: dict, ids: list[str] | None = None, again: bool = False, say=print) -> int:
+def narrate(course: dict, ids: list[str] | None = None, again: bool = False, say=print, batch: bool = False) -> int:
     """Produce the narration of the scenes (`VO-…`, simulations with `audio: true`) with the configured voices: the character
     of a conversation with its own voice (`coursekit voice set --character`), the rest with the voice of the course. Only the
-    ones still pending, unless they are named or `again`. Returns how many were produced."""
+    ones still pending, unless they are named or `again`. Returns how many were produced (with `batch`, how many were put in the
+    queue of the Gemini batch: `coursekit tts-batch collect` produces them)."""
     import tempfile
 
-    from coursekit import mediatools
+    from coursekit import mediatools, ttsbatch
 
     ry, path, data = load_manifest(course["_dir"])
     todo = [a for a in data["assets"] if a.get("kind") == "voice" and a.get("narration")
@@ -459,6 +460,15 @@ def narrate(course: dict, ids: list[str] | None = None, again: bool = False, say
     done = 0
     for asset in todo:
         out = course["_dir"] / "media" / "files" / f"{asset['id']}.mp3"
+        if batch:
+            try:
+                if ttsbatch.add(course, "narrate", str(asset["id"]), str(asset["narration"]), out, asset=str(asset["id"]),
+                                character=asset.get("character") or None):
+                    say(t("media", "narration_queued", asset=asset["id"]))
+                    done += 1
+            except ttsbatch.BatchError as exc:
+                raise MediaError(str(exc)) from None
+            continue
         with tempfile.TemporaryDirectory() as tmp:
             text = Path(tmp) / "scene.txt"
             text.write_text(str(asset["narration"]), encoding="utf-8")

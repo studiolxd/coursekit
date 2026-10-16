@@ -24,6 +24,7 @@ from coursekit import (
     new,
     outline,
     status,
+    ttsbatch,
     verify,
     voices,
 )
@@ -332,8 +333,8 @@ def cmd_video(args: argparse.Namespace) -> int:
             return 0
         statesmod.ensure_active(course)
         if args.action == "voice":
-            made = videomod.voice(course, args.id)
-            print(t("video", "voice_done", count=made))
+            made = videomod.voice(course, args.id, batch=args.batch)
+            print(t("video", "voice_queued_done" if args.batch else "voice_done", count=made))
         elif args.action == "preview":
             print(t("video", "preview", path=videomod.preview(course, args.id).relative_to(root).as_posix()))
         elif args.action == "export":
@@ -931,11 +932,11 @@ def cmd_media(args: argparse.Namespace) -> int:
     if args.action == "narrate":
         statesmod.ensure_active(course)
         try:
-            count = mediamod.narrate(course, [args.id, *args.more] if args.id else None, args.all)
+            count = mediamod.narrate(course, [args.id, *args.more] if args.id else None, args.all, batch=args.batch)
         except (mediamod.MediaError, mediatools.ToolError) as exc:
             print(t("commands", "error_line", text=exc), file=sys.stderr)
             return 1
-        print(t("commands", "media_narrated", count=count))
+        print(t("commands", "media_narration_queued" if args.batch else "media_narrated", count=count))
         _mirror(course["_project"], course["code"])
         return 0
     if args.action in ("fit", "render"):
@@ -1019,8 +1020,51 @@ def cmd_voice(args: argparse.Namespace) -> int:
 def cmd_tts(args: argparse.Namespace) -> int:
     project = _project()
     course = coursemod.load(project, args.course) if args.course else None
+    if args.batch:
+        if course is None or args.engine or args.voice or args.speaker:
+            print(t("commands", "tts_batch_needs"), file=sys.stderr)
+            return 2
+        mediatools.require_file(Path(args.input))
+        out = Path(args.out).resolve()
+        try:
+            out.relative_to(project.root.resolve())
+        except ValueError:
+            print(t("commands", "tts_batch_outside", path=Path(args.out).as_posix()), file=sys.stderr)
+            return 2
+        ident = out.relative_to(project.root.resolve()).as_posix()
+        added = ttsbatch.add(course, "tts", ident, Path(args.input).read_text(encoding="utf-8"), out, character=args.character)
+        print(t("commands", "tts_queued" if added else "tts_already_queued", path=ident, code=course["code"]))
+        return 0
     print(mediatools.tts(course, args.engine, Path(args.input), Path(args.out), args.voice, args.speaker, args.character))
     return 0
+
+
+def cmd_tts_batch(args: argparse.Namespace) -> int:
+    course = coursemod.load(_project(), args.code)
+    if args.action == "list":
+        print("\n".join(ttsbatch.listing(course)))
+        return 0
+    if args.action == "send":
+        done = ttsbatch.send(course)
+        print(t("ttsbatch", "sent", job=done["job"], items=done["items"], requests=done["requests"]))
+        if done["left"]:
+            print(t("ttsbatch", "left_for_later", count=done["left"]))
+        return 0
+    if args.action == "status":
+        done = ttsbatch.status(course)
+        if not done["state"]:
+            print(t("ttsbatch", "no_job_queued", code=course["code"], count=done["queued"]))
+            return 0
+        stats = ", ".join(f"{k} {v}" for k, v in done["stats"].items())
+        print(t("ttsbatch", "status_line", job=done["job"], state=done["state"], stats=stats or "—"))
+        return 0
+    done = ttsbatch.collect(course)
+    if done["state"] not in ttsbatch.FINISHED:
+        print(t("ttsbatch", "still_waiting", state=done["state"], count=done["waiting"]))
+        return 0
+    print(t("ttsbatch", "collected", done=done["done"], failed=done["failed"], state=done["state"]))
+    _mirror(course["_project"], course["code"])
+    return 1 if done["failed"] else 0
 
 
 def cmd_subtitles(args: argparse.Namespace) -> int:
@@ -1340,12 +1384,14 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--size", help=t("commands", "help_media_size"))
     p.add_argument("--fix", action="store_true", help=t("commands", "help_media_fix"))
     p.add_argument("--frames", type=int, help=t("commands", "help_media_frames"))
+    p.add_argument("--batch", action="store_true", help=t("commands", "help_media_batch"))
     p.set_defaults(func=cmd_media)
 
     p = sub.add_parser("video", help=t("commands", "help_video"))
     p.add_argument("action", choices=("new", "check", "voice", "preview", "render", "catalog", "export"))
     p.add_argument("code")
     p.add_argument("id", nargs="?")
+    p.add_argument("--batch", action="store_true", help=t("commands", "help_video_batch"))
     p.set_defaults(func=cmd_video)
 
     p = sub.add_parser("capture", help=t("commands", "help_capture"))
@@ -1384,7 +1430,13 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--voice")
     p.add_argument("--speaker", help=t("commands", "help_tts_speaker"))
     p.add_argument("--character", help=t("commands", "help_tts_character"))
+    p.add_argument("--batch", action="store_true", help=t("commands", "help_tts_batch"))
     p.set_defaults(func=cmd_tts)
+
+    p = sub.add_parser("tts-batch", help=t("commands", "help_tts_batch_command"))
+    p.add_argument("action", choices=("list", "send", "status", "collect"))
+    p.add_argument("code")
+    p.set_defaults(func=cmd_tts_batch)
 
     p = sub.add_parser("subtitles", help=t("commands", "help_subtitles"))
     p.add_argument("--audio", required=True)
@@ -1468,4 +1520,4 @@ def register(sub: argparse._SubParsersAction) -> None:
 ERRORS = (handoffmod.HandoffError, coursemod.CourseNotFound, coursemod.RuleError, approve.ApprovalError, FileExistsError,
           launch.LaunchError, assemblemod.AssembleError, directives.CatalogError, mediamod.MediaError, voices.VoiceError,
           mediatools.ToolError, deliverymod.DeliveryError, publishmod.PublishError, thememod.ThemeError, statesmod.StateError,
-          clientreview.ClientReviewError, HtmlBuildError, localdesign.DesignError)
+          clientreview.ClientReviewError, HtmlBuildError, localdesign.DesignError, ttsbatch.BatchError)

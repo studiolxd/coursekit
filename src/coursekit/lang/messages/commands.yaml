@@ -248,6 +248,8 @@ help_voice: {es: "proveedores de voz disponibles aquí, y la voz única de un cu
 help_tts: {es: "locución de un guion con la voz del curso", en: "voice-over of a script with the course voice"}
 help_tts_course: {es: "usa la voz de este curso (course.yaml › media.voice)", en: "use the voice of this course (course.yaml › media.voice)"}
 help_tts_speaker: {es: "locutor de las voces Piper multilocutor", en: "speaker of multi-speaker Piper voices"}
+help_tts_batch: {es: "en lugar de locutar, añade el guion a la cola del batch de Gemini del curso (la mitad de precio; llega en horas)", en: "instead of voicing, put the script in the Gemini batch queue of the course (half the price; arrives in hours)"}
+help_tts_batch_command: {es: "batch de la voz de Gemini: ver la cola, enviarla, su estado y recoger las locuciones", en: "batch of the Gemini voice: see the queue, send it, its state and collect the narrations"}
 help_subtitles: {es: "subtítulos (VTT) que alinean un guion con su audio", en: "captions (VTT) aligning a script with its audio"}
 help_subtitles_course: {es: "el idioma del curso", en: "the course language"}
 help_delivery:
@@ -370,6 +372,11 @@ brief_find_title:
   en: "# {count} passage(s) of the material for «{query}» (of {total})"
 brief_find_nothing: {es: "ningún fragmento del material contiene esas palabras", en: "no passage of the material holds those words"}
 media_narrated: {es: "{count} narración(es) de escena producidas", en: "{count} scene narration(s) produced"}
+media_narration_queued: {es: "{count} narración(es) de escena en la cola del batch; envíalas con coursekit tts-batch send", en: "{count} scene narration(s) in the batch queue; send them with coursekit tts-batch send"}
+tts_batch_needs: {es: "--batch necesita --course (la cola es de un curso) y la voz del curso (sin --engine, --voice ni --speaker)", en: "--batch needs --course (the queue belongs to a course) and the voice of the course (no --engine, --voice or --speaker)"}
+tts_batch_outside: {es: "--batch: {path} está fuera del proyecto", en: "--batch: {path} is outside the project"}
+tts_queued: {es: "{path}: en la cola del batch de {code} (coursekit tts-batch send {code})", en: "{path}: in the batch queue of {code} (coursekit tts-batch send {code})"}
+tts_already_queued: {es: "{path} ya estaba en la cola de {code} con el mismo texto", en: "{path} was already in the queue of {code} with the same text"}
 
 help_import: {es: "importa cursos de paquetes de eXeLearning (.elp): una carpeta es un curso, o una carpeta con muchos cursos", en: "import courses from eXeLearning packages (.elp): a folder is a course, or a folder of many courses"}
 help_import_path: {es: "carpeta con los .elp de un curso, o carpeta con una subcarpeta por curso", en: "folder with the .elp of a course, or a folder with a subfolder per course"}
@@ -393,7 +400,9 @@ help_capture_note: {es: "reject: qué faltó tapar o qué está mal", en: "rejec
 help_capture_mask: {es: "reject: un texto que hay que tapar siempre en este recurso (se puede repetir)", en: "reject: a text to always cover in this resource (can be repeated)"}
 help_media_fix: {es: "check: lleva a su sonoridad los audios y vídeos que no la tienen", en: "check: bring to their loudness the audios and videos that do not have it"}
 help_media_frames: {es: "sheet: cuántos fotogramas tiene la hoja de contactos (por defecto media › checks › sheet_frames)", en: "sheet: how many frames the contact sheet has (default media › checks › sheet_frames)"}
+help_media_batch: {es: "narrate: añade las escenas a la cola del batch de Gemini en lugar de locutarlas", en: "narrate: put the scenes in the Gemini batch queue instead of voicing them"}
 help_video: {es: "vídeos como datos (montaje de escenas con el tema del curso): crear, comprobar, voz, vista previa, render y catálogo", en: "videos as data (a montage of scenes in the theme of the course): create, check, voice, preview, render and catalog"}
+help_video_batch: {es: "voice: añade las escenas a la cola del batch de Gemini en lugar de locutarlas", en: "voice: put the scenes in the Gemini batch queue instead of voicing them"}
 help_videos: {es: "vídeos de sitios prohibidos que son de un canal oficial: comprobar, proponer, aprobar o rechazar", en: "videos on forbidden sites that come from an official channel: check, propose, approve or reject"}
 help_videos_why: {es: "propose: la evidencia de que el canal del vídeo es oficial", en: "propose: the evidence that the channel of the video is official"}
 help_videos_for: {es: "propose: el recurso del manifiesto al que sustituiría (mientras espera, o si se aprueba, ese recurso no se captura ni se locuta)", en: "propose: the resource of the manifest it would stand in for (while it waits, or once approved, that resource is neither captured nor voiced)"}

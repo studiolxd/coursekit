@@ -112,6 +112,14 @@ with `coursekit tts --course <CODE> …`. The characters (dialogues, simulations
 provider: propose one per character that fits the story bible (`personality`, `speech`), ask the person, set it with
 `coursekit voice set <CODE> <provider> --voice … --character <Name>` and make their lines with `tts --character <Name>`.
 
+**Gemini batch.** With the Gemini voice, the person may want the narrations of the course in batch (half the price, the
+audio in hours): ask once, before the first narration, unless the person already said. If so, add `--batch` to
+`coursekit video voice`, `coursekit media narrate` and `coursekit tts --course <CODE>`: they queue instead of voicing.
+Then run `coursekit tts-batch send <CODE>` once, at the end, and go on with everything that does not need that audio
+(images, scripts, other assets). Do not wait for it, do not send twice, and do not mark as produced what is still in the
+queue: `coursekit tts-batch collect <CODE>` (the person, or the handoff, later) writes it, and then you finish the render
+or the upload of what depended on it. `coursekit tts-batch list <CODE>` shows what is queued.
+
 ## 2. Script before producing (video, audio, GIF, demo)
 
 Write the script in `media/scripts/<id>.md` (voice-over word by word, scenes or terminal steps,

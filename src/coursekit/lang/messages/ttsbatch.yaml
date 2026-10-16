@@ -1,0 +1,21 @@
+# Output and errors of `coursekit tts-batch` and of the `--batch` options (the queue of the Gemini voice in batch).
+file_header: {es: "# Cola de locuciones en batch de la voz de Gemini (coursekit tts-batch): la escribe coursekit; no se edita a mano.", en: "# Queue of narrations in batch of the Gemini voice (coursekit tts-batch): written by coursekit; not edited by hand."}
+only_gemini: {es: "el batch solo existe con la voz de Gemini, y la de {code} es {provider} (coursekit voice set {code} gemini)", en: "the batch exists only with the Gemini voice, and the one of {code} is {provider} (coursekit voice set {code} gemini)"}
+already_sent: {es: "{id} ya se envió en un trabajo que no ha terminado: recógelo (coursekit tts-batch collect) antes de cambiar su texto", en: "{id} was already sent in a job that has not finished: collect it (coursekit tts-batch collect) before changing its text"}
+no_key: {es: "falta GEMINI_API_KEY en el .env del proyecto", en: "GEMINI_API_KEY is missing from the .env of the project"}
+api_failed: {es: "la Gemini API respondió {status}: {detail}", en: "the Gemini API answered {status}: {detail}"}
+upload_failed: {es: "la Files API no devolvió la dirección para subir las peticiones", en: "the Files API did not return the address to upload the requests"}
+job_running: {es: "{code} ya tiene un trabajo en curso ({job}): crear otro no es idempotente (se pagaría dos veces). Espera a que termine y recógelo (coursekit tts-batch collect {code})", en: "{code} already has a job under way ({job}): creating another is not idempotent (it would be paid twice). Wait for it to finish and collect it (coursekit tts-batch collect {code})"}
+nothing_queued: {es: "no hay locuciones en la cola de {code} (se añaden con --batch en coursekit tts, video voice o media narrate)", en: "there are no narrations in the queue of {code} (they are added with --batch in coursekit tts, video voice or media narrate)"}
+no_job: {es: "{code} no tiene ningún trabajo enviado (coursekit tts-batch send {code})", en: "{code} has no job sent (coursekit tts-batch send {code})"}
+no_results: {es: "el trabajo {job} terminó sin fichero de resultados", en: "the job {job} finished without a file of results"}
+written: {es: "  locución escrita: {path}", en: "  narration written: {path}"}
+job_line: {es: "trabajo {job}: {state}", en: "job {job}: {state}"}
+item_line: {es: "  {id} ({kind}, {pieces} parte(s)): {state}{error}", en: "  {id} ({kind}, {pieces} piece(s)): {state}{error}"}
+empty: {es: "la cola de {code} está vacía", en: "the queue of {code} is empty"}
+sent: {es: "✔ trabajo {job} creado: {items} locución(es), {requests} petición(es). Google apunta a 24 h; recógelo con coursekit tts-batch collect", en: "✔ job {job} created: {items} narration(s), {requests} request(s). Google aims at 24 h; collect it with coursekit tts-batch collect"}
+left_for_later: {es: "  {count} locución(es) con otro modelo quedan en la cola para el siguiente trabajo", en: "  {count} narration(s) with another model stay in the queue for the next job"}
+no_job_queued: {es: "{code} no tiene trabajo enviado; {count} locución(es) en la cola", en: "{code} has no job sent; {count} narration(s) in the queue"}
+status_line: {es: "trabajo {job}: {state} ({stats})", en: "job {job}: {state} ({stats})"}
+still_waiting: {es: "el trabajo aún no ha terminado ({state}); {count} locución(es) esperan. Vuelve a intentarlo más tarde", en: "the job has not finished yet ({state}); {count} narration(s) wait. Try again later"}
+collected: {es: "✔ trabajo recogido ({state}): {done} locución(es) escrita(s), {failed} de vuelta en la cola", en: "✔ job collected ({state}): {done} narration(s) written, {failed} back in the queue"}

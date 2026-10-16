@@ -93,6 +93,7 @@ package_not_found: {es: "{asset}: la simulación ya no está en el contenido", e
 asset_without_file: {es: "{asset}: no tiene fichero (media set … --file)", en: "{asset}: it has no file (media set … --file)"}
 render_needs_svg: {es: "{asset}: render es para un SVG", en: "{asset}: render is for an SVG"}
 voice_narrator: {es: "la voz del curso (narrador)", en: "the voice of the course (narrator)"}
+narration_queued: {es: "  {asset}: en la cola del batch de Gemini", en: "  {asset}: in the queue of the Gemini batch"}
 voice_title: {es: "Narración de una escena de {simulation} ({id})", en: "Narration of a scene of {simulation} ({id})"}
 voice_description:
   es: "El texto de la escena (narration), leído por {speaker}. Se produce con `coursekit media narrate`."

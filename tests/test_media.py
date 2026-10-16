@@ -182,7 +182,7 @@ def test_the_gemini_voice(course, monkeypatch, tmp_path):  # noqa: F811
                     {"inlineData": {"mimeType": "audio/L16;codec=pcm;rate=24000", "data": base64.b64encode(b"\x02\x00").decode()}}])
     sent = []
 
-    def fake_post(url, body, headers):
+    def fake_post(url, body, headers, timeout=300):
         sent.append((url, json.loads(body), headers))
         return json.dumps({"candidates": [{"content": {"parts": [next(answers)]}}]}).encode()
 
@@ -196,6 +196,7 @@ def test_the_gemini_voice(course, monkeypatch, tmp_path):  # noqa: F811
     url, body, headers = sent[0]
     assert url.endswith("/models/gemini-3.1-flash-tts-preview:generateContent") and headers["x-goog-api-key"] == "gm"
     assert body["contents"][0]["parts"][0] == {"text": "Hola.", "speechMetadata": {"style": "calm and warm"}}
+    assert body["serviceTier"] == "flex"  # half the price by default
     speech = body["generationConfig"]["speechConfig"]
     assert speech == {"languageCode": "es-ES", "voiceConfig": {"prebuiltVoiceConfig": {"voiceName": "Aoede"}}}
     assert encoded == [b"\x01\x00\x02\x00"]
@@ -398,3 +399,30 @@ def test_redo_clean_forgets_what_the_discarded_version_left(course, capsys):  # 
     assert clean["status"] == "scripted"
     assert all(clean[k] is None for k in ("file", "alt", "transcript", "subtitles_path", "made_with", "asset_path"))
     assert clean["depicts"] == "concept"  # what it shows does not change
+
+
+def test_the_flex_tier_tries_again_and_then_goes_on_in_the_standard_one(monkeypatch):
+    calls, waits = [], []
+
+    def busy(url, body, headers, timeout=300):
+        calls.append(json.loads(body).get("serviceTier", "standard"))
+        if calls[-1] == "flex":
+            raise mediatools.ToolError("busy", 503)
+        return json.dumps({"ok": True}).encode()
+
+    monkeypatch.setattr(mediatools, "post", busy)
+    payload = mediatools.gemini_request("Hola.", "Aoede", "es", "")
+    assert mediatools.gemini_post("u", payload, "k", {"tier": "flex"}, sleep=waits.append) == {"ok": True}
+    assert calls == ["flex"] * 4 + ["standard"] and waits == list(mediatools.FLEX_WAITS)
+    calls.clear()
+    with pytest.raises(mediatools.ToolError, match="no capacity in the flex tier"):
+        mediatools.gemini_post("u", payload, "k", {"tier": "flex", "flex_fallback": False}, sleep=waits.append)
+    calls.clear()
+    assert mediatools.gemini_post("u", payload, "k", {"tier": "standard"}) == {"ok": True} and calls == ["standard"]
+
+    def broken(url, body, headers, timeout=300):
+        raise mediatools.ToolError("bad key", 400)
+
+    monkeypatch.setattr(mediatools, "post", broken)
+    with pytest.raises(mediatools.ToolError, match="bad key"):  # not a matter of capacity: no attempts and no fallback
+        mediatools.gemini_post("u", payload, "k", {"tier": "flex"}, sleep=waits.append)

@@ -16,6 +16,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import time
 import urllib.error
 import urllib.request
 import wave
@@ -29,7 +30,9 @@ from coursekit.voices import course_voice as chosen_voice
 
 
 class ToolError(Exception):
-    pass
+    def __init__(self, message: str, status: int | None = None):
+        super().__init__(message)
+        self.status = status  # the HTTP status of the answer, when the failure was one
 
 
 def run(command: list[str], **kwargs) -> None:
@@ -48,7 +51,7 @@ def fetch(req: urllib.request.Request, timeout: int = 300) -> bytes:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             return resp.read()
     except urllib.error.HTTPError as exc:
-        raise ToolError(t("mediatools", "http_failed", host=req.host, status=exc.code, reason=exc.reason)) from None
+        raise ToolError(t("mediatools", "http_failed", host=req.host, status=exc.code, reason=exc.reason), exc.code) from None
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         raise ToolError(t("mediatools", "network_failed", host=req.host, reason=getattr(exc, "reason", exc))) from None
 
@@ -220,9 +223,9 @@ def encode_pcm(pcm: bytes, out: Path, rate: int = PCM_RATE) -> None:
          "-codec:a", "libmp3lame", "-qscale:a", "3", str(out)], input=pcm)
 
 
-def post(url: str, body: bytes, headers: dict) -> bytes:
+def post(url: str, body: bytes, headers: dict, timeout: int = 300) -> bytes:
     req = urllib.request.Request(url, data=body, headers=headers, method="POST")
-    return fetch(req)
+    return fetch(req, timeout)
 
 
 def tts_azure(text: str, out: Path, voice: str | None, speaker: str | None = None, language: str = "es",
@@ -266,15 +269,43 @@ def gemini_settings(course: dict | None) -> dict:
     return settings
 
 
-def gemini_request(text: str, voice: str | None, language: str, style: str) -> dict:
-    """The body of one generateContent request of the Gemini voice (also each line of a batch)."""
+def gemini_request(text: str, voice: str | None, language: str, style: str, tier: str | None = None) -> dict:
+    """The body of one generateContent request of the Gemini voice (also each line of a batch). `tier: flex` asks for the flex
+    tier: half the price, an answer in minutes instead of seconds, and refused when Google has no capacity (429, 503)."""
     part: dict = {"text": text}
     if style:
         part["speechMetadata"] = {"style": style}
-    return {"contents": [{"role": "user", "parts": [part]}],
+    body = {"contents": [{"role": "user", "parts": [part]}],
             "generationConfig": {"responseModalities": ["AUDIO"],
                                  "speechConfig": {"languageCode": LOCALES.get(language, language),
                                                   "voiceConfig": {"prebuiltVoiceConfig": {"voiceName": voice}}}}}
+    if tier == "flex":
+        body["serviceTier"] = "flex"
+    return body
+
+
+FLEX_WAITS = (5, 20, 60)  # seconds between the attempts when the flex tier has no capacity
+
+
+def gemini_post(url: str, payload: dict, key: str, settings: dict, sleep=time.sleep) -> dict:
+    """One request of the Gemini voice, in the tier of the settings. When flex has no capacity (429, 503) it tries again a few
+    times and then, with `flex_fallback`, in the standard tier (the full price, but the work goes on)."""
+    headers = {"Content-Type": "application/json", "x-goog-api-key": key}
+    tier = str(settings.get("tier") or "standard")
+    if tier != "flex":
+        return json.loads(post(url, json.dumps(payload).encode(), headers))
+    flex = json.dumps({**payload, "serviceTier": "flex"}).encode()
+    for wait in (*FLEX_WAITS, None):
+        try:
+            return json.loads(post(url, flex, headers, timeout=960))  # flex answers in up to 15 minutes
+        except ToolError as exc:
+            if exc.status not in (429, 503):
+                raise
+        if wait is not None:
+            sleep(wait)
+    if settings.get("flex_fallback", True) is False:
+        raise ToolError(t("mediatools", "gemini_flex_busy"))
+    return json.loads(post(url, json.dumps(payload).encode(), headers))
 
 
 def gemini_audio(response: dict) -> tuple[bytes, int]:
@@ -297,11 +328,10 @@ def tts_gemini(text: str, out: Path, voice: str | None, speaker: str | None = No
     key = os.environ["GEMINI_API_KEY"].strip()
     settings = gemini_settings(course)
     url = f"{GEMINI_API}/models/{settings['model']}:generateContent"
-    headers = {"Content-Type": "application/json", "x-goog-api-key": key}
     parts, rate = [], PCM_RATE
     for chunk in sentence_chunks(text, int(settings["chunk_bytes"])):
-        body = json.dumps(gemini_request(chunk, voice, language, str(settings.get("style") or "").strip())).encode()
-        samples, rate = gemini_audio(json.loads(post(url, body, headers)))
+        payload = gemini_request(chunk, voice, language, str(settings.get("style") or "").strip())
+        samples, rate = gemini_audio(gemini_post(url, payload, key, settings))
         parts.append(samples)
     encode_pcm(b"".join(parts), out, rate)
 

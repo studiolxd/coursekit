@@ -293,8 +293,26 @@ media:
 | `model` | `gemini-3.8-flash-tts` | Modelo de la Gemini API. `gemini-3.8-flash-lite-tts` cuesta menos; `gemini-3.1-flash-tts-preview` es el modelo preview anterior |
 | `style` | vacío | Cómo decirlo. Vacío: la voz tal cual |
 | `chunk_bytes` | `4500` | Fragmento más largo de un guion por petición, en bytes UTF-8. El modelo devuelve como mucho unos diez minutos de audio por petición |
+| `tier` | `flex` | `flex`: la mitad del precio, la misma petición, y la respuesta en minutos en lugar de segundos (hasta 15); cuando Google no tiene capacidad responde 429 o 503 y coursekit lo vuelve a intentar unas cuantas veces. `standard`: el precio completo y la respuesta más rápida |
+| `flex_fallback` | `true` | Cuando `flex` sigue sin capacidad tras los intentos, la petición va por el nivel estándar. `false`: falla en su lugar (código de salida 1), y no se paga nada a precio completo |
 
 `coursekit voice set PWD gemini` escribe en el curso el modelo vigente (`course.yaml › media.voice.model`): el curso conserva el modelo con el que empezó aunque cambie el valor por defecto, así que su locución nunca cambia de voz a mitad. Para pasar un curso a otro modelo, cambia esa clave y vuelve a producir su locución. Las voces son las de Gemini (`Aoede`, `Kore`, `Charon`, `Puck`…), sin idioma: el idioma es el del curso. La Gemini API marca todo el audio que genera con una marca de agua SynthID inaudible. En su nivel gratuito, Google puede usar lo que se envía para mejorar sus productos: para el contenido de un cliente, usa una clave con facturación.
+
+### El batch de la voz de Gemini
+
+Además de `flex`, la Gemini API tiene un **batch**: las peticiones de todo un curso se envían juntas en un trabajo y Google las responde en 24 horas como mucho (a menudo en minutos), a la misma mitad de precio. Nada espera la respuesta: las locuciones se ponen en cola, se envía el trabajo y se recogen después. Un curso guarda su cola en `media/tts-batch.yaml` (versionada: qué se envió, con qué modelo, voz y estilo, y cómo fue). Solo existe con la voz de Gemini.
+
+Tres comandos añaden locuciones a la cola con `--batch`, en lugar de locutarlas:
+
+| Comando | Qué va a la cola | Qué hace `collect` con ello |
+|---|---|---|
+| `coursekit video voice CODE ID --batch` | Las escenas de un montaje cuyo texto o voz cambió | Escribe su audio, alinea sus palabras (`stable-ts`) y anota su duración: `coursekit video render` sigue |
+| `coursekit media narrate CODE --batch` | Las escenas de las simulaciones por narrar | Escribe `media/files/<id>.mp3` y marca el recurso `produced` |
+| `coursekit tts --course CODE --in … --out … --batch` | Un guion | Escribe el fichero de `--out` |
+
+Después [`coursekit tts-batch`](03-commands.md#coursekit-tts-batch) `send CODE` sube la cola (un guion largo son varias peticiones, que se vuelven a unir al recogerlas) y crea el trabajo; `status CODE` dice cómo va; `collect CODE` escribe lo que llegó y deja en la cola lo que falló, para enviarlo otra vez. Un trabajo que no termina en 48 horas caduca sin resultados y todo vuelve a la cola. Crear un trabajo no es idempotente (enviar otra vez se pagaría dos veces), así que un segundo `send` se rechaza mientras hay uno en curso. Los recursos de la cola no están pendientes para el agente multimedia ni producidos: `media plan` y el handoff los dejan estar hasta que se recogen.
+
+En el [modo handoff](02-workflow.md#modo-handoff), cuando el agente multimedia deja locuciones en la cola, el handoff las envía y se detiene, diciendo que están en camino; `coursekit handoff CODE` más tarde las recoge (si el trabajo terminó; si no, vuelve a detenerse) y sigue con lo que dependía de ellas.
 
 ## `coursekit tts`
 

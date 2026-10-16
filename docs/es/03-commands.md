@@ -82,7 +82,7 @@ Mientras un curso está en `on_hold`, los comandos que cambian su trabajo se rec
 | Verificación y firma | `coursekit verify`, `coursekit paths`, `coursekit reviewed`, `coursekit approve` |
 | Estado del curso y revisión del cliente | `coursekit hold`, `coursekit resume`, `coursekit client` |
 | Lanzar agentes | `coursekit write`, `coursekit review`, `coursekit run` |
-| Multimedia | `coursekit media`, `coursekit video`, `coursekit voice`, `coursekit tts`, `coursekit subtitles`, `coursekit theme`, `coursekit capture` |
+| Multimedia | `coursekit media`, `coursekit video`, `coursekit voice`, `coursekit tts`, `coursekit tts-batch`, `coursekit subtitles`, `coursekit theme`, `coursekit capture` |
 | Montaje y entrega | `coursekit assemble`, `coursekit preview`, `coursekit directives`, `coursekit delivery`, `coursekit publish`, `coursekit catalog` |
 
 ## Proyecto y máquina
@@ -780,7 +780,7 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
                 [--alt ALT] [--transcript TRANSCRIPT] [--subtitles-path SUBTITLES_PATH]
                 [--made-with MADE_WITH] [--download DOWNLOAD] [--download-title DOWNLOAD_TITLE]
                 [--download-asset-path DOWNLOAD_ASSET_PATH] [--depicts {interface,concept}] [--force]
-                [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all] [--clean] [--size SIZE] [--fix] [--frames FRAMES]
+                [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all] [--clean] [--size SIZE] [--fix] [--frames FRAMES] [--batch]
                 {extract,plan,providers,set,upload,redo,embed,fit,render,narrate,optimize,adopt,check,sheet,transcript} [code] [id] [more ...]
 ```
 
@@ -806,6 +806,7 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
 | `--method METHOD` | por defecto `PUT` | `upload`: método HTTP. |
 | `--fix` | indicador | Solo `check`: lleva a la sonoridad objetivo los audios y vídeos que no la tienen, en el sitio. |
 | `--frames FRAMES` | número; por defecto `media › checks › sheet_frames` | Solo `sheet`: fotogramas de la hoja de contactos. |
+| `--batch` | indicador | Solo `narrate`: añade las escenas a la cola del batch de Gemini en lugar de locutarlas ([`coursekit tts-batch`](#coursekit-tts-batch)). |
 | `--size SIZE` | `ANCHOxALTO` | `fit` (obligatorio) y `render`: el tamaño, p. ej. `1920x1080`. |
 | `--all` | indicador | Solo en `redo`: rehace todos los recursos que usan el tema, no solo los hechos con otros tokens. |
 | `--clean` | indicador | Solo en `redo`: los recursos olvidan además su fichero, texto alternativo, transcripción, subtítulos y la herramienta que los hizo (los ficheros se quedan en disco), para lo que se hace de nuevo desde cero, como un recurso que mostraba una interfaz inventada. |
@@ -823,7 +824,7 @@ Acciones:
 - `render`: dibuja el `.svg` del recurso `id` como un PNG a su lado (`<nombre>.png`), con el Chrome, Chromium o Edge de la máquina y sin interfaz, al tamaño de su `viewBox` o de `--size`: para mirarlo antes de marcarlo producido, y el PNG que necesita creator. Código de salida 1 si el fichero no es un SVG o no hay ese navegador.
 - `optimize`: aligera los ficheros de los recursos `produced` o `uploaded`, en su sitio y en local: las imágenes (PNG, JPEG, WebP) se reducen a `optimize.image.max_width` y se recomprimen, los vídeos MP4 se recodifican como H.264/AAC con tope en `optimize.video.max_height` (necesita `ffmpeg`); un fichero solo se sustituye si el resultado pesa menos. SVG, GIF, audio y paquetes se dejan como están. Con ids, esos recursos; sin ellos, todos. Imprime `<id>: <fichero>: <antes> → <después> bytes` por fichero, o `nada que aligerar`. Ejecútalo antes de subir a creator; el backend html hace lo equivalente con la copia que pone en el paquete. Los límites están en `media.yaml › optimize` ([Medios más ligeros](07-media.md#medios-más-ligeros)). Código de salida 1 si falta `ffmpeg` o falla. Se rechaza mientras el curso está en pausa.
 - `adopt`: toma una imagen que ya existe, como una de un paquete de eXeLearning importado (`brief/text/media/<paquete>/<fichero>`), como el recurso `id`: `--file` es el origen (una ruta desde la carpeta del curso o del proyecto), se copia a `media/files/<id>.<ext>` y el recurso queda `produced` con `--alt` y `recipe: imported`, así no se produce de nuevo. Código de salida 2 sin `id` o `--file`; código 1 si el fichero o el recurso no existe. Se rechaza mientras el curso está en pausa.
-- `narrate`: produce la narración de las escenas de las simulaciones con `audio: true` (los recursos `VO-…`) con las voces configuradas: el personaje de una conversación con su propia voz (`coursekit voice set --character`), el resto con la voz del curso. Por defecto las pendientes; con ids, esas; con `--all`, todas de nuevo. Cada una va a `media/files/<id>.mp3`, con el texto como transcripción, y queda `produced`. Escribe `N narración(es) de escena producidas`; código de salida 1 si falla el proveedor de voz (lo producido antes se conserva).
+- `narrate`: produce la narración de las escenas de las simulaciones con `audio: true` (los recursos `VO-…`) con las voces configuradas: el personaje de una conversación con su propia voz (`coursekit voice set --character`), el resto con la voz del curso. Por defecto las pendientes; con ids, esas; con `--all`, todas de nuevo. Cada una va a `media/files/<id>.mp3`, con el texto como transcripción, y queda `produced`. Escribe `N narración(es) de escena producidas`; código de salida 1 si falla el proveedor de voz (lo producido antes se conserva). Con `--batch` (solo la voz de Gemini) las escenas van a la cola del batch y siguen `pending` hasta que [`coursekit tts-batch collect`](#coursekit-tts-batch) las escribe y las marca `produced`.
 - `check`: revisa los audios y vídeos `produced` o `uploaded` (los nombrados, o todos): su sonoridad frente a `media › checks` (EBU R128 para la web: -16 LUFS, pico -1 dBTP, medidos con ffmpeg); los subtítulos (el `.vtt` o `.srt` junto al fichero, con su nombre) más rápidos de `max_cps` caracteres por segundo; y, en un vídeo con sus escenas descritas ([Accesibilidad de los vídeos](07-media.md#accesibilidad-de-los-vídeos)), el texto de pantalla que su locución no dice. Una línea `AVISO <id> [<código>] <qué>` por cada cosa (códigos `LOUDNESS`, `CAPTIONS_FAST`, `NOT_SAID`, `NOT_CHECKED`), y código de salida 1 mientras quede alguna; `--fix` lleva la sonoridad a su objetivo en el sitio (dos pasadas de `loudnorm`; la imagen de un vídeo se copia, no se vuelve a codificar). Necesita `ffmpeg` y `ffprobe`.
 - `sheet`: la hoja de contactos del vídeo `id`: `--frames` fotogramas (por defecto 24) repartidos a lo largo de su duración en una sola imagen, con el tiempo de cada uno, en `.cache/media/<CODE>/<id>-sheet.png`, para mirar un vídeo sin reproducirlo.
 - `transcript`: a partir de las escenas descritas en `media/scripts/<id>.scenes.yaml`, escribe la transcripción accesible del vídeo `id` (escena a escena, el minuto, lo que se ve y lo que se dice) en `<fichero>.transcript.txt` y una pista WebVTT de descripciones en `<fichero>.descriptions.vtt`, y hace de esa transcripción la del recurso (la que el montaje lleva al curso). Mira [Accesibilidad de los vídeos](07-media.md#accesibilidad-de-los-vídeos).
@@ -845,7 +846,7 @@ coursekit media set PWD U1-S2-M1 --status produced --recipe agent-svg --file med
 Un vídeo como datos: un montaje de escenas (`media/scripts/<id>.video.yaml`) que se renderiza con la biblioteca de escenas de coursekit en Remotion, con el tema del curso; mira [Montaje de vídeo](07-media.md#montaje-de-vídeo). Quién: agentes (el agente de multimedia) y personas.
 
 ```
-coursekit video {new,check,voice,preview,render,catalog,export} code [id]
+coursekit video [--batch] {new,check,voice,preview,render,catalog,export} code [id]
 ```
 
 | Argumento | Valores / por defecto | Significado |
@@ -853,12 +854,13 @@ coursekit video {new,check,voice,preview,render,catalog,export} code [id]
 | `action` | `new`, `check`, `voice`, `preview`, `render`, `catalog`, `export` | Mira abajo. |
 | `code` | código o carpeta del curso | Curso. |
 | `id` | id del recurso | El recurso de vídeo; todas las acciones salvo `catalog` lo necesitan (código de salida 2 sin él). |
+| `--batch` | indicador | Solo `voice`: añade las escenas a la cola del batch de Gemini en lugar de locutarlas. |
 
 Acciones:
 
 - `new`: un primer montaje para el recurso (una apertura con su título, una escena por rellenar y un cierre) en `media/scripts/<id>.video.yaml`. Nunca escribe sobre uno que exista.
 - `check`: el montaje antes de su voz y su render: el formato; cada escena tiene un id, un `type` conocido, sus props obligatorias, sus medios en la carpeta de medios del curso, y `says` o `duration`; textos más largos de lo que cabe en la escena (`TEXT_LONG`); texto en pantalla que la locución no dice (`NOT_SAID`, salvo que la escena lo describa con `shows`); capas de un tipo desconocido (`UNKNOWN_LAYER`) o ancladas a palabras que su escena no dice (`ANCHOR_NOT_SAID`). Una línea por hallazgo, `ERROR` o `AVISO`, con la escena y un código; código de salida 1 mientras haya un error.
-- `voice`: la locución de cada escena con la voz del curso, y los tiempos de sus palabras (`media/files/<id>/<escena>.mp3` y `.words.json`); solo se vuelven a hacer las escenas cuyo texto o voz cambió. Necesita una voz (mira [`coursekit voice`](#coursekit-voice)) y, salvo con ElevenLabs, `stable-ts`.
+- `voice`: la locución de cada escena con la voz del curso, y los tiempos de sus palabras (`media/files/<id>/<escena>.mp3` y `.words.json`); solo se vuelven a hacer las escenas cuyo texto o voz cambió. Necesita una voz (mira [`coursekit voice`](#coursekit-voice)) y, salvo con ElevenLabs, `stable-ts`. Con `--batch` (solo la voz de Gemini) las escenas cuyo texto o voz cambió van a la cola del batch; [`coursekit tts-batch collect`](#coursekit-tts-batch) escribe su audio y los tiempos de sus palabras, y `render` sigue desde ahí.
 - `preview`: un fotograma de cada escena (al 70 %, cuando ya ha entrado lo que entra), pequeño, en una sola imagen: `.cache/media/<CODE>/<id>-preview.png`, antes del render completo.
 - `render`: el vídeo en `media/files/<id>.mp4` (su voz a la sonoridad de `media › checks`), con sus subtítulos (`.vtt`, uno por frase que sigue hasta que empieza el siguiente), sus palabras (`.words.json`), sus escenas descritas (`media/scripts/<id>.scenes.yaml`) y su transcripción accesible y pista de descripciones ([Accesibilidad de los vídeos](07-media.md#accesibilidad-de-los-vídeos)); el recurso pasa a `produced` con la receta `montage` (`screen-recording` cuando muestra una interfaz real y tiene un `screencast` de una grabación real). Como todo recurso generado, dice antes qué muestra (`coursekit media set CODE ID --depicts`).
 - `catalog`: las escenas y las capas que puede usar el curso, de la biblioteca, del proyecto y del curso (cuál tapa a cuál), con qué es cada una, de qué está hecha y sus props (tipo, obligatoria, máximo de caracteres, en pantalla); y los átomos y moléculas de la biblioteca, marcando los que sustituyen el proyecto o el curso.
@@ -905,7 +907,7 @@ coursekit voice set PWD azure --voice es-ES-ElviraNeural
 Produce la locución de un guion. Quién: agentes (el agente multimedia) y personas.
 
 ```
-coursekit tts [--course COURSE] [--engine {elevenlabs,azure,google,piper}] --in INPUT --out OUT [--voice VOICE] [--speaker SPEAKER] [--character CHARACTER]
+coursekit tts [--course COURSE] [--engine {elevenlabs,azure,google,gemini,piper}] --in INPUT --out OUT [--voice VOICE] [--speaker SPEAKER] [--character CHARACTER] [--batch]
 ```
 
 | Argumento | Valores / por defecto | Significado |
@@ -917,11 +919,41 @@ coursekit tts [--course COURSE] [--engine {elevenlabs,azure,google,piper}] --in 
 | `--voice VOICE` | texto | Voz, que sustituye a la del curso. |
 | `--speaker SPEAKER` | entero | Locutor de las voces Piper multilocutor. |
 | `--character CHARACTER` | nombre | Usa la voz de este personaje (`voice set --character`). Con Piper y sin voz propia, los locutores de la voz se turnan en el orden del reparto de la biblia narrativa (un borrador); con otro proveedor y sin voz propia falla y dice cómo fijarla. |
+| `--batch` | indicador | En lugar de locutar el guion, lo añade a la cola del batch de Gemini del curso ([`coursekit tts-batch`](#coursekit-tts-batch)). Necesita `--course`, la voz de Gemini y un `--out` dentro del proyecto, y rechaza `--engine`, `--voice` y `--speaker` (código de salida 2): el batch usa la voz del curso. |
 
 Falla con un mensaje (código de salida 1) cuando el proveedor no está configurado, cuando hay varios proveedores disponibles y no se ha elegido ninguno (usa `coursekit voice set`) o cuando no hay ninguno, cuando el fichero de `--in` no existe, cuando un programa que necesita (`ffmpeg`, `piper`) no está instalado o falla (`<programa> no está instalado o no se encuentra en el PATH (coursekit setup --media)`, `<programa> terminó con error (código N)`), y cuando la API de voz responde con un error o no se puede alcanzar (`<host> respondió <estado> <motivo>: revisa la clave, la región y la voz configuradas`, `no se pudo conectar con <host>: <motivo>`). ElevenLabs escribe además un fichero `.vtt` (subtítulos) junto al audio, con el nombre de `--out` y la extensión `.vtt` (`u1.mp3` da `u1.vtt`), a partir de las marcas de tiempo por carácter que devuelve la API, y los tiempos de cada palabra en `<nombre>.words.json` (`u1.words.json`); con los demás proveedores usa [`coursekit subtitles`](#coursekit-subtitles).
 
 ```
 coursekit tts --course PWD --in media/scripts/u1-s2-m1.txt --out media/files/u1-s2-m1.mp3
+```
+
+### `coursekit tts-batch`
+
+El batch de la voz de Gemini: las locuciones de un curso enviadas juntas, a mitad de precio, y recogidas horas después ([El batch de la voz de Gemini](07-media.md#el-batch-de-la-voz-de-gemini)). Quién: ambos (el handoff lo envía y lo recoge solo).
+
+```
+coursekit tts-batch {list,send,status,collect} code
+```
+
+| Argumento | Valores / por defecto | Significado |
+|---|---|---|
+| `action` | `list`, `send`, `status`, `collect` | Mira abajo. |
+| `code` | código del curso o carpeta | Curso. |
+
+Acciones:
+
+- `list`: el trabajo enviado, si lo hay, y cada locución de la cola (`media/tts-batch.yaml`) con su clase (`tts`, `video`, `narrate`), sus partes y su estado (`queued`, `sent`), y el error del último intento cuando falló.
+- `send`: sube lo que hay en la cola y crea un trabajo. Crear un trabajo no es idempotente (enviar otra vez se pagaría dos veces), así que se rechaza (código de salida 1) mientras hay uno en curso; y con la cola vacía. Un modelo por trabajo: las locuciones de otro modelo esperan al siguiente.
+- `status`: el estado del trabajo (`pending`, `running`, `succeeded`, `failed`, `cancelled`, `expired`) y sus cuentas.
+- `collect`: cuando el trabajo terminó, descarga sus resultados, escribe cada locución donde se pidió y termina aquello para lo que era (una escena de una simulación pasa a `produced`; una escena de un montaje recibe los tiempos de sus palabras). Lo que falló, o un trabajo que caducó, vuelve a la cola para enviarlo de nuevo; código de salida 1 cuando algo falló. Mientras el trabajo no ha terminado lo dice y no cambia nada.
+
+Código de salida 1 sin `GEMINI_API_KEY`, o cuando la Gemini API responde con un error.
+
+```
+coursekit video voice PWD U1-S2-M1 --batch
+coursekit tts-batch send PWD
+coursekit tts-batch status PWD
+coursekit tts-batch collect PWD
 ```
 
 ### `coursekit subtitles`

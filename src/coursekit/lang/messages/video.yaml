@@ -20,6 +20,8 @@ not_said: {es: "{prop} («{text}») está en pantalla y la locución no lo dice:
 voice_failed: {es: "la voz de la escena {scene} falló: {error}", en: "the voice of the scene {scene} failed: {error}"}
 voice_made: {es: "  voz de {scene}: {seconds} s", en: "  voice of {scene}: {seconds} s"}
 voice_done: {es: "{count} locución(es) nueva(s); las que no cambiaron se conservan", en: "{count} new narration(s); the ones that did not change are kept"}
+voice_queued: {es: "  {scene}: en la cola del batch de Gemini", en: "  {scene}: in the queue of the Gemini batch"}
+voice_queued_done: {es: "{count} locución(es) en la cola del batch; las que no cambiaron se conservan. Envíalas con coursekit tts-batch send", en: "{count} narration(s) in the batch queue; the ones that did not change are kept. Send them with coursekit tts-batch send"}
 voice_pending: {es: "la escena {scene} todavía no tiene su voz: coursekit video voice {code} {id}", en: "the scene {scene} has no voice yet: coursekit video voice {code} {id}"}
 has_errors: {es: "el montaje tiene {count} error(es): coursekit video check {code} {id}", en: "the montage has {count} error(s): coursekit video check {code} {id}"}
 no_workspace: {es: "falta el espacio de Remotion (tools/remotion con sus dependencias): coursekit setup --media", en: "the Remotion workspace is missing (tools/remotion with its dependencies): coursekit setup --media"}

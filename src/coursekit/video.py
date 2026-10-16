@@ -400,9 +400,10 @@ def _voice_record(course: dict, asset_id: str) -> dict:
         return {}
 
 
-def voice(course: dict, asset_id: str, say=print) -> int:
-    """The narration of each scene, with the timings of its words; only what changed is made again. How many were made."""
-    from coursekit import voices
+def voice(course: dict, asset_id: str, say=print, batch: bool = False) -> int:
+    """The narration of each scene, with the timings of its words; only what changed is made again. How many were made (with
+    `batch`, how many were put in the queue of the Gemini batch: `coursekit tts-batch collect` finishes them)."""
+    from coursekit import ttsbatch, voices
 
     data = load(course, asset_id)
     _ready(course, asset_id)
@@ -426,6 +427,16 @@ def voice(course: dict, asset_id: str, say=print) -> int:
             continue
         text = folder / f"{sid}.txt"
         text.write_text(says + "\n", encoding="utf-8")
+        if batch:
+            try:
+                queued = ttsbatch.add(course, "video", f"{asset_id}#{sid}", says, audio, asset=asset_id, scene=sid,
+                                      extra={"voice_key": key})
+            except (ttsbatch.BatchError, voices.VoiceError) as exc:
+                raise VideoError(str(exc)) from None
+            if queued:
+                say(t("video", "voice_queued", scene=sid))
+                made += 1
+            continue
         words.unlink(missing_ok=True)
         try:
             mediatools.tts(course, None, text, audio)
@@ -438,6 +449,22 @@ def voice(course: dict, asset_id: str, say=print) -> int:
         made += 1
     (folder / "voice.json").write_text(json.dumps(record, indent=1) + "\n", encoding="utf-8", newline="\n")
     return made
+
+
+def voice_collected(course: dict, asset_id: str, sid: str, key: str, audio: Path, says: str, say=print) -> None:
+    """A scene whose narration came in the Gemini batch: the timings of its words and its length, as `voice` leaves them."""
+    folder = voice_dir(course, asset_id)
+    text = folder / f"{sid}.txt"
+    text.write_text(says + "\n", encoding="utf-8")
+    (folder / f"{sid}.words.json").unlink(missing_ok=True)
+    try:
+        mediatools.subtitles(audio, text, folder / f"{sid}.vtt", language=coursemod.language(course))
+    except mediatools.ToolError as exc:
+        raise VideoError(t("video", "voice_failed", scene=sid, error=exc)) from None
+    record = _voice_record(course, asset_id)
+    record[sid] = {"key": key, "seconds": mediacheck.duration(audio)}
+    (folder / "voice.json").write_text(json.dumps(record, indent=1) + "\n", encoding="utf-8", newline="\n")
+    say(t("video", "voice_made", scene=sid, seconds=f"{record[sid]['seconds']:.1f}"))
 
 
 # ── the montage resolved: what Remotion renders ──────────────────────────────────────────────
