@@ -69,4 +69,5 @@ una hoja, sin render completo), `video render` (MP4, subtítulos, palabras, tran
   en lugar de los de la biblioteca (se copian sobre `kit/` al sincronizar; mismo nombre exportado; el catálogo los marca).
   Sin alias de webpack: no hace falta tocar la configuración de Remotion del proyecto. Probado con un `Heading` del
   proyecto, logo y movimiento `calm`.
-- [ ] Fase 4 (opcional): exportar a DaVinci (FCPXML 1.10 y OTIO).
+- [x] Fase 4 (sin commit todavía): `coursekit video export` (escenas limpias exactas al fotograma, capas en ProRes 4444 con
+  alfa, voces, SRT, `timeline.fcpxml` y `timeline.otio`). Probado de punta a punta; falta abrirlo en DaVinci de verdad.

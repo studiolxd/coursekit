@@ -255,3 +255,79 @@ def test_an_atom_of_the_project_or_of_a_course_takes_the_place_of_the_library(co
     (atoms / "Heading.tsx").write_text("export default function H() { return null; }\n", encoding="utf-8")
     with pytest.raises(video.VideoError, match="must export Heading"):
         video.sync(data)
+
+
+# ── for an editor ────────────────────────────────────────────────────────────────────────────
+
+from coursekit import videoedit  # noqa: E402
+
+
+def sample_timeline(tmp_path):
+    scenes = videoedit.Track("video", "scenes", [videoedit.Clip("a", tmp_path / "a.mp4", 0, 60),
+                                                  videoedit.Clip("b", tmp_path / "b.mp4", 60, 90)])
+    layers = videoedit.Track("video", "layers", [videoedit.Clip("b-1", tmp_path / "b-1.mov", 75, 30)])
+    voices = videoedit.Track("audio", "voices", [videoedit.Clip("voice a", tmp_path / "a.mp3", 0, 50, 50),
+                                                  videoedit.Clip("voice b", tmp_path / "b.mp3", 60, 80, 80)])
+    return videoedit.Timeline("PWD U1", 30, 1920, 1080, 150, [scenes, layers, voices], [(0, "a"), (60, "b")])
+
+
+def test_the_fcpxml_puts_layers_above_and_voices_below_each_scene(tmp_path):
+    import xml.etree.ElementTree as ET
+
+    root = ET.fromstring(videoedit.fcpxml(sample_timeline(tmp_path)).split("\n", 2)[2])
+    assert root.get("version") == "1.10" and root.find("resources/format").get("frameDuration") == "1/30s"
+    spine = root.find("library/event/project/sequence/spine")
+    first, second = spine.findall("asset-clip")
+    assert (first.get("offset"), first.get("duration"), second.get("offset")) == ("0s", "60/30s", "60/30s")
+    connected = {c.get("name"): (c.get("lane"), c.get("offset"), c.get("duration")) for c in second.findall("asset-clip")}
+    assert connected == {"b-1": ("1", "15/30s", "30/30s"), "voice b": ("-1", "0s", "80/30s")}
+    assert [m.get("value") for m in first.findall("marker")] == ["a"]
+    sources = [a.find("media-rep").get("src") for a in root.findall("resources/asset")]
+    assert all(s.startswith("file://") for s in sources) and len(sources) == 5
+
+
+def test_the_otio_has_a_gap_wherever_a_track_has_no_clip(tmp_path):
+    data = json.loads(videoedit.otio(sample_timeline(tmp_path)))
+    scenes, layers, voices = data["tracks"]["children"]
+    assert [c["OTIO_SCHEMA"] for c in layers["children"]] == ["Gap.1", "Clip.2"]
+    assert layers["children"][0]["source_range"]["duration"]["value"] == 75
+    assert [c["OTIO_SCHEMA"] for c in voices["children"]] == ["Clip.2", "Gap.1", "Clip.2"] and voices["kind"] == "Audio"
+    assert [m["name"] for m in scenes["markers"]] == ["a", "b"] and data["OTIO_SCHEMA"] == "Timeline.1"
+
+
+def test_captions_for_an_editor_are_srt():
+    srt = videoedit.srt("WEBVTT\n\n1\n00:00:01.500 --> 00:00:03.250\nHola & adiós.\n")
+    assert srt == "1\n00:00:01,500 --> 00:00:03,250\nHola & adiós.\n\n"
+
+
+def test_export_leaves_each_piece_apart_and_the_timeline(voiced, course, monkeypatch):  # noqa: F811
+    import shutil as sh
+    import subprocess
+
+    if not sh.which("ffmpeg"):
+        pytest.skip("ffmpeg is not installed")
+    data = json.loads(json.dumps(MONTAGE))
+    data["scenes"][1]["layers"] = [{"type": "callout", "props": {"text": "Doce o más"}, "at": "doce", "until": "más"}]
+    voiced = montage(course, data)
+    video.voice(voiced, "U1-S2-M1", lambda m: None)
+    (course.parent.parent / "tools" / "remotion" / "node_modules").mkdir(parents=True)
+    rendered = []
+
+    def remotion(root, args):
+        rendered.append(args)
+        out = next(a for a in args if a.endswith((".mp4", ".mov")))
+        frames = 360 if out.endswith("clean.mp4") else 57
+        subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-f", "lavfi", "-i", "testsrc2=size=320x180:rate=30",
+                        "-frames:v", str(frames), "-pix_fmt", "yuv420p", out], check=True)
+
+    monkeypatch.setattr(video, "_remotion", remotion)
+    done = video.export(voiced, "U1-S2-M1", lambda m: None)
+    folder = course / "media" / "edit" / "U1-S2-M1"
+    assert done == {"folder": folder, "scenes": 3, "layers": 1, "voices": 2}
+    assert sorted(p.name for p in (folder / "scenes").iterdir()) == ["01-opening.mp4", "02-length.mp4", "03-close.mp4"]
+    assert (folder / "layers" / "length-1.mov").exists() and not (folder / "clean.mp4").exists()
+    assert any("--prores-profile=4444" in a for a in rendered[1]) and "--frames=180-236" in rendered[1]
+    props = json.loads((course.parent.parent / ".cache" / "video" / "PWD" / "U1-S2-M1.props.json").read_text(encoding="utf-8"))
+    assert props["mode"] == {"layer": "length-1"}
+    assert "timeline.fcpxml" in [p.name for p in folder.iterdir()]
+    assert (folder / "captions.srt").read_text(encoding="utf-8").startswith("1\n")

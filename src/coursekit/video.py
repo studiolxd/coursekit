@@ -678,3 +678,69 @@ def new(course: dict, asset_id: str) -> Path:
     path.write_text(t("video", "skeleton_header") + "\n" + yaml.safe_dump(skeleton, allow_unicode=True, sort_keys=False),
                     encoding="utf-8", newline="\n")
     return path
+
+
+# ── for an editor ────────────────────────────────────────────────────────────────────────────
+
+def export_dir(course: dict, asset_id: str) -> Path:
+    return course["_dir"] / "media" / "edit" / asset_id
+
+
+def export(course: dict, asset_id: str, say=print) -> dict:
+    """The pieces of the video, apart, and its timeline for an editor (DaVinci Resolve, Final Cut, Premiere): each scene clean
+    (without its layers, without sound), each layer alone with transparency (ProRes 4444), the voice of each scene, the
+    captions in SRT, and the timeline in FCPXML 1.10 and OpenTimelineIO, in media/edit/<id>/."""
+    from coursekit import videoedit
+
+    resolved = resolve(course, asset_id)
+    root = sync(course)
+    media = course["_dir"] / "media"
+    out = export_dir(course, asset_id)
+    shutil.rmtree(out, ignore_errors=True)
+    for folder in ("scenes", "layers", "voices"):
+        (out / folder).mkdir(parents=True, exist_ok=True)
+    fps = resolved["fps"]
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffmpeg:
+        raise VideoError(t("redact", "ffmpeg_missing"))
+    clean = out / "clean.mp4"
+    say(t("video", "export_step", what="clean"))
+    props = _props_file(course, asset_id, {**resolved, "mode": "clean"})
+    _remotion(root, ["render", f"{KIT}/entry.ts", "Montage", str(clean), f"--props={props}", f"--public-dir={media}", "--muted",
+                     "--log=error"])
+    scenes_track, layers_track, voices_track = videoedit.Track("video", "scenes"), videoedit.Track("video", "layers"), \
+        videoedit.Track("audio", "voices")
+    markers = []
+    for n, scene in enumerate(resolved["scenes"], 1):
+        piece = out / "scenes" / f"{n:02d}-{scene['id']}.mp4"
+        first, last = scene["from"], scene["from"] + scene["frames"] - 1  # by the number of the frame: exact, never rounded
+        done = subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-i", str(clean), "-vf",
+                               f"select='between(n\\,{first}\\,{last})',setpts=N/FRAME_RATE/TB", "-r", str(fps), "-c:v", "libx264",
+                               "-crf", "16", "-pix_fmt", "yuv420p", "-an", str(piece)], capture_output=True, text=True, check=False)
+        if done.returncode != 0:
+            raise VideoError(t("redact", "encode_failed", reason=([*(done.stderr or "?").strip().splitlines(), "?"])[0]))
+        scenes_track.clips.append(videoedit.Clip(scene["id"], piece, scene["from"], scene["frames"]))
+        markers.append((scene["from"], scene["id"]))
+        if scene["audio"]:
+            voice = out / "voices" / f"{n:02d}-{scene['id']}.mp3"
+            shutil.copy2(media / scene["audio"], voice)
+            seconds = float(_voice_record(course, asset_id).get(scene["id"], {}).get("seconds") or scene["frames"] / fps)
+            length = min(scene["frames"], round(seconds * fps))
+            voices_track.clips.append(videoedit.Clip(f"voice {scene['id']}", voice, scene["from"], length, round(seconds * fps)))
+        for layer in scene["layers"]:
+            say(t("video", "export_step", what=layer["id"]))
+            piece = out / "layers" / f"{layer['id']}.mov"
+            first = scene["from"] + layer["from"]
+            props = _props_file(course, asset_id, {**resolved, "mode": {"layer": layer["id"]}})
+            _remotion(root, ["render", f"{KIT}/entry.ts", "Montage", str(piece), f"--props={props}", f"--public-dir={media}",
+                             f"--frames={first}-{first + layer['frames'] - 1}", "--codec=prores", "--prores-profile=4444",
+                             "--pixel-format=yuva444p10le", "--image-format=png", "--muted", "--log=error"])
+            layers_track.clips.append(videoedit.Clip(layer["id"], piece, first, layer["frames"]))
+    clean.unlink(missing_ok=True)
+    vtt, _ = _captions(resolved)
+    (out / "captions.srt").write_text(videoedit.srt(vtt), encoding="utf-8", newline="\n")
+    timeline = videoedit.Timeline(f"{course['code']} {asset_id}", fps, resolved["width"], resolved["height"], resolved["frames"],
+                                  [scenes_track, layers_track, voices_track], markers)
+    (out / "timeline.fcpxml").write_text(videoedit.fcpxml(timeline), encoding="utf-8", newline="\n")
+    (out / "timeline.otio").write_text(videoedit.otio(timeline), encoding="utf-8", newline="\n")
+    return {"folder": out, "scenes": len(scenes_track.clips), "layers": len(layers_track.clips), "voices": len(voices_track.clips)}

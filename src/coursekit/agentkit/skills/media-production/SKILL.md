@@ -168,7 +168,8 @@ credits.
   `coursekit video new <CODE> <id>`, fill it, `coursekit video check <CODE> <id>` until it passes, `coursekit video voice`,
   `coursekit video preview` (open the image it prints and look at every scene), `coursekit video render`, which leaves the
   video, its captions, its words and its accessible transcript and marks it `produced`. A video made by hand as a Remotion
-  composition (recipe `remotion`) is still fine when a montage cannot tell it.
+  composition (recipe `remotion`) is still fine when a montage cannot tell it. When a person wants to retouch a video by
+  hand, `coursekit video export <CODE> <id>` leaves its pieces and its timeline for DaVinci Resolve, Final Cut or Premiere.
 - **Video made by hand** — Remotion composition with the script's scenes, diagrams and tokens; voice-over with
   `coursekit tts`; captions (`.vtt`) always. Describe its scenes in `media/scripts/<id>.scenes.yaml` (the `text` on screen,
   what it `shows`, what it `says`): what matters on screen is also said. Look at the render with

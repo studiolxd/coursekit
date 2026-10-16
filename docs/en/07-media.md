@@ -217,6 +217,8 @@ The tokens reach the video as data, so a course with another theme gives another
 
 **Pieces of the project in place of the library's.** An atom or a molecule of the project (`tools/remotion/src/atoms/<Name>.tsx` or `src/molecules/<Name>.tsx`), or of a course (`video/atoms/<Name>.tsx`, `video/molecules/<Name>.tsx`), takes the place of the one of the library with that name in every scene: a project with a strong brand redoes its `Heading` or its `Card` and every scene shows it, without touching the scenes. It exports the same name with the same props (`coursekit video` refuses another name, or one the library does not have); start from the file of the library in `tools/remotion/kit/`. `coursekit video catalog` marks the pieces replaced. The style of the videos (motion, background, logo) is set in [`video`](04-configuration.md#video-the-style-of-the-videos-made-as-a-montage).
 
+**To retouch it by hand.** `coursekit video export CODE ID` leaves the pieces of the video apart (each scene clean, each layer with transparency, each voice, the captions) and its timeline in FCPXML 1.10 and OpenTimelineIO, which DaVinci Resolve, Final Cut and Premiere open with every piece in its place.
+
 When no scene tells an idea, the media agent creates one, composed from the atoms and molecules (importing them from `"../../../kit"`, the same in a scene of the project and of a course), so the library of the project grows with use. The rules of a scene: everything moves with the frame; colours and fonts only from the theme; what enters with a word enters when the narration says it; media by their path inside the media folder of the course; nothing from the network.
 
 ## Accessibility of videos

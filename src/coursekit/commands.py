@@ -332,6 +332,10 @@ def cmd_video(args: argparse.Namespace) -> int:
             print(t("video", "voice_done", count=made))
         elif args.action == "preview":
             print(t("video", "preview", path=videomod.preview(course, args.id).relative_to(root).as_posix()))
+        elif args.action == "export":
+            done = videomod.export(course, args.id)
+            print(t("video", "exported", path=done["folder"].relative_to(root).as_posix(), scenes=done["scenes"], layers=done["layers"],
+                    voices=done["voices"]))
         elif args.action == "render":
             done = videomod.render(course, args.id)
             print(t("video", "rendered", path=done["video"].relative_to(root).as_posix(), seconds=f"{done['seconds']:.1f}",
@@ -1328,7 +1332,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.set_defaults(func=cmd_media)
 
     p = sub.add_parser("video", help=t("commands", "help_video"))
-    p.add_argument("action", choices=("new", "check", "voice", "preview", "render", "catalog"))
+    p.add_argument("action", choices=("new", "check", "voice", "preview", "render", "catalog", "export"))
     p.add_argument("code")
     p.add_argument("id", nargs="?")
     p.set_defaults(func=cmd_video)

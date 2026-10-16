@@ -841,12 +841,12 @@ coursekit media set PWD U1-S2-M1 --status produced --recipe agent-svg --file med
 A video as data: a montage of scenes (`media/scripts/<id>.video.yaml`) rendered with the library of scenes of coursekit in Remotion, in the theme of the course; see [Video montage](07-media.md#video-montage). Who: agents (the media agent) and people.
 
 ```
-coursekit video {new,check,voice,preview,render,catalog} code [id]
+coursekit video {new,check,voice,preview,render,catalog,export} code [id]
 ```
 
 | Argument | Values / default | Meaning |
 |---|---|---|
-| `action` | `new`, `check`, `voice`, `preview`, `render`, `catalog` | See below. |
+| `action` | `new`, `check`, `voice`, `preview`, `render`, `catalog`, `export` | See below. |
 | `code` | course code or folder | Course. |
 | `id` | asset id | The video resource; every action but `catalog` needs it (exit code 2 without it). |
 
@@ -859,7 +859,9 @@ Actions:
 - `render`: the video in `media/files/<id>.mp4` (its voice at the loudness of `media › checks`), with its captions (`.vtt`, a cue per sentence that stays until the next one), its words (`.words.json`), its scenes described (`media/scripts/<id>.scenes.yaml`) and its accessible transcript and track of descriptions ([Accessibility of videos](07-media.md#accessibility-of-videos)); the asset becomes `produced` with the recipe `montage` (`screen-recording` when it shows a real interface and has a `screencast` of a real recording). Like any generated resource, it says first what it shows (`coursekit media set CODE ID --depicts`).
 - `catalog`: the scenes and the layers the course can use, from the library, the project and the course (which hides which), with what each one is, what it is built from and its props (type, required, maximum characters, on screen); and the atoms and molecules of the library, marking those the project or the course replaces.
 
-`voice`, `preview` and `render` are refused while the course is on hold. `preview` and `render` need the Remotion workspace (`coursekit setup --media`) and refuse a montage with errors (`coursekit video check`).
+- `export`: the pieces of the video, apart, and its timeline, to retouch it by hand in an editor (DaVinci Resolve, Final Cut, Premiere), in `media/edit/<id>/` (ignored by git): each scene clean, without its layers or sound (`scenes/NN-<scene>.mp4`, exact to the frame); each layer alone with transparency (`layers/<layer>.mov`, ProRes 4444); the voice of each scene (`voices/`); the captions in `captions.srt`; and the timeline in `timeline.fcpxml` (FCPXML 1.10: the scenes in the main storyline, the layers connected above, the voices below, a marker on each scene; in DaVinci, File › Import › Timeline) and `timeline.otio` (OpenTimelineIO). The paths inside are absolute: the export is for this machine.
+
+`voice`, `preview`, `render` and `export` are refused while the course is on hold. `preview`, `render` and `export` need the Remotion workspace (`coursekit setup --media`) and refuse a montage with errors (`coursekit video check`).
 
 ```
 coursekit video new PWD U1-S2-M1
@@ -868,6 +870,7 @@ coursekit video voice PWD U1-S2-M1
 coursekit video preview PWD U1-S2-M1
 coursekit video render PWD U1-S2-M1
 coursekit video catalog PWD
+coursekit video export PWD U1-S2-M1
 ```
 
 ### `coursekit voice`

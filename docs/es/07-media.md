@@ -217,6 +217,8 @@ Los tokens llegan al vídeo como datos, así que un curso con otro tema da otro 
 
 **Piezas del proyecto en lugar de las de la biblioteca.** Un átomo o una molécula del proyecto (`tools/remotion/src/atoms/<Nombre>.tsx` o `src/molecules/<Nombre>.tsx`), o de un curso (`video/atoms/<Nombre>.tsx`, `video/molecules/<Nombre>.tsx`), sustituye en todas las escenas a la de la biblioteca con ese nombre: un proyecto con una marca fuerte rehace su `Heading` o su `Card` y todas las escenas lo muestran, sin tocar las escenas. Exporta el mismo nombre con las mismas props (`coursekit video` rechaza otro nombre, o uno que la biblioteca no tiene); parte del fichero de la biblioteca en `tools/remotion/kit/`. `coursekit video catalog` marca las piezas sustituidas. El estilo de los vídeos (movimiento, fondo, logo) se fija en [`video`](04-configuration.md#video-el-estilo-de-los-vídeos-hechos-como-montaje).
 
+**Para retocarlo a mano.** `coursekit video export CODE ID` deja las piezas del vídeo por separado (cada escena limpia, cada capa con transparencia, cada voz, los subtítulos) y su línea de tiempo en FCPXML 1.10 y OpenTimelineIO, que DaVinci Resolve, Final Cut y Premiere abren con cada pieza en su sitio.
+
 Cuando ninguna escena cuenta una idea, el agente de multimedia crea una, compuesta con los átomos y las moléculas (importándolos de `"../../../kit"`, igual en una escena del proyecto que en una del curso), así que la biblioteca del proyecto crece con el uso. Las reglas de una escena: todo se mueve con el fotograma; colores y tipografías solo del tema; lo que entra con una palabra entra cuando la locución la dice; medios por su ruta dentro de la carpeta de medios del curso; nada de la red.
 
 ## Accesibilidad de los vídeos
