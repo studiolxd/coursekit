@@ -89,18 +89,6 @@ class Backend(Protocol):
 
     def screenshot(self) -> bytes: ...
     def click(self, x: float, y: float, button: str, count: int) -> None: ...
-    def point(self, x: float, y: float, note: str = "") -> None:
-        """Marks a place of the screen without touching it: on replay it is written down, for a zoom of the video."""
-        self.check()
-        cx, cy = self._to_css(x, y)
-        step = {"x": round(cx), "y": round(cy)}
-        target = self.backend.target_at(cx, cy)
-        if target:
-            step["target"] = target
-        if note.strip():
-            step["note"] = note.strip()
-        self.steps.append({"point": step})
-
     def move(self, x: float, y: float) -> None: ...
     def drag(self, x1: float, y1: float, x2: float, y2: float) -> None: ...
     def scroll(self, x: float, y: float, dx: float, dy: float) -> None: ...
@@ -234,6 +222,18 @@ class Session:
         if count != 1:
             step["count"] = count
         self.steps.append({"click": step})
+
+    def point(self, x: float, y: float, note: str = "") -> None:
+        """Marks a place of the screen without touching it: on replay it is written down, for a zoom of the video."""
+        self.check()
+        cx, cy = self._to_css(x, y)
+        step = {"x": round(cx), "y": round(cy)}
+        target = self.backend.target_at(cx, cy)
+        if target:
+            step["target"] = target
+        if note.strip():
+            step["note"] = note.strip()
+        self.steps.append({"point": step})
 
     def move(self, x: float, y: float) -> None:
         self.check()
