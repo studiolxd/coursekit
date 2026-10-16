@@ -51,3 +51,7 @@ override_unknown: {es: "{path}: la biblioteca no tiene ninguna pieza {name} en {
 override_export: {es: "{path} tiene que exportar {name} (export const {name}), con las mismas props que la de la biblioteca", en: "{path} must export {name} (export const {name}), with the same props as the one of the library"}
 export_step: {es: "  exportando {what}…", en: "  exporting {what}…"}
 exported: {es: "para un editor, en {path}: {scenes} escenas limpias, {layers} capas con transparencia, {voices} voces, captions.srt y la línea de tiempo (timeline.fcpxml para DaVinci Resolve, Final Cut o Premiere; timeline.otio)", en: "for an editor, in {path}: {scenes} clean scenes, {layers} layers with transparency, {voices} voices, captions.srt and the timeline (timeline.fcpxml for DaVinci Resolve, Final Cut or Premiere; timeline.otio)"}
+fonts_missing: {es: "la hoja de fuentes de los vídeos ({path}, config/video.yaml › fonts) no existe", en: "the stylesheet of fonts of the videos ({path}, config/video.yaml › fonts) does not exist"}
+font_remote: {es: "{path} carga {url} de internet: las fuentes de un vídeo tienen que estar en el proyecto (descárgalas junto a la hoja)", en: "{path} loads {url} from the internet: the fonts of a video must be in the project (download them next to the stylesheet)"}
+font_file_missing: {es: "{path} apunta a {file}, que no está en el proyecto", en: "{path} points to {file}, which is not in the project"}
+fonts_empty: {es: "{path} no declara ninguna fuente (@font-face con font-family)", en: "{path} declares no font (@font-face with font-family)"}

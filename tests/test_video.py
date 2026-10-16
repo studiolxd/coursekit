@@ -242,6 +242,31 @@ def test_the_style_of_the_project_and_of_a_course_shape_the_video(voiced, course
         video.resolve(montage(course), "U1-S2-M1")
 
 
+def test_the_shapes_weights_and_fonts_of_a_brand_go_inside_the_video(voiced, course):  # noqa: F811
+    video.voice(voiced, "U1-S2-M1", lambda m: None)
+    root = course.parent.parent
+    resolved = video.resolve(montage(course), "U1-S2-M1")["style"]
+    assert resolved["shapes"] == {} and resolved["weights"] == {} and resolved["fonts"] is None  # what each piece draws
+    fonts = root / "theme" / "branding" / "fonts"
+    (fonts / "acme-sans").mkdir(parents=True)
+    (fonts / "acme-sans" / "acme-sans-latin.woff2").write_bytes(b"wOF2font")
+    (fonts / "fonts.css").write_text("/* the ACME fonts */\n@font-face {\n  font-family: 'ACME Sans';\n  font-weight: 1 1000;\n"
+                                     "  src: url('./acme-sans/acme-sans-latin.woff2') format('woff2');\n}\n", encoding="utf-8")
+    write_style(root, shapes={"radius": 0, "shadow": "none", "border": 1}, weights={"normal": 300, "strong": 500},
+                fonts="theme/branding/fonts/fonts.css")
+    resolved = video.resolve(montage(course), "U1-S2-M1")["style"]
+    assert resolved["shapes"] == {"radius": 0, "border": 1, "shadow": "none"}
+    assert resolved["weights"] == {"normal": 300, "strong": 500}
+    assert resolved["fonts"]["families"] == ["ACME Sans"]
+    assert 'url("data:font/woff2;base64,d09GMmZvbnQ=")' in resolved["fonts"]["css"] and "ACME fonts" not in resolved["fonts"]["css"]
+    (fonts / "fonts.css").write_text("@font-face { font-family: X; src: url('https://fonts.example/x.woff2'); }\n", encoding="utf-8")
+    with pytest.raises(video.VideoError, match="from the internet"):
+        video.resolve(montage(course), "U1-S2-M1")
+    (fonts / "fonts.css").write_text("@font-face { font-family: X; src: url('../../../../outside.woff2'); }\n", encoding="utf-8")
+    with pytest.raises(video.VideoError, match="which is not in the project"):
+        video.resolve(montage(course), "U1-S2-M1")
+
+
 def test_an_atom_of_the_project_or_of_a_course_takes_the_place_of_the_library(course):  # noqa: F811
     root = course.parent.parent
     (root / "tools" / "remotion" / "node_modules").mkdir(parents=True)

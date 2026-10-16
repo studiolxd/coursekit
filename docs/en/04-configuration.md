@@ -377,7 +377,7 @@ profiles:
 
 ### `video`: the style of the videos made as a montage
 
-On top of the theme of the course (its colours and fonts come from `theme/tokens.json`, never from here), the style of the videos of [`coursekit video`](03-commands.md#coursekit-video). A course changes it in the `video:` section of its `course.yaml` (for example, a calmer motion for one course).
+On top of the theme of the course (its colours and font families come from `theme/tokens.json`, never from here; the files of those fonts, the shapes and the weights can be set here), the style of the videos of [`coursekit video`](03-commands.md#coursekit-video). A course changes it in the `video:` section of its `course.yaml` (for example, a calmer motion for one course).
 
 | Key | Default | Meaning |
 |---|---|---|
@@ -386,6 +386,11 @@ On top of the theme of the course (its colours and fonts come from `theme/tokens
 | `background` | `shape` | The background of the scenes that do not ask for one: `plain`, `shape` (soft shapes of the accent) or `band`. |
 | `logo.file` | `null` | A logo, by its path from the project (an image of `theme/branding/`, for example); it goes into the video as data. |
 | `logo.corner`, `logo.scenes`, `logo.size` | `bottom-right`, `[title, outro]`, `64` | Where it goes, on which types of scene, and its height in px. |
+| `shapes.radius` | `null` | Px of the corners of the panels and images (`0`: square). `null`: the radius of the theme; a theme from creator brings none, and then each piece draws its own. |
+| `shapes.shadow` | `null` | `none` takes away the soft shadow of the panels and of the lower third; `null` keeps it. |
+| `shapes.border` | `null` | Px of the border of the panels; `null`: `2`. |
+| `weights.normal`, `weights.strong` | `null` | The weights of the text: what a piece draws at 600 or more takes `strong`, the rest `normal` (for a brand with two weights, e.g. `300` and `500`). `null`: what each piece draws. |
+| `fonts` | `null` | A stylesheet of the project with `@font-face` rules (e.g. `theme/branding/fonts/fonts.css`): the font files it points to (relative to it, inside the project) go inside the video, and the render waits until they are loaded, so a video does not depend on the fonts of the machine. The family names are those of the theme. A font loaded from the internet, or a file that is missing, stops the render with a message. `null`: the fonts of the theme by name. |
 | `format` | `{width: 1920, height: 1080, fps: 30}` | The frame of a video whose montage does not say it. |
 | `pad_seconds` | `0.5` | Seconds of air after the narration of each scene. |
 

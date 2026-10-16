@@ -1,5 +1,5 @@
-# The style of the videos made as a montage (`coursekit video`), on top of the theme of the course (its colours and fonts come
-# from theme/tokens.json, never from here). A project changes it in config/video.yaml, and a course in the `video:` section of
+# The style of the videos made as a montage (`coursekit video`), on top of the theme of the course (its colours and font
+# families come from theme/tokens.json, never from here; the files of those fonts, the shapes and the weights, from here). A project changes it in config/video.yaml, and a course in the `video:` section of
 # its course.yaml (for example, a calmer motion for one course).
 
 # How things move. `character` picks a preset: calm (slow entrances, soft springs), balanced or lively (quick, snappy);
@@ -21,6 +21,23 @@ logo:
   corner: bottom-right
   scenes: [title, outro]
   size: 64
+
+# The shapes of the panels, images and marks, on top of the theme. null keeps the theme's radius (a theme from creator
+# brings none: then the radius of each piece) and each piece's soft shadow; `shadow: none` takes the shadows away.
+shapes:
+  radius: null          # px of the corners, e.g. 0 for square corners
+  shadow: null          # none, or null for the soft shadow of each piece
+  border: null          # px of the border of the panels; null: the piece's own (2)
+
+# The weights of the text: what a piece draws at 600 or more is `strong`, the rest `normal`. null: what each piece draws.
+weights:
+  normal: null          # e.g. 300
+  strong: null          # e.g. 500
+
+# The fonts of the videos, so that they do not depend on what the machine has: a stylesheet of the project with @font-face
+# rules (the font files it points to, relative to it, inside the project; they go inside the video). The family names must
+# be the ones of the theme. null: the fonts of the theme by name, as the machine has them.
+fonts: null             # e.g. theme/branding/fonts/fonts.css
 
 # The frame of a new video, and the air after the narration of each scene.
 format: {width: 1920, height: 1080, fps: 30}

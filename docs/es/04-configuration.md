@@ -377,7 +377,7 @@ profiles:
 
 ### `video`: el estilo de los vídeos hechos como montaje
 
-Por encima del tema del curso (sus colores y tipografías salen de `theme/tokens.json`, nunca de aquí), el estilo de los vídeos de [`coursekit video`](03-commands.md#coursekit-video). Un curso lo cambia en la sección `video:` de su `course.yaml` (por ejemplo, un movimiento más tranquilo para un curso).
+Por encima del tema del curso (sus colores y familias tipográficas salen de `theme/tokens.json`, nunca de aquí; los ficheros de esas fuentes, las formas y los pesos se fijan aquí), el estilo de los vídeos de [`coursekit video`](03-commands.md#coursekit-video). Un curso lo cambia en la sección `video:` de su `course.yaml` (por ejemplo, un movimiento más tranquilo para un curso).
 
 | Clave | Por defecto | Significado |
 |---|---|---|
@@ -386,6 +386,11 @@ Por encima del tema del curso (sus colores y tipografías salen de `theme/tokens
 | `background` | `shape` | El fondo de las escenas que no piden uno: `plain`, `shape` (formas suaves del acento) o `band`. |
 | `logo.file` | `null` | Un logo, por su ruta desde el proyecto (una imagen de `theme/branding/`, por ejemplo); entra en el vídeo como datos. |
 | `logo.corner`, `logo.scenes`, `logo.size` | `bottom-right`, `[title, outro]`, `64` | Dónde va, en qué tipos de escena, y su altura en px. |
+| `shapes.radius` | `null` | Px de las esquinas de los paneles y las imágenes (`0`: rectas). `null`: el radio del tema; un tema de creator no trae, y entonces cada pieza dibuja el suyo. |
+| `shapes.shadow` | `null` | `none` quita la sombra suave de los paneles y del rótulo inferior; `null` la conserva. |
+| `shapes.border` | `null` | Px del borde de los paneles; `null`: `2`. |
+| `weights.normal`, `weights.strong` | `null` | Los pesos del texto: lo que una pieza dibuja a 600 o más toma `strong`, el resto `normal` (para una marca con dos pesos, p. ej. `300` y `500`). `null`: lo que dibuja cada pieza. |
+| `fonts` | `null` | Una hoja de estilos del proyecto con reglas `@font-face` (p. ej. `theme/branding/fonts/fonts.css`): los ficheros de fuente a los que apunta (relativos a ella, dentro del proyecto) entran en el vídeo, y el render espera a que carguen, así que un vídeo no depende de las fuentes de la máquina. Los nombres de familia son los del tema. Una fuente cargada de internet, o un fichero que falta, para el render con un mensaje. `null`: las fuentes del tema por su nombre. |
 | `format` | `{width: 1920, height: 1080, fps: 30}` | El encuadre de un vídeo cuyo montaje no lo dice. |
 | `pad_seconds` | `0.5` | Segundos de aire tras la locución de cada escena. |
 

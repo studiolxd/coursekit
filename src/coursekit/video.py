@@ -337,6 +337,49 @@ def motion(course: dict, data: dict) -> dict:
     return {**preset, **own, **{k: int(v) for k, v in (data.get("motion") or {}).items() if k in MOTION["balanced"]}}
 
 
+def _numbers(block, numbers: tuple[str, ...], words: tuple[str, ...] = ()) -> dict:
+    """The keys of a block of the style that are set: numbers as numbers, words as text."""
+    block = block if isinstance(block, dict) else {}
+    out = {k: float(block[k]) for k in numbers if block.get(k) is not None}
+    return {**out, **{k: str(block[k]) for k in words if block.get(k) is not None}}
+
+
+FONT_TYPES = {".woff2": "font/woff2", ".woff": "font/woff", ".ttf": "font/ttf", ".otf": "font/otf"}
+
+
+def fonts(course: dict) -> dict | None:
+    """The fonts of the style (`fonts`: a stylesheet with @font-face rules), with each file inside as data, and the families
+    it declares; None without one."""
+    import base64
+
+    name = style(course).get("fonts")
+    if not name:
+        return None
+    root = course["_project"].root
+    sheet = root / str(name)
+    if not sheet.is_file():
+        raise VideoError(t("video", "fonts_missing", path=str(name)))
+    css = sheet.read_text(encoding="utf-8")
+
+    def inline(match: re.Match) -> str:
+        ref = match.group(2).strip()
+        if ref.startswith("data:"):
+            return match.group(0)
+        if re.match(r"^[a-z]+:", ref, re.I) or ref.startswith("//"):
+            raise VideoError(t("video", "font_remote", url=ref, path=str(name)))
+        file = (sheet.parent / ref.split("?")[0].split("#")[0]).resolve()
+        if not file.is_file() or root.resolve() not in file.parents:
+            raise VideoError(t("video", "font_file_missing", file=ref, path=str(name)))
+        kind = FONT_TYPES.get(file.suffix.lower(), "application/octet-stream")
+        return f'url("data:{kind};base64,{base64.b64encode(file.read_bytes()).decode()}")'
+
+    css = re.sub(r"""url\(\s*(['"]?)([^'")]+)\1\s*\)""", inline, re.sub(r"/\*.*?\*/", "", css, flags=re.S))
+    families = sorted({f.strip().strip("'\"") for f in re.findall(r"font-family\s*:\s*([^;}]+)", css)})
+    if not families:
+        raise VideoError(t("video", "fonts_empty", path=str(name)))
+    return {"css": css, "families": families}
+
+
 def _logo(course: dict) -> dict | None:
     import base64
     import mimetypes
@@ -516,7 +559,10 @@ def resolve(course: dict, asset_id: str) -> dict:
         cursor += frames
     return {"fps": fps, "width": int(fmt["width"]), "height": int(fmt["height"]), "frames": cursor,
             "tokens": {k: tokens[k] for k in ("color", "font", "radius", "space") if k in tokens},
-            "motion": motion(course, data), "style": {"background": str(look.get("background") or "shape"), "logo": _logo(course)},
+            "motion": motion(course, data), "style": {"background": str(look.get("background") or "shape"), "logo": _logo(course),
+                                                      "shapes": _numbers(look.get("shapes"), ("radius", "border"), ("shadow",)),
+                                                      "weights": _numbers(look.get("weights"), ("normal", "strong")),
+                                                      "fonts": fonts(course)},
             "scenes": resolved}
 
 

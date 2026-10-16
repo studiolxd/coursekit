@@ -1,5 +1,5 @@
 import React from "react";
-import { AbsoluteFill, Audio, Img, interpolate, Sequence, staticFile, useCurrentFrame } from "remotion";
+import { AbsoluteFill, Audio, continueRender, delayRender, Img, interpolate, Sequence, staticFile, useCurrentFrame } from "remotion";
 import { ThemeProvider, type Motion, type Style, type Tokens } from "./theme";
 import { SceneTimeProvider, type Word } from "./timing";
 import { layers as layerRegistry, scenes as registry } from "./registry.generated";
@@ -26,6 +26,21 @@ const Logo: React.FC<{ logo: NonNullable<Style["logo"]> }> = ({ logo }) => {
   );
 };
 
+// The fonts of the project (config/video.yaml › fonts), inside the video: the render waits until each family is loaded, so a
+// frame never comes out in a font of the machine.
+const Fonts: React.FC<{ fonts: NonNullable<Style["fonts"]> }> = ({ fonts }) => {
+  const [handle] = React.useState(() => delayRender("fonts"));
+  React.useEffect(() => {
+    const style = document.createElement("style");
+    style.textContent = fonts.css;
+    document.head.appendChild(style);
+    Promise.all(fonts.families.flatMap((family) => ["300", "400", "500", "700"].map((w) => document.fonts.load(`${w} 40px "${family}"`))))
+      .then(() => continueRender(handle), () => continueRender(handle));
+    return () => { style.remove(); };
+  }, [fonts, handle]);
+  return null;
+};
+
 const Fade: React.FC<{ frames: number; fade: number; children: React.ReactNode }> = ({ frames, fade, children }) => {
   const frame = useCurrentFrame();
   const opacity = interpolate(frame, [0, fade, frames - fade, frames], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
@@ -49,6 +64,7 @@ const OnlyLayer: React.FC<{ scenes: ResolvedScene[]; id: string }> = ({ scenes, 
 
 export const Montage: React.FC<MontageProps> = ({ tokens, motion, style, scenes, mode = "full" }) => (
   <ThemeProvider theme={{ tokens, motion, style }}>
+    {style?.fonts ? <Fonts fonts={style.fonts} /> : null}
     {typeof mode === "object" ? <OnlyLayer scenes={scenes} id={mode.layer} /> : (
     <AbsoluteFill style={{ background: tokens.color.background }}>
       {scenes.map((scene) => {
