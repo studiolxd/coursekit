@@ -188,7 +188,7 @@ A provider is used only if its key is set. See [Media](07-media.md) for how cour
 
 ## The `config/` files
 
-The six configurations are `rules`, `directives`, `media`, `delivery`, `import` and `capture`. Every project gets `config/<name>.example.yaml` with the complete package defaults (a reference, never read). To change something, create `config/<name>.yaml` with **only the keys you change**; `coursekit init --update` refreshes the examples without touching your overrides.
+The seven configurations are `rules`, `directives`, `media`, `delivery`, `import`, `capture` and `video`. Every project gets `config/<name>.example.yaml` with the complete package defaults (a reference, never read). To change something, create `config/<name>.yaml` with **only the keys you change**; `coursekit init --update` refreshes the examples without touching your overrides.
 
 The same keys can be written in a `<name>:` section of `project.yaml` (wins over `config/`) or of a course's `course.yaml` (wins over both, for that course only).
 
@@ -370,6 +370,20 @@ profiles:
     allow_domains: [app.acme.example, sso.acme.example]
     account: demo administrator
 ```
+
+### `video`: the style of the videos made as a montage
+
+On top of the theme of the course (its colours and fonts come from `theme/tokens.json`, never from here), the style of the videos of [`coursekit video`](03-commands.md#coursekit-video). A course changes it in the `video:` section of its `course.yaml` (for example, a calmer motion for one course).
+
+| Key | Default | Meaning |
+|---|---|---|
+| `motion.character` | `balanced` | How things move: `calm` (slow entrances, soft springs), `balanced` or `lively` (quick, snappy). |
+| `motion.enter`, `motion.stagger`, `motion.fade`, `motion.damping` | of the character | One by one over the preset: frames an element takes to enter, frames between the items of a list, frames of the fade of a scene, damping of the springs (higher is calmer). A montage can also set them in its `motion:`. |
+| `background` | `shape` | The background of the scenes that do not ask for one: `plain`, `shape` (soft shapes of the accent) or `band`. |
+| `logo.file` | `null` | A logo, by its path from the project (an image of `theme/branding/`, for example); it goes into the video as data. |
+| `logo.corner`, `logo.scenes`, `logo.size` | `bottom-right`, `[title, outro]`, `64` | Where it goes, on which types of scene, and its height in px. |
+| `format` | `{width: 1920, height: 1080, fps: 30}` | The frame of a video whose montage does not say it. |
+| `pad_seconds` | `0.5` | Seconds of air after the narration of each scene. |
 
 ## `course.yaml`: what a person may set per course
 

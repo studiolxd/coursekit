@@ -188,7 +188,7 @@ Un proveedor se usa solo si su clave está definida. En [Multimedia](07-media.md
 
 ## Los ficheros de `config/`
 
-Las seis configuraciones son `rules`, `directives`, `media`, `delivery`, `import` y `capture`. Cada proyecto recibe `config/<name>.example.yaml` con los valores por defecto completos del paquete (referencia, nunca se lee). Para cambiar algo, crea `config/<name>.yaml` con **solo las claves que cambias**; `coursekit init --update` actualiza los ejemplos sin tocar tus cambios.
+Las siete configuraciones son `rules`, `directives`, `media`, `delivery`, `import`, `capture` y `video`. Cada proyecto recibe `config/<name>.example.yaml` con los valores por defecto completos del paquete (referencia, nunca se lee). Para cambiar algo, crea `config/<name>.yaml` con **solo las claves que cambias**; `coursekit init --update` actualiza los ejemplos sin tocar tus cambios.
 
 Las mismas claves se pueden escribir en una sección `<name>:` de `project.yaml` (gana a `config/`) o del `course.yaml` de un curso (gana a ambos, solo para ese curso).
 
@@ -370,6 +370,20 @@ profiles:
     allow_domains: [app.acme.example, sso.acme.example]
     account: administrador de demostración
 ```
+
+### `video`: el estilo de los vídeos hechos como montaje
+
+Por encima del tema del curso (sus colores y tipografías salen de `theme/tokens.json`, nunca de aquí), el estilo de los vídeos de [`coursekit video`](03-commands.md#coursekit-video). Un curso lo cambia en la sección `video:` de su `course.yaml` (por ejemplo, un movimiento más tranquilo para un curso).
+
+| Clave | Por defecto | Significado |
+|---|---|---|
+| `motion.character` | `balanced` | Cómo se mueven las cosas: `calm` (entradas lentas, muelles suaves), `balanced` o `lively` (rápido, con chispa). |
+| `motion.enter`, `motion.stagger`, `motion.fade`, `motion.damping` | los del carácter | Uno a uno sobre el ajuste: fotogramas que tarda en entrar un elemento, fotogramas entre los elementos de una lista, fotogramas del fundido de una escena, amortiguación de los muelles (más alta es más tranquila). Un montaje también puede fijarlos en su `motion:`. |
+| `background` | `shape` | El fondo de las escenas que no piden uno: `plain`, `shape` (formas suaves del acento) o `band`. |
+| `logo.file` | `null` | Un logo, por su ruta desde el proyecto (una imagen de `theme/branding/`, por ejemplo); entra en el vídeo como datos. |
+| `logo.corner`, `logo.scenes`, `logo.size` | `bottom-right`, `[title, outro]`, `64` | Dónde va, en qué tipos de escena, y su altura en px. |
+| `format` | `{width: 1920, height: 1080, fps: 30}` | El encuadre de un vídeo cuyo montaje no lo dice. |
+| `pad_seconds` | `0.5` | Segundos de aire tras la locución de cada escena. |
 
 ## `course.yaml`: qué puede fijar una persona por curso
 

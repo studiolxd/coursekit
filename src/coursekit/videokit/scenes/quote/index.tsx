@@ -19,7 +19,7 @@ export default function Quote({ props }: SceneProps<QuoteProps>) {
   const quote = i >= 0 ? <>{props.quote.slice(0, i)}<Underline at={at} highlight>{props.quote.slice(i, i + props.stress!.length)}</Underline>{props.quote.slice(i + props.stress!.length)}</> : props.quote;
   return (
     <AbsoluteFill>
-      <Background variant="shape" />
+      <Background />
       <AbsoluteFill style={{ justifyContent: "center", padding: "0 220px", gap: 48 }}>
         <Enter scale><div style={{ fontSize: 220, lineHeight: 0.6, color: color("accent"), fontWeight: 900 }}>“</div></Enter>
         <Enter at={6}><Heading size={84} weight={700}>{quote}</Heading></Enter>

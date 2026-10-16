@@ -64,4 +64,9 @@ una hoja, sin render completo), `video render` (MP4, subtítulos, palabras, tran
   `list`, `quote`, `diagram`; capas `lower-third`, `callout`, `highlight` con `at`/`until`/`hold` resueltos en Python con las
   palabras (`video check` avisa de anclas que no se dicen); fondo `shape`; tamaños revisados mirando la vista previa real;
   `video render` normaliza la sonoridad. Probado de punta a punta con 8 escenas y una capa.
-- [ ] Fase 3
+- [x] Fase 3 (sin commit todavía): configuración `video` (carácter del movimiento con ajustes, fondo por defecto, logo como
+  datos en las escenas elegidas, formato, aire tras la voz), también por curso; átomos y moléculas del proyecto o del curso
+  en lugar de los de la biblioteca (se copian sobre `kit/` al sincronizar; mismo nombre exportado; el catálogo los marca).
+  Sin alias de webpack: no hace falta tocar la configuración de Remotion del proyecto. Probado con un `Heading` del
+  proyecto, logo y movimiento `calm`.
+- [ ] Fase 4 (opcional): exportar a DaVinci (FCPXML 1.10 y OTIO).

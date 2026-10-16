@@ -16,7 +16,7 @@ export default function List({ props }: SceneProps<ListProps>) {
   const times = useSayTimes(props.items.map((i) => i.say));
   return (
     <AbsoluteFill>
-      <Background variant="shape" />
+      <Background />
       <AbsoluteFill style={{ padding: "0 180px", gap: 72, justifyContent: "center" }}>
         <Enter><Heading size={88}>{props.title}</Heading></Enter>
         <div style={{ display: "flex", flexDirection: "column", gap: 44 }}>

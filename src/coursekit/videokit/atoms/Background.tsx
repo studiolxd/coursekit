@@ -1,14 +1,16 @@
 import React from "react";
 import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
-import { useColor } from "../theme";
+import { useColor, useTheme } from "../theme";
 
-// The background of a scene, in the colours of the theme: `plain`; `band`, a band of the surface colour; `shape`, a soft
+// The background of a scene, in the colours of the theme (without `variant`, the one of the style of the project): `plain`; `band`, a band of the surface colour; `shape`, a soft
 // shape of the accent that drifts slowly; `accent`, the accent colour itself (a close).
 
 export const Background: React.FC<{ variant?: "plain" | "band" | "shape" | "accent"; children?: React.ReactNode }> = (
-  { variant = "plain", children }) => {
+  { variant: asked, children }) => {
   const frame = useCurrentFrame();
   const color = useColor();
+  const { style } = useTheme();
+  const variant = asked ?? style?.background ?? "plain"; // a scene that asks for none gets the one of the project
   const base = variant === "accent" ? color("accent") : color("background");
   const drift = interpolate(frame, [0, 600], [0, 40], { extrapolateRight: "extend" });
   return (

@@ -44,3 +44,6 @@ unknown_layer: {es: "no hay ninguna capa {type} (hay: {known})", en: "there is n
 anchor_not_said: {es: "{key}: la locución de la escena no dice «{phrase}», así que la capa no sabe cuándo entrar o salir", en: "{key}: the narration of the scene does not say «{phrase}», so the layer does not know when to enter or leave"}
 catalog_scenes: {es: "Escenas:", en: "Scenes:"}
 catalog_layers: {es: "Capas (sobre una escena, desde una palabra de su locución):", en: "Layers (over a scene, from a word of its narration):"}
+no_logo: {es: "el logo de video.yaml ({path}) no existe", en: "the logo of video.yaml ({path}) does not exist"}
+override_unknown: {es: "{path}: la biblioteca no tiene ninguna pieza {name} en {kind}: para sustituir una, usa su nombre (coursekit video catalog); una pieza nueva va dentro de tu escena", en: "{path}: the library has no piece {name} in {kind}: to replace one, use its name (coursekit video catalog); a new piece goes inside your scene"}
+override_export: {es: "{path} tiene que exportar {name} (export const {name}), con las mismas props que la de la biblioteca", en: "{path} must export {name} (export const {name}), with the same props as the one of the library"}

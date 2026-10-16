@@ -16,7 +16,7 @@ export default function Compare({ props }: SceneProps<CompareProps>) {
   const rightAt = useAt(props.right.say, leftAt + 30);
   return (
     <AbsoluteFill>
-      <Background variant="shape" />
+      <Background />
       <AbsoluteFill style={{ padding: "0 140px", gap: 64, justifyContent: "center" }}>
         {props.title ? <Enter><Heading size={80}>{props.title}</Heading></Enter> : null}
         <div style={{ display: "flex", gap: 56, alignItems: "flex-start" }}>

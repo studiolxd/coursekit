@@ -1,0 +1,27 @@
+# The style of the videos made as a montage (`coursekit video`), on top of the theme of the course (its colours and fonts come
+# from theme/tokens.json, never from here). A project changes it in config/video.yaml, and a course in the `video:` section of
+# its course.yaml (for example, a calmer motion for one course).
+
+# How things move. `character` picks a preset: calm (slow entrances, soft springs), balanced or lively (quick, snappy);
+# `enter`, `stagger`, `fade` and `damping` (frames, and the damping of the springs) override the preset one by one.
+motion:
+  character: balanced
+  # enter: 18           # frames an element takes to enter
+  # stagger: 6          # frames between the elements of a list
+  # fade: 10            # frames a scene takes to fade in and out
+  # damping: 18         # higher is calmer
+
+# The background of the scenes that do not ask for one: plain, shape (soft shapes of the accent) or band.
+background: shape
+
+# A logo on some scenes: `file` is a path from the project (an image of theme/branding/, for example), `corner` one of
+# top-left, top-right, bottom-left, bottom-right, `scenes` the types of scene it goes on, and `size` its height in px.
+logo:
+  file: null
+  corner: bottom-right
+  scenes: [title, outro]
+  size: 64
+
+# The frame of a new video, and the air after the narration of each scene.
+format: {width: 1920, height: 1080, fps: 30}
+pad_seconds: 0.5

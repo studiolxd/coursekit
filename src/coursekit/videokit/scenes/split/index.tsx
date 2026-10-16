@@ -24,7 +24,7 @@ export default function Split({ props }: SceneProps<SplitProps>) {
   );
   return (
     <AbsoluteFill>
-      <Background variant="shape" />
+      <Background />
       <AbsoluteFill style={{ flexDirection: "row", alignItems: "center", gap: 96, padding: "0 140px" }}>
         {props.side === "left" ? <>{media}{text}</> : <>{text}{media}</>}
       </AbsoluteFill>

@@ -40,6 +40,7 @@ from pathlib import Path
 
 import yaml
 
+from coursekit import config as configmod
 from coursekit import course as coursemod
 from coursekit import lang, mediaaccess, mediacheck, mediatools
 from coursekit import media as mediamod
@@ -50,7 +51,10 @@ VERSION = 1
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,47}$")
 NAME_RE = re.compile(r"^[a-z][a-z0-9-]{0,39}$")
 DEFAULT_FORMAT = {"width": 1920, "height": 1080, "fps": 30}
-PAD = 0.5  # seconds of air after the narration of a scene
+MOTION = {"calm": {"enter": 26, "stagger": 10, "fade": 14, "damping": 28},
+          "balanced": {"enter": 18, "stagger": 6, "fade": 10, "damping": 18},
+          "lively": {"enter": 11, "stagger": 4, "fade": 6, "damping": 11}}
+OVERRIDABLE = ("atoms", "molecules")
 KIT = "kit"
 COURSE_COPY = Path("src") / ".course"  # course scenes are rendered from a copy at the depth of the project scenes
 
@@ -121,6 +125,23 @@ def scenes(course: dict) -> dict[str, dict]:
     return pieces(course, "scenes")
 
 
+def overrides(course: dict) -> list[tuple[str, str, str, Path]]:
+    """The atoms and molecules the project (`tools/remotion/src/atoms|molecules/<Name>.tsx`) or the course
+    (`video/atoms|molecules/<Name>.tsx`) puts in place of the library's: (kind, name, origin, file); the course wins."""
+    winners: dict[tuple[str, str], tuple[str, Path]] = {}
+    library = kit_source()
+    for origin, base in (("project", workspace(course) / "src"), ("course", course["_dir"] / "video")):
+        for kind in OVERRIDABLE:
+            for path in sorted((base / kind).glob("*.tsx")) if (base / kind).is_dir() else []:
+                shown = path.relative_to(course["_project"].root).as_posix()
+                if not (library / kind / path.name).exists():
+                    raise VideoError(t("video", "override_unknown", kind=kind, name=path.stem, path=shown))
+                if f"export const {path.stem}" not in path.read_text(encoding="utf-8"):
+                    raise VideoError(t("video", "override_export", name=path.stem, path=shown))
+                winners[(kind, path.stem)] = (origin, path)
+    return [(kind, name, origin, path) for (kind, name), (origin, path) in sorted(winners.items())]
+
+
 def catalog(course: dict) -> list[str]:
     """The scenes, the atoms and the molecules, with their props and what each scene is built from."""
     lines = []
@@ -128,8 +149,10 @@ def catalog(course: dict) -> list[str]:
         lines.append(t("video", f"catalog_{kind}"))
         lines += _catalog_lines(pieces(course, kind))
     kit = kit_source()
-    for kind in ("atoms", "molecules"):
-        names = sorted(p.stem for p in (kit / kind).glob("*.tsx"))
+    replaced = {(kind, name): origin for kind, name, origin, _ in overrides(course)}
+    for kind in OVERRIDABLE:
+        names = [p.stem + (f" [{replaced[(kind, p.stem)]}]" if (kind, p.stem) in replaced else "")
+                 for p in sorted((kit / kind).glob("*.tsx"))]
         lines.append(t("video", f"catalog_{kind}", names=", ".join(names)))
     return lines
 
@@ -219,7 +242,7 @@ def check(course: dict, asset_id: str) -> list[Finding]:
     data = load(course, asset_id)
     available = scenes(course)
     found: list[Finding] = []
-    fmt = {**DEFAULT_FORMAT, **(data.get("format") or {})}
+    fmt = {**DEFAULT_FORMAT, **(style(course).get("format") or {}), **(data.get("format") or {})}
     if not all(isinstance(fmt[k], int) and fmt[k] > 0 for k in ("width", "height", "fps")):
         found.append(Finding("error", "FORMAT", "format", t("video", "bad_format")))
     items = data.get("scenes")
@@ -299,6 +322,35 @@ def _check_layers(course: dict, scene: dict, where: str, says: str, numbers: lis
             if not label and not scene.get("shows") and not mediaaccess.said(text, says, numbers):
                 found.append(Finding("warning", "NOT_SAID", here, t("video", "not_said", prop=prop, text=text)))
     return found
+
+
+def style(course: dict) -> dict:
+    """The style of the videos of this course (config/video.yaml, and its `video:` section of course.yaml)."""
+    return dict(configmod.effective("video", course["_project"], course).value)
+
+
+def motion(course: dict, data: dict) -> dict:
+    """The motion: the preset of `motion.character`, what the style sets one by one, and what the montage sets."""
+    cfg = dict(style(course).get("motion") or {})
+    preset = MOTION.get(str(cfg.get("character") or "balanced"), MOTION["balanced"])
+    own = {k: int(v) for k, v in cfg.items() if k in MOTION["balanced"] and v is not None}
+    return {**preset, **own, **{k: int(v) for k, v in (data.get("motion") or {}).items() if k in MOTION["balanced"]}}
+
+
+def _logo(course: dict) -> dict | None:
+    import base64
+    import mimetypes
+
+    cfg = style(course).get("logo") or {}
+    if not cfg.get("file"):
+        return None
+    path = course["_project"].root / str(cfg["file"])
+    if not path.is_file():
+        raise VideoError(t("video", "no_logo", path=str(cfg["file"])))
+    kind = mimetypes.guess_type(path.name)[0] or "image/png"
+    return {"src": f"data:{kind};base64,{base64.b64encode(path.read_bytes()).decode('ascii')}",
+            "corner": str(cfg.get("corner") or "bottom-right"), "scenes": [str(x) for x in cfg.get("scenes") or []],
+            "size": int(cfg.get("size") or 64)}
 
 
 # ── the voice ────────────────────────────────────────────────────────────────────────────────
@@ -393,8 +445,10 @@ def resolve(course: dict, asset_id: str) -> dict:
     errors = [f for f in check(course, asset_id) if f.level == "error"]
     if errors:
         raise VideoError(t("video", "has_errors", count=len(errors), code=course["code"], id=asset_id))
-    fmt = {**DEFAULT_FORMAT, **(data.get("format") or {})}
+    look = style(course)
+    fmt = {**DEFAULT_FORMAT, **(look.get("format") or {}), **(data.get("format") or {})}
     fps = int(fmt["fps"])
+    pad = float(look.get("pad_seconds") if look.get("pad_seconds") is not None else 0.5)
     record = _voice_record(course, asset_id)
     folder = voice_dir(course, asset_id)
     try:
@@ -413,7 +467,7 @@ def resolve(course: dict, asset_id: str) -> dict:
         if says:
             if sid not in record or not (folder / f"{sid}.mp3").exists():
                 raise VideoError(t("video", "voice_pending", scene=sid, code=course["code"], id=asset_id))
-            seconds = float(record[sid]["seconds"]) + PAD
+            seconds = float(record[sid]["seconds"]) + pad
             audio, words = f"files/{asset_id}/{sid}.mp3", _words(folder / f"{sid}.words.json")
         else:
             seconds, audio, words = float(scene.get("duration") or 3), None, []
@@ -425,7 +479,7 @@ def resolve(course: dict, asset_id: str) -> dict:
         cursor += frames
     return {"fps": fps, "width": int(fmt["width"]), "height": int(fmt["height"]), "frames": cursor,
             "tokens": {k: tokens[k] for k in ("color", "font", "radius", "space") if k in tokens},
-            "motion": {"enter": 18, "stagger": 6, "fade": 10, "damping": 18, **(data.get("motion") or {})},
+            "motion": motion(course, data), "style": {"background": str(look.get("background") or "shape"), "logo": _logo(course)},
             "scenes": resolved}
 
 
@@ -463,6 +517,8 @@ def sync(course: dict) -> Path:
     shutil.rmtree(kit, ignore_errors=True)
     shutil.copytree(source, kit, ignore=shutil.ignore_patterns("__init__.py", "__pycache__"))
     (kit / "README.md").write_text(t("video", "kit_readme") + "\n", encoding="utf-8")
+    for kind, name, _, path in overrides(course):  # a piece of the project (or of the course) in place of the library's
+        shutil.copy2(path, kit / kind / f"{name}.tsx")
     copies = root / COURSE_COPY
     shutil.rmtree(copies, ignore_errors=True)
     lines, tables = [], {}

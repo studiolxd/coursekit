@@ -19,7 +19,7 @@ export default function Diagram({ props }: SceneProps<DiagramProps>) {
   const width = props.steps.length > 4 ? 300 : props.steps.length > 3 ? 360 : 440;
   return (
     <AbsoluteFill>
-      <Background variant="shape" />
+      <Background />
       <AbsoluteFill style={{ padding: "0 90px", gap: 90, justifyContent: "center" }}>
         {props.title ? <Enter><Heading size={84}>{props.title}</Heading></Enter> : null}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 18 }}>

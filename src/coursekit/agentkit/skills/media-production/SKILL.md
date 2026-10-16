@@ -154,6 +154,10 @@ credits.
   3. an atom is missing: write it inside your scene, with the same rules.
   Over a scene, a **layer** enters when its words are said (`layers: [{type, props, at: "…", until: "…"}]`: `lower-third`,
   `callout`, `highlight`, or one you create the same way, in `src/layers/<name>/` or `video/layers/<name>/` with `layer.yaml`).
+  The look of every video comes from the theme and from `coursekit config video` (motion, background, logo): do not
+  hard-code colours or timings. When the project wants a piece of the library to look different everywhere (its headings,
+  its cards), write it in `tools/remotion/src/atoms/<Name>.tsx` (or `molecules/`) from the file of `tools/remotion/kit/`,
+  with the same name and props, instead of changing scene by scene.
   Vary the scenes (do not chain the same one), keep the text on screen short (what is left over goes to the narration) and
   give each item, step or column the words that name it (`say`), so it enters when it is said.
   The library is a starting point, not a limit: if the idea asks for another visual (a diagram that builds itself, a

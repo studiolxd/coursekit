@@ -205,3 +205,53 @@ def test_when_a_phrase_is_said():
     assert video.when_said(words, "Longitud mínima") == {"start": 1, "end": 2.5}
     assert video.when_said(words, "doce caracteres", after=3) == {"start": 3, "end": 4.5}
     assert video.when_said(words, "doce", after=3.5) is None and video.says_phrase("La longitud, mínima: doce", "longitud mínima")
+
+
+# ── the style of the project and pieces of its own ───────────────────────────────────────────
+
+def write_style(root, **values):
+    (root / "config" / "video.yaml").write_text(yaml.safe_dump(values), encoding="utf-8")
+
+
+def test_the_style_of_the_project_and_of_a_course_shape_the_video(voiced, course):  # noqa: F811
+    from tests.test_exelearning import edit_course
+
+    video.voice(voiced, "U1-S2-M1", lambda m: None)
+    root = course.parent.parent
+    (root / "theme" / "branding").mkdir(parents=True, exist_ok=True)
+    (root / "theme" / "branding" / "logo.png").write_bytes(b"\x89PNG\r\n\x1a\n")
+    write_style(root, motion={"character": "calm", "stagger": 8}, background="band", format={"fps": 25},
+                logo={"file": "theme/branding/logo.png", "corner": "top-left", "scenes": ["title"]})
+    resolved = video.resolve(montage(course), "U1-S2-M1")
+    assert resolved["motion"] == {"enter": 26, "stagger": 8, "fade": 14, "damping": 28} and resolved["fps"] == 25
+    assert resolved["style"]["background"] == "band" and resolved["style"]["logo"]["src"].startswith("data:image/png;base64,")
+    assert resolved["style"]["logo"]["corner"] == "top-left" and resolved["style"]["logo"]["scenes"] == ["title"]
+    edit_course(course, lambda d: d.update(video={"motion": {"character": "lively"}}))  # one course, livelier
+    assert video.resolve(montage(course), "U1-S2-M1")["motion"]["enter"] == 11
+    write_style(root, logo={"file": "theme/branding/none.png"})
+    with pytest.raises(video.VideoError, match="does not exist"):
+        video.resolve(montage(course), "U1-S2-M1")
+
+
+def test_an_atom_of_the_project_or_of_a_course_takes_the_place_of_the_library(course):  # noqa: F811
+    root = course.parent.parent
+    (root / "tools" / "remotion" / "node_modules").mkdir(parents=True)
+    atoms = root / "tools" / "remotion" / "src" / "atoms"
+    atoms.mkdir(parents=True)
+    (atoms / "Heading.tsx").write_text("export const Heading = () => null; // of the project\n", encoding="utf-8")
+    (course / "video" / "molecules").mkdir(parents=True)
+    (course / "video" / "molecules" / "TitleBlock.tsx").write_text("export const TitleBlock = () => null; // of the course\n",
+                                                                   encoding="utf-8")
+    data = montage(course)
+    workspace = video.sync(data)
+    assert "of the project" in (workspace / "kit" / "atoms" / "Heading.tsx").read_text(encoding="utf-8")
+    assert "of the course" in (workspace / "kit" / "molecules" / "TitleBlock.tsx").read_text(encoding="utf-8")
+    text = "\n".join(video.catalog(data))
+    assert "Heading [project]" in text and "TitleBlock [course]" in text
+    (atoms / "Sparkle.tsx").write_text("export const Sparkle = () => null;\n", encoding="utf-8")
+    with pytest.raises(video.VideoError, match="has no piece Sparkle in atoms"):
+        video.sync(data)
+    (atoms / "Sparkle.tsx").unlink()
+    (atoms / "Heading.tsx").write_text("export default function H() { return null; }\n", encoding="utf-8")
+    with pytest.raises(video.VideoError, match="must export Heading"):
+        video.sync(data)

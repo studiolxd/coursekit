@@ -24,11 +24,15 @@ export type Motion = {
 
 export const DEFAULT_MOTION: Motion = { enter: 18, stagger: 6, fade: 10, damping: 18 };
 
-export type Theme = { tokens: Tokens; motion: Motion };
+/** The style of the project for its videos (config/video.yaml): the background of the scenes that ask for none, and a logo. */
+export type Style = { background?: "plain" | "band" | "shape"; logo?: { src: string; corner: string; scenes: string[]; size: number } | null };
+
+export type Theme = { tokens: Tokens; motion: Motion; style?: Style };
 
 const ThemeContext = React.createContext<Theme>({
   tokens: { color: { background: "#ffffff", text: "#1a1a1a", accent: "#0b5fff", "text-soft": "#555555" }, font: { family: "sans-serif" } },
   motion: DEFAULT_MOTION,
+  style: { background: "shape", logo: null },
 });
 
 export const ThemeProvider: React.FC<{ theme: Theme; children: React.ReactNode }> = ({ theme, children }) => (
