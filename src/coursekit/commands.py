@@ -219,6 +219,11 @@ def cmd_videos(args: argparse.Namespace) -> int:
 def cmd_capture(args: argparse.Namespace) -> int:
     project = _project()
     try:
+        if args.action == "serve":
+            from coursekit import capture_session
+
+            capture_session.serve(project)
+            return 0
         if args.action == "profiles":
             entries = capturemod.profiles(project)
             for entry in entries:
@@ -1231,7 +1236,8 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.set_defaults(func=cmd_media)
 
     p = sub.add_parser("capture", help=t("commands", "help_capture"))
-    p.add_argument("action", choices=("login", "logout", "profiles", "allow", "revoke", "redact", "review", "approve", "reject"))
+    p.add_argument("action", choices=("login", "logout", "profiles", "allow", "revoke", "redact", "review", "approve", "reject",
+                                      "serve"))
     p.add_argument("target", nargs="?", help=t("commands", "help_capture_target"))
     p.add_argument("ids", nargs="*", help=t("commands", "help_capture_ids"))
     p.add_argument("--mode", choices=capturemod.MODES, help=t("commands", "help_capture_mode"))

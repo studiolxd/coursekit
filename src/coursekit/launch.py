@@ -241,6 +241,7 @@ def headless_args(agent: Agent, text: str, last_message: Path, mcp_name: str, co
             allowed += [f"mcp__{mcp_name}", *([f"mcp__{connector}"] if connector else []), "Bash(coursekit:*)", "WebFetch"]
         if agent.role == "media":
             allowed.append("WebSearch")  # to look for the official video that can stand in for a tutorial of a real application
+            allowed.append(f"mcp__{agentsmod.CAPTURE_SERVER}")  # captures of a real application, when a person allowed them
         if agent.role in ("media", "illustration"):
             allowed += [f"Bash({program}:*)" for program in programs or []]
             allowed += [f"mcp__{key}" for key in connectors or []]

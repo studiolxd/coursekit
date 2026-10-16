@@ -140,7 +140,10 @@ def profile_config(cfg: dict, name: str) -> dict:
         raise CaptureError(t("capture", "no_domains", name=name))
     if not domain_allowed(parts.hostname, domains):
         raise CaptureError(t("capture", "start_outside", name=name, host=parts.hostname))
-    return {"start_url": url, "allow_domains": domains, "account": str(profile.get("account") or "")}
+    login = str(profile.get("login_url") or "").strip()
+    if login and urlsplit(login).scheme not in ("https", "http"):
+        raise CaptureError(t("capture", "bad_login_url", name=name, url=login))
+    return {"start_url": url, "allow_domains": domains, "account": str(profile.get("account") or ""), "login_url": login}
 
 
 def _launch_login(folder: Path, url: str) -> None:
@@ -309,7 +312,7 @@ def purge_raw(project: Project, now: dt.datetime | None = None) -> int:
     return gone
 
 
-def _asset(course: dict, asset_id: str) -> tuple:
+def find_asset(course: dict, asset_id: str) -> tuple:
     ry, path, data = mediamod.load_manifest(course["_dir"])
     asset = next((a for a in data["assets"] if str(a["id"]) == asset_id), None)
     if asset is None or asset.get("depicts") != "interface":
@@ -317,7 +320,7 @@ def _asset(course: dict, asset_id: str) -> tuple:
     return ry, path, data, asset
 
 
-def _save(ry, path: Path, data) -> None:
+def save_manifest(ry, path: Path, data) -> None:
     with path.open("w", encoding="utf-8", newline="\n") as fh:
         ry.dump(data, fh)
 
@@ -336,7 +339,7 @@ def redact(project: Project, course: dict, asset_id: str, source: Path | None = 
     it again after a rejection); the covered one goes to media/recordings/<id> and waits for a person to approve it."""
     cfg = settings(project)
     _require_enabled(cfg)
-    ry, path, data, asset = _asset(course, asset_id)
+    ry, path, data, asset = find_asset(course, asset_id)
     previous = dict(asset.get("capture") or {})
     raw = _raw_file(project, course["code"], asset_id)
     warnings = []
@@ -379,7 +382,7 @@ def redact(project: Project, course: dict, asset_id: str, source: Path | None = 
     asset["capture"] = {"state": "captured", "source": "redact", "engine": report.engine, "at": _stamp(_now()),
                         "findings": dict(report.findings), "warnings": result["warnings"],
                         "file": target.relative_to(course["_dir"]).as_posix(), "masks": terms or None}
-    _save(ry, path, data)
+    save_manifest(ry, path, data)
     purge_raw(project)
     return {**result, "file": target, "review": review}
 
@@ -408,7 +411,7 @@ def write_review(course: dict, asset_id: str, report: dict) -> Path:
 
 
 def review(course: dict, asset_id: str) -> Path:
-    _, _, _, asset = _asset(course, asset_id)
+    _, _, _, asset = find_asset(course, asset_id)
     out = review_dir(course, asset_id) / "review.html"
     if not (asset.get("capture") or {}).get("state") or not out.exists():
         raise CaptureError(t("capture", "nothing_to_review", id=asset_id))
@@ -421,7 +424,7 @@ def decide(project: Project, course: dict, asset_id: str, approved: bool, note: 
     who = identity.current()
     if who is None:
         raise CaptureError(t("capture", "no_identity"))
-    ry, path, data, asset = _asset(course, asset_id)
+    ry, path, data, asset = find_asset(course, asset_id)
     state = dict(asset.get("capture") or {})
     if state.get("state") != "captured":
         raise CaptureError(t("capture", "not_captured", id=asset_id, state=state.get("state") or "—"))
@@ -437,5 +440,5 @@ def decide(project: Project, course: dict, asset_id: str, approved: bool, note: 
         state["note"] = (note or "").strip() or None
         state["masks"] = sorted({*(state.get("masks") or []), *(m.strip() for m in masks or [] if m.strip())}) or None
     asset["capture"] = state
-    _save(ry, path, data)
+    save_manifest(ry, path, data)
     return state

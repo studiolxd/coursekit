@@ -17,12 +17,19 @@ modes: [browser, desktop]      # the ways of capturing a project allows: browser
 # The web applications, one profile each: the key is the name `coursekit capture login NAME` uses (lowercase letters,
 # digits and hyphens). Every address the capture opens must be on one of its `allow_domains` (a domain covers its
 # subdomains), so it never wanders to other sites; put the single sign-on domain there too if the login goes through one.
-# `account` is only a label of which account it is (e.g. "demo admin"), never a user name or a password.
+# `account` is only a label of which account it is (e.g. "demo admin"), never a user name or a password. `login_url`
+# (optional) is the start of the address of the login page: landing there means the session expired, and the capture stops
+# until a person logs in again (`coursekit capture login`); the agent never logs in.
 #   acme-admin:
 #     start_url: https://app.acme.example/
 #     allow_domains: [app.acme.example, sso.acme.example]
+#     login_url: https://sso.acme.example/login
 #     account: demo administrator
 profiles: {}
+
+screenshot:
+  max_edge: 1920               # px: the largest side of what the agent sees (its coordinates are in that space)
+  device_scale: 2              # browser: pixels per CSS pixel of the saved captures (2 = sharp on high-density screens)
 
 # What is hidden in a capture. In a web application the text on screen is replaced in the page itself (with invented people,
 # companies and data of the course language, see lang/<code>.yaml › capture_people) before anything is captured; in a
@@ -43,6 +50,10 @@ redact:
     ip: '\b(?:\d{1,3}\.){3}\d{1,3}\b'
   names: true                  # names of people: a known first name followed by one or two words in capitals
   extra_terms: []              # words always hidden, whatever case (a real company, a project, a place): ["Bravant"]
+  selectors: []                # browser: CSS of the parts of a page always blurred (an account menu, a photo): [".user-card"]
+                               # (photos and avatars whose class, id or alt says so are blurred anyway)
+  pixel_check: true            # browser: every screen is also read on the pixels (text in images, canvas) and what is
+                               # still there is covered; needs an OCR (the capture extra or tesseract), else it says so
   faces: true                  # faces in photos and avatars (on the pixels: needs the capture extra)
   pixels: pixelate             # how it is covered on the pixels: pixelate | blur | solid
   padding: 4                   # px around what is covered

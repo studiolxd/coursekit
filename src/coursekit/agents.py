@@ -51,6 +51,8 @@ DENY_OPENCODE = {"*coursekit approve*": "deny", "*coursekit videos approve*": "d
                  "*coursekit capture approve*": "deny", "*coursekit capture reject*": "deny",
                  "git push*": "deny"}
 
+CAPTURE_SERVER = "coursekit-capture"  # the MCP server of `coursekit capture serve`, registered when capture.yaml › enabled
+
 LANGUAGE_NAMES = {"es": "Spanish (Spain)", "en": "English"}
 ADDRESS_RULES = {
     "tu": "address the learner as «tú»",
@@ -384,11 +386,16 @@ def write_configs(project: Project, values: dict[str, str]) -> list[str]:
     slxd = (config.project_data(project).get("platform") or {}).get("slxd") or {}
     url = str(slxd.get("mcp_url") or "").strip()
     name = values["mcp_name"]
+    capture_on = bool(config.effective("capture", project).get("enabled"))
     changed = []
 
     mcp = _load_json(root / ".mcp.json")
     if url:
         mcp.setdefault("mcpServers", {})[name] = {"type": "http", "url": url}
+    if capture_on:
+        mcp.setdefault("mcpServers", {})[CAPTURE_SERVER] = {"type": "stdio", "command": "coursekit", "args": ["capture", "serve"]}
+    elif CAPTURE_SERVER in (mcp.get("mcpServers") or {}):
+        del mcp["mcpServers"][CAPTURE_SERVER]
     if mcp and _save_json(root / ".mcp.json", mcp):
         changed.append(".mcp.json")
 
@@ -400,6 +407,10 @@ def write_configs(project: Project, values: dict[str, str]) -> list[str]:
             instructions.append(item)
     if url:
         oc.setdefault("mcp", {})[name] = {"type": "remote", "url": url, "enabled": True}
+    if capture_on:
+        oc.setdefault("mcp", {})[CAPTURE_SERVER] = {"type": "local", "command": ["coursekit", "capture", "serve"], "enabled": True}
+    elif CAPTURE_SERVER in (oc.get("mcp") or {}):
+        del oc["mcp"][CAPTURE_SERVER]
     bash = oc.setdefault("permission", {}).setdefault("bash", {})
     if isinstance(bash, dict):
         bash.update(DENY_OPENCODE)
@@ -415,11 +426,13 @@ def write_configs(project: Project, values: dict[str, str]) -> list[str]:
         changed.append(".claude/settings.json")
 
     codex = root / ".codex" / "config.toml"
-    if url and (not codex.exists() or MARKER in codex.read_text(encoding="utf-8")):
-        text = (
-            f"# {MARKER} (from project.yaml › platform.slxd). Remove this line to manage the file by hand.\n"
-            f"[mcp_servers.{json.dumps(name)}]\nurl = {json.dumps(url)}\n"
-        )
+    sections = [f"[mcp_servers.{json.dumps(name)}]\nurl = {json.dumps(url)}\n"] if url else []
+    if capture_on:
+        sections.append(f'[mcp_servers.{json.dumps(CAPTURE_SERVER)}]\ncommand = "coursekit"\nargs = ["capture", "serve"]\n')
+    if sections and (not codex.exists() or MARKER in codex.read_text(encoding="utf-8")):
+        origin = "project.yaml › platform.slxd" + (" and capture.yaml › enabled" if capture_on else "") if url \
+            else "capture.yaml › enabled"
+        text = f"# {MARKER} (from {origin}). Remove this line to manage the file by hand.\n" + "\n".join(sections)
         if not codex.exists() or codex.read_text(encoding="utf-8") != text:
             codex.parent.mkdir(parents=True, exist_ok=True)
             codex.write_text(text, encoding="utf-8", newline="\n")

@@ -67,8 +67,20 @@ What you may do with an `interface` resource, in this order:
    there, work from it: for a **video**, the recipe `screen-recording` (Remotion over the real recording: narration with the
    voice of the course, captions, zooms, highlights, the cursor of the recording; nothing of the screen is redrawn); for an
    **image**, the recipe `screenshot` (crop it and mark it with numbers, frames or arrows; never redraw it); for a **GIF**, cut
-   and convert the recording with ffmpeg. Record it with the recipe and `--depicts interface`.
-3. **Nothing of the above exists yet: do not produce it.** Write the **brief for the person** in
+   and convert the recording with ffmpeg. Record it with the recipe and `--depicts interface`. When the project captures
+   (`coursekit config capture` › `enabled`), first cover the personal data of what the person provided:
+   `coursekit capture redact <CODE> <id>` (the original leaves the project), and work from the covered file only after a
+   person approved it (`coursekit capture approve`, which you may not run: tell them `coursekit capture review <CODE> <id>`).
+3. **A capture you make yourself**, when the tools of the `coursekit-capture` MCP server are available and a person allowed
+   it (`coursekit capture allow`; you may not run it, nor `login`): write first the brief of item 4 and, in it, a `capture`
+   block with where it starts (`start: /path`) and what must always be hidden (`mask: [{selector: ...}, {text: ...}]`). Then
+   `session_start` with the code and the id, follow the steps of the brief looking at each `screenshot` (use `zoom` to read
+   small text), `save_shot` when the screen is the one the resource needs (for a video, `record_start` and `record_stop`
+   around the steps it shows), and `session_end`. The personal data on screen is already replaced with invented data: never
+   try to undo it, never log in or type a password or a code, never leave the application. If a tool says that the
+   permission or the session is gone, stop and tell the person what to run. The capture then waits for a person
+   (`coursekit capture review` and `approve`); compose the resource from it only once approved.
+4. **Nothing of the above exists yet: do not produce it.** Write the **brief for the person** in
    `courses/<CODE>/media/scripts/<id>.md` and leave the asset waiting:
    `coursekit media set <CODE> <id> --status scripted --recipe screen-recording|screenshot --depicts interface`.
    The brief says: what the resource teaches; the exact account, application and version to use; the steps in order (what to

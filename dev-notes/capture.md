@@ -190,4 +190,12 @@ mask: [{selector: ".account-email"}, {text: "Ana García"}]
   `produced` mientras la captura espera revisión o está rechazada, denegaciones de `approve`/`reject`, extra con
   rapidocr-onnxruntime y opencv-python-headless. Falta probar a mano el OCR real y el vídeo (el test del vídeo se salta sin
   OpenCV). Apple Vision en macOS queda pendiente.
-- [ ] Paso 3
+- [x] Paso 3a (sin commit todavía): `mcpserver.py` (MCP mínimo por stdio, sin dependencias), `tools/capture-dom.js`
+  (probado en el Chrome de la máquina con `--dump-dom`: texto, atributos, título, shadow DOM cerrado, lo que llega después,
+  campos y áreas editables difuminados sin tocar su valor, selectores, avatares), `capture_session.py` (sesión, permiso
+  comprobado en cada acción, `login_url`, dominios, campos secretos, coordenadas, `pixel_check`, pasos al bloque del guion),
+  `coursekit capture serve`, registro de `coursekit-capture` en los tres ficheros, herramientas permitidas al agente de
+  multimedia sin interfaz, skill de `/produce-media`. El vídeo se graba en `replay` (3b), no durante la sesión: el modelo
+  piensa entre acciones y el vídeo saldría con pausas. Falta probar a mano una sesión real con Playwright.
+- [ ] Paso 3b: `coursekit capture replay` (repite los pasos a ritmo humano, cursor visible inyectado, graba con el
+  screencast de CDP → ffmpeg, `pixel_check` sobre el vídeo), y entonces `screen-recording` queda completo.
