@@ -47,6 +47,13 @@ coursekit te avisa cuando se publica una versión nueva: como mucho una vez al d
 
 Si el shell no encuentra `coursekit` tras instalarlo, ejecuta `uv tool update-shell` y abre una terminal nueva.
 
+Las capturas reales de aplicaciones ([`coursekit capture`](03-commands.md#coursekit-capture)) necesitan el extra opcional `capture` (Playwright, un OCR y OpenCV; descarga bastante). Instala el paquete con él, o reinstálalo sobre la copia que tienes; las comillas evitan que la terminal interprete los corchetes:
+
+```bash
+uv tool install --force "slxd-coursekit[capture]"
+uv tool install --force --editable "./coursekit[capture]"   # desde un clon
+```
+
 ### Desinstalar
 
 `coursekit setup` puede instalar cosas fuera de tus proyectos: las herramientas de multimedia, una voz de borrador, las dependencias de Remotion y, si lo aceptas, líneas en los ficheros de tu terminal. Quítalas **primero**, mientras el comando todavía existe, y después quita el paquete:

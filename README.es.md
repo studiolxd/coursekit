@@ -53,6 +53,8 @@ Para probarlo desde un clon, con los cambios aplicándose al instante:
 uv tool install --editable /ruta/a/coursekit
 ```
 
+Las capturas reales de aplicaciones (`coursekit capture`) necesitan el extra opcional `capture`: `uv tool install --force "slxd-coursekit[capture]"` (desde un clon: `uv tool install --force --editable "/ruta/a/coursekit[capture]"`).
+
 Para actualizar una copia instalada: `uv tool upgrade slxd-coursekit`. Nada más: el primer comando en cada proyecto regenera sus ficheros gestionados y los de los agentes. Una versión concreta: `uv tool install slxd-coursekit==0.2.1`.
 
 ## Inicio rápido
