@@ -220,7 +220,7 @@ Next step: create your first course.
 
 Before you start (optional, but worth it):
   · Reference material: drop the documents in brief/sources/, the URLs in brief/links.md and the general indications in brief/notes.md. `coursekit brief` converts them for the agents to read.
-  · Project defaults: look at config/*.example.yaml (rules, directives, media, delivery and import) and, to change one, create config/<name>.yaml with only what you change. `coursekit config` shows what is in force.
+  · Project defaults: look at config/*.example.yaml (rules, directives, media, delivery, import, capture and video) and, to change one, create config/<name>.yaml with only what you change. `coursekit config` shows what is in force.
 
 Then:
   1. Go into the project:  cd acme-courses
