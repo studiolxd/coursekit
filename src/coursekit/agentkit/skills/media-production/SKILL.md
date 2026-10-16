@@ -144,13 +144,18 @@ credits.
   1. a scene that exists tells the idea well: use it (`coursekit video catalog <CODE>` lists the scenes of the library, of
      the project and of the course, their props, their limits and what each one is built from);
   2. none does: **create one**, composed from the atoms and molecules of the library (`Heading`, `Text`, `Enter`, `Stagger`,
-     `Underline`, `Counter`, `MediaSlot`, `Ring`, `Background`, `TitleBlock`, `BulletList`, `StatBlock`, `ScreenRecording`;
+     `Underline`, `Counter`, `MediaSlot`, `Ring`, `Background`, `Card`, `Badge`, `Arrow`, `TitleBlock`, `BulletList`,
+     `StatBlock`, `CompareColumn`, `StepNode`, `ScreenRecording`;
      read the scenes of `tools/remotion/kit/scenes/` to see how they are put together). A scene is a folder with
      `index.tsx` (`export default` a component that receives `{props}`, importing from `"../../../kit"`) and `scene.yaml`
      (`description`, `built_from`, and its `props` with `type`, `required`, `max_chars`, `on_screen`, `label`). It goes in
      `tools/remotion/src/scenes/<name>/` when other courses can use it, or in `courses/<CODE>/video/scenes/<name>/` when it
      only makes sense in this course; the same name hides the scene of the library (or of the project);
   3. an atom is missing: write it inside your scene, with the same rules.
+  Over a scene, a **layer** enters when its words are said (`layers: [{type, props, at: "…", until: "…"}]`: `lower-third`,
+  `callout`, `highlight`, or one you create the same way, in `src/layers/<name>/` or `video/layers/<name>/` with `layer.yaml`).
+  Vary the scenes (do not chain the same one), keep the text on screen short (what is left over goes to the narration) and
+  give each item, step or column the words that name it (`say`), so it enters when it is said.
   The library is a starting point, not a limit: if the idea asks for another visual (a diagram that builds itself, a
   timeline, a before and after), create it. The rules of every scene: everything moves with the frame
   (`useCurrentFrame`, no CSS animations or timers); colours and fonts only from the theme (`useColor`, `useTheme`); what

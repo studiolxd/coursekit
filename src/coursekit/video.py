@@ -87,36 +87,56 @@ def kit_source() -> Path:
 
 # ── the scenes there are ─────────────────────────────────────────────────────────────────────
 
-def _scene_folders(base: Path) -> dict[str, Path]:
+META = {"scenes": "scene.yaml", "layers": "layer.yaml"}
+
+
+def _folders(base: Path) -> dict[str, Path]:
     if not base.is_dir():
         return {}
     return {p.name: p for p in sorted(base.iterdir()) if p.is_dir() and NAME_RE.match(p.name) and (p / "index.tsx").exists()}
 
 
-def _meta(folder: Path) -> dict:
+def _meta(folder: Path, kind: str = "scenes") -> dict:
     try:
-        data = yaml.safe_load((folder / "scene.yaml").read_text(encoding="utf-8")) or {}
+        data = yaml.safe_load((folder / META[kind]).read_text(encoding="utf-8")) or {}
     except (OSError, yaml.YAMLError):
         data = {}
     return data if isinstance(data, dict) else {}
 
 
-def scenes(course: dict) -> dict[str, dict]:
-    """The scenes a montage of this course can use: name → {origin, folder, meta}, the course first, then the project."""
+def pieces(course: dict, kind: str = "scenes") -> dict[str, dict]:
+    """The scenes (or the layers) a montage of this course can use: name → {origin, folder, meta, hides}; the course wins
+    over the project, and the project over the library."""
     found: dict[str, dict] = {}
-    layers = (("library", kit_source() / "scenes"), ("project", workspace(course) / "src" / "scenes"),
-              ("course", course["_dir"] / "video" / "scenes"))
+    layers = (("library", kit_source() / kind), ("project", workspace(course) / "src" / kind),
+              ("course", course["_dir"] / "video" / kind))
     for origin, base in layers:
-        for name, folder in _scene_folders(base).items():
-            found[name] = {"origin": origin, "folder": folder, "meta": _meta(folder),
+        for name, folder in _folders(base).items():
+            found[name] = {"origin": origin, "folder": folder, "meta": _meta(folder, kind),
                            "hides": found[name]["origin"] if name in found else None}
     return found
+
+
+def scenes(course: dict) -> dict[str, dict]:
+    return pieces(course, "scenes")
 
 
 def catalog(course: dict) -> list[str]:
     """The scenes, the atoms and the molecules, with their props and what each scene is built from."""
     lines = []
-    for name, scene in sorted(scenes(course).items()):
+    for kind in ("scenes", "layers"):
+        lines.append(t("video", f"catalog_{kind}"))
+        lines += _catalog_lines(pieces(course, kind))
+    kit = kit_source()
+    for kind in ("atoms", "molecules"):
+        names = sorted(p.stem for p in (kit / kind).glob("*.tsx"))
+        lines.append(t("video", f"catalog_{kind}", names=", ".join(names)))
+    return lines
+
+
+def _catalog_lines(found: dict[str, dict]) -> list[str]:
+    lines = []
+    for name, scene in sorted(found.items()):
         meta = scene["meta"]
         hides = t("video", "hides", origin=scene["hides"]) if scene["hides"] else ""
         lines.append(t("video", "catalog_scene", name=name, origin=scene["origin"], hides=hides,
@@ -130,10 +150,6 @@ def catalog(course: dict) -> list[str]:
             bits += [t("video", "catalog_max", n=spec["max_chars"])] if spec.get("max_chars") else []
             bits += [t("video", "catalog_on_screen")] if spec.get("on_screen") else []
             lines.append(f"      {prop}: {', '.join(bits)}" + (f" — {spec['help']}" if spec.get("help") else ""))
-    kit = kit_source()
-    for kind in ("atoms", "molecules"):
-        names = sorted(p.stem for p in (kit / kind).glob("*.tsx"))
-        lines.append(t("video", f"catalog_{kind}", names=", ".join(names)))
     return lines
 
 
@@ -165,22 +181,37 @@ def _text(value) -> str:
     return "" if value is None else str(value)
 
 
-def _texts_on_screen(props: dict, spec: dict, labels: bool = True) -> list[tuple[str, str]]:
-    """(prop, text) of every prop the scene shows on screen, lists included; without `labels`, those marked `label` (a kicker,
-    a tag: they need not be said)."""
-    out = []
+def _walk(value, rule: dict, path: str, out: list) -> None:
+    rule = rule if isinstance(rule, dict) else {}
+    kind = rule.get("type")
+    if kind == "object" and isinstance(value, dict):
+        for name, sub in (rule.get("fields") or {}).items():
+            if value.get(name) is not None:
+                _walk(value[name], sub, f"{path}.{name}", out)
+    elif kind == "list" and isinstance(value, list):
+        for i, item in enumerate(value):
+            if rule.get("items") and isinstance(item, dict):
+                for name, sub in rule["items"].items():
+                    if item.get(name) is not None:
+                        _walk(item[name], sub, f"{path}[{i}].{name}", out)
+            elif rule.get("on_screen") and not isinstance(item, (dict, list)):
+                out.append((f"{path}[{i}]", _text(item), rule.get("items_max_chars"), bool(rule.get("label"))))
+    elif rule.get("on_screen") and not isinstance(value, (dict, list)):
+        out.append((path, _text(value), rule.get("max_chars"), bool(rule.get("label"))))
+
+
+def on_screen(props: dict, spec: dict) -> list[tuple[str, str, int | None, bool]]:
+    """(where, text, maximum characters, is a label) of everything a scene shows on screen, nested props included."""
+    out: list = []
     for prop, rule in (spec or {}).items():
-        rule = rule if isinstance(rule, dict) else {}
-        value = props.get(prop)
-        if rule.get("type") == "list" and isinstance(value, list):
-            for item in value:
-                for sub, sub_rule in (rule.get("items") or {}).items():
-                    if isinstance(sub_rule, dict) and sub_rule.get("on_screen") and isinstance(item, dict) and item.get(sub) is not None \
-                            and (labels or not sub_rule.get("label")):
-                        out.append((f"{prop}.{sub}", _text(item[sub])))
-        elif rule.get("on_screen") and value is not None and (labels or not rule.get("label")):
-            out.append((prop, _text(value)))
+        if props.get(prop) is not None:
+            _walk(props[prop], rule, prop, out)
     return out
+
+
+def _texts_on_screen(props: dict, spec: dict, labels: bool = True) -> list[tuple[str, str]]:
+    """(where, text) of what a scene shows on screen; without `labels`, not those marked `label` (they need not be said)."""
+    return [(where, text) for where, text, _, label in on_screen(props, spec) if labels or not label]
 
 
 def check(course: dict, asset_id: str) -> list[Finding]:
@@ -231,13 +262,11 @@ def check(course: dict, asset_id: str) -> list[Finding]:
         for prop in props:
             if prop not in spec and spec:
                 found.append(Finding("warning", "UNKNOWN_PROP", where, t("video", "unknown_prop", prop=prop, type=kind)))
-        for prop, text in _texts_on_screen(props, spec):
-            base = prop.split(".")[0]
-            rule = spec.get(base) or {}
-            limit = (rule.get("items") or {}).get(prop.split(".")[1], {}).get("max_chars") if "." in prop else rule.get("max_chars")
+        for prop, text, limit, _ in on_screen(props, spec):
             if limit and len(text) > int(limit):
                 found.append(Finding("warning", "TEXT_LONG", where, t("video", "text_long", prop=prop, n=len(text), max=limit)))
         says = _text(scene.get("says")).strip()
+        found += _check_layers(course, scene, where, says, numbers)
         if not says and not scene.get("duration"):
             found.append(Finding("error", "NO_DURATION", where, t("video", "no_duration")))
         if not scene.get("shows"):  # what is on screen is also said (a silent scene describes it with `shows`)
@@ -247,7 +276,56 @@ def check(course: dict, asset_id: str) -> list[Finding]:
     return found
 
 
+def _check_layers(course: dict, scene: dict, where: str, says: str, numbers: list[str]) -> list[Finding]:
+    found, available = [], pieces(course, "layers")
+    for n, layer in enumerate(scene.get("layers") or [], 1):
+        here = f"{where}/{layer.get('id') or n}" if isinstance(layer, dict) else f"{where}/{n}"
+        if not isinstance(layer, dict) or _text(layer.get("type")) not in available:
+            kind = _text(layer.get("type")) if isinstance(layer, dict) else "—"
+            found.append(Finding("error", "UNKNOWN_LAYER", here, t("video", "unknown_layer", type=kind or "—",
+                                                                   known=", ".join(sorted(available)))))
+            continue
+        spec = available[layer["type"]]["meta"].get("props") or {}
+        props = layer.get("props") or {}
+        for prop, rule in spec.items():
+            if isinstance(rule, dict) and rule.get("required") and props.get(prop) in (None, "", []):
+                found.append(Finding("error", "PROP_MISSING", here, t("video", "prop_missing", prop=prop)))
+        for key in ("at", "until"):
+            if layer.get(key) and not says_phrase(says, str(layer[key])):
+                found.append(Finding("warning", "ANCHOR_NOT_SAID", here, t("video", "anchor_not_said", key=key, phrase=layer[key])))
+        for prop, text, limit, label in on_screen(props, spec):
+            if limit and len(text) > int(limit):
+                found.append(Finding("warning", "TEXT_LONG", here, t("video", "text_long", prop=prop, n=len(text), max=limit)))
+            if not label and not scene.get("shows") and not mediaaccess.said(text, says, numbers):
+                found.append(Finding("warning", "NOT_SAID", here, t("video", "not_said", prop=prop, text=text)))
+    return found
+
+
 # ── the voice ────────────────────────────────────────────────────────────────────────────────
+
+def _normal_words(text: str) -> list[str]:
+    import unicodedata
+
+    text = unicodedata.normalize("NFD", text)
+    text = "".join(c for c in text if unicodedata.category(c) != "Mn").lower()
+    return [w for w in re.sub(r"[^a-z0-9ñ]+", " ", text).split() if w]
+
+
+def when_said(words: list[dict], phrase: str, after: float = -1) -> dict | None:
+    """The first word (with its start and end) of the first time a phrase is said from `after` on; the last one in `end`."""
+    wanted = _normal_words(phrase)
+    said = [(_normal_words(str(w["w"])) or [""])[0] for w in words]
+    for i in range(0, len(said) - len(wanted) + 1):
+        if wanted and float(words[i]["start"]) >= after and said[i:i + len(wanted)] == wanted:
+            return {"start": float(words[i]["start"]), "end": float(words[i + len(wanted) - 1]["end"])}
+    return None
+
+
+def says_phrase(says: str, phrase: str) -> bool:
+    """Whether a phrase is in a narration (the same words in a row), before the voice exists."""
+    wanted, said = _normal_words(phrase), _normal_words(says)
+    return bool(wanted) and any(said[i:i + len(wanted)] == wanted for i in range(len(said) - len(wanted) + 1))
+
 
 def _hash(*parts: str) -> str:
     return hashlib.sha256("\x00".join(parts).encode("utf-8")).hexdigest()[:16]
@@ -343,12 +421,33 @@ def resolve(course: dict, asset_id: str) -> dict:
             seconds = max(seconds, float(scene["duration"]))
         frames = max(1, round(seconds * fps))
         resolved.append({"id": sid, "type": str(scene["type"]), "from": cursor, "frames": frames, "props": props, "audio": audio,
-                         "words": words, "says": says})
+                         "words": words, "says": says, "layers": _resolve_layers(scene, words, frames, fps)})
         cursor += frames
     return {"fps": fps, "width": int(fmt["width"]), "height": int(fmt["height"]), "frames": cursor,
             "tokens": {k: tokens[k] for k in ("color", "font", "radius", "space") if k in tokens},
             "motion": {"enter": 18, "stagger": 6, "fade": 10, "damping": 18, **(data.get("motion") or {})},
             "scenes": resolved}
+
+
+def _resolve_layers(scene: dict, words: list[dict], frames: int, fps: int) -> list[dict]:
+    """Each layer from the word it is anchored to (`at`) until `until` is said, or `hold` seconds (default 3), inside its scene.
+    A layer whose word is not said is left out (`video check` warns of it)."""
+    out = []
+    for n, layer in enumerate(scene.get("layers") or [], 1):
+        start = 0.0
+        if layer.get("at"):
+            hit = when_said(words, str(layer["at"]))
+            if hit is None:
+                continue
+            start = hit["start"]
+        end = start + float(layer.get("hold") or 3)
+        if layer.get("until"):
+            hit = when_said(words, str(layer["until"]), start)
+            end = hit["end"] if hit else end
+        first = min(frames - 1, round(start * fps))
+        out.append({"id": str(layer.get("id") or f"{scene['id']}-{n}"), "type": str(layer["type"]), "from": first,
+                    "frames": max(1, min(frames - first, round((end - start) * fps))), "props": dict(layer.get("props") or {})})
+    return out
 
 
 # ── the workspace of Remotion ────────────────────────────────────────────────────────────────
@@ -366,24 +465,29 @@ def sync(course: dict) -> Path:
     (kit / "README.md").write_text(t("video", "kit_readme") + "\n", encoding="utf-8")
     copies = root / COURSE_COPY
     shutil.rmtree(copies, ignore_errors=True)
-    lines, names = [], []
-    for name, scene in sorted(scenes(course).items()):
-        if scene["origin"] == "library":
-            path = f"./scenes/{name}"
-        elif scene["origin"] == "project":
-            path = f"../src/scenes/{name}"
-        else:
-            target = copies / f"{course['code'].lower()}-{name}"
-            shutil.copytree(scene["folder"], target)
-            path = f"../{COURSE_COPY.as_posix()}/{target.name}"
-        ident = "s_" + re.sub(r"[^a-z0-9]", "_", name)
-        lines.append(f'import {ident} from "{path}";')
-        names.append(f'"{name}": {ident}')
+    lines, tables = [], {}
+    for kind, prefix in (("scenes", "s_"), ("layers", "l_")):
+        names = []
+        for name, piece in sorted(pieces(course, kind).items()):
+            if piece["origin"] == "library":
+                path = f"./{kind}/{name}"
+            elif piece["origin"] == "project":
+                path = f"../src/{kind}/{name}"
+            else:
+                target = copies / f"{course['code'].lower()}-{kind}-{name}"
+                shutil.copytree(piece["folder"], target)
+                path = f"../{COURSE_COPY.as_posix()}/{target.name}"
+            ident = prefix + re.sub(r"[^a-z0-9]", "_", name)
+            lines.append(f'import {ident} from "{path}";')
+            names.append(f'"{name}": {ident}')
+        tables[kind] = ", ".join(names)
     (kit / "registry.generated.ts").write_text(
-        "// Written by coursekit (`coursekit video …`): the scenes of the library, the project and the course that win. Do not edit.\n"
-        'import type React from "react";\nimport type { SceneProps } from "./contract";\n' + "\n".join(lines) +
+        "// Written by coursekit (`coursekit video …`): the scenes and layers of the library, the project and the course that win.\n"
+        'import type React from "react";\nimport type { LayerProps, SceneProps } from "./contract";\n' + "\n".join(lines) +
         "\n\n// eslint-disable-next-line @typescript-eslint/no-explicit-any\n"
-        f"export const scenes: Record<string, React.FC<SceneProps<any>>> = {{ {', '.join(names)} }};\n", encoding="utf-8", newline="\n")
+        f"export const scenes: Record<string, React.FC<SceneProps<any>>> = {{ {tables['scenes']} }};\n"
+        "// eslint-disable-next-line @typescript-eslint/no-explicit-any\n"
+        f"export const layers: Record<string, React.FC<LayerProps<any>>> = {{ {tables['layers']} }};\n", encoding="utf-8", newline="\n")
     return root
 
 
@@ -464,6 +568,10 @@ def render(course: dict, asset_id: str) -> dict:
     media = course["_dir"] / "media"
     out = media / "files" / f"{asset_id}.mp4"
     _remotion(root, ["render", f"{KIT}/entry.ts", "Montage", str(out), f"--props={props}", f"--public-dir={media}", "--log=error"])
+    if any(scene["audio"] for scene in resolved["scenes"]):  # the voice at the loudness of the course (media › checks)
+        cfg = mediacheck.settings(course)
+        if mediacheck.loudness_finding({"id": asset_id}, out, cfg) is not None:
+            mediacheck.fix_loudness(out, cfg)
     vtt, words = _captions(resolved)
     out.with_suffix(".vtt").write_text(vtt, encoding="utf-8", newline="\n")
     mediatools.write_words([{"w": w["w"], "start": w["start"], "end": w["end"]} for w in words], mediatools.words_path(out))

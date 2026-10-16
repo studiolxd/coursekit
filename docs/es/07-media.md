@@ -193,25 +193,26 @@ scenes:
     shows: "El cierre, sobre el color de acento: «Larga y única»"
 ```
 
-Una escena tiene un `id`, un `type`, sus `props`, lo que `says` (o una `duration` cuando no dice nada) y, si hace falta, `shows` (lo que se ve, cuando la locución no lo dice).
+Una escena tiene un `id`, un `type`, sus `props`, lo que `says` (o una `duration` cuando no dice nada) y, si hace falta, `shows` (lo que se ve, cuando la locución no lo dice) y `layers`: cada una con un `type`, sus `props`, `at` (las palabras de la locución con las que entra) y `until` (las palabras con las que sale) o `hold` (segundos, por defecto 3), por ejemplo `{type: callout, props: {text: "Doce o más"}, at: "doce", until: "más"}`. Una capa cuyas palabras no se dicen se deja fuera, y `coursekit video check` lo avisa (`ANCHOR_NOT_SAID`). Tras el render, la voz se lleva a la sonoridad de `media › checks`.
 
 **Las piezas.** Todo se construye por niveles, cada uno solo con el de abajo:
 
 | Nivel | Qué | En la biblioteca |
 |---|---|---|
 | Tokens | el tema del curso (el suyo, o si no el del proyecto) y los tokens de movimiento | colores, tipografías, radio; cuánto tardan las cosas en entrar |
-| Átomos | las piezas mínimas, movidas por el fotograma | `Heading`, `Text`, `Enter`, `Stagger`, `Underline`, `Counter`, `MediaSlot`, `Ring`, `Background`, `ScreenRecording`; `useAt("palabra")`: cuándo la dice la locución |
-| Moléculas | combinaciones pequeñas | `TitleBlock`, `BulletList`, `StatBlock` |
-| Escenas | composiciones completas | `title`, `split`, `stat`, `outro`, `screencast` |
+| Átomos | las piezas mínimas, movidas por el fotograma | `Heading`, `Text`, `Enter`, `Stagger`, `Underline`, `Counter`, `MediaSlot`, `Ring`, `Background`, `Card`, `Badge`, `Arrow`, `ScreenRecording`; `useAt("palabra")` y `useSayTimes([...])`: cuándo la dice la locución |
+| Moléculas | combinaciones pequeñas | `TitleBlock`, `BulletList`, `StatBlock`, `CompareColumn`, `StepNode` |
+| Escenas | composiciones completas | `title`, `split`, `stat`, `compare`, `list`, `quote`, `diagram` (un proceso que se construye), `outro`, `screencast` |
+| Capas | sobre una escena, desde una palabra de su locución | `lower-third` (un nombre y un cargo), `callout` (una nota corta en una esquina), `highlight` (un anillo sobre un punto) |
 
-Los tokens llegan al vídeo como datos, así que un curso con otro tema da otro vídeo sin cambiar nada. Una escena es una carpeta con `index.tsx` (su componente) y `scene.yaml` (qué es, de qué está hecha y sus props: tipo, obligatoria, máximo de caracteres, en pantalla, etiqueta); `coursekit video catalog` las lista todas, para que se vean las piezas y cómo se arman.
+Los tokens llegan al vídeo como datos, así que un curso con otro tema da otro vídeo sin cambiar nada. Una escena es una carpeta con `index.tsx` (su componente) y `scene.yaml` (una capa, `layer.yaml`) (qué es, de qué está hecha y sus props: tipo, obligatoria, máximo de caracteres, en pantalla, etiqueta); `coursekit video catalog` las lista todas, para que se vean las piezas y cómo se arman.
 
 **Dónde están las escenas y cuál gana.** Una escena del curso tapa a la del proyecto con el mismo nombre, y una del proyecto a la de la biblioteca:
 
 | Dónde | Qué |
 |---|---|
-| `courses/<CODE>/video/scenes/<nombre>/` | escenas de un curso |
-| `tools/remotion/src/scenes/<nombre>/` | escenas del proyecto, para todos sus cursos |
+| `courses/<CODE>/video/scenes/<nombre>/`, `video/layers/<nombre>/` | escenas y capas de un curso |
+| `tools/remotion/src/scenes/<nombre>/`, `src/layers/<nombre>/` | escenas y capas del proyecto, para todos sus cursos |
 | `tools/remotion/kit/` | la biblioteca de coursekit: la escribe cada comando `coursekit video` desde el paquete; git la ignora y nunca se edita |
 
 Cuando ninguna escena cuenta una idea, el agente de multimedia crea una, compuesta con los átomos y las moléculas (importándolos de `"../../../kit"`, igual en una escena del proyecto que en una del curso), así que la biblioteca del proyecto crece con el uso. Las reglas de una escena: todo se mueve con el fotograma; colores y tipografías solo del tema; lo que entra con una palabra entra cuando la locución la dice; medios por su ruta dentro de la carpeta de medios del curso; nada de la red.

@@ -40,3 +40,7 @@ catalog_max: {es: "máx. {n}", en: "max {n}"}
 catalog_on_screen: {es: "en pantalla", en: "on screen"}
 catalog_atoms: {es: "átomos: {names}", en: "atoms: {names}"}
 catalog_molecules: {es: "moléculas: {names}", en: "molecules: {names}"}
+unknown_layer: {es: "no hay ninguna capa {type} (hay: {known})", en: "there is no layer {type} (there are: {known})"}
+anchor_not_said: {es: "{key}: la locución de la escena no dice «{phrase}», así que la capa no sabe cuándo entrar o salir", en: "{key}: the narration of the scene does not say «{phrase}», so the layer does not know when to enter or leave"}
+catalog_scenes: {es: "Escenas:", en: "Scenes:"}
+catalog_layers: {es: "Capas (sobre una escena, desde una palabra de su locución):", en: "Layers (over a scene, from a word of its narration):"}

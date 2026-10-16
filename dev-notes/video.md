@@ -60,4 +60,8 @@ una hoja, sin render completo), `video render` (MP4, subtítulos, palabras, tran
   `.gitignore` de los proyectos, skill con el orden de decisión. Probado de punta a punta con Piper, stable-ts y Remotion
   reales: voz, vista previa, render, `media check` y transcripción. El diseño visual de las escenas es básico: se pule en
   la fase 2.
-- [ ] Fase 2
+- [x] Fase 2 (sin commit todavía): átomos `Card`, `Badge`, `Arrow`; moléculas `CompareColumn`, `StepNode`; escenas `compare`,
+  `list`, `quote`, `diagram`; capas `lower-third`, `callout`, `highlight` con `at`/`until`/`hold` resueltos en Python con las
+  palabras (`video check` avisa de anclas que no se dicen); fondo `shape`; tamaños revisados mirando la vista previa real;
+  `video render` normaliza la sonoridad. Probado de punta a punta con 8 escenas y una capa.
+- [ ] Fase 3

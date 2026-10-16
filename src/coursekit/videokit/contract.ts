@@ -11,3 +11,12 @@ export type SceneProps<P = Record<string, unknown>> = {
   /** Its id in the montage. */
   id: string;
 };
+
+// The contract of a layer: a piece over a scene from the word it is anchored to (`at`) until `until` or `hold` seconds.
+// A layer is a folder with `index.tsx` and `layer.yaml`, like a scene.
+export type LayerProps<P = Record<string, unknown>> = {
+  props: P;
+  id: string;
+  /** How many frames it lasts. */
+  frames: number;
+};

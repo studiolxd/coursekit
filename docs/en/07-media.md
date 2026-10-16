@@ -193,25 +193,26 @@ scenes:
     shows: "The close, on the accent colour: «Long and unique»"
 ```
 
-A scene has an `id`, a `type`, its `props`, what it `says` (or a `duration` when it says nothing) and, optionally, `shows` (what is seen, when the narration does not say it).
+A scene has an `id`, a `type`, its `props`, what it `says` (or a `duration` when it says nothing) and, optionally, `shows` (what is seen, when the narration does not say it) and `layers`: each one a `type`, its `props`, `at` (the words of the narration it enters with), and `until` (the words it leaves with) or `hold` (seconds, default 3), for example `{type: callout, props: {text: "Twelve or more"}, at: "twelve", until: "more"}`. A layer whose words are not said is left out, and `coursekit video check` warns of it (`ANCHOR_NOT_SAID`). After the render, the voice is brought to the loudness of `media › checks`.
 
 **The pieces.** Everything is built in levels, each one only from the one below:
 
 | Level | What | In the library |
 |---|---|---|
 | Tokens | the theme of the course (its own, else the project's) and the tokens of motion | colours, fonts, radius; how long things take to enter |
-| Atoms | the smallest pieces, moved by the frame | `Heading`, `Text`, `Enter`, `Stagger`, `Underline`, `Counter`, `MediaSlot`, `Ring`, `Background`, `ScreenRecording`; `useAt("word")`: when the narration says it |
-| Molecules | small combinations | `TitleBlock`, `BulletList`, `StatBlock` |
-| Scenes | whole compositions | `title`, `split`, `stat`, `outro`, `screencast` |
+| Atoms | the smallest pieces, moved by the frame | `Heading`, `Text`, `Enter`, `Stagger`, `Underline`, `Counter`, `MediaSlot`, `Ring`, `Background`, `Card`, `Badge`, `Arrow`, `ScreenRecording`; `useAt("word")` and `useSayTimes([...])`: when the narration says it |
+| Molecules | small combinations | `TitleBlock`, `BulletList`, `StatBlock`, `CompareColumn`, `StepNode` |
+| Scenes | whole compositions | `title`, `split`, `stat`, `compare`, `list`, `quote`, `diagram` (a process that builds itself), `outro`, `screencast` |
+| Layers | over a scene, from a word of its narration | `lower-third` (a name and a role), `callout` (a short note at a corner), `highlight` (a ring on a point) |
 
-The tokens reach the video as data, so a course with another theme gives another video with no change. A scene is a folder with `index.tsx` (its component) and `scene.yaml` (what it is, what it is built from, and its props: type, required, maximum characters, on screen, label); `coursekit video catalog` lists them all, so the pieces and how they are put together can be seen.
+The tokens reach the video as data, so a course with another theme gives another video with no change. A scene is a folder with `index.tsx` (its component) and `scene.yaml` (a layer, `layer.yaml`) (what it is, what it is built from, and its props: type, required, maximum characters, on screen, label); `coursekit video catalog` lists them all, so the pieces and how they are put together can be seen.
 
 **Where the scenes are, and which one wins.** A scene of the course hides one of the project with the same name, and one of the project hides one of the library:
 
 | Where | What |
 |---|---|
-| `courses/<CODE>/video/scenes/<name>/` | scenes of one course |
-| `tools/remotion/src/scenes/<name>/` | scenes of the project, for every course |
+| `courses/<CODE>/video/scenes/<name>/`, `video/layers/<name>/` | scenes and layers of one course |
+| `tools/remotion/src/scenes/<name>/`, `src/layers/<name>/` | scenes and layers of the project, for every course |
 | `tools/remotion/kit/` | the library of coursekit: every `coursekit video` command writes it from the package; it is ignored by git and never edited |
 
 When no scene tells an idea, the media agent creates one, composed from the atoms and molecules (importing them from `"../../../kit"`, the same in a scene of the project and of a course), so the library of the project grows with use. The rules of a scene: everything moves with the frame; colours and fonts only from the theme; what enters with a word enters when the narration says it; media by their path inside the media folder of the course; nothing from the network.

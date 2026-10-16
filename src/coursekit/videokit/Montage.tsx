@@ -2,13 +2,14 @@ import React from "react";
 import { AbsoluteFill, Audio, interpolate, Sequence, staticFile, useCurrentFrame } from "remotion";
 import { ThemeProvider, type Motion, type Tokens } from "./theme";
 import { SceneTimeProvider, type Word } from "./timing";
-import { scenes as registry } from "./registry.generated";
+import { layers as layerRegistry, scenes as registry } from "./registry.generated";
 
 // The montage: the scenes one after another, each with its narration, its words and its duration (computed by coursekit from
 // the voice: changing a text changes the timing, not the code), in the theme of the course.
 
+export type ResolvedLayer = { id: string; type: string; from: number; frames: number; props: Record<string, unknown> };
 export type ResolvedScene = { id: string; type: string; from: number; frames: number; props: Record<string, unknown>;
-  audio?: string | null; words: Word[] };
+  audio?: string | null; words: Word[]; layers?: ResolvedLayer[] };
 export type MontageProps = { fps: number; width: number; height: number; frames: number; tokens: Tokens; motion: Motion;
   scenes: ResolvedScene[] };
 
@@ -28,6 +29,14 @@ export const Montage: React.FC<MontageProps> = ({ tokens, motion, scenes }) => (
             <SceneTimeProvider value={{ words: scene.words, frames: scene.frames }}>
               <Fade frames={scene.frames} fade={motion.fade}>
                 {Scene ? <Scene id={scene.id} props={scene.props} /> : null}
+                {(scene.layers ?? []).map((layer) => {
+                  const Layer = layerRegistry[layer.type];
+                  return Layer ? (
+                    <Sequence key={layer.id} from={layer.from} durationInFrames={layer.frames} name={layer.id}>
+                      <Layer id={layer.id} props={layer.props} frames={layer.frames} />
+                    </Sequence>
+                  ) : null;
+                })}
               </Fade>
               {scene.audio ? <Audio src={staticFile(scene.audio)} /> : null}
             </SceneTimeProvider>

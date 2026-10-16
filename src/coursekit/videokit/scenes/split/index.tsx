@@ -12,19 +12,19 @@ export type SplitProps = { kicker?: string; title: string; points?: Bullet[]; me
 
 export default function Split({ props }: SceneProps<SplitProps>) {
   const media = props.media ? (
-    <Enter at={10} from={props.side === "left" ? "right" : "left"} style={{ flex: 1, height: 680 }}>
+    <Enter at={10} from={props.side === "left" ? "right" : "left"} style={{ flex: 1, height: 720 }}>
       <MediaSlot src={props.media} />
     </Enter>
   ) : null;
   const text = (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 56 }}>
-      <TitleBlock kicker={props.kicker} title={props.title} size={72} />
+      <TitleBlock kicker={props.kicker} title={props.title} size={88} />
       {props.points?.length ? <BulletList items={props.points} at={24} /> : null}
     </div>
   );
   return (
     <AbsoluteFill>
-      <Background />
+      <Background variant="shape" />
       <AbsoluteFill style={{ flexDirection: "row", alignItems: "center", gap: 96, padding: "0 140px" }}>
         {props.side === "left" ? <>{media}{text}</> : <>{text}{media}</>}
       </AbsoluteFill>

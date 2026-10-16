@@ -15,3 +15,8 @@ export * from "./atoms/ScreenRecording";
 export * from "./molecules/TitleBlock";
 export * from "./molecules/BulletList";
 export * from "./molecules/StatBlock";
+export * from "./atoms/Card";
+export * from "./atoms/Badge";
+export * from "./atoms/Arrow";
+export * from "./molecules/CompareColumn";
+export * from "./molecules/StepNode";

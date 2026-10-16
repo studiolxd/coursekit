@@ -14,7 +14,7 @@ export const StatBlock: React.FC<{ value: number; prefix?: string; suffix?: stri
         <Counter value={value} at={at} prefix={prefix} suffix={suffix} decimals={decimals} locale={locale} />
       </Heading>
     </Enter>
-    <Enter at={at + 14}><Heading size={60} style={{ marginTop: 20 }}>{label}</Heading></Enter>
-    <Enter at={at + 26}><Text size={28} tone="text-soft" style={{ marginTop: 28 }}>{source}</Text></Enter>
+    <Enter at={at + 14}><Heading size={72} style={{ marginTop: 20 }}>{label}</Heading></Enter>
+    <Enter at={at + 26}><Text size={36} tone="text-soft" style={{ marginTop: 28 }}>{source}</Text></Enter>
   </div>
 );

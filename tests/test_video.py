@@ -39,10 +39,11 @@ def scene_folder(base, name, description="mine"):
 def test_the_catalog_shows_the_library_and_how_it_is_built(course):  # noqa: F811
     lines = video.catalog(montage(course))
     text = "\n".join(lines)
-    for name in ("title", "split", "stat", "outro", "screencast"):
+    for name in ("title", "split", "stat", "outro", "screencast", "compare", "list", "quote", "diagram", "lower-third", "callout"):
         assert f"{name} [library]" in text
     assert "built from: Background, TitleBlock" in text and "title: text, required, max 60, on screen" in text
-    assert "atoms: Background, Counter, Enter" in text and "molecules: BulletList, StatBlock, TitleBlock" in text
+    assert "atoms: Arrow, Background, Badge, Card, Counter" in text and "molecules: BulletList, CompareColumn, StatBlock" in text
+    assert text.index("Scenes:") < text.index("Layers (over a scene")
 
 
 def test_a_scene_of_the_course_hides_one_of_the_project_which_hides_one_of_the_library(course):  # noqa: F811
@@ -64,8 +65,9 @@ def test_the_registry_imports_the_scenes_that_win(course):  # noqa: F811
     workspace = video.sync(montage(course))
     registry = (workspace / "kit" / "registry.generated.ts").read_text(encoding="utf-8")
     assert 'import s_title from "../src/scenes/title";' in registry and 'import s_split from "./scenes/split";' in registry
-    assert 'import s_timeline from "../src/.course/pwd-timeline";' in registry
-    assert (workspace / "src" / ".course" / "pwd-timeline" / "index.tsx").exists()
+    assert 'import s_timeline from "../src/.course/pwd-scenes-timeline";' in registry
+    assert (workspace / "src" / ".course" / "pwd-scenes-timeline" / "index.tsx").exists()
+    assert 'import l_lower_third from "./layers/lower-third";' in registry and '"lower-third": l_lower_third' in registry
     assert (workspace / "kit" / "Montage.tsx").exists() and not (workspace / "kit" / "__init__.py").exists()
 
 
@@ -132,6 +134,7 @@ def test_render_leaves_the_video_with_its_captions_words_and_accessible_transcri
         __import__("pathlib").Path(out).write_bytes(b"mp4")
 
     monkeypatch.setattr(video, "_remotion", remotion)
+    monkeypatch.setattr(video.mediacheck, "loudness_finding", lambda *a: None)
     with pytest.raises(video.VideoError, match="say what it shows before it is produced"):
         video.render(voiced, "U1-S2-M1")  # a generated video says first that it shows no real interface
     assert main(["media", "set", "PWD", "U1-S2-M1", "--depicts", "concept"]) == 0
@@ -167,3 +170,38 @@ def test_the_montage_is_the_first_option_for_a_video():
     recipes = [r["id"] for r in config.package_defaults("media")["types"]["video"]]
     assert recipes[:2] == ["montage", "remotion"]
     assert mediacheck  # used by the voice
+
+
+def test_nested_props_are_checked_and_said(course, capsys):  # noqa: F811
+    prepare_asset(course, capsys)
+    data = {"scenes": [{"id": "sides", "type": "compare", "props": {
+        "left": {"title": "Una contraseña corta", "items": ["Se adivina en minutos con un programa de diccionario"]},
+        "right": {"title": "Una frase larga", "items": ["Tarda siglos"]}},
+        "says": "Una contraseña corta frente a una frase larga, que tarda siglos."}]}
+    found = {(f.code, f.text.split(" ")[0]) for f in video.check(montage(course, data), "U1-S2-M1")}
+    assert ("TEXT_LONG", "left.items[0]") in found and ("NOT_SAID", "left.items[0]") in found
+    assert not any(where.startswith("right") for code, where in found)
+
+
+def test_a_layer_enters_with_its_word_and_leaves_with_another(voiced, course, capsys):  # noqa: F811
+    data = json.loads(json.dumps(MONTAGE))
+    data["scenes"][1]["layers"] = [
+        {"type": "callout", "props": {"text": "Doce o más"}, "at": "doce", "until": "más"},
+        {"type": "lower-third", "props": {"title": "Ana López", "subtitle": "Seguridad"}, "at": "nunca"},
+        {"type": "nope", "props": {}}]
+    checked = montage(course, data)
+    found = {(f.where, f.code) for f in video.check(checked, "U1-S2-M1")}
+    assert ("length/2", "ANCHOR_NOT_SAID") in found and ("length/3", "UNKNOWN_LAYER") in found
+    assert not any(where == "length/1" for where, _ in found)
+    data["scenes"][1]["layers"] = data["scenes"][1]["layers"][:2]
+    video.voice(montage(course, data), "U1-S2-M1", lambda m: None)
+    layers = video.resolve(montage(course, data), "U1-S2-M1")["scenes"][1]["layers"]
+    # "La longitud manda: doce caracteres o más." at half a second a word: "doce" at 1.5 s, "más." ends at 3.4 s
+    assert layers == [{"id": "length-1", "type": "callout", "from": 45, "frames": 57, "props": {"text": "Doce o más"}}]
+
+
+def test_when_a_phrase_is_said():
+    words = [{"w": w, "start": i, "end": i + 0.5} for i, w in enumerate(["La", "longitud", "mínima:", "doce", "caracteres."])]
+    assert video.when_said(words, "Longitud mínima") == {"start": 1, "end": 2.5}
+    assert video.when_said(words, "doce caracteres", after=3) == {"start": 3, "end": 4.5}
+    assert video.when_said(words, "doce", after=3.5) is None and video.says_phrase("La longitud, mínima: doce", "longitud mínima")

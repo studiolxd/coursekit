@@ -13,7 +13,7 @@ export default function Stat({ props }: SceneProps<StatProps>) {
   const at = useAt(props.say, 6);
   return (
     <AbsoluteFill>
-      <Background />
+      <Background variant="shape" />
       <AbsoluteFill style={{ justifyContent: "center", padding: "0 160px" }}>
         <StatBlock {...props} at={at} />
       </AbsoluteFill>

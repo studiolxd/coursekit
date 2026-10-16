@@ -1,0 +1,6 @@
+description: A ring on a point of the scene (fractions of the screen), while the narration talks about it.
+built_from: [Ring]
+props:
+  fx: {type: number, required: true}
+  fy: {type: number, required: true}
+  size: {type: number}

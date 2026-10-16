@@ -41,3 +41,15 @@ export const useAt = (phrase: string | undefined, fallback = 0): number => {
 
 /** Frames since a moment of the scene (negative before it). */
 export const useSince = (frame: number) => useCurrentFrame() - frame;
+
+/** The frame of the scene in which each phrase is said, one after another (null for one that is not said, or not given). */
+export const useSayTimes = (phrases: (string | undefined)[]): (number | null)[] => {
+  const { words } = useSceneTime();
+  const { fps } = useVideoConfig();
+  let after = -1;
+  return phrases.map((phrase) => {
+    const s = phrase ? whenSaid(words, phrase, after) : null;
+    if (s != null) after = s;
+    return s == null ? null : Math.round(s * fps);
+  });
+};
