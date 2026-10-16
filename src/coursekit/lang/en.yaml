@@ -197,3 +197,17 @@ player:
   skin_secure: Secure connection
   skin_not_secure: Not secure
   sim_hint: You can click on the screen or the scene to point at what catches your attention.
+
+# Invented people and companies for `coursekit capture`: what replaces the real data of an application on screen, and the
+# first names and last names that help to find a person's name in a capture (the lists of every language are used to find
+# them). First names go apart for women and men, so the invented name keeps the gender of the real one.
+capture_people:
+  women: [Emma, Olivia, Amelia, Isla, Ava, Mia, Grace, Lily, Sophie, Chloe, Emily, Hannah, Sarah, Laura, Jessica,
+          Lucy, Ella, Ruby, Anna, Kate, James, Oliver, Jack, Harry, George]
+  men: [Noah, Leo, Oscar, Thomas, William, Daniel, Samuel, Joseph, David, Michael, John, Peter, Paul, Mark, Robert,
+        Richard, Andrew, Steven, Matthew, Ryan, Adam, Luke, Ben, Tom, Alex]
+  last_names: [Smith, Jones, Taylor, Brown, Williams, Wilson, Johnson, Davies, Robinson, Wright, Thompson, Evans, Walker,
+               White, Roberts, Green, Hall, Wood, Jackson, Clarke, Miller, Davis, Moore, Martin, Lee, Harris, Clark, Lewis,
+               Young, King]
+  companies: [Nexora, Valdia, Trelis, Orvanta, Kestrel Works, Brightfield, Lumen Labs, Northgate Supplies]
+  email_domain: example.com

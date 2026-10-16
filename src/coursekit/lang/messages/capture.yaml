@@ -31,3 +31,19 @@ session_since: {es: "sesión desde {at}", en: "session since {at}"}
 no_session: {es: "sin sesión", en: "no session"}
 not_configured: {es: "ya no está en capture.yaml (coursekit capture logout lo borra)", en: "no longer in capture.yaml (coursekit capture logout deletes it)"}
 no_profiles: {es: "no hay perfiles en capture.yaml › profiles", en: "there are no profiles in capture.yaml › profiles"}
+needs_one_id: {es: "{action} necesita el código del curso y un recurso", en: "{action} needs the code of the course and one resource"}
+no_recording: {es: "no hay grabación ni captura de {id}: déjala en {folder}.png o .mp4, o di cuál con --file", en: "there is no recording or capture of {id}: drop it in {folder}.png or .mp4, or say which with --file"}
+bad_recording: {es: "{name} no es una imagen (png, jpg, webp) ni un vídeo (mp4, mov, webm, mkv)", en: "{name} is not an image (png, jpg, webp) or a video (mp4, mov, webm, mkv)"}
+original_in_git: {es: "el original {path} ya estaba en git: sale del proyecto, pero sigue en el historial; quítalo de él si tenía datos reales", en: "the original {path} was already in git: it leaves the project, but it stays in the history; remove it from there if it had real data"}
+redacted: {es: "{id}: tapado ({found}) en {file}; revísalo en {review} y apruébalo con coursekit capture approve", en: "{id}: covered ({found}) in {file}; review it in {review} and approve it with coursekit capture approve"}
+review_nothing: {es: "nada encontrado", en: "nothing found"}
+review_title: {es: "Revisión de la captura {id} ({code})", en: "Review of the capture {id} ({code})"}
+review_found: {es: "Tapado: {found}. Lectura: {engine}, {frames} fotograma(s).", en: "Covered: {found}. Reading: {engine}, {frames} frame(s)."}
+review_how:
+  es: "Lo enmarcado está tapado. Comprueba que no queda ningún dato real (nombres, correos, teléfonos, cuentas, caras, documentos): si todo está bien, coursekit capture approve {code} {id}; si falta algo, coursekit capture reject {code} {id} --note \"…\" --mask \"texto\" y vuelve a taparlo con coursekit capture redact {code} {id}."
+  en: "What is framed is covered. Check that no real data is left (names, emails, phone numbers, accounts, faces, documents): if all is well, coursekit capture approve {code} {id}; if something is missing, coursekit capture reject {code} {id} --note \"…\" --mask \"text\" and cover it again with coursekit capture redact {code} {id}."
+nothing_to_review: {es: "{id} no tiene una captura que revisar (coursekit capture redact)", en: "{id} has no capture to review (coursekit capture redact)"}
+not_captured: {es: "{id} no tiene una captura pendiente de revisión (está: {state})", en: "{id} has no capture waiting for review (it is: {state})"}
+reject_needs_note: {es: "reject necesita --note con lo que falta o --mask con lo que hay que tapar", en: "reject needs --note with what is missing or --mask with what to cover"}
+decided_approved: {es: "{id}: captura aprobada; el original se ha borrado y /produce-media ya puede componer el recurso", en: "{id}: capture approved; the original is deleted and /produce-media can compose the resource now"}
+decided_rejected: {es: "{id}: captura rechazada; tápala de nuevo con coursekit capture redact {code} {id}", en: "{id}: capture rejected; cover it again with coursekit capture redact {code} {id}"}

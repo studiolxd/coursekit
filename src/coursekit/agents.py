@@ -41,12 +41,14 @@ DENY_CLAUDE = ["Bash(coursekit approve:*)", "Bash(coursekit videos approve:*)", 
                "Bash(coursekit client:*)", "Bash(coursekit hold:*)", "Bash(coursekit resume:*)",
                "Bash(coursekit handoff:*)", "Bash(coursekit reviewed*--by*)", "Bash(coursekit capture login:*)",
                "Bash(coursekit capture logout:*)", "Bash(coursekit capture allow:*)", "Bash(coursekit capture revoke:*)",
+               "Bash(coursekit capture approve:*)", "Bash(coursekit capture reject:*)",
                "Bash(git push:*)",
                "Edit(courses/*/assembly/*.json)"]  # the state of the assembly is written by `coursekit assemble`, never by hand
 DENY_OPENCODE = {"*coursekit approve*": "deny", "*coursekit videos approve*": "deny", "*coursekit videos reject*": "deny",
                  "*coursekit client*": "deny", "*coursekit hold*": "deny", "*coursekit resume*": "deny",
                  "*coursekit handoff*": "deny", "*coursekit reviewed*--by*": "deny", "*coursekit capture login*": "deny",
                  "*coursekit capture logout*": "deny", "*coursekit capture allow*": "deny", "*coursekit capture revoke*": "deny",
+                 "*coursekit capture approve*": "deny", "*coursekit capture reject*": "deny",
                  "git push*": "deny"}
 
 LANGUAGE_NAMES = {"es": "Spanish (Spain)", "en": "English"}

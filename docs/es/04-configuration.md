@@ -333,7 +333,7 @@ Las reglas por defecto dejan fuera el aviso que precede a un interactivo (`click
 
 ### `capture`: capturas reales de una aplicación
 
-Los perfiles de las aplicaciones web y los permisos de [`coursekit capture`](03-commands.md#coursekit-capture). No se captura nada hasta que un proyecto lo activa.
+Los perfiles de las aplicaciones web, los permisos de [`coursekit capture`](03-commands.md#coursekit-capture) y lo que se tapa en una captura. No se captura nada hasta que un proyecto lo activa.
 
 | Clave | Por defecto | Significado |
 |---|---|---|
@@ -341,6 +341,15 @@ Los perfiles de las aplicaciones web y los permisos de [`coursekit capture`](03-
 | `grant_minutes` | `60` | Cuánto dura un permiso de `coursekit capture allow` si no dice `--minutes`. |
 | `modes` | `[browser, desktop]` | Las formas de capturar que permite el proyecto: `browser` (una aplicación web en un navegador que abre coursekit) y `desktop` (una ventana de un programa de la máquina). |
 | `profiles` | `{}` | Las aplicaciones web, un perfil cada una. La clave es el nombre que usa `coursekit capture login` (minúsculas, cifras y guiones). Cada uno tiene `start_url` (dónde se abre), `allow_domains` (los únicos dominios que puede abrir; un dominio cubre sus subdominios, y el dominio del inicio de sesión único también va aquí si el acceso pasa por uno) y `account` (solo una etiqueta de qué cuenta es, nunca un nombre de usuario ni una contraseña). |
+| `redact.patterns` | `email`, `iban`, `card`, `national_id`, `phone`, `ip` | Los tipos de datos personales, por id, con la expresión regular que encuentra cada uno (sintaxis de Python). Donde el texto es exacto (el texto de una página) coursekit también comprueba los ids conocidos: las cifras de un teléfono, los dígitos de control de un IBAN, una tarjeta o un DNI/NIE, los números de una IP. Sobre los píxeles se tapa todo texto con esa forma, porque la lectura puede fallar. Añade los tuyos (un número de empleado, una referencia de expediente) con un id y una expresión; el mapa se fusiona clave a clave, así que `card: null` desactiva uno. Si dos se solapan, gana el primero de la lista. |
+| `redact.names` | `true` | Nombres de personas: un nombre conocido (`lang/<code>.yaml › capture_people`, las listas de todos los idiomas) seguido de una o dos palabras con mayúscula. |
+| `redact.extra_terms` | `[]` | Palabras que se tapan siempre, sin distinguir mayúsculas (una empresa real, un proyecto, un lugar). |
+| `redact.faces` | `true` | Caras en fotos y avatares, con el detector de caras de OpenCV (el extra `capture`). Sin él, la revisión avisa de que no se han buscado caras. |
+| `redact.pixels` | `pixelate` | Cómo se tapa sobre los píxeles: `pixelate`, `blur` o `solid`. |
+| `redact.padding` | `4` | Píxeles de margen alrededor de lo tapado. |
+| `redact.ocr` | `auto` | Quién lee el texto de los píxeles: `rapidocr` (se instala con el extra `capture`), `tesseract` (el programa de la máquina, con los datos de español para un curso en español si están instalados) o `auto` (rapidocr si está instalado; si no, tesseract). |
+| `redact.video_fps` | `4` | Lecturas por segundo de un vídeo; lo que encuentra una sigue tapado hasta la siguiente. |
+| `raw.keep_days` | `7` | Días que se guarda fuera del proyecto el original de una grabación (para taparlo de nuevo tras un rechazo); se borra al aprobar la captura. |
 
 ```yaml
 # config/capture.yaml
@@ -454,7 +463,7 @@ Qué contiene:
 | Ruta (dentro del almacén) | La escribe | Contenido |
 |---|---|---|
 | `workspaces/<name>-<hash>/` | `coursekit setup --media` (Remotion); `coursekit setup` y `coursekit assemble build` (constructor html); `coursekit assemble check` (verificador html) | Un espacio de trabajo de Node instalado una sola vez con `npm install`: el de Remotion (`workspaces/remotion-<hash>/`), el constructor del backend html (`workspaces/html-builder-<hash>/`, con `@studiolxd/scorm` y `esbuild`) y su verificador (`workspaces/html-checker-<hash>/`, con `playwright-core` y `axe-core`; usa el navegador instalado y no descarga ninguno). `<hash>` se calcula a partir de su `package.json` y su `package-lock.json`: los proyectos con las mismas dependencias comparten la carpeta, y un proyecto que edita su `package.json` tiene otra. El constructor html toma su `package.json` de coursekit, así que todos los proyectos de la misma versión lo comparten. |
-| `capture/<project>-<hash>/` | `coursekit capture login`, `coursekit capture allow` | Los perfiles de navegador de un proyecto (`profiles/<name>/`, con la sesión iniciada, y `profiles/<name>.json`, cuándo y quién) y sus permisos para capturar (`grants/<CODE>.json`). Solo puede leerlos su dueño; `coursekit capture logout` borra un perfil. |
+| `capture/<project>-<hash>/` | `coursekit capture login`, `allow` y `redact` | Los perfiles de navegador de un proyecto (`profiles/<name>/`, con la sesión iniciada, y `profiles/<name>.json`, cuándo y quién) sus permisos para capturar (`grants/<CODE>.json`) y los originales de las grabaciones que tapó `redact` (`raw/<CODE>/`, hasta aprobarlas o pasados `raw › keep_days`). Solo puede leerlos su dueño; `coursekit capture logout` borra un perfil. |
 | `installed.json` | `coursekit setup`, `coursekit assemble build` | El registro de lo que coursekit instaló fuera de los proyectos, para que `coursekit uninstall` pueda quitarlo. |
 
 `installed.json` es un fichero JSON con una lista por cada tipo de cosa:

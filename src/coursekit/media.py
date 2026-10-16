@@ -569,6 +569,9 @@ def set_asset(course: dict, asset_id: str, **values) -> str:
             raise MediaError(t("media", f"theme_{found.state}", code=course["code"]))
         if found.tokens:
             asset["theme"] = thememod.fingerprint(found.tokens)
+    capture_state = (asset.get("capture") or {}).get("state")
+    if values.get("status") in ("produced", "uploaded") and capture_state in ("captured", "rejected"):
+        raise MediaError(t("media", f"capture_{capture_state}", asset=asset_id, code=course["code"]))
     first_time = asset.get("status") not in ("produced", "uploaded")
     depicts = values.get("depicts") or asset.get("depicts")
     if depicts and depicts not in DEPICTS:

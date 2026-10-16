@@ -333,7 +333,7 @@ The default rules drop the prompt that comes before an interactive (`click`; our
 
 ### `capture`: real captures of an application
 
-The profiles of the web applications and the permissions of [`coursekit capture`](03-commands.md#coursekit-capture). Nothing is captured until a project turns it on.
+The profiles of the web applications, the permissions of [`coursekit capture`](03-commands.md#coursekit-capture) and what is covered in a capture. Nothing is captured until a project turns it on.
 
 | Key | Default | Meaning |
 |---|---|---|
@@ -341,6 +341,15 @@ The profiles of the web applications and the permissions of [`coursekit capture`
 | `grant_minutes` | `60` | How long a permission of `coursekit capture allow` lasts unless it says `--minutes`. |
 | `modes` | `[browser, desktop]` | The ways of capturing the project allows: `browser` (a web application in a browser coursekit opens) and `desktop` (a window of a program of the machine). |
 | `profiles` | `{}` | The web applications, one profile each. The key is the name `coursekit capture login` uses (lowercase letters, digits and hyphens). Each one has `start_url` (where it opens), `allow_domains` (the only domains it may open; a domain covers its subdomains, and the single sign-on domain goes here too if the login goes through one) and `account` (only a label of which account it is, never a user name or a password). |
+| `redact.patterns` | `email`, `iban`, `card`, `national_id`, `phone`, `ip` | The kinds of personal data, by id, with the regular expression that finds each one (Python syntax). Where the text is exact (the text of a page) coursekit also checks the known ids: the digits of a phone, the check digits of an IBAN, a card or a Spanish DNI/NIE, the numbers of an IP. On the pixels every text with the shape is covered, because the reading can be wrong. Add your own (an employee number, a file reference) with an id and an expression; the mapping merges key by key, so `card: null` turns one off. The first kind of the list wins when two overlap. |
+| `redact.names` | `true` | Names of people: a known first name (`lang/<code>.yaml › capture_people`, the lists of every language) followed by one or two capitalised words. |
+| `redact.extra_terms` | `[]` | Words always covered, whatever case (a real company, a project, a place). |
+| `redact.faces` | `true` | Faces in photos and avatars, with the face detector of OpenCV (the `capture` extra). Without it, the review says the faces were not looked for. |
+| `redact.pixels` | `pixelate` | How it is covered on the pixels: `pixelate`, `blur` or `solid`. |
+| `redact.padding` | `4` | Pixels of margin around what is covered. |
+| `redact.ocr` | `auto` | Who reads the text of the pixels: `rapidocr` (installed with the `capture` extra), `tesseract` (the program of the machine, with the Spanish data for a Spanish course if installed) or `auto` (rapidocr if installed, else tesseract). |
+| `redact.video_fps` | `4` | Readings per second of a video; what one finds stays covered until the next one. |
+| `raw.keep_days` | `7` | Days the original of a recording is kept outside the project (to cover it again after a rejection); it is deleted when the capture is approved. |
 
 ```yaml
 # config/capture.yaml
@@ -454,7 +463,7 @@ What it holds:
 | Path (inside the store) | Written by | Content |
 |---|---|---|
 | `workspaces/<name>-<hash>/` | `coursekit setup --media` (Remotion); `coursekit setup` and `coursekit assemble build` (html builder); `coursekit assemble check` (html checker) | A Node workspace installed once with `npm install`: the Remotion one (`workspaces/remotion-<hash>/`), the builder of the html backend (`workspaces/html-builder-<hash>/`, with `@studiolxd/scorm` and `esbuild`) and its checker (`workspaces/html-checker-<hash>/`, with `playwright-core` and `axe-core`; it uses the installed browser and downloads none). `<hash>` is computed from its `package.json` and `package-lock.json`: projects with the same dependencies share the folder, and a project that edits its `package.json` gets another one. The html builder takes its `package.json` from coursekit, so every project of the same version shares it. |
-| `capture/<project>-<hash>/` | `coursekit capture login`, `coursekit capture allow` | The browser profiles of a project (`profiles/<name>/`, with the logged-in session, and `profiles/<name>.json`, when and by whom) and its permissions to capture (`grants/<CODE>.json`). Readable only by its owner; `coursekit capture logout` deletes a profile. |
+| `capture/<project>-<hash>/` | `coursekit capture login`, `allow` and `redact` | The browser profiles of a project (`profiles/<name>/`, with the logged-in session, and `profiles/<name>.json`, when and by whom) its permissions to capture (`grants/<CODE>.json`) and the originals of the recordings `redact` covered (`raw/<CODE>/`, until approved or `raw › keep_days`). Readable only by its owner; `coursekit capture logout` deletes a profile. |
 | `installed.json` | `coursekit setup`, `coursekit assemble build` | The record of what coursekit installed outside the projects, so that `coursekit uninstall` can take it away. |
 
 `installed.json` is a JSON file with one list per kind of thing:

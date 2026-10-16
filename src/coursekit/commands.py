@@ -254,6 +254,26 @@ def cmd_capture(args: argparse.Namespace) -> int:
         elif args.action == "revoke":
             done = capturemod.revoke(project, args.target)
             print(t("capture", "revoked" if done else "revoke_none", code=args.target))
+        else:
+            if len(args.ids) != 1:
+                print(t("capture", "needs_one_id", action=args.action), file=sys.stderr)
+                return 2
+            course = coursemod.load(project, args.target)
+            asset_id = args.ids[0]
+            if args.action == "redact":
+                statesmod.ensure_active(course)
+                result = capturemod.redact(project, course, asset_id, Path(args.file) if args.file else None)
+                found = ", ".join(f"{kind} {n}" for kind, n in sorted(result["findings"].items())) or t("capture", "review_nothing")
+                for warning in result["warnings"]:
+                    print(t("commands", "warning_line", text=warning))
+                print(t("capture", "redacted", id=asset_id, found=found, file=result["file"].relative_to(project.root).as_posix(),
+                        review=result["review"].relative_to(project.root).as_posix()))
+            elif args.action == "review":
+                print(capturemod.review(course, asset_id).relative_to(project.root).as_posix())
+            else:
+                state = capturemod.decide(project, course, asset_id, args.action == "approve", args.note, args.mask)
+                print(t("capture", f"decided_{state['state']}", id=asset_id, code=course["code"]))
+                _mirror(project, course["code"])
     except capturemod.CaptureError as exc:
         print(t("commands", "error_line", text=exc), file=sys.stderr)
         return 1
@@ -1211,13 +1231,16 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.set_defaults(func=cmd_media)
 
     p = sub.add_parser("capture", help=t("commands", "help_capture"))
-    p.add_argument("action", choices=("login", "logout", "profiles", "allow", "revoke"))
+    p.add_argument("action", choices=("login", "logout", "profiles", "allow", "revoke", "redact", "review", "approve", "reject"))
     p.add_argument("target", nargs="?", help=t("commands", "help_capture_target"))
     p.add_argument("ids", nargs="*", help=t("commands", "help_capture_ids"))
     p.add_argument("--mode", choices=capturemod.MODES, help=t("commands", "help_capture_mode"))
     p.add_argument("--profile", help=t("commands", "help_capture_profile"))
     p.add_argument("--window", help=t("commands", "help_capture_window"))
     p.add_argument("--minutes", type=float, help=t("commands", "help_capture_minutes"))
+    p.add_argument("--file", help=t("commands", "help_capture_file"))
+    p.add_argument("--note", help=t("commands", "help_capture_note"))
+    p.add_argument("--mask", action="append", help=t("commands", "help_capture_mask"))
     p.set_defaults(func=cmd_capture)
 
     p = sub.add_parser("download", help=t("commands", "help_download"))

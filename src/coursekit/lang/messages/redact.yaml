@@ -1,0 +1,8 @@
+# Messages of the covering of personal data on the pixels (`coursekit capture redact`).
+ocr_missing: {es: "para leer el texto de la imagen hace falta el extra capture de coursekit (uv tool install \"slxd-coursekit[capture]\") o el programa tesseract", en: "reading the text of the image needs the capture extra of coursekit (uv tool install \"slxd-coursekit[capture]\") or the tesseract program"}
+ocr_failed: {es: "tesseract no pudo leer la imagen: {reason}", en: "tesseract could not read the image: {reason}"}
+faces_unchecked: {es: "no se han buscado caras (falta el extra capture de coursekit): revísalas a mano", en: "faces were not looked for (the capture extra of coursekit is missing): check them by hand"}
+video_needs_extra: {es: "tapar un vídeo necesita el extra capture de coursekit (uv tool install \"slxd-coursekit[capture]\")", en: "covering a video needs the capture extra of coursekit (uv tool install \"slxd-coursekit[capture]\")"}
+ffmpeg_missing: {es: "tapar un vídeo necesita ffmpeg (coursekit setup --media)", en: "covering a video needs ffmpeg (coursekit setup --media)"}
+video_unreadable: {es: "no se puede leer el vídeo {name}", en: "the video {name} cannot be read"}
+encode_failed: {es: "ffmpeg no pudo codificar el vídeo tapado: {reason}", en: "ffmpeg could not encode the covered video: {reason}"}

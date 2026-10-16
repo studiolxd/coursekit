@@ -69,7 +69,8 @@ CLAUDE_DENY = ["Bash(git commit:*)", "Bash(git push:*)", "Bash(coursekit approve
                "Bash(coursekit videos reject:*)", "Bash(coursekit client:*)", "Bash(coursekit hold:*)",
                "Bash(coursekit resume:*)", "Bash(coursekit handoff:*)", "Bash(coursekit reviewed*--by*)",
                "Bash(coursekit capture login:*)", "Bash(coursekit capture logout:*)", "Bash(coursekit capture allow:*)",
-               "Bash(coursekit capture revoke:*)", "Edit(courses/*/assembly/*.json)"]
+               "Bash(coursekit capture revoke:*)", "Bash(coursekit capture approve:*)", "Bash(coursekit capture reject:*)",
+               "Edit(courses/*/assembly/*.json)"]
 
 
 class LaunchError(Exception):

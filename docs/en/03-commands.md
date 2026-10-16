@@ -43,7 +43,7 @@ Commands load `.env` (at the project root) into the process environment before r
 
 | Marker | Meaning |
 |---|---|
-| People only | The command signs or changes something that belongs to a person. The generated agent configurations deny it (`coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff`, `coursekit reviewed --by`, `coursekit capture login`, `logout`, `allow` and `revoke`). |
+| People only | The command signs or changes something that belongs to a person. The generated agent configurations deny it (`coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff`, `coursekit reviewed --by`, `coursekit capture login`, `logout`, `allow`, `revoke`, `approve` and `reject`). |
 | Agents | The agent of a role runs it as part of a skill or slash command. People can run it too. |
 | Both | Everyday commands for people and agents alike. |
 
@@ -937,21 +937,24 @@ coursekit theme check
 
 ### `coursekit capture`
 
-Prepares the real captures of an application that coursekit makes itself, for the resources that show a real interface (`depicts: interface`, recipes `screenshot` and `screen-recording`): the profiles of the web applications and the permission to capture. The capture itself (an agent driving the application, with the real data hidden before the agent sees anything) comes in a later version; until then the recording is still provided by a person in `media/recordings/`. Who: people (`login`, `logout`, `allow` and `revoke` are denied to the agents); `profiles`: both.
+The real captures of an application for the resources that show a real interface (`depicts: interface`, recipes `screenshot` and `screen-recording`): the profiles of the web applications, the permission to capture, and the covering of the personal data of a capture or a recording before it is used. An agent driving the application itself comes in a later version; until then the recording is provided by a person, and `redact` covers its personal data. Who: people (`login`, `logout`, `allow`, `revoke`, `approve` and `reject` are denied to the agents); `profiles`, `redact` and `review`: both.
 
 ```
-coursekit capture [--mode {browser,desktop}] [--profile PROFILE] [--window WINDOW] [--minutes MINUTES] {login,logout,profiles,allow,revoke} [target] [ids ...]
+coursekit capture [--mode {browser,desktop}] [--profile PROFILE] [--window WINDOW] [--minutes MINUTES] [--file FILE] [--note NOTE] [--mask MASK] {login,logout,profiles,allow,revoke,redact,review,approve,reject} [target] [ids ...]
 ```
 
 | Argument | Values / default | Meaning |
 |---|---|---|
-| `action` | `login`, `logout`, `profiles`, `allow`, `revoke` | See below. |
-| `target` | profile name or course code | `login` and `logout`: the profile; `allow` and `revoke`: the course. |
-| `ids` | resource ids | `allow`: the resources that may be captured. Without ids, every resource of the course that shows an interface. |
+| `action` | `login`, `logout`, `profiles`, `allow`, `revoke`, `redact`, `review`, `approve`, `reject` | See below. |
+| `target` | profile name or course code | `login` and `logout`: the profile; the other actions: the course. |
+| `ids` | resource ids | `allow`: the resources that may be captured (without ids, every resource of the course that shows an interface). `redact`, `review`, `approve` and `reject`: the one resource. |
 | `--mode MODE` | `browser`, `desktop` | `allow`: a web application opened in a browser (`browser`) or a window of a program of the machine (`desktop`). Required. It must be in `capture.yaml › modes`. |
 | `--profile PROFILE` | profile name | `allow --mode browser`: the profile it opens with. Required in that mode; the profile must have a session. |
 | `--window WINDOW` | window name | `allow --mode desktop`: the only window that may be captured and driven. Required in that mode. |
 | `--minutes MINUTES` | number; default `capture.yaml › grant_minutes` | `allow`: how long the permission lasts. |
+| `--file FILE` | path; default `media/recordings/<id>.*` | `redact`: the capture (`.png`, `.jpg`, `.webp`) or the recording (`.mp4`, `.mov`, `.webm`, `.mkv`) the person provided. |
+| `--note NOTE` | text | `reject`: what was left to cover or what is wrong. |
+| `--mask MASK` | text; can be repeated | `reject`: a text to always cover in this resource from now on. |
 
 Nothing works until the project turns it on (`enabled: true` in `config/capture.yaml`, see [`capture`](04-configuration.md#capture-real-captures-of-an-application)). Actions:
 
@@ -960,14 +963,22 @@ Nothing works until the project turns it on (`enabled: true` in `config/capture.
 - `profiles`: lists the profiles of `capture.yaml › profiles` with the label of their account, where they start and whether they have a session (and since when); a session whose profile is no longer configured is listed too, so it can be deleted.
 - `allow CODE [ID…]`: gives the permission to capture, signed with the identity of the `.env`, until it expires. It names the mode and the profile or the window. A new permission replaces the one the course had. A resource that does not show an interface is refused.
 - `revoke CODE`: takes the permission back before it expires.
+- `redact CODE ID`: covers the personal data of the capture or the recording a person provided. The original leaves the project at once (it is kept in the store, `capture/<project>/raw/`, to cover it again after a rejection, and deleted when approved or after `raw › keep_days`); the covered one goes to `media/recordings/<id>.png` (an image) or `<id>.mp4` (a video). The text is read (OCR, see [`capture`](04-configuration.md#capture-real-captures-of-an-application)), every stretch with the shape of a kind of `redact › patterns`, a person's name or an `extra_terms` is covered, and so are the faces; a video is read `video_fps` times a second and what one reading finds stays covered until the next one. The resource gets `capture.state: captured` in the manifest, and `coursekit media set --status produced` refuses it until a person approves it. If the original was already committed to git, it says so: it leaves the project, but not the history. A rejected capture is covered again from the original, with the texts of `--mask`.
+- `review CODE ID`: prints the path of the review sheet (`.cache/capture/<CODE>/<id>/review.html`): every reading, covered, with a frame around what was covered, the kinds found and what could not be checked (the faces, when the `capture` extra is missing). It never holds the real values.
+- `approve CODE ID`: a person approves the covered capture, signed with the identity of the `.env`; the original is deleted and `/produce-media` can compose the resource.
+- `reject CODE ID --note "…" [--mask "…"]`: a person rejects it, saying what is missing (`--note`) or what to cover (`--mask`, at least one of the two); then `redact` covers it again.
 
-Use an account or an environment of tests with invented data: hiding the real data is a safety net, not the main measure. Exit codes: `0` on success; `2` when `target` or `--mode` is missing; `1`, with a message, when capture is off, the profile is not configured or has no session, the mode is not allowed, a resource does not show an interface, or there is no identity.
+Covering on the pixels finds what has the shape of personal data, not everything: a name the lists do not know, a number with a shape of its own (add it to `patterns`) or text inside a photo may be missed, so the review of a person is not optional. Use an account or an environment of tests with invented data: covering is a safety net, not the main measure. Exit codes: `0` on success; `2` when `target`, `--mode` or the resource is missing; `1`, with a message, when capture is off, the profile is not configured or has no session, the mode is not allowed, a resource does not show an interface, there is no recording or no OCR, the capture is not waiting for a review, or there is no identity.
 
 ```
 coursekit capture login acme-admin
 coursekit capture allow PWD U1-S2-M1 --mode browser --profile acme-admin --minutes 30
 coursekit capture allow PWD --mode desktop --window "Password Manager"
 coursekit capture revoke PWD
+coursekit capture redact PWD U1-S2-M1
+coursekit capture review PWD U1-S2-M1
+coursekit capture reject PWD U1-S2-M1 --note "the account number in the header" --mask "ACME-0042"
+coursekit capture approve PWD U1-S2-M1
 ```
 
 ## Assembly and delivery

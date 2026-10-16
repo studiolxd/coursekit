@@ -43,7 +43,7 @@ Los comandos cargan `.env` (en la raíz del proyecto) en el entorno del proceso 
 
 | Marca | Significado |
 |---|---|
-| Solo personas | El comando firma o cambia algo que pertenece a una persona. Las configuraciones de agente generadas lo deniegan (`coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff`, `coursekit reviewed --by`, `coursekit capture login`, `logout`, `allow` y `revoke`). |
+| Solo personas | El comando firma o cambia algo que pertenece a una persona. Las configuraciones de agente generadas lo deniegan (`coursekit approve`, `coursekit client`, `coursekit hold`, `coursekit resume`, `coursekit handoff`, `coursekit reviewed --by`, `coursekit capture login`, `logout`, `allow`, `revoke`, `approve` y `reject`). |
 | Agentes | El agente de un rol lo ejecuta dentro de una skill o un comando de barra. Las personas también pueden ejecutarlo. |
 | Ambos | Comandos de uso diario, para personas y agentes por igual. |
 
@@ -937,21 +937,24 @@ coursekit theme check
 
 ### `coursekit capture`
 
-Prepara las capturas reales de una aplicación que hace el propio coursekit, para los recursos que muestran una interfaz real (`depicts: interface`, recetas `screenshot` y `screen-recording`): los perfiles de las aplicaciones web y el permiso para capturar. La captura en sí (un agente que maneja la aplicación, con los datos reales tapados antes de que el agente vea nada) llega en una versión posterior; hasta entonces la grabación la sigue aportando una persona en `media/recordings/`. Quién: personas (`login`, `logout`, `allow` y `revoke` se deniegan a los agentes); `profiles`: ambos.
+Las capturas reales de una aplicación para los recursos que muestran una interfaz real (`depicts: interface`, recetas `screenshot` y `screen-recording`): los perfiles de las aplicaciones web, el permiso para capturar y el tapado de los datos personales de una captura o una grabación antes de usarla. El agente que maneja la aplicación llega en una versión posterior; hasta entonces la grabación la aporta una persona y `redact` tapa sus datos personales. Quién: personas (`login`, `logout`, `allow`, `revoke`, `approve` y `reject` se deniegan a los agentes); `profiles`, `redact` y `review`: ambos.
 
 ```
-coursekit capture [--mode {browser,desktop}] [--profile PROFILE] [--window WINDOW] [--minutes MINUTES] {login,logout,profiles,allow,revoke} [target] [ids ...]
+coursekit capture [--mode {browser,desktop}] [--profile PROFILE] [--window WINDOW] [--minutes MINUTES] [--file FILE] [--note NOTE] [--mask MASK] {login,logout,profiles,allow,revoke,redact,review,approve,reject} [target] [ids ...]
 ```
 
 | Argumento | Valores / por defecto | Significado |
 |---|---|---|
-| `action` | `login`, `logout`, `profiles`, `allow`, `revoke` | Mira abajo. |
-| `target` | nombre de perfil o código de curso | `login` y `logout`: el perfil; `allow` y `revoke`: el curso. |
-| `ids` | ids de recursos | `allow`: los recursos que se pueden capturar. Sin ids, todos los recursos del curso que muestran una interfaz. |
+| `action` | `login`, `logout`, `profiles`, `allow`, `revoke`, `redact`, `review`, `approve`, `reject` | Mira abajo. |
+| `target` | nombre de perfil o código de curso | `login` y `logout`: el perfil; las demás acciones: el curso. |
+| `ids` | ids de recursos | `allow`: los recursos que se pueden capturar (sin ids, todos los recursos del curso que muestran una interfaz). `redact`, `review`, `approve` y `reject`: el recurso. |
 | `--mode MODE` | `browser`, `desktop` | `allow`: una aplicación web abierta en un navegador (`browser`) o una ventana de un programa de la máquina (`desktop`). Obligatorio. Tiene que estar en `capture.yaml › modes`. |
 | `--profile PROFILE` | nombre de perfil | `allow --mode browser`: el perfil con el que se abre. Obligatorio en ese modo; el perfil tiene que tener sesión. |
 | `--window WINDOW` | nombre de ventana | `allow --mode desktop`: la única ventana que se puede capturar y manejar. Obligatorio en ese modo. |
 | `--minutes MINUTES` | número; por defecto `capture.yaml › grant_minutes` | `allow`: cuánto dura el permiso. |
+| `--file FILE` | ruta; por defecto `media/recordings/<id>.*` | `redact`: la captura (`.png`, `.jpg`, `.webp`) o la grabación (`.mp4`, `.mov`, `.webm`, `.mkv`) que aportó la persona. |
+| `--note NOTE` | texto | `reject`: qué faltó tapar o qué está mal. |
+| `--mask MASK` | texto; se puede repetir | `reject`: un texto que hay que tapar siempre en este recurso a partir de ahora. |
 
 Nada funciona hasta que el proyecto lo activa (`enabled: true` en `config/capture.yaml`, mira [`capture`](04-configuration.md#capture-capturas-reales-de-una-aplicación)). Acciones:
 
@@ -960,14 +963,22 @@ Nada funciona hasta que el proyecto lo activa (`enabled: true` en `config/captur
 - `profiles`: lista los perfiles de `capture.yaml › profiles` con la etiqueta de su cuenta, dónde empiezan y si tienen sesión (y desde cuándo); también aparece una sesión cuyo perfil ya no está configurado, para poder borrarla.
 - `allow CODE [ID…]`: da el permiso para capturar, firmado con la identidad del `.env`, hasta que caduca. Dice el modo y el perfil o la ventana. Un permiso nuevo sustituye al que tenía el curso. Se rechaza un recurso que no muestra una interfaz.
 - `revoke CODE`: retira el permiso antes de que caduque.
+- `redact CODE ID`: tapa los datos personales de la captura o la grabación que aportó una persona. El original sale del proyecto en el acto (se guarda en el almacén, `capture/<project>/raw/`, para taparlo de nuevo tras un rechazo, y se borra al aprobarlo o pasados `raw › keep_days`); el tapado va a `media/recordings/<id>.png` (una imagen) o `<id>.mp4` (un vídeo). Se lee el texto (OCR, mira [`capture`](04-configuration.md#capture-capturas-reales-de-una-aplicación)), se tapa cada tramo con la forma de un tipo de `redact › patterns`, el nombre de una persona o un `extra_terms`, y también las caras; un vídeo se lee `video_fps` veces por segundo y lo que encuentra una lectura sigue tapado hasta la siguiente. El recurso recibe `capture.state: captured` en el manifiesto, y `coursekit media set --status produced` lo rechaza hasta que una persona lo aprueba. Si el original ya estaba en git, lo avisa: sale del proyecto, pero no del historial. Una captura rechazada se vuelve a tapar desde el original, con los textos de `--mask`.
+- `review CODE ID`: imprime la ruta de la hoja de revisión (`.cache/capture/<CODE>/<id>/review.html`): cada lectura, tapada, con un marco alrededor de lo tapado, los tipos encontrados y lo que no se pudo comprobar (las caras, si falta el extra `capture`). Nunca contiene los valores reales.
+- `approve CODE ID`: una persona aprueba la captura tapada, firmada con la identidad del `.env`; el original se borra y `/produce-media` ya puede componer el recurso.
+- `reject CODE ID --note "…" [--mask "…"]`: una persona la rechaza, diciendo qué falta (`--note`) o qué hay que tapar (`--mask`, al menos una de las dos); después `redact` la vuelve a tapar.
 
-Usa una cuenta o un entorno de pruebas con datos inventados: tapar los datos reales es una red de seguridad, no la medida principal. Códigos de salida: `0` si todo va bien; `2` si falta `target` o `--mode`; `1`, con un mensaje, si la captura está desactivada, el perfil no está configurado o no tiene sesión, el modo no está permitido, un recurso no muestra una interfaz o no hay identidad.
+Tapar sobre los píxeles encuentra lo que tiene forma de dato personal, no todo: se puede escapar un nombre que las listas no conocen, un número con una forma propia (añádelo a `patterns`) o un texto dentro de una foto, así que la revisión de una persona no es opcional. Usa una cuenta o un entorno de pruebas con datos inventados: tapar es una red de seguridad, no la medida principal. Códigos de salida: `0` si todo va bien; `2` si falta `target`, `--mode` o el recurso; `1`, con un mensaje, si la captura está desactivada, el perfil no está configurado o no tiene sesión, el modo no está permitido, un recurso no muestra una interfaz, no hay grabación o no hay OCR, la captura no espera revisión o no hay identidad.
 
 ```
 coursekit capture login acme-admin
 coursekit capture allow PWD U1-S2-M1 --mode browser --profile acme-admin --minutes 30
 coursekit capture allow PWD --mode desktop --window "Gestor de contraseñas"
 coursekit capture revoke PWD
+coursekit capture redact PWD U1-S2-M1
+coursekit capture review PWD U1-S2-M1
+coursekit capture reject PWD U1-S2-M1 --note "el número de cuenta de la cabecera" --mask "ACME-0042"
+coursekit capture approve PWD U1-S2-M1
 ```
 
 ## Montaje y entrega

@@ -197,3 +197,17 @@ player:
   skin_secure: Conexión segura
   skin_not_secure: No es seguro
   sim_hint: Puedes pulsar sobre la pantalla o la escena para señalar lo que te llama la atención.
+
+# Personas y empresas inventadas para `coursekit capture`: lo que sustituye en pantalla a los datos reales de una aplicación,
+# y los nombres y apellidos que ayudan a encontrar el nombre de una persona en una captura (se usan las listas de todos los
+# idiomas para encontrarlos). Los nombres van aparte para mujeres y hombres, para que el inventado conserve el género del real.
+capture_people:
+  women: [Lucía, María, Paula, Laura, Carmen, Ana, Sara, Marta, Elena, Isabel, Cristina, Raquel, Silvia, Patricia,
+          Beatriz, Nuria, Irene, Alba, Julia, Clara, Andrea, Sofía]
+  men: [Daniel, David, Javier, Carlos, Miguel, Alejandro, Pablo, Sergio, Jorge, Manuel, Antonio, José, Francisco,
+        Juan, Luis, Álvaro, Diego, Adrián, Iván, Rubén, Óscar, Raúl, Alberto, Fernando, Rafael, Hugo, Mario, Marcos]
+  last_names: [García, Martínez, López, Sánchez, González, Gómez, Fernández, Moreno, Jiménez, Pérez, Rodríguez, Navarro,
+               Ruiz, Díaz, Serrano, Hernández, Muñoz, Sáez, Romero, Rubio, Alfaro, Molina, Ortiz, Delgado, Castro, Ortega,
+               Marín, Iglesias, Santos, Vidal]
+  companies: [Nexora, Valdia, Trelis, Orvanta, Talleres Brezo, Campoalto, Lumen Labs, Suministros Norte]
+  email_domain: example.com

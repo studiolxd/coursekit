@@ -118,6 +118,14 @@ mask: [{selector: ".account-email"}, {text: "Ana García"}]
   sustituye lo que coincide por un dato ficticio coherente (hash del valor → índice del conjunto), difumina avatares,
   `img`/`video`/`canvas` y los `selectors`, tapa contraseñas. `pixel_check`: OCR sobre las capturas finales; lo que siga
   coincidiendo sale como aviso en `review`.
+- **Editar el HTML en directo, decisiones** (para `dom.js`): `add_init_script` (antes que la página y en todos los frames) y
+  página oculta hasta la primera pasada; solo `nodeValue` de los nodos de texto, nunca la estructura; **nunca** el `value` de
+  `input`/`textarea`/`contenteditable` (un Guardar enviaría el dato falso a la aplicación real): se tapan con una capa;
+  tampoco se reescriben respuestas de red (`page.route`) por la misma razón; atributos visibles (`title`, `placeholder`,
+  `alt`, título de la pestaña); shadow DOM abierto, y `attachShadow` parcheado para que los cerrados nazcan abiertos;
+  sustituto de longitud y formato parecidos; mismo valor → mismo ficticio en toda la sesión. Lo que no es texto (imágenes,
+  `canvas`, PDF, vídeo) se difumina o queda para `pixel_check`. Desplegables nativos y autocompletado no salen en el
+  screencast.
 - **Píxeles** (escritorio y `capture redact`): OCR (Apple Vision en macOS; rapidocr-onnxruntime en el resto) → patrones +
   nombres + `extra_terms`; caras con YuNet (OpenCV); en vídeo, fotogramas de muestra + seguimiento de cajas con OpenCV
   interpolado, render con ffmpeg (`boxblur`/`drawbox`).
@@ -154,9 +162,10 @@ mask: [{selector: ".account-email"}, {text: "Ana García"}]
 ## 9. Orden de trabajo
 
 1. `capture.yaml`, perfiles, `login`/`logout`/`profiles`, `allow`/`revoke` y sus denegaciones.
-2. Detección de datos personales, datos ficticios por idioma, anonimización por píxeles y `capture redact`.
+2. Detección de datos personales, datos ficticios por idioma, anonimización por píxeles, `capture redact` y
+   `review`/`approve`/`reject`.
 3. Modo navegador, `dom.js`, servidor MCP, sesiones y `replay`.
-4. `review`/`approve`/`reject`, subestado del manifiesto, handoff, registro en `agents`, skill.
+4. Handoff (lista lo que espera revisión), registro del servidor en `agents`, skill de `/produce-media`.
 5. Escritorio: macOS, después Windows y X11.
 6. Vídeo: screencast, ffmpeg en escritorio y anonimización con seguimiento.
 
@@ -172,4 +181,13 @@ mask: [{selector: ".account-email"}, {text: "Ana García"}]
   los pasos siguientes se añaden con ellos), `capture.py`, `coursekit capture login|logout|profiles|allow|revoke`,
   denegaciones (`agents.DENY_*`, `launch.CLAUDE_DENY`), `uninstall` borra `capture/`, extra `capture = ["playwright"]`,
   docs en/es (03, 04, 07) y READMEs, `tests/test_capture.py`. El login real con navegador falta probarlo a mano.
-- [ ] Paso 2
+- [x] Paso 2 (sin commit todavía): `pii.py` (patrones de `capture.yaml › redact › patterns` con comprobación de dígitos
+  de control donde el texto es exacto; nombres por lista de nombres de pila de todos los idiomas; `extra_terms`; ficticios
+  estables con forma y longitud parecidas y mismo género, de `lang/<code>.yaml › capture_people`), `redact.py` (OCR
+  rapidocr o tesseract; caras con el Haar de OpenCV en vez de YuNet, para no llevar un modelo en el paquete; vídeo:
+  lecturas a `video_fps` y cada fotograma tapado con la lectura anterior y la siguiente, en vez de seguimiento de cajas),
+  `capture redact|review|approve|reject` (adelantados del paso 4: sin ellos `redact` no sirve), `media set` rechaza
+  `produced` mientras la captura espera revisión o está rechazada, denegaciones de `approve`/`reject`, extra con
+  rapidocr-onnxruntime y opencv-python-headless. Falta probar a mano el OCR real y el vídeo (el test del vídeo se salta sin
+  OpenCV). Apple Vision en macOS queda pendiente.
+- [ ] Paso 3

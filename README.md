@@ -31,7 +31,7 @@ Early development (`0.3`). What is solid and what is still to prove:
 
 - **Used end to end:** the process from brief to SCORM delivery, with both backends (slxd creator and the html backend), in Spanish and English; the decision-based approach with simulations; the local instructional design; the handoff mode.
 - **New and less proven:** migrating an existing course from eXeLearning packages (`coursekit import`, `/update-unit`, videos from official channels). It converts real packages without losing text, but the whole flow with real agents is still being piloted.
-- **In progress:** captures of real applications that coursekit makes itself (`coursekit capture`): profiles of the web applications and the permission to capture are in place; an agent driving the application with the real data hidden is not yet.
+- **In progress:** captures of real applications that coursekit makes itself (`coursekit capture`): profiles of the web applications, the permission to capture, and covering the personal data of a recording a person provides (OCR, reviewed and approved by a person) are in place; an agent driving the application with the real data hidden is not yet.
 - **Known gaps of the creator platform** that the pipeline works around: [Known limits of the creator backend](docs/en/08-assembly-and-delivery.md#known-limits-of-the-creator-backend).
 - **Not yet:** reading eXeLearning 4 packages (`.elpx`) or HTML exports of a site, publishing the components of the html backend as a package of their own, more languages than Spanish and English.
 
