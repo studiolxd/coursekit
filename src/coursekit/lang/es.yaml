@@ -211,3 +211,9 @@ capture_people:
                Marín, Iglesias, Santos, Vidal]
   companies: [Nexora, Valdia, Trelis, Orvanta, Talleres Brezo, Campoalto, Lumen Labs, Suministros Norte]
   email_domain: example.com
+
+# Accesibilidad de los vídeos (`coursekit media transcript` y `media check`): la etiqueta de lo que se ve en la transcripción
+# accesible, y los números como se dicen (un 3 en pantalla se dice cuando la locución dice «tres»).
+transcript_on_screen: En pantalla
+number_words: [cero, uno, dos, tres, cuatro, cinco, seis, siete, ocho, nueve, diez, once, doce, trece, catorce, quince,
+               dieciséis, diecisiete, dieciocho, diecinueve, veinte]

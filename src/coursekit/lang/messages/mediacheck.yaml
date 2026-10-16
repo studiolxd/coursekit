@@ -1,0 +1,13 @@
+# Messages of `coursekit media check` and `coursekit media sheet`.
+ffmpeg_missing: {es: "comprobar los audios y vídeos necesita ffmpeg y ffprobe (coursekit setup --media)", en: "checking the audios and videos needs ffmpeg and ffprobe (coursekit setup --media)"}
+no_audio: {es: "{name} no tiene sonido que medir", en: "{name} has no sound to measure"}
+silent: {es: "{name}: no se pudo medir la sonoridad (¿está en silencio?)", en: "{name}: its loudness could not be measured (is it silent?)"}
+loudness: {es: "{name}: sonoridad {level} LUFS y pico {peak} dBTP; tiene que estar en {target} LUFS con el pico como mucho en {top} dBTP (coursekit media check --fix lo corrige)", en: "{name}: loudness {level} LUFS and peak {peak} dBTP; it must be at {target} LUFS with the peak at most {top} dBTP (coursekit media check --fix fixes it)"}
+fixed: {es: "{name}: sonoridad llevada a {target} LUFS", en: "{name}: loudness brought to {target} LUFS"}
+fix_failed: {es: "{name}: no se pudo corregir la sonoridad", en: "{name}: its loudness could not be fixed"}
+captions_fast: {es: "{name}: {count} subtítulo(s) más rápidos de {limit} caracteres por segundo (el peor, en {at}, a {cps}): pártelos o acorta el texto", en: "{name}: {count} caption(s) faster than {limit} characters per second (the worst, at {at}, at {cps}): split them or shorten the text"}
+no_video: {es: "{name} no es un vídeo producido", en: "{name} is not a produced video"}
+sheet_failed: {es: "no se pudo hacer la hoja de contactos de {name}", en: "the contact sheet of {name} could not be made"}
+line: {es: "{asset} [{code}] {text}", en: "{asset} [{code}] {text}"}
+none: {es: "los audios y vídeos producidos están bien", en: "the audios and videos produced are fine"}
+sheet: {es: "hoja de contactos en {path}", en: "contact sheet in {path}"}

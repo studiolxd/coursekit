@@ -1,0 +1,6 @@
+# Messages of the accessibility of videos (`coursekit media transcript` and the NOT_SAID of `media check`).
+bad_scenes: {es: "{path} no es un fichero de escenas válido: {error}", en: "{path} is not a valid file of scenes: {error}"}
+not_said: {es: "escena {n}: la locución no dice {text} (dilo, o describe lo que se ve con shows)", en: "scene {n}: the narration does not say {text} (say it, or describe what is seen with shows)"}
+no_scenes: {es: "no hay escenas descritas: escríbelas en {path}", en: "there are no scenes described: write them in {path}"}
+no_file: {es: "{id} todavía no tiene fichero", en: "{id} has no file yet"}
+written: {es: "{id}: transcripción accesible en {transcript} y descripciones en {descriptions}; es ya la transcripción del recurso", en: "{id}: accessible transcript in {transcript} and descriptions in {descriptions}; it is now the transcript of the resource"}

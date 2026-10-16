@@ -138,8 +138,15 @@ credits.
 - **Interactive terminal demo** — asciinema recording of the script's commands and an EMBED
   package (`media/src/<id>/index.html` with the player and `tokens.css`).
 - **Video** — Remotion composition with the script's scenes, diagrams and tokens; voice-over with
-  `coursekit tts`; captions (`.vtt`) always.
+  `coursekit tts`; captions (`.vtt`) always. Describe its scenes in `media/scripts/<id>.scenes.yaml` (the `text` on screen,
+  what it `shows`, what it `says`): what matters on screen is also said. Look at the render with
+  `coursekit media sheet <CODE> <id>` (open the image it prints) instead of guessing, and once it is produced,
+  `coursekit media transcript <CODE> <id>` writes its accessible transcript and its track of descriptions.
 - **Audio** — `coursekit tts --course <CODE> …` with the course voice; keep the transcript.
+
+After producing audios and videos, `coursekit media check <CODE>`: loudness, captions too fast to read and what is on screen
+and not said (the limits are those of `media › checks`). Fix what it reports (`--fix` for the loudness; split the captions or
+shorten the text; say what is missing or describe it with `shows`) and run it again until it passes.
 - **Interactive simulation** — self-contained package in `media/src/<id>/` (`index.html` + JS
   without external dependencies) that imports `tokens.css`; keyboard, `aria-*`, visible focus,
   no emojis, text in {{language_name}}, works from `file://`.

@@ -18,6 +18,8 @@ from coursekit import (
     envfile,
     launch,
     localdesign,
+    mediaaccess,
+    mediacheck,
     mediatools,
     new,
     outline,
@@ -834,6 +836,38 @@ def cmd_media(args: argparse.Namespace) -> int:
             print(t("commands", "warning_line", text=w))
         print("\n".join(lines) if lines else t("commands", "media_nothing"))
         return 0
+    if args.action == "check":
+        try:
+            findings, fixed = mediacheck.check(course, [args.id, *args.more] if args.id else None, args.fix)
+        except mediacheck.CheckError as exc:
+            print(t("commands", "error_line", text=exc), file=sys.stderr)
+            return 1
+        for line in fixed:
+            print(line)
+        for f in findings:
+            print(t("commands", "warning_line", text=t("mediacheck", "line", asset=f.asset, code=f.code, text=f.text)))
+        if not findings:
+            print(t("mediacheck", "none"))
+        return 1 if findings else 0
+    if args.action in ("sheet", "transcript"):
+        if not args.id:
+            print(t("commands", "media_set_needs_id"), file=sys.stderr)
+            return 2
+        try:
+            if args.action == "sheet":
+                out = mediacheck.sheet(course, args.id, args.frames)
+                print(t("mediacheck", "sheet", path=out.relative_to(course["_project"].root).as_posix()))
+            else:
+                statesmod.ensure_active(course)
+                done = mediaaccess.write(course, args.id)
+                root = course["_project"].root
+                print(t("mediaaccess", "written", id=args.id, transcript=done["transcript"].relative_to(root).as_posix(),
+                        descriptions=done["descriptions"].relative_to(root).as_posix()))
+                _mirror(course["_project"], course["code"])
+        except (mediacheck.CheckError, mediaaccess.AccessError) as exc:
+            print(t("commands", "error_line", text=exc), file=sys.stderr)
+            return 1
+        return 0
     if args.action == "embed":
         if not args.id:
             print(t("commands", "media_set_needs_id"), file=sys.stderr)
@@ -1233,7 +1267,7 @@ def register(sub: argparse._SubParsersAction) -> None:
 
     p = sub.add_parser("media", help=t("commands", "help_media"))
     p.add_argument("action", choices=("extract", "plan", "providers", "set", "upload", "redo", "embed", "fit", "render", "narrate",
-                                      "optimize", "adopt"))
+                                      "optimize", "adopt", "check", "sheet", "transcript"))
     p.add_argument("code", nargs="?")
     p.add_argument("id", nargs="?")
     p.add_argument("more", nargs="*", help=t("commands", "help_media_more"))
@@ -1248,6 +1282,8 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--all", action="store_true", help=t("commands", "help_media_all"))
     p.add_argument("--clean", action="store_true", help=t("commands", "help_media_clean"))
     p.add_argument("--size", help=t("commands", "help_media_size"))
+    p.add_argument("--fix", action="store_true", help=t("commands", "help_media_fix"))
+    p.add_argument("--frames", type=int, help=t("commands", "help_media_frames"))
     p.set_defaults(func=cmd_media)
 
     p = sub.add_parser("capture", help=t("commands", "help_capture"))

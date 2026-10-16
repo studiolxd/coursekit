@@ -211,3 +211,9 @@ capture_people:
                Young, King]
   companies: [Nexora, Valdia, Trelis, Orvanta, Kestrel Works, Brightfield, Lumen Labs, Northgate Supplies]
   email_domain: example.com
+
+# Accessibility of videos (`coursekit media transcript` and `media check`): the label of what is seen in the accessible
+# transcript, and the numbers as they are said (a 3 on screen is said when the narration says "three").
+transcript_on_screen: On screen
+number_words: [zero, one, two, three, four, five, six, seven, eight, nine, ten, eleven, twelve, thirteen, fourteen, fifteen,
+               sixteen, seventeen, eighteen, nineteen, twenty]

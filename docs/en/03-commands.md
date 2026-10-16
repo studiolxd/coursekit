@@ -776,13 +776,13 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
                 [--alt ALT] [--transcript TRANSCRIPT] [--subtitles-path SUBTITLES_PATH]
                 [--made-with MADE_WITH] [--download DOWNLOAD] [--download-title DOWNLOAD_TITLE]
                 [--download-asset-path DOWNLOAD_ASSET_PATH] [--depicts {interface,concept}] [--force]
-                [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all] [--clean] [--size SIZE]
-                {extract,plan,providers,set,upload,redo,embed,fit,render,narrate,optimize,adopt} [code] [id] [more ...]
+                [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all] [--clean] [--size SIZE] [--fix] [--frames FRAMES]
+                {extract,plan,providers,set,upload,redo,embed,fit,render,narrate,optimize,adopt,check,sheet,transcript} [code] [id] [more ...]
 ```
 
 | Argument | Values / default | Meaning |
 |---|---|---|
-| `action` | `extract`, `plan`, `providers`, `set`, `upload`, `redo`, `embed`, `fit`, `render`, `narrate`, `optimize`, `adopt` | See below. |
+| `action` | `extract`, `plan`, `providers`, `set`, `upload`, `redo`, `embed`, `fit`, `render`, `narrate`, `optimize`, `adopt`, `check`, `sheet`, `transcript` | See below. |
 | `code` | course code or folder | Required by every action except `providers` (exit code 2 without it). |
 | `id` | asset id such as `U1-S2-M1` | Required by `set` (exit code 2 without it). |
 | `--status STATUS` | `pending`, `scripted`, `produced`, `uploaded` | New status of the asset (checked against `coursekit config media`). |
@@ -800,6 +800,8 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
 | `--url URL` | `https://` address | `upload`: the `uploadUrl` that the platform minted (creator's `request_asset_upload` or `request_embed_upload`). |
 | `--content-type CONTENT_TYPE` | MIME type, for example `image/png` | `upload`: the one the upload was requested with. |
 | `--method METHOD` | default `PUT` | `upload`: HTTP method. |
+| `--fix` | flag | `check` only: bring to the target loudness the audios and videos out of it, in place. |
+| `--frames FRAMES` | number; default `media › checks › sheet_frames` | `sheet` only: frames of the contact sheet. |
 | `--size SIZE` | `WIDTHxHEIGHT` | `fit` (required) and `render`: the size, e.g. `1920x1080`. |
 | `--all` | flag | `redo` only: redo every asset that uses the theme, not only those made with other tokens. |
 | `--clean` | flag | `redo` only: the assets also forget their file, alt text, transcript, captions and the tool that made them (the files stay on disk), for what is made again from nothing, such as a resource that showed an invented interface. |
@@ -818,6 +820,9 @@ Actions:
 - `optimize`: makes the files of the `produced` or `uploaded` assets lighter, in place and locally: images (PNG, JPEG, WebP) are scaled down to `optimize.image.max_width` and recompressed, MP4 videos are re-encoded as H.264/AAC capped at `optimize.video.max_height` (needs `ffmpeg`); a file is replaced only if the result weighs less. SVG, GIF, audio and packages are left as they are. With ids, those assets; without, all. Prints `<id>: <file>: <before> → <after> bytes` per file, or `nothing to optimise`. Run it before uploading to creator; the html backend does the equivalent on the copy it puts in the package. The limits are in `media.yaml › optimize` ([Lighter media](07-media.md#lighter-media)). Exit code 1 if `ffmpeg` is missing or fails. Refused while the course is on hold.
 - `adopt`: takes an image that already exists, such as one of an imported eXeLearning package (`brief/text/media/<package>/<file>`), as the asset `id`: `--file` is the source (a path from the course or the project folder), it is copied to `media/files/<id>.<ext>` and the asset is marked `produced` with `--alt` and `recipe: imported`, so it is not made again. Exit code 2 without `id` or `--file`; exit code 1 if the file or the asset does not exist. Refused while the course is on hold.
 - `narrate`: produces the narration of the scenes of the simulations with `audio: true` (the `VO-…` assets) with the configured voices: the character of a conversation with its own voice (`coursekit voice set --character`), the rest with the voice of the course. By default the pending ones; with ids, those; with `--all`, all of them again. Each one goes to `media/files/<id>.mp3`, with the text as its transcript, and is marked `produced`. Prints `N scene narration(s) produced`; exit code 1 if the voice provider fails (what was produced before is kept).
+- `check`: looks at the audios and videos `produced` or `uploaded` (the ones named, or all): their loudness against `media › checks` (EBU R128 for the web: -16 LUFS, peak -1 dBTP, measured with ffmpeg); the cues of their captions (the `.vtt` or `.srt` next to the file, with its name) faster than `max_cps` characters per second; and, for a video whose scenes are described ([Accessibility of videos](07-media.md#accessibility-of-videos)), the text on screen its narration does not say. One `WARNING <id> [<code>] <what>` line each (codes `LOUDNESS`, `CAPTIONS_FAST`, `NOT_SAID`, `NOT_CHECKED`), and exit code 1 while there is one; `--fix` brings the loudness to its target in place (two passes of `loudnorm`; the picture of a video is copied, not encoded again). It needs `ffmpeg` and `ffprobe`.
+- `sheet`: the contact sheet of the video `id`: `--frames` frames (default 24) spread over its length in one image, with the time of each one, in `.cache/media/<CODE>/<id>-sheet.png`, to look at a video without playing it.
+- `transcript`: from the scenes described in `media/scripts/<id>.scenes.yaml`, writes the accessible transcript of the video `id` (scene by scene, the minute, what is seen and what is said) in `<file>.transcript.txt` and a WebVTT track of descriptions in `<file>.descriptions.vtt`, and makes that transcript the one of the asset (what the assembly puts in the course). See [Accessibility of videos](07-media.md#accessibility-of-videos).
 - `redo`: marks assets to be produced again and prints their ids. With one or more ids (`redo CODE U1-S3-M1 U1-S5-M4`), those; without them, the produced or uploaded assets of the types that use the theme (`uses_theme`) whose fingerprint differs from the current tokens (all of them with `--all`). They go back to `scripted` and forget their fingerprint and uploaded path; their script and file stay. Then `/produce-media` (or `coursekit handoff`) produces them again. See [Change the theme after producing the media](07-media.md#change-the-theme-after-producing-the-media). Refused while the course is on hold.
 
 The types that use the theme tokens are listed in `media.yaml › uses_theme` (by default `infographic`, `diagram`, `animated_gif`, `simulation`, `video` and `terminal_demo`). For them:

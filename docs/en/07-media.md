@@ -166,6 +166,27 @@ Heavy images and videos slow the course down in the LMS, so coursekit makes them
 - **html backend:** `coursekit assemble build` optimises the copy it puts in the package and leaves the source file alone; there is nothing to run.
 - SVG, GIF, audio and packages are never touched. Only `.mp4` videos are re-encoded (what Remotion and VHS write), so the name in the manifest stays valid.
 
+## Accessibility of videos
+
+What a video shows also exists as text, so that whoever cannot see it gets it (WCAG 1.2.3, 1.2.5 and 1.2.8). The scenes of a video are described next to its brief, in `media/scripts/<id>.scenes.yaml`:
+
+```yaml
+words: media/files/u1-s2-m1.words.json      # the timings of the narration (default: <file of the video>.words.json)
+scenes:
+  - text: "Minimum length: 12"              # the text on screen (one or a list)
+    says: "Open the security settings and set the minimum length to twelve."
+  - text: "History"
+    shows: "The list of saved changes, with the date of each one"   # what is seen, in a sentence
+    says: "And that is all."
+```
+
+- **Integrated audio description.** What matters on screen is also said: `coursekit media check` reports (`NOT_SAID`) the text on screen whose narration does not say most of its meaningful words (four letters or more, and numbers, also when they are said in words), unless the scene describes what is seen in `shows`. Fix it in the narration or with `shows`.
+- **Accessible transcript and descriptions.** `coursekit media transcript CODE ID` writes, scene by scene, the minute (from the words of the narration), what is seen (`shows`, else the text on screen, after `On screen:` in the language of the course) and what is said, in `<file>.transcript.txt`, and the same as a WebVTT track of descriptions (`kind="descriptions"`) in `<file>.descriptions.vtt`. The transcript becomes the one of the asset, so the assembly puts it in the course under the video.
+
+## Checking audios and videos
+
+Before an audio or a video goes to the course, `coursekit media check CODE` looks at its loudness (EBU R128 for the web: -16 LUFS, peak -1 dBTP; `--fix` brings it there), at its captions (none faster than 17 characters per second) and at what it shows and does not say; `coursekit media sheet CODE ID` puts frames of a video in one image, to look at it without playing it. The limits are in `media.yaml › checks`. See [`coursekit media`](03-commands.md#coursekit-media).
+
 ## Upload to creator
 
 With the creator backend the assets are uploaded to the content of their unit, which the assembly creates, and the course is assembled again so that they replace their placeholders (the handoff does it by itself: [Handoff mode](02-workflow.md#handoff-mode)). The agent asks creator for an upload address (`request_asset_upload`, or `request_embed_upload` for packages) and sends the file with `coursekit media upload CODE --file F --url "<uploadUrl>" --content-type MIME`; then it records the path with `coursekit media set CODE ID --status uploaded --asset-path <path>`.

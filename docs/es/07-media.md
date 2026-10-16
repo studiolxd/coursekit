@@ -166,6 +166,27 @@ Las imágenes y los vídeos pesados ralentizan el curso en el LMS, así que cour
 - **Backend html:** `coursekit assemble build` optimiza la copia que pone en el paquete y no toca el fichero original; no hay nada que ejecutar.
 - Los SVG, GIF, audios y paquetes no se tocan nunca. Solo se recodifican los vídeos `.mp4` (lo que escriben Remotion y VHS), así el nombre del manifiesto sigue siendo válido.
 
+## Accesibilidad de los vídeos
+
+Lo que muestra un vídeo existe también como texto, para que lo tenga quien no puede verlo (WCAG 1.2.3, 1.2.5 y 1.2.8). Las escenas de un vídeo se describen junto a su guion, en `media/scripts/<id>.scenes.yaml`:
+
+```yaml
+words: media/files/u1-s2-m1.words.json      # los tiempos de la locución (por defecto: <fichero del vídeo>.words.json)
+scenes:
+  - text: "Longitud mínima: 12"             # el texto en pantalla (uno o una lista)
+    says: "Abre los ajustes de seguridad y pon la longitud mínima en doce."
+  - text: "Historial"
+    shows: "La lista de cambios guardados, con la fecha de cada uno"   # lo que se ve, en una frase
+    says: "Y ya está."
+```
+
+- **Audiodescripción integrada.** Lo importante de la pantalla también se dice: `coursekit media check` avisa (`NOT_SAID`) del texto en pantalla cuya locución no dice la mayor parte de sus palabras con significado (de cuatro letras o más, y los números, también cuando se dicen con letras), salvo que la escena describa lo que se ve en `shows`. Arréglalo en la locución o con `shows`.
+- **Transcripción accesible y descripciones.** `coursekit media transcript CODE ID` escribe, escena a escena, el minuto (a partir de las palabras de la locución), lo que se ve (`shows`, o si no el texto en pantalla, tras `En pantalla:` en el idioma del curso) y lo que se dice, en `<fichero>.transcript.txt`, y lo mismo como pista WebVTT de descripciones (`kind="descriptions"`) en `<fichero>.descriptions.vtt`. La transcripción pasa a ser la del recurso, así que el montaje la pone en el curso bajo el vídeo.
+
+## Revisar audios y vídeos
+
+Antes de que un audio o un vídeo vaya al curso, `coursekit media check CODE` revisa su sonoridad (EBU R128 para la web: -16 LUFS, pico -1 dBTP; `--fix` la corrige), sus subtítulos (ninguno más rápido de 17 caracteres por segundo) y lo que muestra y no dice; `coursekit media sheet CODE ID` pone fotogramas de un vídeo en una sola imagen, para mirarlo sin reproducirlo. Los límites están en `media.yaml › checks`. Mira [`coursekit media`](03-commands.md#coursekit-media).
+
 ## Subida a creator
 
 Con el backend creator los recursos se suben al contenido de su unidad, que crea el montaje, y el curso se monta otra vez para que sustituyan a sus recuadros (el handoff lo hace solo: [Modo handoff](02-workflow.md#modo-handoff)). El agente pide a creator una dirección de subida (`request_asset_upload`, o `request_embed_upload` para los paquetes) y envía el fichero con `coursekit media upload CODE --file F --url "<uploadUrl>" --content-type MIME`; después registra la ruta con `coursekit media set CODE ID --status uploaded --asset-path <ruta>`.

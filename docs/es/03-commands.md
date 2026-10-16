@@ -776,13 +776,13 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
                 [--alt ALT] [--transcript TRANSCRIPT] [--subtitles-path SUBTITLES_PATH]
                 [--made-with MADE_WITH] [--download DOWNLOAD] [--download-title DOWNLOAD_TITLE]
                 [--download-asset-path DOWNLOAD_ASSET_PATH] [--depicts {interface,concept}] [--force]
-                [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all] [--clean] [--size SIZE]
-                {extract,plan,providers,set,upload,redo,embed,fit,render,narrate,optimize,adopt} [code] [id] [more ...]
+                [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all] [--clean] [--size SIZE] [--fix] [--frames FRAMES]
+                {extract,plan,providers,set,upload,redo,embed,fit,render,narrate,optimize,adopt,check,sheet,transcript} [code] [id] [more ...]
 ```
 
 | Argumento | Valores / por defecto | Significado |
 |---|---|---|
-| `action` | `extract`, `plan`, `providers`, `set`, `upload`, `redo`, `embed`, `fit`, `render`, `narrate`, `optimize`, `adopt` | Ver más abajo. |
+| `action` | `extract`, `plan`, `providers`, `set`, `upload`, `redo`, `embed`, `fit`, `render`, `narrate`, `optimize`, `adopt`, `check`, `sheet`, `transcript` | Ver más abajo. |
 | `code` | código o carpeta del curso | Obligatorio en todas las acciones salvo `providers` (código de salida 2 si falta). |
 | `id` | id de recurso como `U1-S2-M1` | Obligatorio en `set` (código de salida 2 si falta). |
 | `--status STATUS` | `pending`, `scripted`, `produced`, `uploaded` | Nuevo estado del recurso (se comprueba con `coursekit config media`). |
@@ -800,6 +800,8 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
 | `--url URL` | dirección `https://` | `upload`: el `uploadUrl` que dio la plataforma (`request_asset_upload` o `request_embed_upload` de creator). |
 | `--content-type CONTENT_TYPE` | tipo MIME, por ejemplo `image/png` | `upload`: el mismo con el que se pidió la subida. |
 | `--method METHOD` | por defecto `PUT` | `upload`: método HTTP. |
+| `--fix` | indicador | Solo `check`: lleva a la sonoridad objetivo los audios y vídeos que no la tienen, en el sitio. |
+| `--frames FRAMES` | número; por defecto `media › checks › sheet_frames` | Solo `sheet`: fotogramas de la hoja de contactos. |
 | `--size SIZE` | `ANCHOxALTO` | `fit` (obligatorio) y `render`: el tamaño, p. ej. `1920x1080`. |
 | `--all` | indicador | Solo en `redo`: rehace todos los recursos que usan el tema, no solo los hechos con otros tokens. |
 | `--clean` | indicador | Solo en `redo`: los recursos olvidan además su fichero, texto alternativo, transcripción, subtítulos y la herramienta que los hizo (los ficheros se quedan en disco), para lo que se hace de nuevo desde cero, como un recurso que mostraba una interfaz inventada. |
@@ -818,6 +820,9 @@ Acciones:
 - `optimize`: aligera los ficheros de los recursos `produced` o `uploaded`, en su sitio y en local: las imágenes (PNG, JPEG, WebP) se reducen a `optimize.image.max_width` y se recomprimen, los vídeos MP4 se recodifican como H.264/AAC con tope en `optimize.video.max_height` (necesita `ffmpeg`); un fichero solo se sustituye si el resultado pesa menos. SVG, GIF, audio y paquetes se dejan como están. Con ids, esos recursos; sin ellos, todos. Imprime `<id>: <fichero>: <antes> → <después> bytes` por fichero, o `nada que aligerar`. Ejecútalo antes de subir a creator; el backend html hace lo equivalente con la copia que pone en el paquete. Los límites están en `media.yaml › optimize` ([Medios más ligeros](07-media.md#medios-más-ligeros)). Código de salida 1 si falta `ffmpeg` o falla. Se rechaza mientras el curso está en pausa.
 - `adopt`: toma una imagen que ya existe, como una de un paquete de eXeLearning importado (`brief/text/media/<paquete>/<fichero>`), como el recurso `id`: `--file` es el origen (una ruta desde la carpeta del curso o del proyecto), se copia a `media/files/<id>.<ext>` y el recurso queda `produced` con `--alt` y `recipe: imported`, así no se produce de nuevo. Código de salida 2 sin `id` o `--file`; código 1 si el fichero o el recurso no existe. Se rechaza mientras el curso está en pausa.
 - `narrate`: produce la narración de las escenas de las simulaciones con `audio: true` (los recursos `VO-…`) con las voces configuradas: el personaje de una conversación con su propia voz (`coursekit voice set --character`), el resto con la voz del curso. Por defecto las pendientes; con ids, esas; con `--all`, todas de nuevo. Cada una va a `media/files/<id>.mp3`, con el texto como transcripción, y queda `produced`. Escribe `N narración(es) de escena producidas`; código de salida 1 si falla el proveedor de voz (lo producido antes se conserva).
+- `check`: revisa los audios y vídeos `produced` o `uploaded` (los nombrados, o todos): su sonoridad frente a `media › checks` (EBU R128 para la web: -16 LUFS, pico -1 dBTP, medidos con ffmpeg); los subtítulos (el `.vtt` o `.srt` junto al fichero, con su nombre) más rápidos de `max_cps` caracteres por segundo; y, en un vídeo con sus escenas descritas ([Accesibilidad de los vídeos](07-media.md#accesibilidad-de-los-vídeos)), el texto de pantalla que su locución no dice. Una línea `AVISO <id> [<código>] <qué>` por cada cosa (códigos `LOUDNESS`, `CAPTIONS_FAST`, `NOT_SAID`, `NOT_CHECKED`), y código de salida 1 mientras quede alguna; `--fix` lleva la sonoridad a su objetivo en el sitio (dos pasadas de `loudnorm`; la imagen de un vídeo se copia, no se vuelve a codificar). Necesita `ffmpeg` y `ffprobe`.
+- `sheet`: la hoja de contactos del vídeo `id`: `--frames` fotogramas (por defecto 24) repartidos a lo largo de su duración en una sola imagen, con el tiempo de cada uno, en `.cache/media/<CODE>/<id>-sheet.png`, para mirar un vídeo sin reproducirlo.
+- `transcript`: a partir de las escenas descritas en `media/scripts/<id>.scenes.yaml`, escribe la transcripción accesible del vídeo `id` (escena a escena, el minuto, lo que se ve y lo que se dice) en `<fichero>.transcript.txt` y una pista WebVTT de descripciones en `<fichero>.descriptions.vtt`, y hace de esa transcripción la del recurso (la que el montaje lleva al curso). Mira [Accesibilidad de los vídeos](07-media.md#accesibilidad-de-los-vídeos).
 - `redo`: marca recursos para producirlos de nuevo e imprime sus ids. Con uno o más ids (`redo CODE U1-S3-M1 U1-S5-M4`), esos; sin ellos, los recursos producidos o subidos de los tipos que usan el tema (`uses_theme`) cuya huella difiere de los tokens actuales (todos con `--all`). Vuelven a `scripted` y olvidan su huella y su ruta subida; su guion y su fichero se conservan. Después `/produce-media` (o `coursekit handoff`) los produce otra vez. Mira [Cambiar el theme después de producir el multimedia](07-media.md#cambiar-el-theme-después-de-producir-el-multimedia). Se niega mientras el curso está en pausa.
 
 Los tipos que usan los tokens del tema figuran en `media.yaml › uses_theme` (por defecto `infographic`, `diagram`, `animated_gif`, `simulation`, `video` y `terminal_demo`). Para ellos:
