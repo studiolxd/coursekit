@@ -16,6 +16,7 @@ question_objective_key: "objective:"
 thousands_separator: ","
 assessment_instructions: Instructions for the learner
 assessment_bank: Question bank
+assessment_unit_title: Assessment    # the package of the tests when they go apart (delivery › assessment › placement: separate)
 download: Download
 learner: You                          # the learner when they speak in a dialogue (no portrait)
 note: Note
@@ -217,3 +218,26 @@ capture_people:
 transcript_on_screen: On screen
 number_words: [zero, one, two, three, four, five, six, seven, eight, nine, ten, eleven, twelve, thirteen, fourteen, fifteen,
                sixteen, seventeen, eighteen, nineteen, twenty]
+
+# Inclusive language (`rules › inclusive_language`): words that name people as if one gender stood for everyone, with a neutral
+# alternative (`coursekit verify` warns about them with `neutral`), and the forms with a slash (it warns about them with `neutral`
+# and `split`). Compared ignoring case and as whole words.
+inclusive:
+  generic:
+    he or she: they
+    his or her: their
+    him or her: them
+    chairman: chair, chairperson
+    chairmen: chairs
+    mankind: humankind, people
+    manpower: workforce, staff
+    man-hours: person-hours, work hours
+    businessman: businessperson
+    businessmen: businesspeople
+    salesman: salesperson
+    salesmen: salespeople
+    spokesman: spokesperson
+    workmen: workers
+    layman: non-specialist
+    laymen: non-specialists
+  marks: '(?<![\w/])(?:he/she|she/he|his/her|her/his|him/her|her/him|s/he|\(s\)he)(?![\w/])'

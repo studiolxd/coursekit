@@ -501,68 +501,158 @@ def _row(sheet, values: list, bold: bool = False) -> None:
             cell.font = UNIT_FONT
 
 
+def keys(course: dict, graph: dict) -> tuple[dict[str, str], dict[str, str], dict[str, str]]:
+    """What a person reads for each competency (C1…), each objective (U1.1…, the ids `coursekit sync` gives and
+    misconceptions.yaml uses; with the id of design.yaml after it when that one differs) and the kind of each section node
+    (intro, content, activities, summary)."""
+    from coursekit import sync as syncmod  # imports this module
+
+    competencies = {c["id"]: str(c.get("clave") or f"C{n}") for n, c in enumerate(syncmod.ordered(graph["competencias"]), 1)}
+    units, _ = syncmod.build_units(graph, course, coursemod.rules(course), coursemod.tokens(course))
+    labels = {str(o["slxd_id"]): str(o["id"]) for u in units for o in u["objectives"]}
+    objectives = {}
+    for n, o in enumerate(syncmod.ordered(graph["objetivos"]), 1):
+        label, own = labels.get(o["id"]), o.get("clave")
+        objectives[o["id"]] = (f"{label} ({own})" if own and own != label else label) if label else str(own or f"O{n}")
+    kinds = {s["slxd_id"]: s["kind"] for u in units for s in u["sections"]}
+    return competencies, objectives, kinds
+
+
+ORPHAN_CHECKS = ("coverage.orphan_content", "cobertura.contenidoHuerfano")
+
+
+def slxd_findings(path: Path) -> list[Finding]:
+    """The findings of `design_matrix_validate` that the design agent saved in validation.json."""
+    if not path.is_file():
+        return []
+    data = json.loads(path.read_text(encoding="utf-8"))
+    items = data.get("hallazgos", []) if isinstance(data, dict) else data
+    return [Finding(str(h.get("check") or ""), "error" if h.get("severidad") == "error" else "warning", str(h.get("mensaje") or ""),
+                    str((h.get("ref") or {}).get("tipo") or "matriz"), (h.get("ref") or {}).get("id")) for h in items or []]
+
+
+def review_excel(course: dict) -> tuple[list[Finding], Path]:
+    """A course designed in slxd: the Excel the person reviews, the same workbook as a local design, from the matrix.json and
+    validation.json the design agent saved (the Excel slxd exports lacks the competencies, the hours of the sections and the
+    grading of the tests)."""
+    from coursekit import sync as syncmod  # imports this module
+
+    folder = course["_dir"] / "design"
+    graph = syncmod.load_graph(folder / "matrix.json")
+    findings = slxd_findings(folder / "validation.json")
+    target = folder / excel_name(course)
+    write_excel(course, graph, findings, target)
+    return findings, target
+
+
+def expected(finding: Finding, kinds: dict[str, str]) -> bool:
+    """A warning the design asks for: an introduction or a summary develops no objective."""
+    return finding.check in ORPHAN_CHECKS and kinds.get(str(finding.ref)) in ("intro", "summary")
+
+
 def write_excel(course: dict, graph: dict, findings: list[Finding], target: Path) -> None:
+    from coursekit import misconceptions as misconmod
+
     head = lambda key: t("design", key)  # noqa: E731
     bloom_name = {BLOOM_SLXD[b]: t("design", f"bloom_{b}") for b in BLOOM}
     kinds = {v: t("design", f"type_{k}") for k, v in LEARNING_TYPES.items()}
     instruments = {v: t("design", f"instrument_{k}") for k, v in INSTRUMENTS.items()}
-    competencies = {c["id"]: c["clave"] for c in graph["competencias"]}
-    objectives = {o["id"]: o["clave"] for o in graph["objetivos"]}
+    competencies, objectives, section_kinds = keys(course, graph)
     nodes = {n["id"]: n for n in graph["nodos"]}
-    keys = lambda ids, names: ", ".join(names.get(i, "?") for i in ids)  # noqa: E731
+    rules = coursemod.rules(course)
+    names = lambda ids, found: ", ".join(found.get(i, "?") for i in ids)  # noqa: E731
+    ordered = lambda items: sorted(items, key=lambda x: x.get("orden", 0))  # noqa: E731
 
     book = Workbook()
     meta = graph["matrix"]
-    passing = next(k for k, v in PASSING.items() if v == meta["criterioAprobado"])
+    passing = next((k for k, v in PASSING.items() if v == meta.get("criterioAprobado")), "all_tests")
+    leaves = [n for n in graph["nodos"] if n["tipo"] in ("apartado", "subapartado")
+              and not any(c["parentId"] == n["id"] for c in graph["nodos"])]
+    words = sum(coursemod.min_words(n.get("horas") or 0, rules) for n in leaves)
     sheet = _sheet(book, head("sheet_profile"), [(head("col_field"), 28), (head("col_value"), 90)], first=True)
-    for key, value in (("field_title", meta["nombre"]), ("field_code", course["code"]), ("field_hours", meta["duracionHoras"]),
-                       ("field_structure", meta["patronEstructural"]), ("field_words_per_hour", meta["palabrasPorHora"]),
-                       ("field_audience", meta["publicoObjetivo"]), ("field_level", meta["nivel"]),
-                       ("field_prerequisites", meta["conocimientosPrevios"]), ("field_context", meta["contexto"]),
-                       ("field_tone", meta["tono"]), ("field_passing", head(f"passing_{passing}")),
-                       ("field_course_score", meta["notaAprobadoCurso"])):
+    for key, value in (("field_title", meta.get("nombre")), ("field_code", course["code"]), ("field_hours", meta.get("duracionHoras")),
+                       ("field_min_words", words),
+                       ("field_structure", meta.get("patronEstructural")), ("field_words_per_hour", meta.get("palabrasPorHora")),
+                       ("field_audience", meta.get("publicoObjetivo")), ("field_level", meta.get("nivel")),
+                       ("field_prerequisites", meta.get("conocimientosPrevios")), ("field_context", meta.get("contexto")),
+                       ("field_tone", meta.get("tono")), ("field_passing", head(f"passing_{passing}")),
+                       ("field_course_score", meta.get("notaAprobadoCurso"))):
         _row(sheet, [head(key), value])
 
-    sheet = _sheet(book, head("sheet_competencies"), [(head("col_id"), 8), (head("col_text"), 100)])
-    for c in graph["competencias"]:
-        _row(sheet, [c["clave"], c["texto"]])
+    sheet = _sheet(book, head("sheet_competencies"), [(head("col_id"), 8), (head("col_text"), 90), (head("col_objectives"), 30)])
+    for c in ordered(graph["competencias"]):
+        served = [o["id"] for o in ordered(graph["objetivos"]) if c["id"] in (o.get("competenciaIds") or [])]
+        _row(sheet, [competencies[c["id"]], c["texto"], names(served, objectives)])
 
-    sheet = _sheet(book, head("sheet_objectives"), [(head("col_id"), 10), (head("col_text"), 80), (head("col_bloom"), 14),
-                                                    (head("col_competencies"), 16)])
-    for o in graph["objetivos"]:
-        _row(sheet, [o["clave"], o["texto"], bloom_name[o["nivelBloom"]], keys(o["competenciaIds"], competencies)])
+    sheet = _sheet(book, head("sheet_objectives"), [(head("col_id"), 10), (head("col_text"), 70), (head("col_bloom"), 14),
+                                                    (head("col_competencies"), 14), (head("col_sections"), 40),
+                                                    (head("col_learning"), 30), (head("col_assessment"), 30)])
+    for o in sorted(graph["objetivos"], key=lambda o: (objectives[o["id"]] if objectives[o["id"]][:1] == "U" else "~", o.get("orden", 0))):
+        where = [nodes[n["id"]]["titulo"] for n in graph["nodos"] if o["id"] in (n.get("objetivoIds") or [])]
+        practised = [a["titulo"] for a in graph["actividadesAprendizaje"] if o["id"] in (a.get("objetivoIds") or [])]
+        assessed = [a["titulo"] for a in graph["actividadesEvaluacion"] if o["id"] in (a.get("objetivoIds") or [])]
+        _row(sheet, [objectives[o["id"]], o["texto"], bloom_name.get(o.get("nivelBloom"), o.get("nivelBloom")),
+                     names(o.get("competenciaIds") or [], competencies), "\n".join(where), "\n".join(practised), "\n".join(assessed)])
 
     sheet = _sheet(book, head("sheet_structure"), [(head("col_level"), 14), (head("col_title"), 60), (head("col_hours"), 8),
-                                                   (head("col_objectives"), 22)])
+                                                   (head("col_min_words"), 12), (head("col_objectives"), 22)])
     children: dict[str | None, list[dict]] = {}
     for n in graph["nodos"]:
         children.setdefault(n["parentId"], []).append(n)
 
     def walk(parent: str | None, depth: int) -> None:
-        for n in sorted(children.get(parent, []), key=lambda x: x["orden"]):
-            _row(sheet, [head(f"node_{n['tipo']}"), "    " * depth + n["titulo"], n["horas"], keys(n["objetivoIds"], objectives)],
+        for n in ordered(children.get(parent, [])):
+            leaf = n in leaves
+            _row(sheet, [head(f"node_{n['tipo']}"), "    " * depth + n["titulo"], n.get("horas"),
+                         coursemod.min_words(n.get("horas") or 0, rules) if leaf else None, names(n.get("objetivoIds") or [], objectives)],
                  bold=n["tipo"] in ("modulo", "unidad"))
             walk(n["id"], depth + 1)
     walk(None, 0)
 
+    unit_order = {n["id"]: i for i, n in enumerate(n for top in ordered(children.get(None, []))
+                                                    for n in ([top] if top["tipo"] == "unidad" else ordered(children.get(top["id"], []))))}
+    by_unit = lambda items: sorted(items, key=lambda a: (unit_order.get(a["nodeId"], 0), a.get("orden", 0)))  # noqa: E731
     sheet = _sheet(book, head("sheet_learning"), [(head("col_unit"), 30), (head("col_title"), 40), (head("col_type"), 20),
                                                   (head("col_objectives"), 16), (head("col_description"), 70)])
-    for a in graph["actividadesAprendizaje"]:
-        _row(sheet, [nodes[a["nodeId"]]["titulo"], a["titulo"], kinds[a["tipo"]], keys(a["objetivoIds"], objectives), a["descripcion"]])
+    for a in by_unit(graph["actividadesAprendizaje"]):
+        _row(sheet, [nodes[a["nodeId"]]["titulo"], a["titulo"], kinds.get(a.get("tipo"), a.get("tipo")),
+                     names(a.get("objetivoIds") or [], objectives), a.get("descripcion")])
 
     sheet = _sheet(book, head("sheet_assessment"), [(head("col_unit"), 30), (head("col_title"), 40), (head("col_instrument"), 18),
                                                     (head("col_objectives"), 16), (head("col_criterion"), 50),
                                                     (head("col_weight"), 8), (head("col_passing"), 10), (head("col_attempts"), 10),
                                                     (head("col_description"), 60)])
-    for a in graph["actividadesEvaluacion"]:
-        _row(sheet, [nodes[a["nodeId"]]["titulo"], a["titulo"], instruments[a["instrumento"]], keys(a["objetivoIds"], objectives),
-                     a["criterio"], a["peso"], a["notaAprobado"], a["intentosMax"], a["descripcion"]])
+    for a in by_unit(graph["actividadesEvaluacion"]):
+        _row(sheet, [nodes[a["nodeId"]]["titulo"], a["titulo"], instruments.get(a.get("instrumento"), a.get("instrumento")),
+                     names(a.get("objetivoIds") or [], objectives), a.get("criterio"), a.get("peso"), a.get("notaAprobado"),
+                     a.get("intentosMax"), a.get("descripcion")])
 
-    sheet = _sheet(book, head("sheet_validation"), [(head("col_severity"), 12), (head("col_check"), 34), (head("col_message"), 100)])
-    for f in findings:
-        _row(sheet, [head(f"severity_{f.severity}"), f.check, f.message])
+    errors, _ = misconmod.load(course)
+    sheet = _sheet(book, head("sheet_misconceptions"), [(head("col_objective"), 12), (head("col_id"), 22), (head("col_text"), 100)])
+    for eid, (objective, text) in (errors.by_id.items() if errors else ()):
+        _row(sheet, [objective, eid, text])
+    if not errors or not errors.by_id:
+        _row(sheet, ["", "", head("no_misconceptions")])
+
+    sheet = _sheet(book, head("sheet_validation"), [(head("col_severity"), 14), (head("col_element"), 40), (head("col_check"), 30),
+                                                    (head("col_message"), 90)])
+    unit_word = coursemod.tokens(course)["unit"]
+
+    def node_name(n: dict) -> str:
+        up = n
+        while up.get("parentId") and up["tipo"] != "unidad":
+            up = nodes[up["parentId"]]
+        unit = f"{unit_word} {unit_order[up['id']] + 1}" if up["id"] in unit_order else ""
+        return n["titulo"] if up is n or not unit else f"{unit} · {n['titulo']}"
+
+    element = {**{n["id"]: node_name(n) for n in graph["nodos"]}, **objectives, **competencies,
+               **{a["id"]: a["titulo"] for a in graph["actividadesAprendizaje"] + graph["actividadesEvaluacion"]}}
+    rank = {"error": 0, "warning": 1, "expected": 2}
+    shown = [("expected" if expected(f, section_kinds) else f.severity, f) for f in findings]
+    for severity, f in sorted(shown, key=lambda x: rank[x[0]]):
+        _row(sheet, [head(f"severity_{severity}"), element.get(str(f.ref), ""), f.check, f.message])
     if not findings:
-        _row(sheet, ["", "", head("no_findings")])
+        _row(sheet, ["", "", "", head("no_findings")])
     book.save(target)
 
 

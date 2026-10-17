@@ -1,8 +1,10 @@
 """`coursekit delivery`: record a delivered SCORM package in course.yaml › deliveries.
 
 The assembly agent exports each unit (creator: create_export), downloads the zip to
-courses/<CODE>/delivery/ and records it here. When every unit has a package of the same version,
-the course moves to `delivered`.
+courses/<CODE>/delivery/ and records it here. When the tests go apart (`delivery › assessment › placement: separate`) their
+package is one more unit; with a question-bank format (`format: aiken | gift | moodle-xml`) `coursekit delivery questions`
+writes and records the bank. When every package (and the bank, if any) of the same version is recorded, the course moves to
+`delivered`.
 """
 
 from __future__ import annotations
@@ -14,6 +16,7 @@ import zipfile
 from pathlib import Path
 
 from coursekit import clientreview, config, identity
+from coursekit import course as coursemod
 from coursekit.i18n import t
 from coursekit.states import ensure_active, history_entry
 from coursekit.util import USER_AGENT, edit_yaml, save_yaml, sha256_file
@@ -100,8 +103,7 @@ def add(course: dict, unit: int, version: str, file: str, job: str | None = None
         raise DeliveryError(t("delivery", "wrong_folder", folder=delivery_dir))
     course_path = course_dir / "course.yaml"
     ry, data = edit_yaml(course_path)
-    units = [u["n"] for u in data.get("units") or []]
-    if unit not in units:
+    if coursemod.package_unit(course, unit) is None:
         raise DeliveryError(t("delivery", "unit_not_found", unit=unit))
     if data.get("deliveries") is None:
         data["deliveries"] = []
@@ -118,13 +120,52 @@ def add(course: dict, unit: int, version: str, file: str, job: str | None = None
         "snapshot": snapshot,
     }
     data["deliveries"].append(entry)
-    delivered = {d["unit"] for d in data["deliveries"] if d.get("version") == version}
-    if set(units) <= delivered and data["status"] in ("assembly", "client_review"):
+    return _close(course, ry, data, version, path.name, warning)
+
+
+def _pending(course: dict, deliveries: list[dict], version: str) -> list[str]:
+    """What the version still lacks: the packages (by unit number) and the question bank when the tests are exported as one."""
+    done = [d for d in deliveries if d.get("version") == version]
+    units = {d.get("unit") for d in done if d.get("kind", "package") == "package"}
+    pending = [str(u["n"]) for u in coursemod.package_units(course) if u["n"] not in units]
+    if coursemod.assessment_delivery(course)[1] != "platform" and not any(d.get("kind") == "questions" for d in done):
+        pending.append(t("delivery", "pending_questions"))
+    return pending
+
+
+def _close(course: dict, ry, data: dict, version: str, name: str, warning: str | None) -> str:
+    """Saves the record and, when nothing of the version is missing, moves the course to `delivered`."""
+    pending = _pending(course, data["deliveries"], version)
+    if not pending and data["status"] in ("assembly", "client_review"):
         data["status"] = "delivered"
-        data.setdefault("history", []).append(history_entry("delivered", f"Version {version} delivered", entry["by"]))
-    save_yaml(ry, data, course_path)
-    pending = sorted(set(units) - delivered)
+        who = data["deliveries"][-1].get("by") or "unknown"
+        data.setdefault("history", []).append(history_entry("delivered", f"Version {version} delivered", who))
+    save_yaml(ry, data, course["_dir"] / "course.yaml")
     note = f"\n{warning}" if warning else ""
     if pending:
-        return t("delivery", "recorded_pending", name=path.name, version=version, pending=pending) + note
-    return t("delivery", "recorded_done", name=path.name) + note
+        return t("delivery", "recorded_pending", name=name, version=version, pending=", ".join(pending)) + note
+    return t("delivery", "recorded_done", name=name) + note
+
+
+def add_questions(course: dict, version: str) -> str:
+    """Writes the question bank of the course (`delivery › assessment › format`) in delivery/ and records it."""
+    from coursekit import questionbank
+
+    warning = check_ready(course)
+    fmt = coursemod.assessment_delivery(course)[1]
+    files = questionbank.export(course, version, fmt)
+    course_path = course["_dir"] / "course.yaml"
+    ry, data = edit_yaml(course_path)
+    if data.get("deliveries") is None:
+        data["deliveries"] = []
+    who = identity.current() or identity.suggested()
+    data["deliveries"].append({
+        "version": version,
+        "kind": "questions",
+        "format": fmt,
+        "date": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
+        "by": str(who) if who else "unknown",
+        "files": [{"file": p.name, "sha256": sha256_file(p)} for p in files],
+    })
+    names = ", ".join(p.name for p in files)
+    return t("questionbank", "written", format=fmt, files=names) + "\n" + _close(course, ry, data, version, names, warning)

@@ -100,7 +100,7 @@ def approve_design(course: dict, confirm: Confirm, do_commit: bool = True, who: 
         _, problems = storymod.load(course)
         if problems:
             raise ApprovalError(t("approve", "story_problems", problems="\n  ".join(problems)))
-    excel = sorted(design.glob("*.xlsx"))
+    excel = sorted(design.glob("*.xlsx"), key=lambda p: p.name == localdesign.excel_name(course))  # the review Excel last
     graph = json.loads(matrix.read_text(encoding="utf-8"))
     meta = graph.get("matrix") or {}
     check = sync(course, check_only=True)

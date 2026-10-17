@@ -20,6 +20,15 @@ defaults:
     passing_score: 50
     attempts: 2
 
+# How the texts name people (the learners, the clients, a team): the design, the writing and the review follow it, and
+# `coursekit verify` warns with the words of the language (lang/<code>.yaml › inclusive). A course may set its own.
+inclusive_language: neutral    # none: the generic masculine where the language has one (es: «los alumnos»)
+                               # neutral: collective and epicene words, «quien», «la persona» (es: «el alumnado», «quien aprende»;
+                               #   en: singular they); no doubling and no slashes. verify warns about generic words and slashes
+                               # split: both forms in full where the language marks gender (es: «el alumno y la alumna»), a neutral
+                               #   word when there is one; no slashes. verify warns about slashes
+                               # slash: both forms with a slash (es: «el/la alumno/a»); hard to read and to hear in a screen reader
+
 # Review of each unit before its sign-off.
 review:
   ai: required                 # required: an AI review (coursekit review, then `coursekit reviewed`) comes before the sign-off

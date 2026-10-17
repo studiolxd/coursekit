@@ -25,6 +25,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from coursekit import assemble as assemblemod
+from coursekit import course as coursemod
 from coursekit import delivery as deliverymod
 from coursekit import paths as pathsmod
 from coursekit import preview, store
@@ -367,7 +368,7 @@ def check(course: dict, unit: dict, browser: str | None = None, say: Say = print
     for ref in missing_files(folder):
         result.errors.append(t("playcheck", "missing_file", ref=ref))
     standard = "2004" if deliverymod.settings(course)["export"]["standard"] == "scorm_2004" else "1.2"
-    server = preview.serve(course, course.get("units") or [unit], unit["n"], port=0)
+    server = preview.serve(course, coursemod.package_units(course) or [unit], unit["n"], port=0)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:

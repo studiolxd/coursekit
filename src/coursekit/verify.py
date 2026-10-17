@@ -140,6 +140,60 @@ def check_forbidden(label: str, lines: list[str], forbidden: dict, report: Repor
                 report.error(t("verify", "forbidden_term", label=label, line=number, term=term))
 
 
+EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
+FENCE = re.compile(r"^\s*(```|~~~)")
+
+
+def check_inclusive(label: str, lines: list[str], mode: str, tokens: dict, report: Report, skip: tuple[str, ...] = ()) -> None:
+    """`rules › inclusive_language`: with `neutral`, the words of the language that name people in a generic masculine (one
+    warning per word, with the lines and the neutral alternative); with `neutral` or `split`, the forms with a slash or an @.
+    Code, comments, addresses and the lines in `skip` (the format's own headings) are left out."""
+    if mode not in ("neutral", "split"):
+        return
+    lexicon = tokens.get("inclusive") or {}
+    generic = {str(word): str(alt) for word, alt in (lexicon.get("generic") or {}).items()} if mode == "neutral" else {}
+    patterns = {word: re.compile(r"(?<!\w)" + r"\s+".join(map(re.escape, word.split())) + r"(?!\w)", re.I) for word in generic}
+    marks = re.compile(lexicon["marks"], re.I) if lexicon.get("marks") else None
+    found: dict[str, list[int]] = {}
+    fenced = comment = False
+    for number, line in enumerate(lines, 1):
+        if FENCE.match(line):
+            fenced = not fenced
+            continue
+        text = line
+        if comment:
+            if "-->" not in text:
+                continue
+            text, comment = text.split("-->", 1)[1], False
+        text = re.sub(r"<!--.*?-->", " ", text)
+        if "<!--" in text:
+            text, comment = text.split("<!--", 1)[0], True
+        if fenced or text.strip() in skip:
+            continue
+        text = EMAIL.sub(" ", URL.sub(" ", text))
+        for word, pattern in patterns.items():
+            if pattern.search(text):
+                found.setdefault(word, []).append(number)
+        for mark in marks.findall(text) if marks else []:
+            report.warn(t("verify", "inclusive_mark", label=label, line=number, form=mark, mode=mode))
+    for word, numbers in found.items():
+        shown = ", ".join(map(str, numbers[:5])) + (" …" if len(numbers) > 5 else "")
+        report.warn(t("verify", "inclusive_generic", label=label, lines=shown, word=word, alternative=generic[word]))
+
+
+def check_bank_format(course: dict, path: Path, directives, rules: dict, report: Report) -> None:
+    """With a question-bank format (`delivery › assessment › format`), the questions of the tests must be of a type it takes."""
+    fmt = coursemod.assessment_delivery(course)[1]
+    if fmt == "platform":
+        return
+    allowed = coursemod.BANK_QUESTIONS[fmt]
+    for line, name, body in directives:
+        if name in (rules.get("question_directives") or ()) and name not in allowed:
+            report.error(t("verify", "bank_type", file=path.name, line=line, name=name, format=fmt, allowed=", ".join(allowed)))
+        elif name == "fill-in-the-blank" and fmt == "gift" and sum(len(re.findall(r"\{[^{}]+\}", b)) for b in body) > 1:
+            report.error(t("verify", "bank_gift_blanks", file=path.name, line=line))
+
+
 def check_pictographs(path: Path, text: str, allowed: str, report: Report) -> None:
     for i, line in enumerate(text.splitlines(), 1):
         found = {ch for ch in PICTOGRAPH_RE.findall(line) if ch not in allowed}
@@ -470,6 +524,8 @@ def verify_unit(course: dict, unit: dict) -> Report:
     forbidden = all_rules.get("forbidden") or {}
     registry = videosmod.by_key(course["_dir"])
     check_forbidden(content_path.name, text.splitlines(), forbidden, report, registry)
+    inclusive = coursemod.inclusive_language(all_rules)
+    check_inclusive(content_path.name, text.splitlines(), inclusive, tokens, report)
     sections = split_sections(text, syntax)
     specs = unit.get("sections") or []
     found, expected = [s.n for s in sections], [s["n"] for s in specs]
@@ -583,9 +639,12 @@ def verify_unit(course: dict, unit: dict) -> Report:
         a_text = assessment_path.read_text(encoding="utf-8")
         check_pictographs(assessment_path, a_text, rules["allowed_symbols"], report)
         check_forbidden(assessment_path.name, a_text.splitlines(), forbidden, report, registry)
+        format_headings = tuple(f"### {tokens[k]}" for k in ("assessment_instructions", "assessment_bank"))
+        check_inclusive(assessment_path.name, a_text.splitlines(), inclusive, tokens, report, format_headings)
         directives = list(parse_directives(assessment_path, a_text.splitlines(), rules, report))
         assessment_directives = directives
         questions = check_questions(assessment_path, directives, rules, syntax, report)
+        check_bank_format(course, assessment_path, directives, rules, report)
         passing = float(((course.get("design") or {}).get("grading") or {}).get("passing_score") or 50)
         # with a test, the grade is the test's: a scored simulation of the content does not count (in any backend)
         if any(syntax.activity.match(line) for line in a_text.splitlines()):

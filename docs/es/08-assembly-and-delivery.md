@@ -130,6 +130,35 @@ La actividad de una lección es la que tiene el mismo título en el diseño y, s
 
 Un cambio solo en la calificación de un test (tras firmar de nuevo el diseño y ejecutar `plan`) aparece en `diff` como una operación `update_quiz` de esa lección, y el curso no vuelve a `assembly` hasta que se aplica. Con el backend html los tres valores se escriben en los ajustes de cada test, pero el paquete informa de una sola nota por unidad (la mejor de sus tests), así que el peso no la cambia.
 
+### Dónde van las evaluaciones
+
+Las evaluaciones se escriben en el `assessment.md` de su unidad, y ahí las ven la redacción, la revisión y `verify`. Dónde acaban se decide en el montaje y la entrega con `delivery › assessment` (un curso puede fijar lo suyo en `course.yaml › delivery › assessment`):
+
+| `placement` | Qué se monta y se entrega |
+|---|---|
+| `unit` (por defecto) | Cada unidad lleva sus evaluaciones como lecciones de evaluación, y su paquete informa de su nota. |
+| `separate` | Las unidades no llevan evaluaciones e informan del avance (`lessonProgress`). Todas las evaluaciones del curso van en un paquete propio, una unidad más después de la última (`coursekit status` da su número), con el título del curso y «Evaluación» («Assessment» en inglés); informa de la nota (`quiz`). El plan de cada unidad lo dice en `score_source`, y el agente de entrega lo pasa a la exportación de creator. Con el backend creator su contenido se crea con `create_content` y se registra en `course.yaml › assessment_unit`; las lecciones de evaluación que el generador del diseño creó dentro de cada unidad se borran. |
+
+| `format` | Las preguntas de las evaluaciones |
+|---|---|
+| `platform` (por defecto) | Lecciones de evaluación de los paquetes, en creator o en el paquete html. |
+| `aiken`, `gift`, `moodle-xml` | Un banco de preguntas que importa el LMS, escrito por `coursekit delivery questions` en `delivery/`. Las preguntas salen de los paquetes; una actividad con una simulación puntuable deja la simulación en su paquete (el de su unidad, o el de las evaluaciones con `separate`), y una actividad que solo tiene preguntas no tiene lección. |
+
+Cada formato de banco admite unos tipos de pregunta: `verify` rechaza los demás en `assessment.md` mientras se redacta la unidad, y `delivery questions` también los rechaza.
+
+| Directiva | `aiken` | `gift` | `moodle-xml` |
+|---|---|---|---|
+| `single-choice` | ✔ | ✔ | ✔ (`multichoice`, una respuesta) |
+| `multi-select` | ✘ | ✔ (cada respuesta correcta vale 100/n %, cada incorrecta resta) | ✔ (`multichoice`, varias respuestas) |
+| `true-false` | ✘ | ✔ | ✔ |
+| `match` | ✘ | ✔ | ✔ (`matching`) |
+| `sorting-groups` | ✘ | ✔ (como emparejamiento: cada elemento con su grupo) | ✔ (`matching`) |
+| `short-answer` | ✘ | ✔ | ✔ |
+| `fill-in-the-blank` | ✘ | ✔ (un hueco por pregunta) | ✔ (`cloze`, varios huecos) |
+| `sorting`, `order-words` | ✘ | ✘ | ✘ |
+
+Qué conserva cada fichero: el texto de la pregunta, sus opciones, las respuestas correctas y la retroalimentación (de acierto, de error y general; Aiken no tiene retroalimentación), con el HTML de los textos (texto plano en Aiken). Cada pregunta se llama como su actividad y su posición, con su objetivo (`U1-E1.1-q3 · U1.2`). El id del error común que representa un distractor nunca se escribe. GIFT y Moodle XML ponen cada actividad en su propia categoría (`<CODE>/U1 E1.1 <título>`); Aiken no tiene categorías, así que es un fichero por actividad. La nota para aprobar, los intentos y los pesos no forman parte de estos formatos: se fijan en el cuestionario del LMS.
+
 ### Simulaciones en creator
 
 Creator no tiene un bloque para una simulación ni comparte estado entre bloques, así que en su plan:

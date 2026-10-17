@@ -51,6 +51,17 @@ class RuleError(Exception):
     pass
 
 
+INCLUSIVE_MODES = ("none", "neutral", "split", "slash")
+
+
+def inclusive_language(rules: dict) -> str:
+    """`rules › inclusive_language`: how the texts name people (`none`, `neutral`, `split` or `slash`)."""
+    mode = str(rules.get("inclusive_language") or "neutral").strip().lower()
+    if mode not in INCLUSIVE_MODES:
+        raise RuleError(t("course", "bad_inclusive", value=mode, valid=", ".join(INCLUSIVE_MODES)))
+    return mode
+
+
 def load(project: Project, code_or_path: str) -> dict:
     folder = project.course_dir(code_or_path)
     if not (folder / "course.yaml").exists():
@@ -106,6 +117,67 @@ def rules(course: dict | None = None, project: Project | None = None) -> dict:
     content["simulation_directives"] = by_role("simulation")
     content["component_equivalents"] = registry.get("component_equivalents") or {}
     return cfg
+
+
+ASSESSMENT_PLACEMENTS = ("unit", "separate")
+BANK_QUESTIONS = {  # the question directives each question-bank format can take
+    "aiken": ("single-choice",),
+    "gift": ("single-choice", "multi-select", "true-false", "match", "sorting-groups", "short-answer", "fill-in-the-blank"),
+    "moodle-xml": ("single-choice", "multi-select", "true-false", "match", "sorting-groups", "short-answer", "fill-in-the-blank"),
+}
+ASSESSMENT_FORMATS = ("platform", *BANK_QUESTIONS)
+
+
+def assessment_delivery(course: dict) -> tuple[str, str]:
+    """(placement, format) of the tests: `delivery › assessment`, the course's over the project's."""
+    cfg = (config.effective("delivery", course.get("_project"), course).value.get("assessment") or {})
+    placement = str(cfg.get("placement") or "unit").strip().lower()
+    fmt = str(cfg.get("format") or "platform").strip().lower()
+    if placement not in ASSESSMENT_PLACEMENTS:
+        raise RuleError(t("course", "bad_assessment", key="placement", value=placement, valid=", ".join(ASSESSMENT_PLACEMENTS)))
+    if fmt not in ASSESSMENT_FORMATS:
+        raise RuleError(t("course", "bad_assessment", key="format", value=fmt, valid=", ".join(ASSESSMENT_FORMATS)))
+    return placement, fmt
+
+
+def assessment_unit(course: dict) -> dict | None:
+    """The package of the tests when they go apart (`placement: separate`): one more unit to assemble and deliver, after the
+    others, with no content of its own. Its lessons are the assessment activities of every unit (built by the plan from their
+    assessment.md); what is recorded of it lives in `course.yaml › assessment_unit`. None when the tests stay in their units or no
+    unit has one."""
+    placement, fmt = assessment_delivery(course)
+    if placement != "separate":
+        return None
+    units = course.get("units") or []
+    activities = [dict(a, unit=u["n"]) for u in units for a in (u.get("activities") or {}).get("assessment") or []]
+    if not activities or (fmt != "platform" and not tests_with_simulations(course)):
+        return None  # with a question-bank format only the scored simulations of the tests stay in a package
+    own = course.get("assessment_unit") or {}
+    return {"n": max(u["n"] for u in units) + 1, "kind": "assessment", "title": tokens(course)["assessment_unit_title"],
+            "hours": 0, "sections": [], "objectives": [o for u in units for o in u.get("objectives") or []],
+            "activities": {"learning": [], "assessment": activities}, "sources": [u["n"] for u in units],
+            "content_id": own.get("content_id"), "links": own.get("links") or {},
+            "status": "approved" if all(u.get("status") == "approved" for u in units) else "pending"}
+
+
+def tests_with_simulations(course: dict) -> bool:
+    """Some assessment.md of the course has a simulation (what stays in a package with a question-bank format)."""
+    names = tuple(rules(course)["content"].get("simulation_directives") or ())
+    for u in course.get("units") or []:
+        path = unit_dir(course["_dir"], u["n"]) / "assessment.md"
+        if path.exists() and any(line.strip() in {f":::{n}" for n in names} for line in path.read_text(encoding="utf-8").splitlines()):
+            return True
+    return False
+
+
+def package_units(course: dict) -> list[dict]:
+    """The units that become a package (assembly and delivery): the units of the design and, when the tests go apart, theirs."""
+    extra = assessment_unit(course)
+    return list(course.get("units") or []) + ([extra] if extra else [])
+
+
+def package_unit(course: dict, n: int | None) -> dict | None:
+    return next((u for u in package_units(course) if u["n"] == n), None)
 
 
 def min_words(hours: float, cfg: dict) -> int:

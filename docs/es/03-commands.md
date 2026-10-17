@@ -362,7 +362,7 @@ coursekit status PWD
 
 ### `coursekit design`
 
-Comprueba el diseño instruccional de un curso hecho en el proyecto (`course.yaml › design.tool: local`), `design/design.yaml`, y lo exporta. Úsalo cada vez que cambie ese fichero: el agente de diseño lo ejecuta mientras diseña, y la firma necesita su exportación. Quién: ambos (el agente de diseño, `/approve-design`).
+Comprueba el diseño instruccional de un curso hecho en el proyecto (`course.yaml › design.tool: local`), `design/design.yaml`, y lo exporta; en un curso diseñado en slxd, escribe el Excel que revisa la persona (mira abajo). Úsalo cada vez que cambie ese fichero: el agente de diseño lo ejecuta mientras diseña, y la firma necesita su exportación. Quién: ambos (el agente de diseño, `/approve-design`).
 
 ```
 coursekit design [--check] code
@@ -375,7 +375,11 @@ coursekit design [--check] code
 
 Aplica las comprobaciones de una matriz de diseño: referencias y estructura (ids, objetivos y competencias que existen, módulos solo con `con_modulos`), cobertura (cada objetivo desarrollado en un apartado, apartados y competencias sin objetivos), evidencia (cada objetivo con una actividad de evaluación), práctica antes de evaluar, el instrumento frente al nivel de Bloom (un test evidencia hasta *apply*, un caso práctico hasta *evaluate*, un portafolio o una rúbrica hasta *create*), horas (apartados sin ellas, partes que no suman lo de su unidad o módulo, un total distinto de `design.hours`), verbos (un objetivo que empieza con un verbo que no se puede observar, o con un verbo de otro nivel de Bloom, según las listas del idioma del curso) y progresión (una unidad que llega a *evaluate* o *create* sin ninguna unidad anterior en *apply* o más). Cada hallazgo se imprime con `✘` (error) o `·` (aviso), y después `N errores · M avisos`.
 
-Sin `--check` escribe `design/matrix.json` (el diseño con la forma de la matriz de diseño de slxd, con ids que no cambian de una exportación a la siguiente, así que volver a exportar no rompe una firma), `design/validation.json` (los hallazgos) y `design/<CODE>-instructional-design.xlsx` (perfil, competencias, objetivos, estructura, actividades y validación, para que lo revise la persona), y refresca la carpeta espejo. Código de salida 1 cuando hay errores (los ficheros se escriben igualmente, para que la persona los vea) o cuando el curso se diseña en slxd. El formato del fichero está en [Diseño local](02-workflow.md#diseño-local).
+Sin `--check` escribe `design/matrix.json` (el diseño con la forma de la matriz de diseño de slxd, con ids que no cambian de una exportación a la siguiente, así que volver a exportar no rompe una firma), `design/validation.json` (los hallazgos) y `design/<CODE>-instructional-design.xlsx` (para que lo revise la persona; mira abajo), y refresca la carpeta espejo. Código de salida 1 cuando hay errores (los ficheros se escriben igualmente, para que la persona los vea). El formato del fichero está en [Diseño local](02-workflow.md#diseño-local).
+
+Un curso diseñado en slxd (`design.tool: slxd`) tiene el mismo Excel a partir de `design/matrix.json` y `design/validation.json`, que guarda el agente de diseño (`design_matrix_get`, `design_matrix_validate`): `coursekit design CODE` lo escribe, imprime los hallazgos de slxd y sale con código 1 cuando hay errores o la matriz no está guardada; `--check` solo imprime. El libro que exporta slxd no tiene las competencias, las horas de los apartados ni la calificación de los tests, así que la persona revisa este.
+
+El Excel tiene estas hojas, con las etiquetas en el idioma de la persona: ficha (con las palabras mínimas del curso), competencias (y los objetivos a los que sirve cada una), objetivos (con los ids `U1.1`… que usan `course.yaml` y `misconceptions.yaml`, su nivel de Bloom y competencias, y los apartados, actividades de aprendizaje y actividades de evaluación de cada uno), estructura (horas y palabras mínimas de cada apartado), actividades de aprendizaje y de evaluación (en el orden de las unidades, con peso, aprobado e intentos), errores comunes (`design/misconceptions.yaml`) y validación (primero los errores, después los avisos y al final los esperados: una introducción o un resumen que no desarrolla ningún objetivo, que la consola no imprime).
 
 ```
 coursekit design PWD --check
@@ -433,7 +437,7 @@ coursekit download --out OUT url
 Imprime `descargado <ruta> (<tamaño> bytes)`. Código de salida 1 si la dirección no es `https`, si la ruta queda fuera del proyecto o si el servidor responde con un error o no se puede alcanzar. Usa los certificados de `network.ca_bundles`, como el resto de llamadas de red.
 
 ```
-coursekit download "https://…/export/download?t=…" --out courses/PWD/design/PWD-instructional-design.xlsx
+coursekit download "https://…/export/download?t=…" --out courses/PWD/design/PWD-slxd-matrix.xlsx
 ```
 
 ### `coursekit brief`
@@ -1257,15 +1261,15 @@ coursekit directives check .cache/list_brick_types.json
 Comprueba que un curso puede entregarse, registra un paquete SCORM entregado en `course.yaml › deliveries`, o imprime el nombre de fichero que debe tener un paquete. Quién: agentes (el agente de montaje) y personas.
 
 ```
-coursekit delivery [--file FILE] [--job JOB] [--snapshot SNAPSHOT] [--unit UNIT] [--version VERSION] [--url URL] {add,name,check,download} code
+coursekit delivery [--file FILE] [--job JOB] [--snapshot SNAPSHOT] [--unit UNIT] [--version VERSION] [--url URL] {add,name,check,download,questions} code
 ```
 
 | Argumento | Valores / por defecto | Significado |
 |---|---|---|
-| `action` | `add`, `name`, `check`, `download` | Registrar un paquete, imprimir el nombre de fichero esperado, comprobar que el curso puede entregarse o descargar un paquete exportado. |
+| `action` | `add`, `name`, `check`, `download`, `questions` | Registrar un paquete, imprimir el nombre de fichero esperado, comprobar que el curso puede entregarse, descargar un paquete exportado, o escribir y registrar el banco de preguntas de las evaluaciones. |
 | `code` | código o carpeta del curso | Curso. |
 | `--unit UNIT` | número de unidad (obligatorio en `add` y `name`) | Unidad del paquete. |
-| `--version VERSION` | texto (obligatorio en `add` y `name`), por ejemplo `1.0` | Versión de la entrega. |
+| `--version VERSION` | texto (obligatorio en `add`, `name` y `questions`), por ejemplo `1.0` | Versión de la entrega. |
 | `--file FILE` | ruta (`add`) | El `.zip` descargado; una ruta relativa se toma desde la carpeta actual. Debe estar directamente dentro de `courses/<CODE>/delivery/`. Código de salida 2 si falta. |
 | `--job JOB` | texto (`add`) | Id del trabajo de exportación de creator. No se usa con el backend html. |
 | `--snapshot SNAPSHOT` | texto (`add`) | Id de la instantánea de creator desde la que se exportó el paquete. No se usa con el backend html. |
@@ -1280,6 +1284,8 @@ La revisión del cliente es obligatoria cuando `delivery.yaml › client_review.
 `download` guarda el paquete de un trabajo de exportación (su `downloadUrl`, una dirección `https://` que caduca) como `courses/<CODE>/delivery/<nombre>`, con el nombre que imprime `name`, comprueba que es un zip válido con `imsmanifest.xml` en su raíz e imprime su ruta, lista para `add`; una descarga fallida o inválida no deja fichero. Existe para que el agente de montaje no necesite `curl`, que una sesión sin interfaz no puede ejecutar. Se niega en los mismos casos que `name` y `add`.
 
 `name` construye el nombre a partir de `delivery › file_name` (por defecto `{code}-U{unit:02d}-v{version}-{standard}.zip`, por ejemplo `PWD-U01-v1.0-scorm12.zip`). `add` comprueba que el fichero es un zip válido con `imsmanifest.xml` en su raíz y que está en la carpeta de entrega, y registra versión, unidad, fecha, firmante, estándar, nombre de fichero, SHA-256, trabajo e instantánea. Un paquete válido siempre se registra. Cuando todas las unidades tienen un paquete de la misma versión y el curso estaba en `assembly` o `client_review`, el curso pasa a `delivered`; si faltan unidades imprime las que quedan. En cualquier otro estado (por ejemplo `media`) el paquete se registra y un aviso dice que el curso no se marca como entregado. Código de salida 1 ante un paquete no válido, una carpeta incorrecta, una unidad desconocida, un curso en pausa o una revisión del cliente obligatoria que falta.
+
+Cuando las evaluaciones van aparte (`delivery › assessment › placement: separate`), su paquete es una unidad más después de la última (`coursekit status` da su número) y se entrega como cualquier unidad. Con un formato de banco de preguntas (`delivery › assessment › format`: `aiken`, `gift` o `moodle-xml`), `questions` escribe el banco de las evaluaciones en `courses/<CODE>/delivery/` y lo registra en `deliveries` (`kind: questions`, el formato y cada fichero con su SHA-256): `gift` y `moodle-xml` escriben un fichero por curso (`<CODE>-questions-v<versión>.gift` o `.xml`) con una categoría por actividad de evaluación; `aiken`, un `.txt` por actividad, porque el formato no tiene categorías. Se niega ante un tipo de pregunta que el formato no admite (código de salida 1). Entonces el curso queda entregado cuando están registrados todos los paquetes y el banco de la versión. Mira [Dónde van las evaluaciones](08-assembly-and-delivery.md#dónde-van-las-evaluaciones).
 
 ```
 coursekit delivery check PWD

@@ -150,11 +150,21 @@ def learner_text(path: Path, tokens: dict, assessment: bool) -> str:
 
 
 def missing_words(course: dict, unit: dict, page: str) -> list[str]:
+    """The words of the unit's `.md` the learner should read that the page lacks. The tests are checked where they go: in their unit,
+    or in the package of the tests when they go apart; with a question-bank format they leave the packages and are not checked."""
     tokens = coursemod.tokens(course)
-    folder = coursemod.unit_dir(course["_dir"], unit["n"])
+    placement, fmt = coursemod.assessment_delivery(course)
+    files: list[tuple[Path, bool]] = []
+    if unit.get("kind") == "assessment":
+        sources = [coursemod.unit_dir(course["_dir"], n) for n in unit.get("sources") or []]
+        files += [(folder / "assessment.md", True) for folder in sources if fmt == "platform"]
+    else:
+        folder = coursemod.unit_dir(course["_dir"], unit["n"])
+        files.append((folder / "content.md", False))
+        if placement == "unit" and fmt == "platform":
+            files.append((folder / "assessment.md", True))
     wanted: set[str] = set()
-    for name, assessment in (("content.md", False), ("assessment.md", True)):
-        path = folder / name
+    for path, assessment in files:
         if path.exists():
             wanted |= set(WORD.findall(learner_text(path, tokens, assessment).casefold()))
     return sorted(wanted - page_words(page))

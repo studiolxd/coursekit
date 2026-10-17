@@ -16,6 +16,7 @@ question_objective_key: "objetivo:"
 thousands_separator: "."
 assessment_instructions: Instrucciones para el alumno
 assessment_bank: Banco de preguntas
+assessment_unit_title: Evaluación    # the package of the tests when they go apart (delivery › assessment › placement: separate)
 download: Descargar
 learner: Tú                          # the learner when they speak in a dialogue (no portrait)
 note: Nota
@@ -217,3 +218,29 @@ capture_people:
 transcript_on_screen: En pantalla
 number_words: [cero, uno, dos, tres, cuatro, cinco, seis, siete, ocho, nueve, diez, once, doce, trece, catorce, quince,
                dieciséis, diecisiete, dieciocho, diecinueve, veinte]
+
+# Lenguaje inclusivo (`rules › inclusive_language`): palabras que nombran a las personas en masculino como si fuera para todas,
+# con una alternativa neutra (`coursekit verify` avisa de ellas con `neutral`), y las formas con barra o arroba (avisa de ellas con
+# `neutral` y `split`). Se comparan sin distinguir mayúsculas y como palabras enteras.
+inclusive:
+  generic:
+    alumno: quien aprende, la persona
+    alumnos: el alumnado, las personas que aprenden
+    usuario: la persona usuaria
+    usuarios: las personas usuarias
+    trabajador: la persona trabajadora
+    trabajadores: la plantilla, el personal
+    empleado: la persona empleada
+    empleados: la plantilla, el personal
+    profesor: el o la docente
+    profesores: el profesorado
+    ciudadanos: la ciudadanía
+    vecinos: el vecindario, vecinal
+    clientes: la clientela
+    autónomos: las personas autónomas, el trabajo autónomo
+    compañeros: el equipo, las personas compañeras
+    interesados: las personas interesadas
+    expertos: las personas expertas
+    destinatarios: las personas destinatarias
+    los niños: la infancia
+  marks: '(?<![\w/])(?:el/la|la/el|los/las|las/los|[^\W\d_]{2,}/(?:a|as|o|os)|[^\W\d_]+@[^\W\d_]*)(?![\w/])'

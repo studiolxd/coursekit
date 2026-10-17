@@ -38,7 +38,7 @@ format words below (section heading, objective tag, media placeholder) are in th
 **Word count:** only text the learner reads counts. Media placeholders, objective tags, HTML
 comments and the `:::` lines of directives do not count (the text inside a directive does).
 
-Writing rules: {{language_name}}, {{address_rule}}, complete prose (no bare lists or unexpanded
+Writing rules: {{language_name}}, {{address_rule}}, {{inclusive_rule}}, complete prose (no bare lists or unexpanded
 outlines), **no emojis** (only `{{allowed_symbols}}` are allowed).
 
 ## 2. Interactive component directives

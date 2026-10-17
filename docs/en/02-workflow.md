@@ -255,7 +255,7 @@ To make the migration follow the client's wishes, write them in `brief/notes.md`
 /new-course "Strong passwords" 2 --code PWD
 ```
 
-The design agent creates the course, reads the brief and builds a **proposal**: competencies, units, objectives, sections, activities and hours. Where depends on `course.yaml › design.tool`: in the design matrix of SLXD Creator (`slxd`) or in `courses/PWD/design/design.yaml` (`local`, see [Local design](#local-design)). Either way it exports the design to `courses/PWD/design/` (`matrix.json`, `validation.json` and the Excel you review) and ends with a summary. Review it, then ask for changes in plain words:
+The design agent creates the course, reads the brief and builds a **proposal**: competencies, units, objectives, sections, activities and hours. Where depends on `course.yaml › design.tool`: in the design matrix of SLXD Creator (`slxd`) or in `courses/PWD/design/design.yaml` (`local`, see [Local design](#local-design)). Either way it exports the design to `courses/PWD/design/` (`matrix.json`, `validation.json` and the Excel you review, which [`coursekit design`](03-commands.md#coursekit-design) writes the same way for both) and ends with a summary. In an expository course the activities have no hours of their own: the hours of each section hold its reading, the practice of its objectives and its share of the assessment. Review it, then ask for changes in plain words:
 
 ```text
 /design-change PWD Add a unit on password managers and move 0.5 hours to it

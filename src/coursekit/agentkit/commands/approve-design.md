@@ -7,7 +7,7 @@ Prepare the approval of the instructional design of course $ARGUMENTS.
 
 1. Refresh the export. Design in slxd (`course.yaml › design.tool: slxd`): read the matrix with `design_matrix_get` and
    compare it with `courses/<CODE>/design/matrix.json`; if the person edited in slxd since the last export, export again
-   (Excel, `matrix.json`, `validation.json`). Local design (`design.tool: local`): run `coursekit design <CODE>`, which
+   (`matrix.json`, `validation.json`, then `coursekit design <CODE>` for the Excel, as the skill's Export says). Local design (`design.tool: local`): run `coursekit design <CODE>`, which
    exports `design/design.yaml` again (the person may have edited it).
 2. Validation (`design_matrix_validate`, or what `coursekit design` printed): if there are errors, stop and explain them.
 3. Run `coursekit sync <CODE> --check` and summarise what will be signed: units, hours, sections,

@@ -34,6 +34,13 @@ With a local design (`design.tool: local`) there is no matrix in slxd to generat
 --content-id <id>`, and then step 3. Its lessons are made in section 3 below (`create_lesson`, one per lesson of the plan,
 in order).
 
+**The tests** ({{assessment_delivery}}). `coursekit status <CODE>` says where they go for this course. When they go
+apart, the package of the tests is one more unit (`coursekit status` gives its number, after the last unit): no generator
+skeleton for it, so `create_content` with the plan's `content_title`, `coursekit assemble link <CODE> --unit N --content-id
+<id>` and step 3, and its lessons are made in section 3. The generator still creates the evaluation lessons inside each unit:
+`delete_lesson` them once the person agrees (they go in the package of the tests). With a question-bank format the plan of a
+unit leaves out the tests that have no scored simulation: delete their generated lessons the same way.
+
 The generator names each content after its **unit**. The plan gives the title it must have
 (`content_title`): the course title when it has a single unit, otherwise
 "{{t_unit}} N. <unit title>". Step 3 applies it.

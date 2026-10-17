@@ -71,10 +71,12 @@ sections the course needs, and justify it.
 5. **Links** (`design_matrix_node_link_objetivo`): each content section with the objectives it
    develops. Every objective is covered by at least one section.
 6. **Activities** per unit: learning activities (`design_matrix_aa_create`, formative, not
-   graded) to practise each objective, and assessment activities (`design_matrix_ae_create`)
+   graded) to practise each objective (in slxd they hang from the unit, the only place the tool takes; the writer puts
+   each one inside the section that develops its objectives), and assessment activities (`design_matrix_ae_create`)
    that give evidence of all of them. Instrument according to the Bloom level (the validator
    requires it: questionnaire up to *apply*; case study up to *evaluate*; portfolio/rubric for
-   *create*). Grading: give each assessment activity its `peso` (weight in the unit's score; 1 when the tests count
+   *create*). Delivery of the tests: {{assessment_delivery}}. With a question-bank format, design each test with the
+   question types it takes, and a scored simulation when an objective needs more than those. Grading: give each assessment activity its `peso` (weight in the unit's score; 1 when the tests count
    the same), `notaAprobado` and `intentosMax` (0 = unlimited) in `design_matrix_ae_create` / `_ae_update`; what you
    leave empty takes `design.grading` of `course.yaml` (`passing_score`, `attempts`) and weight 1 when assembling.
 7. **Common errors** in `courses/<CODE>/design/misconceptions.yaml`, written in {{language_name}}: for each objective,
@@ -92,14 +94,20 @@ sections the course needs, and justify it.
    level (apply/analyse/evaluate need more time than remember), practice and activities. Never
    split evenly. `design_matrix_node_update_horas` on sections and units; the total must be
    exactly `design.hours`. Introduction and summary usually take {{intro_summary_hours}} h per
-   unit. Each hour means {{words_per_hour}} minimum words.
+   unit. Each hour means {{words_per_hour}} minimum words (pages round up per section: `coursekit sync <CODE> --check`
+   prints the total; copy it, never work it out). In an expository course **the activities have no hours of their own**:
+   the hours of a content section hold its reading, the practice of its objectives (the writer puts the learning
+   activities inside the section that develops them) and its share of the unit's assessment (the questions on its
+   objectives). Give more hours to the sections whose objectives carry more practice and assessment, and say in the
+   proposal notes how each unit's practice and assessment are spread.
 9. **Validation.** `design_matrix_validate` until **0 errors**. Review every warning.
 10. **Own pedagogical review** (without spending slxd credits): apply the "Self-review" rubric
    below and fix what you find before presenting the proposal.
 11. **Export** (see "Export").
 12. **Proposal notes** in `courses/<CODE>/design/proposal-notes.md` ({{ui_language_name}}):
     structure and why, hour split and criterion, assumptions (syllabus, audience, level),
-    questions for the person, accepted validation warnings and why. In a decision-based course, also the action map
+    questions for the person, accepted validation warnings and why (leave out the ones the design asks for: an
+    introduction or a summary that develops no objective; `coursekit design <CODE>` does not print them). In a decision-based course, also the action map
     and the story bible (see "Decision-based courses").
 
 ## Migrated courses (`design.origin: import`)
@@ -221,12 +229,16 @@ characters:
 1. `design_matrix_get` → save the JSON **as it is** in `courses/<CODE>/design/matrix.json`, with your file-writing tool
    (the whole response, including `updatedAt`): never patch the previous file by hand or with a script.
 2. `design_matrix_validate` → `courses/<CODE>/design/validation.json`.
-3. `design_matrix_export` with `locale: "{{ui_language}}"` (the language of the sheet labels: without it slxd writes them in
-   its default language, not the project's) → download the `downloadUrl` (expires in 24 h) with
-   `coursekit download "<downloadUrl>" --out courses/<CODE>/design/<CODE>-instructional-design.xlsx` (not `curl`: a
-   session without an interface cannot run it). That is what the person reviews.
-4. `coursekit sync <CODE> --check` to confirm the structure is understood and the hours add up.
-5. `coursekit publish <CODE>` so the Excel is in the mirror folder: the only publication an agent runs, because
+3. `coursekit design <CODE>`: writes `courses/<CODE>/design/<CODE>-instructional-design.xlsx` from those two files, which is
+   what the person reviews (profile, competencies, objectives with where they are developed, practised and assessed,
+   structure with hours and minimum words, activities with their grading, common errors, validation). It prints the
+   validation without the warnings the design asks for (an introduction or a summary develops no objective).
+4. `design_matrix_export` with `locale: "{{ui_language}}"` (without it slxd writes the labels in its default language) →
+   download the `downloadUrl` (expires in 24 h) with
+   `coursekit download "<downloadUrl>" --out courses/<CODE>/design/<CODE>-slxd-matrix.xlsx` (not `curl`: a session
+   without an interface cannot run it): slxd's own workbook, kept as a copy.
+5. `coursekit sync <CODE> --check` to confirm the structure is understood and the hours add up.
+6. `coursekit publish <CODE>` so the Excel is in the mirror folder: the only publication an agent runs, because
    downloading the files is not a `coursekit` command that could do it by itself (every other command that
    changes the course updates the mirror).
 
@@ -282,7 +294,15 @@ For each element, if there is a problem, fix it and note it in `proposal-notes.m
 - **Objectives:** observable, measurable verb; Bloom level coherent with the verb; one
   behaviour; achievable in the hours given.
 - **Objective ↔ assessment activity:** the task asks for the behaviour of the verb (neither
-  easier nor harder); the criterion measures it; the evidence is recorded.
+  easier nor harder); the criterion measures it; the evidence is recorded. **Doing, not recognising:** picking the best
+  option among several evidences *understand*. For an objective of *apply* or above the learner must do what the verb
+  says: build or complete something (sort the steps, fill a template, write the request), decide in a situation that
+  changes with the decision (a scored simulation), or judge a given result with the criteria of the objective. Describe the
+  task that way in the activity; when the instrument cannot ask for it (an export format that only takes single choice,
+  for instance), say so in the proposal notes and how close it gets.
+- **Grading:** the pass mark and the attempts of each assessment activity fit what it measures. With few questions per
+  objective, a pass mark of 50 lets a learner pass without showing one of them: justify the mark in the proposal notes,
+  or raise it, or ask for a minimum per objective in the criterion.
 - **Objective ↔ learning activity:** the activity lets the learner practise the behaviour
   (nothing passive for apply/analyse/evaluate/create).
 - **Common errors:** real (from the material, the audience, the sector), specific to the objective, written as the
@@ -291,5 +311,7 @@ For each element, if there is a problem, fix it and note it in `proposal-notes.m
 ## Fixed rules
 
 - No emojis. Course language: {{language_name}}.
+- Everything you write in the design (profile, competencies, objectives, titles of units and sections, descriptions of the
+  activities, common errors) follows {{inclusive_rule}}: the titles and the objectives reach the learner.
 - In slxd, always keep the slxd IDs in `course.yaml › slxd`.
 - Never edit `course.yaml › units` by hand: `coursekit sync` writes it after the approval.

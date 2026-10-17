@@ -362,7 +362,7 @@ coursekit status PWD
 
 ### `coursekit design`
 
-Checks the instructional design of a course made in the project (`course.yaml › design.tool: local`), `design/design.yaml`, and exports it. Use it every time that file changes: the design agent runs it while it designs, and the sign-off needs its export. Who: both (the design agent, `/approve-design`).
+Checks the instructional design of a course made in the project (`course.yaml › design.tool: local`), `design/design.yaml`, and exports it; for a course designed in slxd, writes the Excel the person reviews (see below). Use it every time that file changes: the design agent runs it while it designs, and the sign-off needs its export. Who: both (the design agent, `/approve-design`).
 
 ```
 coursekit design [--check] code
@@ -375,7 +375,11 @@ coursekit design [--check] code
 
 It applies the checks of a design matrix: references and structure (ids, objectives and competencies that exist, modules only with `con_modulos`), coverage (every objective developed in a section, sections and competencies without objectives), evidence (every objective with an assessment activity), practice before assessment, the instrument against the Bloom level (a quiz evidences up to *apply*, a case study up to *evaluate*, a portfolio or a rubric up to *create*), hours (sections without them, parts that do not add up to their unit or module, a total other than `design.hours`), verbs (an objective that starts with a verb that cannot be observed, or with a verb of another Bloom level, from the lists of the course language) and progression (a unit that reaches *evaluate* or *create* with no earlier unit at *apply* or above). Each finding is printed with `✘` (error) or `·` (warning), then `N errors · M warnings`.
 
-Without `--check` it writes `design/matrix.json` (the design in the shape of slxd's design matrix, with ids that do not change from one export to the next, so exporting again does not break a signature), `design/validation.json` (the findings) and `design/<CODE>-instructional-design.xlsx` (profile, competencies, objectives, structure, activities and validation, for the person to review), and refreshes the mirror folder. Exit code 1 when there are errors (the files are written anyway, so the person sees them) or when the course designs in slxd. The format of the file is in [Local design](02-workflow.md#local-design).
+Without `--check` it writes `design/matrix.json` (the design in the shape of slxd's design matrix, with ids that do not change from one export to the next, so exporting again does not break a signature), `design/validation.json` (the findings) and `design/<CODE>-instructional-design.xlsx` (for the person to review; see below), and refreshes the mirror folder. Exit code 1 when there are errors (the files are written anyway, so the person sees them). The format of the file is in [Local design](02-workflow.md#local-design).
+
+A course designed in slxd (`design.tool: slxd`) gets the same Excel from the `design/matrix.json` and `design/validation.json` the design agent saved (`design_matrix_get`, `design_matrix_validate`): `coursekit design CODE` writes it, prints the findings of slxd and fails with exit code 1 when there are errors or the matrix is not saved; `--check` only prints. The workbook slxd exports lacks the competencies, the hours of the sections and the grading of the tests, so the person reviews this one.
+
+The Excel has these sheets, with the labels in the language of the person: profile (with the minimum words of the course), competencies (and the objectives each one serves), objectives (with the ids `U1.1`… that `course.yaml` and `misconceptions.yaml` use, their Bloom level and competencies, and the sections, learning activities and assessment activities of each one), structure (hours and minimum words of each section), learning activities and assessment activities (in the order of the units, with weight, pass mark and attempts), common errors (`design/misconceptions.yaml`) and validation (errors first, then warnings, then the expected ones: an introduction or a summary that develops no objective, which the console does not print).
 
 ```
 coursekit design PWD --check
@@ -433,7 +437,7 @@ coursekit download --out OUT url
 Prints `downloaded <path> (<size> bytes)`. Exit code 1 when the address is not `https`, when the path is outside the project, or when the server answers with an error or cannot be reached. It uses the CA certificates of `network.ca_bundles`, like every other network call.
 
 ```
-coursekit download "https://…/export/download?t=…" --out courses/PWD/design/PWD-instructional-design.xlsx
+coursekit download "https://…/export/download?t=…" --out courses/PWD/design/PWD-slxd-matrix.xlsx
 ```
 
 ### `coursekit brief`
@@ -1257,15 +1261,15 @@ coursekit directives check .cache/list_brick_types.json
 Checks that a course can be delivered, records a delivered SCORM package in `course.yaml › deliveries`, or prints the file name a package must have. Who: agents (the assembly agent) and people.
 
 ```
-coursekit delivery [--file FILE] [--job JOB] [--snapshot SNAPSHOT] [--unit UNIT] [--version VERSION] [--url URL] {add,name,check,download} code
+coursekit delivery [--file FILE] [--job JOB] [--snapshot SNAPSHOT] [--unit UNIT] [--version VERSION] [--url URL] {add,name,check,download,questions} code
 ```
 
 | Argument | Values / default | Meaning |
 |---|---|---|
-| `action` | `add`, `name`, `check`, `download` | Record a package, print the expected file name, check that the course can be delivered, or download an exported package. |
+| `action` | `add`, `name`, `check`, `download`, `questions` | Record a package, print the expected file name, check that the course can be delivered, download an exported package, or write and record the question bank of the tests. |
 | `code` | course code or folder | Course. |
 | `--unit UNIT` | unit number (required by `add` and `name`) | Unit of the package. |
-| `--version VERSION` | text (required by `add` and `name`), for example `1.0` | Delivery version. |
+| `--version VERSION` | text (required by `add`, `name` and `questions`), for example `1.0` | Delivery version. |
 | `--file FILE` | path (`add`) | The downloaded `.zip`; a relative path is taken from the current folder. It must be directly inside `courses/<CODE>/delivery/`. Exit code 2 without it. |
 | `--job JOB` | text (`add`) | Id of the creator export job. Not used with the html backend. |
 | `--snapshot SNAPSHOT` | text (`add`) | Id of the creator snapshot the package was exported from. Not used with the html backend. |
@@ -1280,6 +1284,8 @@ The client's review is required when `delivery.yaml › client_review.required` 
 `download` saves the package of an export job (its `downloadUrl`, an `https://` address that expires) as `courses/<CODE>/delivery/<name>`, with the name `name` prints, checks that it is a valid zip with `imsmanifest.xml` at its root and prints its path, ready for `add`; a failed or invalid download leaves no file. It exists so that the assembly agent does not need `curl`, which a session without an interface cannot run. It refuses in the same cases as `name` and `add`.
 
 `name` builds the name from `delivery › file_name` (default `{code}-U{unit:02d}-v{version}-{standard}.zip`, for example `PWD-U01-v1.0-scorm12.zip`). `add` checks that the file is a valid zip with `imsmanifest.xml` at its root and lives in the delivery folder, then records version, unit, date, signer, standard, file name, SHA-256, job and snapshot. A valid package is always recorded. When every unit has a package of the same version and the course was in `assembly` or `client_review`, the course becomes `delivered`; if units are missing it prints the ones still pending. In any other status (for example `media`) the package is recorded and a warning says the course is not marked as delivered. Exit code 1 on an invalid package, a wrong folder, an unknown unit, a course on hold or a client's review still required.
+
+When the tests go apart (`delivery › assessment › placement: separate`), their package is one more unit after the last one (`coursekit status` gives its number) and is delivered like any unit. With a question-bank format (`delivery › assessment › format`: `aiken`, `gift` or `moodle-xml`), `questions` writes the bank of the tests in `courses/<CODE>/delivery/` and records it in `deliveries` (`kind: questions`, the format and each file with its SHA-256): `gift` and `moodle-xml` write one file per course (`<CODE>-questions-v<version>.gift` or `.xml`) with a category per assessment activity; `aiken`, one `.txt` per activity, because the format has no categories. It refuses a question type the format cannot take (exit code 1). Then the course is delivered when every package and the bank of the version are recorded. See [Where the tests go](08-assembly-and-delivery.md#where-the-tests-go).
 
 ```
 coursekit delivery check PWD

@@ -238,10 +238,11 @@ def _zip(out_dir: Path, target: Path) -> None:
 
 def mark_assembled(course: dict) -> str:
     """When every unit has its package built, the course moves from `media` to `assembly` (as when creator holds every unit)."""
+    from coursekit import course as coursemod
     from coursekit.states import history_entry
     from coursekit.util import edit_yaml, save_yaml
 
-    units = course.get("units") or []
+    units = coursemod.package_units(course)
     built = all((course["_dir"] / "assembly" / "html" / f"unit-{u['n']:02d}" / "index.html").exists() for u in units)
     if course["status"] != "media" or not units or not built:
         return ""

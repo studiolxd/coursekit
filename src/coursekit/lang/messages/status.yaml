@@ -61,3 +61,7 @@ unit_line:
 unit_line_written_with:
   es: "  U{n} {title} · {hours} h · {sections} apartados · {objectives} objetivos · mín. {words} palabras · {status} · escrita con {tool}"
   en: "  U{n} {title} · {hours} h · {sections} sections · {objectives} objectives · min. {words} words · {status} · written with {tool}"
+assessment_line: {es: "  Evaluaciones: {placement} · formato {format}{package}", en: "  Tests: {placement} · format {format}{package}"}
+assessment_unit: {es: "en cada unidad", en: "in each unit"}
+assessment_separate: {es: "aparte", en: "apart"}
+assessment_package: {es: " · paquete de evaluación: unidad {n}", en: " · package of the tests: unit {n}"}

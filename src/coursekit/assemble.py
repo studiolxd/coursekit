@@ -651,7 +651,10 @@ def brick_hash(brick: dict) -> str:
 
 
 def content_title(course: dict, unit: dict) -> str:
-    """Title of the unit's creator content: the course title when there is a single unit."""
+    """Title of the unit's creator content: the course title when there is a single unit; for the package of the tests when they
+    go apart, the course title and its own."""
+    if unit.get("kind") == "assessment":
+        return f"{course['title']}. {unit['title']}"
     if len(course.get("units") or []) == 1:
         return course["title"]
     return f"{coursemod.tokens(course)['unit']} {unit['n']}. {unit['title']}"
@@ -733,48 +736,47 @@ def for_creator(bricks: list[dict], ctx: dict, key: str) -> list[dict]:
     return out
 
 
-def build_plan(course: dict, unit: dict, assets: dict[str, dict] | None = None,
-               simulations: bool = False) -> tuple[dict, list[str], list[str]]:
-    """The plan of a unit. `assets` are the media of the manifest as the plan reads them (the html backend gives its own copies).
-    With the creator backend the simulations become embeds and the adaptive blocks their neutral branch, unless `simulations`
-    asks for them as they are (to build their packages)."""
-    folder = coursemod.unit_dir(course["_dir"], unit["n"])
-    syntax = Syntax(coursemod.tokens(course))
+def context(course: dict, assets: dict[str, dict] | None = None) -> dict:
+    """What turning the `.md` of a course into bricks needs: the directives, the syntax of the language, the media."""
     assets = manifest_assets(course) if assets is None else assets
-    ctx = {
+    return {
         "course": course,
         "registry": config.effective("directives", course.get("_project"), course).value["directives"],
-        "syntax": syntax,
+        "syntax": Syntax(coursemod.tokens(course)),
         "assets": assets,
         "media_by_title": {a.get("title"): a for a in assets.values()},
         "code_languages": (coursemod.rules(course=course).get("assembly") or {}).get("code_languages") or [],
         "errors": [],
         "warnings": [],
     }
-    sections = {s["n"]: s for s in unit.get("sections") or []}
-    lessons = []
-    for m, lines in split((folder / "content.md").read_text(encoding="utf-8"), syntax.section):
-        n = int(m.group(1))
-        spec = sections.get(n)
-        if spec is None:
-            ctx["errors"].append(t("assemble", "section_not_in_design", section=syntax.t["section"], n=n))
-            continue
-        key = f"U{unit['n']}-S{n}"
-        lessons.append({"key": key, "type": "content", "title": spec["title"], "kind": spec["kind"],
-                        "slxd_node_id": spec.get("slxd_id"), "bricks": parse_blocks(lines, ctx, key)})
 
-    assessment = folder / "assessment.md"
-    if assessment.exists():
-        for m, lines in split(assessment.read_text(encoding="utf-8"), syntax.assessment):
-            parts = {sm.group(1): sl for sm, sl in split("\n".join(lines), re.compile(r"^### (.+?)\s*$"))}
-            # the learner sees the instructions, the simulations wherever the activity has them, and the question bank
-            played = [line for name, part in parts.items() if name not in (syntax.t["assessment_instructions"], syntax.t["assessment_bank"])
-                      for line in simulation_blocks(part, ctx)]
-            body = parts.get(syntax.t["assessment_instructions"], []) + [""] + played + [""] + parts.get(syntax.t["assessment_bank"], [])
-            key = f"U{unit['n']}-E{m.group(1)}"
-            lessons.append({"key": key, "type": "evaluation", "title": m.group(2), "kind": "assessment",
-                            "quiz": quiz_settings(course, unit, m.group(1), m.group(2)),
-                            "bricks": parse_blocks(body, ctx, key)})
+
+def build_plan(course: dict, unit: dict, assets: dict[str, dict] | None = None,
+               simulations: bool = False) -> tuple[dict, list[str], list[str]]:
+    """The plan of a unit. `assets` are the media of the manifest as the plan reads them (the html backend gives its own copies).
+    With the creator backend the simulations become embeds and the adaptive blocks their neutral branch, unless `simulations`
+    asks for them as they are (to build their packages)."""
+    folder = coursemod.unit_dir(course["_dir"], unit["n"])
+    ctx = context(course, assets)
+    syntax = ctx["syntax"]
+    placement, fmt = coursemod.assessment_delivery(course)
+    lessons = []
+    if unit.get("kind") == "assessment":  # the package of the tests when they go apart: those of every unit, in order
+        for source in course.get("units") or []:
+            lessons += assessment_lessons(course, source, ctx, fmt)
+    else:
+        sections = {s["n"]: s for s in unit.get("sections") or []}
+        for m, lines in split((folder / "content.md").read_text(encoding="utf-8"), syntax.section):
+            n = int(m.group(1))
+            spec = sections.get(n)
+            if spec is None:
+                ctx["errors"].append(t("assemble", "section_not_in_design", section=syntax.t["section"], n=n))
+                continue
+            key = f"U{unit['n']}-S{n}"
+            lessons.append({"key": key, "type": "content", "title": spec["title"], "kind": spec["kind"],
+                            "slxd_node_id": spec.get("slxd_id"), "bricks": parse_blocks(lines, ctx, key)})
+        if placement == "unit":
+            lessons += assessment_lessons(course, unit, ctx, fmt)
 
     if (course.get("design") or {}).get("approach") == "decision-based":
         # the simulation that opens a content section holds the rest of the lesson until it reaches an ending: the learner
@@ -792,7 +794,33 @@ def build_plan(course: dict, unit: dict, assets: dict[str, dict] | None = None,
             ctx["warnings"].append(t("assemble", "lesson_without_content", key=lesson["key"]))
     plan = {"course": course["code"], "unit": unit["n"], "content_id": unit.get("content_id"),
             "content_title": content_title(course, unit), "lessons": lessons}
+    if placement == "separate" or fmt != "platform":  # a package without tests reports the learner's progress, not a score
+        plan["score_source"] = "quiz" if any(lesson["type"] == "evaluation" for lesson in lessons) else "lessonProgress"
     return plan, ctx["errors"], ctx["warnings"]
+
+
+def assessment_lessons(course: dict, unit: dict, ctx: dict, fmt: str = "platform") -> list[dict]:
+    """The evaluation lessons of the assessment activities of a unit (its assessment.md). With a question-bank format the questions
+    leave the package (`coursekit delivery questions`): a lesson keeps only its scored simulations, and one without any is left out."""
+    syntax: Syntax = ctx["syntax"]
+    assessment = coursemod.unit_dir(course["_dir"], unit["n"]) / "assessment.md"
+    if not assessment.exists():
+        return []
+    lessons = []
+    for m, lines in split(assessment.read_text(encoding="utf-8"), syntax.assessment):
+        parts = {sm.group(1): sl for sm, sl in split("\n".join(lines), re.compile(r"^### (.+?)\s*$"))}
+        # the learner sees the instructions, the simulations wherever the activity has them, and the question bank
+        played = [line for name, part in parts.items() if name not in (syntax.t["assessment_instructions"], syntax.t["assessment_bank"])
+                  for line in simulation_blocks(part, ctx)]
+        bank = parts.get(syntax.t["assessment_bank"], []) if fmt == "platform" else []
+        body = parts.get(syntax.t["assessment_instructions"], []) + [""] + played + [""] + bank
+        key = f"U{unit['n']}-E{m.group(1)}"
+        bricks = parse_blocks(body, ctx, key)
+        if fmt != "platform" and not any(b["type"] == "SIMULATION" for b in walk(bricks)):
+            continue
+        lessons.append({"key": key, "type": "evaluation", "title": m.group(2), "kind": "assessment",
+                        "quiz": quiz_settings(course, unit, m.group(1), m.group(2)), "bricks": bricks})
+    return lessons
 
 
 # ── Plan, diff and applied state ─────────────────────────────────────────────────────────────
@@ -967,7 +995,7 @@ def unit_checked(course_dir: Path, n: int) -> bool:
 
 def mark_assembled(course: dict) -> str:
     """When every unit is in creator exactly as planned, the course moves from `media` to `assembly`."""
-    if course["status"] != "media" or not all(unit_in_sync(course["_dir"], u["n"]) for u in course["units"]):
+    if course["status"] != "media" or not all(unit_in_sync(course["_dir"], u["n"]) for u in coursemod.package_units(course)):
         return ""
     path = course["_dir"] / "course.yaml"
     ry, data = edit_yaml(path)
@@ -982,8 +1010,10 @@ def link(course: dict, unit: dict, content_id: str | None = None, preview: str |
     """Record the creator content of a unit and, once it exists, its preview and client-review links."""
     path = course["_dir"] / "course.yaml"
     ry, data = edit_yaml(path)
-    for u in data["units"]:
-        if u["n"] == unit["n"]:
+    if unit.get("kind") == "assessment" and not isinstance(data.get("assessment_unit"), dict):
+        data["assessment_unit"] = {}
+    for u in [data["assessment_unit"]] if unit.get("kind") == "assessment" else data["units"]:
+        if unit.get("kind") == "assessment" or u["n"] == unit["n"]:
             if content_id:
                 u["content_id"] = content_id
             if preview or review:

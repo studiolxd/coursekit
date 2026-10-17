@@ -23,6 +23,7 @@ from coursekit import (
     mediatools,
     new,
     outline,
+    questionbank,
     status,
     ttsbatch,
     verify,
@@ -49,7 +50,7 @@ from coursekit.htmlkit.build import HtmlBuildError
 from coursekit.i18n import t, tn
 from coursekit.lang import format_number
 from coursekit.project import Project, find_project
-from coursekit.sync import sync
+from coursekit.sync import load_graph, sync
 
 
 def _project() -> Project:
@@ -384,10 +385,13 @@ def cmd_sync(args: argparse.Namespace) -> int:
 
 def cmd_design(args: argparse.Namespace) -> int:
     course = coursemod.load(_project(), args.code)
-    if not localdesign.is_local(course):
-        print(t("design", "not_local", code=course["code"]), file=sys.stderr)
-        return 1
-    if args.check:
+    local = localdesign.is_local(course)
+    if not local:  # designed in slxd: the review Excel, from the matrix.json and validation.json the design agent saved
+        kinds = localdesign.keys(course, load_graph(course["_dir"] / "design" / "matrix.json"))[2]
+        findings = localdesign.slxd_findings(course["_dir"] / "design" / "validation.json")
+        findings = [f for f in findings if not localdesign.expected(f, kinds)]
+        files = [] if args.check else [localdesign.review_excel(course)[1]]
+    elif args.check:
         _, findings = localdesign.build(course)
     else:
         statesmod.ensure_active(course)
@@ -447,7 +451,7 @@ def cmd_preview(args: argparse.Namespace) -> int:
     if coursemod.backend(course) != "html":
         print(t("preview", "needs_html", code=course["code"], backend=coursemod.backend(course)), file=sys.stderr)
         return 1
-    units = course.get("units") or []
+    units = coursemod.package_units(course)
     if not units:
         print(t("commands", "no_units"), file=sys.stderr)
         return 1
@@ -758,7 +762,7 @@ def cmd_assemble_build(course: dict, args: argparse.Namespace) -> int:
     if coursemod.backend(course) != "html":
         print(t("commands", "assemble_build_needs_html", code=course["code"], backend=coursemod.backend(course)), file=sys.stderr)
         return 1
-    units = [u for u in course.get("units") or [] if args.unit is None or u["n"] == args.unit]
+    units = [u for u in coursemod.package_units(course) if args.unit is None or u["n"] == args.unit]
     if not units:
         print(t("commands", "unit_not_found", n=args.unit), file=sys.stderr)
         return 1
@@ -809,7 +813,7 @@ def cmd_assemble_check(course: dict, args: argparse.Namespace) -> int:
     if coursemod.backend(course) != "html":
         print(t("commands", "assemble_build_needs_html", code=course["code"], backend=coursemod.backend(course)), file=sys.stderr)
         return 1
-    units = [u for u in course.get("units") or [] if args.unit is None or u["n"] == args.unit]
+    units = [u for u in coursemod.package_units(course) if args.unit is None or u["n"] == args.unit]
     if not units:
         print(t("commands", "unit_not_found", n=args.unit), file=sys.stderr)
         return 1
@@ -843,7 +847,7 @@ def cmd_assemble(args: argparse.Namespace) -> int:
     if args.unit is None:
         print(t("commands", "assemble_needs_unit", action=args.action), file=sys.stderr)
         return 2
-    unit = next((u for u in course.get("units") or [] if u["n"] == args.unit), None)
+    unit = coursemod.package_unit(course, args.unit)
     if unit is None:
         print(t("commands", "unit_not_found", n=args.unit), file=sys.stderr)
         return 1
@@ -1129,6 +1133,13 @@ def cmd_delivery(args: argparse.Namespace) -> int:
     if args.action == "check":
         warning = deliverymod.check_ready(course)
         print(warning or t("commands", "delivery_ready", code=course["code"]))
+        return 0
+    if args.action == "questions":
+        if not args.version:
+            print(t("commands", "delivery_needs_version", action=args.action), file=sys.stderr)
+            return 2
+        print(deliverymod.add_questions(course, args.version))
+        _mirror(course["_project"], course["code"])
         return 0
     if args.unit is None or not args.version:
         print(t("commands", "delivery_needs_unit_version", action=args.action), file=sys.stderr)
@@ -1516,7 +1527,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.set_defaults(func=cmd_subtitles)
 
     p = sub.add_parser("delivery", help=t("commands", "help_delivery"))
-    p.add_argument("action", choices=("add", "name", "check", "download"))
+    p.add_argument("action", choices=("add", "name", "check", "download", "questions"))
     p.add_argument("code")
     p.add_argument("--unit", type=int)
     p.add_argument("--url", help=t("commands", "help_delivery_url"))
@@ -1597,4 +1608,4 @@ ERRORS = (handoffmod.HandoffError, coursemod.CourseNotFound, coursemod.RuleError
           launch.LaunchError, assemblemod.AssembleError, directives.CatalogError, mediamod.MediaError, voices.VoiceError,
           mediatools.ToolError, deliverymod.DeliveryError, publishmod.PublishError, thememod.ThemeError, statesmod.StateError,
           clientreview.ClientReviewError, HtmlBuildError, localdesign.DesignError, ttsbatch.BatchError,
-          researchmod.ResearchError)
+          researchmod.ResearchError, questionbank.BankError)

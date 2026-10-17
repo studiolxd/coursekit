@@ -23,6 +23,9 @@ and a zip per unit (`delivery/`), not blocks in a platform. `coursekit status <C
 ## 1. Build
 
 For each unit, in order: `coursekit assemble build <CODE> --unit N` (without `--unit`, every unit). It prints the folder of the preview.
+The tests: {{assessment_delivery}}. When they go apart, their package is one more unit after the last (`coursekit status
+<CODE>` gives its number) and builds the same way; with a question-bank format the tests without a scored simulation are not in
+any package (the delivery writes the bank).
 
 - Errors name the lesson and the directive (a key written in the wrong language, a question without options…). Fix them in the `.md`, never in the output, and build again.
 - The build also checks that the package carries every word of the content: a line of the `.md` that the format does not render

@@ -127,11 +127,30 @@ def test_a_local_course_designs_exports_syncs_and_signs_without_slxd(project, ca
     assert "coursekit design PWD101" in capsys.readouterr().err
 
 
-def test_a_course_designed_in_slxd_has_no_local_design(project, capsys):
+def test_a_course_designed_in_slxd_gets_the_same_review_excel(project, capsys):
     assert main(["new", "Contraseñas seguras", "1", "--code", "pwd101"]) == 0
-    assert not (project / "courses" / "PWD101" / "design" / "design.yaml").exists()
-    assert main(["design", "PWD101"]) == 1
-    assert "designs in slxd" in capsys.readouterr().err
+    design = project / "courses" / "PWD101" / "design"
+    assert not (design / "design.yaml").exists()
+    assert main(["design", "PWD101"]) == 1  # the design agent has not saved the matrix yet
+    assert "does not exist" in capsys.readouterr().err
+    matrix = json.loads((Path(__file__).parent / "fixtures" / "matrix.json").read_text(encoding="utf-8"))
+    (design / "matrix.json").write_text(json.dumps(matrix), encoding="utf-8")
+    intro, content = (n["id"] for n in matrix["nodos"][1:3])
+    finding = lambda node: {"check": "cobertura.contenidoHuerfano", "severidad": "aviso", "mensaje": "No objective.",  # noqa: E731
+                            "ref": {"tipo": "nodo", "id": node}}
+    (design / "validation.json").write_text(json.dumps({"hallazgos": [finding(intro), finding(content)]}), encoding="utf-8")
+    assert main(["design", "PWD101", "--check"]) == 0
+    out = capsys.readouterr().out
+    assert out.count("No objective.") == 1  # the introduction develops no objective by design: not reported
+    assert not (design / "PWD101-instructional-design.xlsx").exists()  # --check writes nothing
+    assert main(["design", "PWD101"]) == 0
+    book = load_workbook(design / "PWD101-instructional-design.xlsx")
+    assert "Competencies" in book.sheetnames and "Common errors" in book.sheetnames
+    objectives = [r for r in book["Objectives"].iter_rows(values_only=True)][1:]
+    assert [r[0] for r in objectives] == ["U1.1", "U1.2"]  # the ids course.yaml and misconceptions.yaml use
+    validation = [r for r in book["Validation"].iter_rows(values_only=True)][1:]
+    assert [(r[0], r[1]) for r in validation] == [("Warning", "Unidad 1 · Cómo es una contraseña robusta"),
+                                                   ("Expected", "Unidad 1 · Introducción y objetivos")]
 
 
 def test_the_checks_of_a_design_matrix(project):

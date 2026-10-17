@@ -5,7 +5,9 @@ description: Delivery of a course — snapshot and SCORM export of each unit fro
 
 # SCORM delivery
 
-Export settings: `coursekit config delivery`. Each unit is one creator content and one package.
+Export settings: `coursekit config delivery`. Each unit is one creator content and one package. The tests:
+{{assessment_delivery}}; `coursekit status <CODE>` says it for this course and, when they go apart, the number of the package of
+the tests, which is delivered like any unit.
 
 {{> _slxd-tools}}
 
@@ -30,7 +32,9 @@ same; `coursekit status <CODE>` says which backend the course uses.
 
 1. `create_snapshot` of the content named `v<version>` (keep its id).
 2. `create_export` with `contentId` and the values of `delivery › export` (`deliveryType`,
-   `standard`, `reporting`, `scoreSource`). Keep `jobId` and `downloadUrl`.
+   `standard`, `reporting`, `scoreSource`); when the plan of the unit (`assembly/unit-NN.plan.json`) has `score_source`, that one
+   replaces `scoreSource` (a unit without tests reports the progress, the package of the tests the score). Keep `jobId` and
+   `downloadUrl`.
 3. `get_export_status` until `COMPLETE` (wait between calls; if `FAILED`, stop and show
    `errorMessage`).
 4. Download the package: `coursekit delivery download <CODE> --unit N --version X.Y --url "<downloadUrl>"`. It saves it as
@@ -39,6 +43,13 @@ same; `coursekit status <CODE>` says which backend the course uses.
 5. `coursekit delivery add <CODE> --unit N --version X.Y --file courses/<CODE>/delivery/<name> --job <jobId> --snapshot <id>`.
    It checks the zip has `imsmanifest.xml` at its root and records it; with a mirror folder configured it
    also copies the package there (never deleted) and updates the catalog.
+
+## Question bank
+
+With a question-bank format (`aiken`, `gift`, `moodle-xml`), after the packages: `coursekit delivery questions <CODE> --version
+X.Y`. It writes the bank in `courses/<CODE>/delivery/` (gift and moodle-xml: one file with a category per activity; aiken: one
+file per activity) and records it; the course is delivered when the packages and the bank of the version are recorded. If it
+refuses a question type, the unit has to be fixed (`/write-unit`): never edit the bank by hand.
 
 ## At the end
 

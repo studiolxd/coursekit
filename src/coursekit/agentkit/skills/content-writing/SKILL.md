@@ -6,7 +6,7 @@ description: Writing a unit's content (content.md and assessment.md) from its ap
 # Writing a unit
 
 Mandatory format: `.coursekit/docs/content-format.md`. Write in {{language_name}};
-{{address_rule}}; tone: {{tone}}.
+{{address_rule}}; {{inclusive_rule}}; tone: {{tone}}.
 
 ## Before writing
 
@@ -76,6 +76,9 @@ Mandatory format: `.coursekit/docs/content-format.md`. Write in {{language_name}
   learner sees **only** the instructions, its simulations and its question bank, exactly as written: they are for the
   learner, never notes for people ("this activity has no question bank…"). An activity that is only a scored simulation
   leaves its bank empty; the other subsections (objectives, development, marking, attempts) are for people.
+  Where the tests go: {{assessment_delivery}}. `coursekit verify` refuses in the bank a question type the format cannot
+  take. When the tests go apart, the section still tells the learner where the test is (the assessment package after the
+  units), not that it follows.
 - **Common errors** (`courses/<CODE>/design/misconceptions.yaml`, signed with the design): every error of the unit's
   objectives is put in front of the learner at least once in the unit, and explained. In `single-choice` and
   `multi-select`, each distractor is one of those errors and ends with its id, `- [ ] <option> ‹reuse›` (the learner

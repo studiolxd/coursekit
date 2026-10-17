@@ -160,6 +160,15 @@ col_attempts: {es: "Intentos", en: "Attempts"}
 col_severity: {es: "Gravedad", en: "Severity"}
 col_check: {es: "Comprobación", en: "Check"}
 col_message: {es: "Mensaje", en: "Message"}
+col_element: {es: "Elemento", en: "Element"}
+col_objective: {es: "Objetivo", en: "Objective"}
+col_sections: {es: "Apartados", en: "Sections"}
+col_learning: {es: "Actividades de aprendizaje", en: "Learning activities"}
+col_assessment: {es: "Actividades de evaluación", en: "Assessment activities"}
+col_min_words: {es: "Palabras mín.", en: "Min. words"}
+field_min_words: {es: "Palabras mínimas", en: "Minimum words"}
+sheet_misconceptions: {es: "Errores comunes", en: "Common errors"}
+no_misconceptions: {es: "Sin errores comunes (design/misconceptions.yaml)", en: "No common errors (design/misconceptions.yaml)"}
 field_title: {es: "Título", en: "Title"}
 field_code: {es: "Código", en: "Code"}
 field_hours: {es: "Horas", en: "Hours"}
@@ -197,4 +206,5 @@ instrument_portfolio: {es: "Entrega o portfolio", en: "Deliverable or portfolio"
 instrument_rubric: {es: "Rúbrica", en: "Rubric"}
 severity_error: {es: "Error", en: "Error"}
 severity_warning: {es: "Aviso", en: "Warning"}
+severity_expected: {es: "Esperado", en: "Expected"}
 no_findings: {es: "Sin errores ni avisos", en: "No errors or warnings"}

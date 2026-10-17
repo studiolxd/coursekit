@@ -17,3 +17,5 @@ matrix_changed:
   es: "design/matrix.json cambió después de la aprobación: hay que aprobar el diseño de nuevo"
   en: "design/matrix.json changed after the approval: the design must be approved again"
 bad_update_mode: {es: "rules › update › mode: «{value}» no vale (válidos: {valid})", en: "rules › update › mode: “{value}” is not valid (valid: {valid})"}
+bad_assessment: {es: "delivery › assessment › {key}: «{value}» no vale (válidos: {valid})", en: "delivery › assessment › {key}: “{value}” is not valid (valid: {valid})"}
+bad_inclusive: {es: "rules › inclusive_language: «{value}» no vale (válidos: {valid})", en: "rules › inclusive_language: “{value}” is not valid (valid: {valid})"}

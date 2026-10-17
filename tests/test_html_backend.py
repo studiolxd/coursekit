@@ -447,3 +447,26 @@ def test_the_scripts_of_the_player_are_valid_javascript():
     player = htmlbuild.template_dir() / "player"
     for name in ("games.js", "embedsim.js"):
         assert subprocess.run([node, "--check", str(player / name)], capture_output=True, text=True).returncode == 0, name
+
+
+def test_the_tests_apart_are_one_more_package(html_course, capsys):
+    path = html_course / "course.yaml"
+    path.write_text(path.read_text(encoding="utf-8").replace("status: design_approved", "status: media", 1)
+                    + "delivery:\n  assessment:\n    placement: separate\n", encoding="utf-8")
+    produce_image(html_course)
+    capsys.readouterr()
+    assert main(["assemble", "build", "PWD", "--unit", "1", "--version", "1.0"]) == 0
+    unit = (html_course / "assembly" / "html" / "unit-01" / "index.html").read_text(encoding="utf-8")
+    assert 'data-type="evaluation"' not in unit  # the test left the unit, and the check of its words does not miss it
+    assert "moves to assembly" not in capsys.readouterr().out  # the package of the tests is still to build
+    assert main(["status", "PWD"]) == 0
+    assert "Tests: apart · format platform · package of the tests: unit 2" in capsys.readouterr().out
+    assert main(["assemble", "build", "PWD", "--unit", "2", "--version", "1.0"]) == 0
+    assert "every unit is built: the course moves to assembly" in capsys.readouterr().out
+    tests = (html_course / "assembly" / "html" / "unit-02" / "index.html").read_text(encoding="utf-8")
+    config_json = json.loads(tests.split('id="ck-config">')[1].split("</script>")[0])
+    assert [x["key"] for x in config_json["lessons"]] == ["U1-E1.1"]
+    assert (html_course / "delivery" / "PWD-U02-v1.0-scorm12.zip").exists()
+    assert main(["delivery", "add", "PWD", "--unit", "2", "--version", "1.0", "--file",
+                 str(html_course / "delivery" / "PWD-U02-v1.0-scorm12.zip")]) == 0
+    assert "pending for v1.0: 1" in capsys.readouterr().out

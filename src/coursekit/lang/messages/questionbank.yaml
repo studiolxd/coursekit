@@ -1,0 +1,16 @@
+# Messages of `coursekit delivery questions` (the tests of a course as a question bank: Aiken, GIFT, Moodle XML).
+type_not_allowed:
+  es: "{name}: una pregunta «{kind}» no cabe en {format} (admite: {allowed}); cámbiala en assessment.md"
+  en: "{name}: a “{kind}” question does not fit in {format} (it takes: {allowed}); change it in assessment.md"
+gift_one_blank:
+  es: "{name}: en GIFT un rellenar huecos lleva un solo hueco; pártelo en varias preguntas"
+  en: "{name}: in GIFT a fill-in-the-blank takes a single blank; split it into several questions"
+not_a_bank_format:
+  es: "«{format}» no es un formato de banco de preguntas (válidos: {valid}); el curso lo dice en delivery › assessment › format"
+  en: "“{format}” is not a question-bank format (valid: {valid}); the course sets it in delivery › assessment › format"
+no_questions:
+  es: "{code} no tiene preguntas en el banco de preguntas de sus actividades de evaluación"
+  en: "{code} has no questions in the question bank of its assessment activities"
+written:
+  es: "banco de preguntas ({format}): {files}"
+  en: "question bank ({format}): {files}"

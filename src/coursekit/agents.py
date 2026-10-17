@@ -59,6 +59,15 @@ ADDRESS_RULES = {
     "usted": "address the learner as «usted»",
     "you": 'address the learner as "you"',
 }
+INCLUSIVE_RULES = {
+    "none": "name people with the generic masculine where the language has one (es: «los alumnos»); no doubling, no slashes",
+    "neutral": "name people in a neutral way: collective and epicene words, «quien», «la persona» (es: «el alumnado», «quien "
+               "aprende», «la clientela»; en: singular they); never the generic masculine, doubling only where no neutral word "
+               "exists, never a slash or an @",
+    "split": "name both genders in full where the language marks gender (es: «el alumno y la alumna»), or a neutral word when "
+             "there is one (es: «el alumnado»); never a slash or an @",
+    "slash": "name both genders with a slash where the language marks gender (es: «el/la alumno/a»)",
+}
 
 TOKEN = re.compile(r"\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}")
 PARTIAL = re.compile(r"\{\{>\s*([a-z0-9_-]+)\s*\}\}")
@@ -136,6 +145,7 @@ def context(project: Project) -> dict[str, str]:
     content = rules["content"]
     design = rules.get("design") or {}
     address = str(data.get("address") or ("you" if content_language == "en" else "tu"))
+    inclusive = coursemod.inclusive_language(rules)
     slxd = (data.get("platform") or {}).get("slxd") or {}
     fields = tokens["placeholder_fields"]
     return {
@@ -146,6 +156,9 @@ def context(project: Project) -> dict[str, str]:
         "ui_language_name": LANGUAGE_NAMES.get(ui_language, ui_language),
         "ui_language": ui_language,
         "address_rule": ADDRESS_RULES.get(address, f"address the learner as «{address}»"),
+        "assessment_delivery": assessment_delivery_rule(project),
+        "inclusive_rule": f"inclusive language: {INCLUSIVE_RULES[inclusive]} (`rules › inclusive_language: {inclusive}`; a course "
+                          "may set its own, see `coursekit config rules --course <CODE>`)",
         "backend": str((data.get("assembly") or {}).get("backend") or "creator"),
         "mcp_name": str(slxd.get("mcp_name") or "slxd-creator"),
         "t_section": tokens["section"],
@@ -185,6 +198,21 @@ def context(project: Project) -> dict[str, str]:
         "reference_sources_max": str((rules.get("brief") or {}).get("reference_sources_max", "")),
         "project_skins": project_skins(project),
     }
+
+
+def assessment_delivery_rule(project: Project) -> str:
+    """Where the tests go and in which format (`delivery › assessment`), as the skills tell it."""
+    cfg = config.effective("delivery", project).value.get("assessment") or {}
+    placement, fmt = str(cfg.get("placement") or "unit"), str(cfg.get("format") or "platform")
+    where = ("in the package of their unit" if placement == "unit" else
+             "apart, in one package of their own after the units (one more unit to assemble and deliver)")
+    if fmt == "platform":
+        how = "as evaluation lessons of the package"
+    else:
+        how = (f"as a {fmt} question bank the LMS imports (`coursekit delivery questions`): the question bank of assessment.md "
+               f"may use only {', '.join(coursemod.BANK_QUESTIONS[fmt])}; scored simulations stay in a package")
+    return (f"the tests go {where}, {how} (`delivery › assessment`: placement {placement}, format {fmt}; a course may set its own, "
+            "see `coursekit config delivery --course <CODE>`)")
 
 
 def project_skins(project: Project) -> str:

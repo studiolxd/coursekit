@@ -29,8 +29,12 @@ def unit_simulations(course: dict, unit: dict) -> UnitPaths:
     rules = coursemod.rules(course)["content"]
     result = UnitPaths(unit["n"])
     folder = coursemod.unit_dir(course["_dir"], unit["n"])
-    for name in ("content.md", "assessment.md"):
-        path = folder / name
+    files = [(folder / "content.md", "content.md")]
+    if unit.get("kind") == "assessment":  # the package of the tests when they go apart: the tests of every unit
+        files = [(coursemod.unit_dir(course["_dir"], n) / "assessment.md", "assessment.md") for n in unit.get("sources") or []]
+    elif coursemod.assessment_delivery(course)[0] == "unit":
+        files.append((folder / "assessment.md", "assessment.md"))
+    for path, name in files:
         if not path.exists():
             continue
         for line, directive, body in parse_directives(path, path.read_text(encoding="utf-8").splitlines(), rules, Report()):

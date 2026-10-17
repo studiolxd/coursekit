@@ -130,6 +130,35 @@ The activity of a lesson is the one with the same title in the design, else the 
 
 A change only in the grading of a test (after signing the design again and running `plan`) shows in `diff` as an `update_quiz` operation of that lesson, and the course is not `assembly` again until it is applied. With the html backend the three values are written in the settings of each test, but the package reports one score for the unit (the best of its tests), so the weight does not change it.
 
+### Where the tests go
+
+The tests are written in the `assessment.md` of their unit, and the writing, the review and `verify` see them there. Where they end up is decided at assembly and delivery by `delivery › assessment` (a course may set its own in `course.yaml › delivery › assessment`):
+
+| `placement` | What is assembled and delivered |
+|---|---|
+| `unit` (default) | Each unit carries its tests as evaluation lessons, and its package reports their score. |
+| `separate` | The units carry no tests and report the learner's progress (`lessonProgress`). All the tests of the course go in one package of their own, one more unit after the last one (`coursekit status` gives its number), titled with the course title and «Assessment» («Evaluación» in Spanish); it reports the score (`quiz`). The plan of each unit says which in `score_source`, and the delivery agent passes it to the creator export. With the creator backend its content is created with `create_content` and recorded in `course.yaml › assessment_unit`; the evaluation lessons that the design generator made inside each unit are deleted. |
+
+| `format` | The questions of the tests |
+|---|---|
+| `platform` (default) | Evaluation lessons of the packages, in creator or in the html package. |
+| `aiken`, `gift`, `moodle-xml` | A question bank the LMS imports, written by `coursekit delivery questions` in `delivery/`. The questions leave the packages; an activity with a scored simulation keeps the simulation in its package (its unit's, or the package of the tests with `separate`), and an activity with only questions has no lesson. |
+
+Each bank format takes some question types: `verify` refuses the others in `assessment.md` while the unit is written, and `delivery questions` refuses them too.
+
+| Directive | `aiken` | `gift` | `moodle-xml` |
+|---|---|---|---|
+| `single-choice` | ✔ | ✔ | ✔ (`multichoice`, one answer) |
+| `multi-select` | ✘ | ✔ (each right answer 100/n %, each wrong one negative) | ✔ (`multichoice`, several answers) |
+| `true-false` | ✘ | ✔ | ✔ |
+| `match` | ✘ | ✔ | ✔ (`matching`) |
+| `sorting-groups` | ✘ | ✔ (as matching: each item to its group) | ✔ (`matching`) |
+| `short-answer` | ✘ | ✔ | ✔ |
+| `fill-in-the-blank` | ✘ | ✔ (one blank per question) | ✔ (`cloze`, several blanks) |
+| `sorting`, `order-words` | ✘ | ✘ | ✘ |
+
+What each file keeps: the text of the question, its options, the right answers and the feedback (right, wrong and general; Aiken has no feedback), with the HTML of the texts (plain text in Aiken). Each question is named after its activity and position, with its objective (`U1-E1.1-q3 · U1.2`). The id of the common error a distractor represents is never written. GIFT and Moodle XML put each activity in its own category (`<CODE>/U1 E1.1 <title>`); Aiken has none, so it is one file per activity. Pass marks, attempts and weights are not part of these formats: they are set on the quiz of the LMS.
+
 ### Simulations in creator
 
 Creator has no brick for a simulation and does not share state between bricks, so in its plan:

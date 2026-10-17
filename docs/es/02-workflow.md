@@ -255,7 +255,7 @@ Para que la migración siga los deseos del cliente, escríbelos en `brief/notes.
 /new-course "Contraseñas seguras" 2 --code PWD
 ```
 
-El agente de diseño crea el curso, lee el brief y construye una **propuesta**: competencias, unidades, objetivos, apartados, actividades y horas. Dónde depende de `course.yaml › design.tool`: en la matriz de diseño de SLXD Creator (`slxd`) o en `courses/PWD/design/design.yaml` (`local`, mira [Diseño local](#diseño-local)). En los dos casos exporta el diseño a `courses/PWD/design/` (`matrix.json`, `validation.json` y el Excel que revisas) y termina con un resumen. Revísalo y pide cambios con tus palabras:
+El agente de diseño crea el curso, lee el brief y construye una **propuesta**: competencias, unidades, objetivos, apartados, actividades y horas. Dónde depende de `course.yaml › design.tool`: en la matriz de diseño de SLXD Creator (`slxd`) o en `courses/PWD/design/design.yaml` (`local`, mira [Diseño local](#diseño-local)). En los dos casos exporta el diseño a `courses/PWD/design/` (`matrix.json`, `validation.json` y el Excel que revisas, que [`coursekit design`](03-commands.md#coursekit-design) escribe igual en los dos casos) y termina con un resumen. En un curso expositivo las actividades no tienen horas propias: las horas de cada apartado incluyen su lectura, la práctica de sus objetivos y su parte de la evaluación. Revísalo y pide cambios con tus palabras:
 
 ```text
 /design-change PWD Añade una unidad sobre gestores de contraseñas y pásale 0,5 horas
