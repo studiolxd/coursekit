@@ -54,7 +54,12 @@ NAME_RE = re.compile(r"^[a-z][a-z0-9-]{0,39}$")
 DEFAULT_FORMAT = {"width": 1920, "height": 1080, "fps": 30}
 MOTION = {"calm": {"enter": 26, "stagger": 10, "fade": 14, "damping": 28},
           "balanced": {"enter": 18, "stagger": 6, "fade": 10, "damping": 18},
-          "lively": {"enter": 11, "stagger": 4, "fade": 6, "damping": 11}}
+          "lively": {"enter": 11, "stagger": 4, "fade": 6, "damping": 11},
+          "none": {"enter": 0, "stagger": 0, "fade": 10, "damping": 18}}  # no movement inside a scene; the fade between scenes stays
+ENTRANCES = ("auto", "fade", "rise", "slide", "scale", "none")
+STRESSES = ("underline", "highlight", "colour")
+TRANSITIONS = ("cut", "fade", "dip", "push", "wipe")  # how one scene gives way to the next (config/video.yaml › transition)
+DIRECTIONS = ("left", "right", "up", "down")  # how a scene marks its stressed word (config/video.yaml › stress)
 OVERRIDABLE = ("atoms", "molecules")
 KIT = "kit"
 COURSE_COPY = Path("src") / ".course"  # course scenes are rendered from a copy at the depth of the project scenes
@@ -325,6 +330,8 @@ def check(course: dict, asset_id: str) -> list[Finding]:
                 found.append(Finding("warning", "TEXT_LONG", where, t("video", "text_long", prop=prop, n=len(text), max=limit)))
         says = _text(scene.get("says")).strip()
         found += _check_layers(course, scene, where, says, numbers)
+        if n > 1:
+            found += _check_transition(course, scene, items[n - 2], where, fmt)
         if not says and not scene.get("duration"):
             found.append(Finding("error", "NO_DURATION", where, t("video", "no_duration")))
         if not scene.get("shows"):  # what is on screen is also said (a silent scene describes it with `shows`)
@@ -460,7 +467,69 @@ def motion(course: dict, data: dict) -> dict:
     cfg = dict(style(course).get("motion") or {})
     preset = MOTION.get(str(cfg.get("character") or "balanced"), MOTION["balanced"])
     own = {k: int(v) for k, v in cfg.items() if k in MOTION["balanced"] and v is not None}
-    return {**preset, **own, **{k: int(v) for k, v in (data.get("motion") or {}).items() if k in MOTION["balanced"]}}
+    entrance = str(cfg.get("entrance") or "auto")
+    return {**preset, **own, **{k: int(v) for k, v in (data.get("motion") or {}).items() if k in MOTION["balanced"]},
+            "entrance": entrance if entrance in ENTRANCES else "auto"}
+
+
+def transition_setting(course: dict) -> dict:
+    """The transitions of the project (config/video.yaml › transition): the type, the frames (None: those of motion.fade), the
+    direction and the types a script may ask for (empty: all)."""
+    cfg = style(course).get("transition")
+    cfg = cfg if isinstance(cfg, dict) else {}
+    frames = cfg.get("frames")
+    return {"type": str(cfg.get("type") or "auto"), "frames": int(frames) if isinstance(frames, (int, float)) else None,
+            "direction": str(cfg.get("direction") or "left"), "allow": [str(v) for v in (cfg.get("allow") or [])]}
+
+
+def _asked_transition(scene: dict) -> dict:
+    """What a scene of the script asks for its entrance: `transition: fade` or `transition: {type: push, direction: up}`."""
+    raw = scene.get("transition")
+    return {"type": raw} if isinstance(raw, str) else dict(raw) if isinstance(raw, dict) else {}
+
+
+def _ground(course: dict, kind: str, props: dict) -> tuple[str, str]:
+    """What a scene is drawn on, to tell whether two scenes share their background."""
+    background = str(props.get("background") or ("accent" if kind == "outro" else style(course).get("background") or "shape"))
+    return background, str(props.get("photo") or "") if background == "photo" else ""
+
+
+def _check_transition(course: dict, scene: dict, before: object, where: str, fmt: dict) -> list[Finding]:
+    """The entrance a scene asks for: a type that exists and the project allows, and one that does not eat the voice of the scene
+    before (longer than the margin after its narration, the two voices would overlap)."""
+    asked = _asked_transition(scene)
+    kind = str(asked.get("type") or "")
+    level = "warning" if os.environ.get("COURSEKIT_HANDOFF") == "1" else "error"
+    setting = transition_setting(course)
+    found = []
+    if kind and kind not in (*TRANSITIONS, "auto"):
+        found.append(Finding("error", "TRANSITION", where, t("video", "transition_unknown", type=kind, known=", ".join(TRANSITIONS))))
+    elif kind and setting["allow"] and kind not in setting["allow"]:
+        found.append(Finding(level, "NOT_ALLOWED", where, t("video", "not_allowed", prop="transition", value=kind,
+                                                            allowed=", ".join(setting["allow"]))))
+    look = style(course)
+    pad = float(look.get("pad_seconds") if look.get("pad_seconds") is not None else 0.5)
+    frames = setting["frames"] if setting["frames"] is not None else motion(course, {})["fade"]
+    said_before = isinstance(before, dict) and _text(before.get("says")).strip()
+    if said_before and kind != "cut" and frames > pad * int(fmt["fps"]):
+        found.append(Finding("warning", "TRANSITION_LONG", where, t("video", "transition_long", frames=frames,
+                                                                   pad=round(pad * int(fmt["fps"])))))
+    return found
+
+
+def transition_for(course: dict, before: dict, scene: dict, fade: int) -> dict:
+    """How `scene` (resolved: its type and props) enters after `before`: the type (auto picks by the two scenes), its frames and
+    its direction."""
+    setting = transition_setting(course)
+    asked = _asked_transition(scene)
+    kind = str(asked.get("type") or setting["type"])
+    if kind == "auto":
+        same = _ground(course, before["type"], before["props"]) == _ground(course, scene["type"], scene["props"])
+        kind = "wipe" if scene["type"] == "chapter" else "fade" if scene["type"] == "outro" or same else "dip"
+    kind = kind if kind in TRANSITIONS else "dip"
+    direction = str(asked.get("direction") or setting["direction"])
+    frames = 0 if kind == "cut" else setting["frames"] if setting["frames"] is not None else fade
+    return {"type": kind, "frames": max(0, int(frames)), "direction": direction if direction in DIRECTIONS else "left"}
 
 
 def _look(course: dict) -> dict:
@@ -468,7 +537,13 @@ def _look(course: dict) -> dict:
     look = style(course)
     found_fonts = fonts(course)
     text, base = text_roles(course, (found_fonts or {}).get("families") or [])
+    stress = str(look.get("stress") or "underline")
+    veil = look.get("photo_veil") if isinstance(look.get("photo_veil"), dict) else {}
+    opacity = veil.get("opacity")
     return {"background": str(look.get("background") or "shape"), "logo": _logo(course),
+            "stress": stress if stress in STRESSES else "underline",
+            "veil": {"color": str(veil.get("color") or "background"),
+                     "opacity": min(1.0, max(0.0, float(opacity))) if isinstance(opacity, (int, float)) else 0.82},
             "shapes": _numbers(look.get("shapes"), ("radius", "border"), ("shadow",)),
             "weights": _weights(course, look), "fonts": found_fonts, "text": text, "textBase": base}
 
@@ -694,6 +769,7 @@ def resolve(course: dict, asset_id: str) -> dict:
         tokens = thememod.load(course["_project"], course)
     except thememod.ThemeError as exc:
         raise VideoError(str(exc)) from None
+    moving = motion(course, data)
     resolved, cursor = [], 0
     for scene in data["scenes"]:
         sid = str(scene["id"])
@@ -707,16 +783,21 @@ def resolve(course: dict, asset_id: str) -> dict:
         if says:
             if sid not in record or not (folder / f"{sid}.mp3").exists():
                 raise VideoError(t("video", "voice_pending", scene=sid, code=course["code"], id=asset_id))
-            seconds = float(record[sid]["seconds"]) + pad
+            seconds = float(record[sid]["seconds"]) + pad + float(scene.get("hold") or 0)  # `hold`: it stays a while after it is said
             audio, words = f"files/{asset_id}/{sid}.mp3", _words(folder / f"{sid}.words.json")
         else:
             seconds, audio, words = float(scene.get("duration") or 3), None, []
         if scene.get("duration") and says:
             seconds = max(seconds, float(scene["duration"]))
         frames = max(1, round(seconds * fps))
-        resolved.append({"id": sid, "type": str(scene["type"]), "from": cursor, "frames": frames, "props": props, "audio": audio,
-                         "words": words, "says": says, "layers": _resolve_layers(scene, words, frames, fps, course)})
-        cursor += frames
+        entry = {"id": sid, "type": str(scene["type"]), "from": cursor, "frames": frames, "props": props, "audio": audio,
+                 "words": words, "says": says, "layers": _resolve_layers(scene, words, frames, fps, course), "transition": None}
+        if resolved:  # it enters over the end of the one before: they overlap for the frames of the transition
+            entry["transition"] = transition_for(course, resolved[-1], {**scene, "props": props}, moving["fade"])
+            entry["transition"]["frames"] = min(entry["transition"]["frames"], resolved[-1]["frames"] - 1, frames - 1)
+            entry["from"] = cursor - entry["transition"]["frames"]
+        resolved.append(entry)
+        cursor = entry["from"] + frames
     return {"fps": fps, "width": int(fmt["width"]), "height": int(fmt["height"]), "frames": cursor,
             "tokens": {k: tokens[k] for k in ("color", "font", "radius", "space", "shadow") if k in tokens},
             "motion": motion(course, data), "style": _look(course),
@@ -886,7 +967,18 @@ def _sample_image(tokens: dict) -> str:
             "</svg>")
 
 
+GALLERY_NEXT = "statement"  # the scene the transitions of the gallery lead into, after the cover
 GALLERY_FIRST = "title"  # the cover goes first in the gallery: the first scene of most videos
+
+
+def _gallery_transitions(course: dict) -> dict:
+    """The transitions the galleries show: each type the project allows, with its name in the language of the person, and the
+    frames and the direction of the project."""
+    setting = transition_setting(course)
+    kinds = [k for k in TRANSITIONS if not setting["allow"] or k in setting["allow"]]
+    frames = setting["frames"] if setting["frames"] is not None else motion(course, {})["fade"]
+    return {"types": [{"name": k, "label": t("video", f"transition_{k}")} for k in kinds], "frames": frames,
+            "direction": setting["direction"] if setting["direction"] in DIRECTIONS else "left", "directions": list(DIRECTIONS)}
 
 
 def _as_allowed(course: dict, name: str, piece: dict, language: str) -> dict:
@@ -986,6 +1078,8 @@ def _gallery_app(course: dict, out: Path, extra: dict, code: bool, say) -> Path:
             "base": example(pieces(course, "scenes").get(GALLERY_BASE) or {"meta": {}}, language) or {"title": ""},
             "samples": ["gallery-sample-photo.jpg", "gallery-sample.svg", *_course_images(course, out)], "labels": labels,
             "pieces": found, "swatches": [[k, str(v)] for k, v in (tokens.get("color") or {}).items() if str(v).startswith("#")],
+            "next": example(pieces(course, "scenes").get(GALLERY_NEXT) or {"meta": {}}, language) or {"text": ""},
+            "transitions": _gallery_transitions(course),
             "montage": {"fps": int(fmt["fps"]), "width": int(fmt["width"]), "height": int(fmt["height"]),
                         "tokens": {k: tokens[k] for k in ("color", "font", "radius", "space", "shadow") if k in tokens},
                         "motion": motion(course, {}), "style": _look(course)}, **extra}
@@ -1024,7 +1118,8 @@ LIVE_LABELS = ("default", "none", "variant", "example", "no_example", "code", "s
                "sample_subheading", "sample_kicker", "sample_body", "sample_quote", "sample_statement", "sample_label",
                "sample_caption", "skip", "menu", "menu_close", "navigation", "typography_intro", "style_group", "colours",
                "colours_intro", "shapes", "shapes_intro", "id_hint", "background", "radius", "border", "shadow", "weight_normal",
-               "weight_strong", "col_value", "rendered_hint")
+               "weight_strong", "col_value", "rendered_hint", "less", "more", "empty",
+               "transitions", "transitions_intro", "transition", "direction")
 
 
 def _write(path: Path, text: str) -> None:
@@ -1180,6 +1275,19 @@ def gallery(course: dict, say=print) -> Path:
         cursor += frames
     if not drawn:
         raise VideoError(t("video", "gallery_empty", code=course.get("_label") or course["code"]))
+    ahead = example(pieces(course, "scenes").get(GALLERY_NEXT) or {"meta": {}}, language) or {"text": ""}
+    shown = _gallery_transitions(course)
+    pairs = {}  # transition-<type>: (its first frame, its last), the cover giving way to the next scene
+    for kind in (k["name"] for k in shown["types"]):
+        overlap = 0 if kind == "cut" else min(shown["frames"], frames - 1)
+        first = {"id": f"transition-{kind}-from", "type": GALLERY_BASE, "props": base, "layers": [], "from": cursor, "frames": frames,
+                 "audio": None, "words": [], "says": ""}
+        second = {"id": f"transition-{kind}", "type": GALLERY_NEXT, "props": ahead, "layers": [], "from": cursor + frames - overlap,
+                  "frames": frames, "audio": None, "words": [], "says": "",
+                  "transition": {"type": kind, "frames": overlap, "direction": shown["direction"]}}
+        drawn += [first, second]
+        pairs[f"transition-{kind}"] = (first["from"], second["from"] + frames, second["from"] + overlap // 2)
+        cursor = second["from"] + frames
     resolved = {"fps": fps, "width": int(fmt["width"]), "height": int(fmt["height"]), "frames": cursor,
                 "tokens": {k: tokens[k] for k in ("color", "font", "radius", "space", "shadow") if k in tokens},
                 "motion": motion(course, {}), "style": _look(course), "scenes": drawn}
@@ -1196,7 +1304,16 @@ def gallery(course: dict, say=print) -> Path:
     _remotion(root, ["render", f"{KIT}/entry.ts", "Montage", str(video_file), f"--props={props_file}", f"--public-dir={out}", "--muted",
                      "--scale=0.5", "--log=error"])
     starts = {}
+    for name, (begin, end, middle) in pairs.items():  # the clip of a transition: both scenes, its poster in the middle of it
+        starts[name] = (begin / fps, end / fps)
+        mediatools.run(["ffmpeg", "-loglevel", "error", "-y", "-ss", f"{middle / fps:.3f}", "-i", str(video_file), "-frames:v", "1",
+                        str(out / "frames" / f"{name}.png")])
+        mediatools.run(["ffmpeg", "-loglevel", "error", "-y", "-ss", f"{begin / fps:.3f}", "-t", f"{(end - begin) / fps:.3f}",
+                        "-i", str(video_file), "-an", "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p",
+                        str(out / "clips" / f"{name}.mp4")])
     for scene in drawn:
+        if scene["id"].startswith("transition-"):
+            continue
         name = scene["layers"][0]["id"] if scene["layers"] else scene["id"]
         starts[name] = (scene["from"] / fps, (scene["from"] + scene["frames"]) / fps)
         at = (scene["from"] + scene["frames"] - resolved["motion"]["fade"] - 2) / fps  # all in, before it fades out
@@ -1333,13 +1450,15 @@ def export(course: dict, asset_id: str, say=print) -> dict:
     markers = []
     for n, scene in enumerate(resolved["scenes"], 1):
         piece = out / "scenes" / f"{n:02d}-{scene['id']}.mp4"
-        first, last = scene["from"], scene["from"] + scene["frames"] - 1  # by the number of the frame: exact, never rounded
+        following = resolved["scenes"][n] if n < len(resolved["scenes"]) else None  # up to the next: the transitions are in the render
+        first, last = scene["from"], (following["from"] if following else scene["from"] + scene["frames"]) - 1  # by the number of the frame
+        length = last - first + 1
         done = subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-i", str(clean), "-vf",
                                f"select='between(n\\,{first}\\,{last})',setpts=N/FRAME_RATE/TB", "-r", str(fps), "-c:v", "libx264",
                                "-crf", "16", "-pix_fmt", "yuv420p", "-an", str(piece)], capture_output=True, text=True, check=False)
         if done.returncode != 0:
             raise VideoError(t("redact", "encode_failed", reason=([*(done.stderr or "?").strip().splitlines(), "?"])[0]))
-        scenes_track.clips.append(videoedit.Clip(scene["id"], piece, scene["from"], scene["frames"]))
+        scenes_track.clips.append(videoedit.Clip(scene["id"], piece, scene["from"], length))
         markers.append((scene["from"], scene["id"]))
         if scene["audio"]:
             voice = out / "voices" / f"{n:02d}-{scene['id']}.mp3"

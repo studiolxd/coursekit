@@ -1,0 +1,12 @@
+label: {en: "Progress", es: "Progreso"}
+description:
+  en: Where the video is; one mark per part at the top right, the parts done and the current one in the accent.
+  es: En qué punto está el vídeo; una marca por parte arriba a la derecha, las hechas y la actual en el acento.
+built_from: []
+props:
+  current: {type: number, required: true, help: {en: "the current part, from 1", es: "la parte actual, desde 1"}}
+  total: {type: number, required: true, help: {en: "how many parts the video has", es: "cuántas partes tiene el vídeo"}}
+# What the gallery draws it with (`coursekit video gallery`), in each language of the courses.
+example:
+  en: {current: 2, total: 4}
+  es: {current: 2, total: 4}

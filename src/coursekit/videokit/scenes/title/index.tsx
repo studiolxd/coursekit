@@ -1,7 +1,10 @@
 import React from "react";
 import { AbsoluteFill } from "remotion";
 import { Background } from "../../atoms/Background";
+import { Ground } from "../../atoms/Ground";
+import { CAPTIONS, ITEMS, JUSTIFY, SIDE, edges } from "../../atoms/Place";
 import { Card } from "../../atoms/Card";
+import { Credit } from "../../atoms/Credit";
 import { Enter } from "../../atoms/Enter";
 import { MediaSlot } from "../../atoms/MediaSlot";
 import { Text } from "../../atoms/Text";
@@ -15,19 +18,15 @@ import type { SceneProps } from "../../contract";
 export type TitleProps = {
   kicker?: string; title: string; text?: string;
   background?: "plain" | "surface" | "accent" | "photo"; photo?: string; layout?: "side" | "panel" | "over";
-  align?: "left" | "center" | "right"; valign?: "top" | "middle" | "bottom"; ink?: "dark" | "light";
+  align?: "left" | "center" | "right"; valign?: "top" | "middle" | "bottom"; ink?: "dark" | "light"; credit?: string;
 };
-
-const JUSTIFY = { top: "flex-start", middle: "center", bottom: "flex-end" } as const;
-const ITEMS = { left: "flex-start", center: "center", right: "flex-end" } as const;
-const CAPTIONS = 200; // px kept free at the bottom of the frame, where the captions go
 
 export default function Title({ props }: SceneProps<TitleProps>) {
   const align = props.align ?? "left";
   const valign = props.valign ?? "middle";
   const photo = props.background === "photo" && props.photo ? props.photo : undefined;
   const layout = photo ? props.layout ?? "side" : undefined;
-  const ink = props.background === "accent" ? "on-accent" : layout === "over" && props.ink === "light" ? "background" : undefined;
+  const ink = layout === "over" && props.ink === "light" ? "background" : undefined;  // on the accent the ground sets it
   const size = layout === "side" ? (props.title.length > 40 ? 64 : 76) : props.title.length > 40 ? 84 : 104;  // half the frame: smaller
   const block = (
     <div style={{ textAlign: align, maxWidth: layout === "side" ? undefined : 1400 }}>
@@ -42,7 +41,6 @@ export default function Title({ props }: SceneProps<TitleProps>) {
       {children}
     </AbsoluteFill>
   );
-  const edges = `120px 160px ${valign === "bottom" ? CAPTIONS : 120}px`;
 
   if (photo && layout === "side") {  // the photo on one half, the text on the other: `align: right` puts the text on the right
     const right = align === "right";
@@ -56,6 +54,7 @@ export default function Title({ props }: SceneProps<TitleProps>) {
       <AbsoluteFill>
         <Background variant="plain" />
         <AbsoluteFill style={{ flexDirection: "row" }}>{right ? <>{media}{text}</> : <>{text}{media}</>}</AbsoluteFill>
+        <Credit>{props.credit}</Credit>
       </AbsoluteFill>
     );
   }
@@ -64,15 +63,13 @@ export default function Title({ props }: SceneProps<TitleProps>) {
       <AbsoluteFill>
         <AbsoluteFill><MediaSlot src={photo} style={{ borderRadius: 0 }} /></AbsoluteFill>
         {place(layout === "panel" ? <Enter><Card tone="surface" padding={72} style={{ maxWidth: 1200 }}>{block}</Card></Enter> : block,
-          edges)}
+          edges(valign, SIDE))}
+        <Credit>{props.credit}</Credit>
       </AbsoluteFill>
     );
   }
   const background = props.background && props.background !== "photo" ? props.background : undefined;
   return (
-    <AbsoluteFill>
-      <Background variant={background} />
-      {place(block, edges)}
-    </AbsoluteFill>
+    <Ground variant={background} credit={props.credit}>{place(block, edges(valign, SIDE))}</Ground>
   );
 }

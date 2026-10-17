@@ -1,0 +1,17 @@
+label: {en: "Pointer", es: "Señalador"}
+description:
+  en: A short label with a line that points at a spot of the scene.
+  es: Una etiqueta corta con una línea que señala un punto de la escena.
+built_from: [Card, Text]
+props:
+  fx: {type: number, required: true}
+  fy: {type: number, required: true}
+  text: {type: text, required: true, max_chars: 40, on_screen: true}
+  side: {type: choice, values: [left, right, top, bottom], help: {en: "where the label goes from the spot (default left)", es: "dónde va la etiqueta respecto al punto (por defecto left)"}}
+# What the gallery draws it with (`coursekit video gallery`), in each language of the courses.
+example:
+  en: {fx: 0.42, fy: 0.51, side: right, text: "The title of the course"}
+  es: {fx: 0.42, fy: 0.51, side: right, text: "El título del curso"}
+# Other ways the gallery draws it: the props of each over those of the example.
+variants:
+  - {name: top, label: {en: "Label above", es: "Etiqueta arriba"}, props: {side: top, fx: 0.56, fy: 0.4}}

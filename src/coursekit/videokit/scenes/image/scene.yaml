@@ -1,0 +1,20 @@
+label: {en: "Image", es: "Imagen"}
+description:
+  en: An image on the whole frame (a photo, an illustration) while the narration talks over it, with a slow movement and, if it has one, a caption.
+  es: Una imagen a pantalla completa (una foto, una ilustración) mientras habla la locución, con un movimiento lento y, si lo lleva, un pie.
+built_from: [MediaSlot, Card, Text, Credit]
+props:
+  image: {type: media, required: true, help: {en: "a path inside the media folder of the course (files/…); describe it in `shows` of the scene", es: "una ruta dentro de la carpeta media del curso (files/…); descríbela en `shows` de la escena"}}
+  caption: {type: text, max_chars: 100, on_screen: true, help: {en: "a line over the image, at the bottom left: what to look at", es: "una línea sobre la imagen, abajo a la izquierda: en qué fijarse"}}
+  move: {type: choice, values: [zoom-in, zoom-out, pan-left, pan-right, none], help: {en: "how it moves across the scene: it closes in (default), it opens out, it pans or it stays still", es: "cómo se mueve a lo largo de la escena: se acerca (por defecto), se aleja, se desplaza o se queda quieta"}}
+  fit: {type: choice, values: [cover, contain], help: {en: "cover, it fills the frame and is cropped (default); contain, it is seen whole", es: "cover, llena el cuadro y se recorta (por defecto); contain, se ve entera"}}
+  credit: {type: text, max_chars: 80, on_screen: true, help: {en: "the credit of the image of the scene (its author and its licence), small at the bottom right: a CC-BY photo requires it", es: "el crédito de la imagen de la escena (su autor y su licencia), pequeño abajo a la derecha: una foto CC-BY lo exige"}}
+  entrance: {type: choice, values: [auto, fade, rise, slide, scale, none], help: {en: "how its elements enter (default that of config/video.yaml › motion › entrance): auto, each its own way; fade; rise; slide, from its side; scale, they grow; none, no movement", es: "cómo entran sus elementos (por defecto el de config/video.yaml › motion › entrance): auto, cada uno a su manera; fade; rise, suben; slide, desde su lado; scale, crecen; none, sin movimiento"}}
+# What the gallery draws it with (`coursekit video gallery`), in each language of the courses.
+example:
+  en: {image: gallery-sample-photo.jpg, caption: "A password written on a note is a password anyone can read"}
+  es: {image: gallery-sample-photo.jpg, caption: "Una contraseña apuntada en una nota es una contraseña que cualquiera puede leer"}
+# Other ways the gallery draws it: the props of each over those of the example.
+variants:
+  - {name: pan, label: {en: "Pan", es: "Desplazamiento"}, props: {move: pan-right}}
+  - {name: credit, label: {en: "With a credit", es: "Con crédito"}, props: {credit: "Photo: Unsplash (CC0)"}}

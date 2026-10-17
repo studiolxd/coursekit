@@ -1,5 +1,5 @@
 import React from "react";
-import { useTheme } from "../theme";
+import { useSceneMotion, useTheme } from "../theme";
 import { Enter, type EnterProps } from "./Enter";
 
 // Children that enter one after another, `motion.stagger` frames apart (or `gap`), from frame `at`. Each child can also enter
@@ -8,7 +8,8 @@ import { Enter, type EnterProps } from "./Enter";
 export const Stagger: React.FC<{ at?: number; gap?: number; times?: (number | null)[]; from?: EnterProps["from"];
   children: React.ReactNode; style?: React.CSSProperties }> = ({ at = 0, gap, times, from = "up", children, style }) => {
   const { motion } = useTheme();
-  const step = gap ?? motion.stagger;
+  const { reveal } = useSceneMotion();
+  const step = reveal === "together" ? 0 : gap ?? motion.stagger;
   return (
     <div style={style}>
       {React.Children.toArray(children).map((child, i) => (

@@ -1,7 +1,7 @@
 import React from "react";
 import { Heading } from "../atoms/Heading";
-import { Text } from "../atoms/Text";
 import { Enter } from "../atoms/Enter";
+import { Kicker } from "../atoms/Kicker";
 import { Underline } from "../atoms/Underline";
 import { useAt } from "../timing";
 
@@ -16,7 +16,7 @@ export const TitleBlock: React.FC<{ kicker?: string; title: string; stress?: str
     : null;
   return (
     <div>
-      {kicker ? <Enter at={at}><Text size={36} tone={ink ?? "accent-ink"} weight={800} role="kicker" style={{ textTransform: "uppercase", letterSpacing: 2, marginBottom: 18 }}>{kicker}</Text></Enter> : null}
+      {kicker ? <Kicker at={at} ink={ink} style={{ marginBottom: 18 }}>{kicker}</Kicker> : null}
       <Enter at={at + 6}>
         <Heading size={size} tone={ink ?? "headings"} role={role}>
           {parts ? <>{parts[0]}<Underline at={underlineAt} tone={ink}>{parts[1]}</Underline>{parts[2]}</> : title}

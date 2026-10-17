@@ -6,7 +6,13 @@ built_from: [Text]
 props:
   title: {type: text, required: true, max_chars: 40, on_screen: true, label: true}
   subtitle: {type: text, max_chars: 60, on_screen: true, label: true}
+  corner: {type: choice, values: [bottom-left, bottom-right], help: {en: "default bottom-left", es: "por defecto bottom-left"}}
+  style: {type: choice, values: [bar, card, plain], help: {en: "bar, a bar of the accent beside a panel (default); card, a card; plain, the text alone (only over a calm scene)", es: "bar, una barra del acento junto a un panel (por defecto); card, una tarjeta; plain, el texto solo (solo sobre una escena tranquila)"}}
 # What the gallery draws it with (`coursekit video gallery`), in each language of the courses.
 example:
   en: {title: "Ana Ruiz", subtitle: "Security lead, ACME"}
   es: {title: "Ana Ruiz", subtitle: "Responsable de seguridad, ACME"}
+# Other ways the gallery draws it: the props of each over those of the example.
+variants:
+  - {name: right, label: {en: "Right", es: "Derecha"}, props: {corner: bottom-right}}
+  - {name: card, label: {en: "Card", es: "Tarjeta"}, props: {style: card}}

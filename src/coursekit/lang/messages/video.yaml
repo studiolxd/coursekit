@@ -110,8 +110,11 @@ live_sample_label: {es: "Ana Ruiz, responsable de formación", en: "Ana Ruiz, tr
 live_sample_caption: {es: "Fuente: un informe de 2026", en: "Source: a report of 2026"}
 live_default: {es: "(por defecto)", en: "(default)"}
 live_none: {es: "(ninguna)", en: "(none)"}
-live_variant: {es: "Variante:", en: "Variant:"}
-live_example: {es: "el ejemplo", en: "the example"}
+live_less: {es: "Menos", en: "Less"}
+live_more: {es: "Más", en: "More"}
+live_empty: {es: "Sin valor", en: "No value"}
+live_variant: {es: "Variante", en: "Variant"}
+live_example: {es: "Por defecto", en: "Default"}
 live_no_example: {es: "Sin ejemplo: añade example: a su fichero de metadatos para verla aquí.", en: "No example: add example: to its metadata file to see it here."}
 live_code: {es: "En el guion del vídeo (media/scripts/<id>.video.yaml):", en: "In the script of the video (media/scripts/<id>.video.yaml):"}
 live_scenes: {es: "escena", en: "scene"}
@@ -122,3 +125,20 @@ live_col_prop: {es: "Prop", en: "Prop"}
 live_col_type: {es: "Tipo", en: "Type"}
 live_col_control: {es: "Valor", en: "Value"}
 live_col_help: {es: "Para qué", en: "What for"}
+transition_unknown:
+  es: "transition: «{type}» no es una transición (las transiciones: {known}, o auto)"
+  en: "transition: '{type}' is not a transition (the transitions: {known}, or auto)"
+transition_long:
+  es: "la transición dura {frames} fotogramas y el margen tras la locución de la escena anterior es de {pad}: las voces se pisarían; acorta config/video.yaml › transition › frames o alarga pad_seconds"
+  en: "the transition lasts {frames} frames and the margin after the narration of the scene before is {pad}: the voices would overlap; shorten config/video.yaml › transition › frames or lengthen pad_seconds"
+transition_cut: {es: Corte, en: Cut}
+transition_fade: {es: Fundido cruzado, en: Cross-fade}
+transition_dip: {es: Fundido al fondo, en: Dip to the background}
+transition_push: {es: Empuje, en: Push}
+transition_wipe: {es: Barrido, en: Wipe}
+live_transitions: {es: Transiciones, en: Transitions}
+live_transitions_intro:
+  es: "Cómo pasa una escena a la siguiente, con el estilo del proyecto (config/video.yaml › transition). Un guion elige la de cada escena con `transition:`; con auto, coursekit la elige según las dos escenas."
+  en: "How one scene gives way to the next, in the style of the project (config/video.yaml › transition). A script picks each scene's with `transition:`; with auto, coursekit picks it from the two scenes."
+live_transition: {es: Transición, en: Transition}
+live_direction: {es: Dirección, en: Direction}

@@ -7,7 +7,12 @@ props:
   fx: {type: number, required: true}
   fy: {type: number, required: true}
   size: {type: number}
+  shape: {type: choice, values: [ring, box], help: {en: "a ring (default) or a rounded box, for a button or a field", es: "un anillo (por defecto) o una caja redondeada, para un botón o un campo"}}
+  dim: {type: boolean, default: false, help: {en: "darken everything around it (default false)", es: "oscurecer todo lo de alrededor (por defecto false)"}}
 # What the gallery draws it with (`coursekit video gallery`), in each language of the courses.
 example:
   en: {fx: 0.3, fy: 0.42}
   es: {fx: 0.3, fy: 0.42}
+# Other ways the gallery draws it: the props of each over those of the example.
+variants:
+  - {name: box-dim, label: {en: "Box, the rest darkened", es: "Caja con el resto oscurecido"}, props: {shape: box, dim: true}}

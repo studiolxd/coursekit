@@ -1,14 +1,31 @@
 label: {en: "Quote", es: "Cita"}
 description:
-  en: A quote and who says it; a word of the quote (`stress`) is highlighted when the narration says it.
-  es: Una cita y quién la dice; una palabra de la cita (`stress`) se resalta cuando se locuta.
-built_from: [Background, Heading, Text, Underline, Enter]
+  en: A quote and who says it; a word of the quote (`stress`) is underlined when the narration says it.
+  es: Una cita y quién la dice; una palabra de la cita (`stress`) se subraya cuando se locuta.
+built_from: [Ground (Background), Heading, Text, Stressed (Underline), Enter]
 props:
   quote: {type: text, required: true, max_chars: 140, on_screen: true}
   author: {type: text, required: true, max_chars: 40, on_screen: true, label: true}
   role: {type: text, max_chars: 60, on_screen: true, label: true}
   stress: {type: text, help: {en: "a word of the quote the narration stresses", es: "una palabra de la cita que la locución destaca"}}
+  background: {type: choice, values: [plain, surface, accent, photo], help: {en: "default: the background of the style of the project (config/video.yaml)", es: "por defecto: el fondo del estilo del proyecto (config/video.yaml)"}}
+  photo: {type: media, when: {background: photo}, help: {en: "with background photo: a path inside the media folder of the course (files/…), under a veil (`veil`, `veil_opacity`); describe it in `shows` of the scene", es: "con background photo: una ruta dentro de la carpeta media del curso (files/…), bajo un velo (`veil`, `veil_opacity`); descríbela en `shows` de la escena"}}
+  veil: {type: choice, values: [background, surface, accent, none], when: {background: photo}, help: {en: "with a photo: the colour of the veil over it (default that of config/video.yaml › photo_veil); none, no veil, only for a calm, light photo", es: "con foto: el color del velo sobre ella (por defecto el de config/video.yaml › photo_veil); none, sin velo, solo para una foto tranquila y clara"}}
+  veil_opacity: {type: number, when: {background: photo}, help: {en: "with a photo: how opaque the veil is, from 0 to 1 (default that of config/video.yaml › photo_veil)", es: "con foto: lo opaco que es el velo, de 0 a 1 (por defecto el de config/video.yaml › photo_veil)"}}
+  align: {type: choice, values: [left, center], help: {en: "where the content goes across (default left)", es: "dónde va el contenido en horizontal (por defecto left)"}}
+  valign: {type: choice, values: [top, middle, bottom], help: {en: "where the content goes up and down (default middle); at the bottom it keeps clear of the captions", es: "dónde va el contenido en vertical (por defecto middle); abajo deja libre la zona de los subtítulos"}}
+  mark: {type: choice, values: [quote, bar, none], help: {en: "what marks the quote: large quotation marks (default), a bar of the accent at its side or nothing", es: "qué marca la cita: unas comillas grandes (por defecto), una barra del acento a su lado o nada"}}
+  portrait: {type: media, help: {en: "a photo of who says it, beside the quote: a path inside the media folder of the course (files/…)", es: "una foto de quien la dice, al lado de la cita: una ruta dentro de la carpeta media del curso (files/…)"}}
+  credit: {type: text, max_chars: 80, on_screen: true, help: {en: "the credit of the image of the scene (its author and its licence), small at the bottom right: a CC-BY photo requires it", es: "el crédito de la imagen de la escena (su autor y su licencia), pequeño abajo a la derecha: una foto CC-BY lo exige"}}
+  entrance: {type: choice, values: [auto, fade, rise, slide, scale, none], help: {en: "how its elements enter (default that of config/video.yaml › motion › entrance): auto, each its own way; fade; rise; slide, from its side; scale, they grow; none, no movement", es: "cómo entran sus elementos (por defecto el de config/video.yaml › motion › entrance): auto, cada uno a su manera; fade; rise, suben; slide, desde su lado; scale, crecen; none, sin movimiento"}}
 # What the gallery draws it with (`coursekit video gallery`), in each language of the courses.
 example:
   en: {quote: "A password you can remember is a password you will not write down.", author: "Ana Ruiz", role: "Security lead, ACME", stress: "remember"}
   es: {quote: "Una contraseña que recuerdas es una contraseña que no apuntas.", author: "Ana Ruiz", role: "Responsable de seguridad, ACME", stress: "recuerdas"}
+# Other ways the gallery draws it: the props of each over those of the example.
+variants:
+  - {name: surface, label: {en: "Surface", es: "Superficie"}, props: {background: surface}}
+  - {name: accent, label: {en: "Accent", es: "Acento"}, props: {background: accent}}
+  - {name: photo, label: {en: "Photo", es: "Foto"}, props: {background: photo, photo: gallery-sample-photo.jpg}}
+  - {name: bar, label: {en: "Bar", es: "Barra"}, props: {mark: bar}}
+  - {name: portrait, label: {en: "With a portrait", es: "Con retrato"}, props: {portrait: gallery-sample-photo.jpg, mark: none}}

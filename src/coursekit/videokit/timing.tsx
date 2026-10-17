@@ -1,5 +1,6 @@
 import React from "react";
 import { useCurrentFrame, useVideoConfig } from "remotion";
+import { useSceneMotion } from "./theme";
 
 // The time of a scene: its duration and the words of its narration (seconds from the start of the scene). `useAt("word")`
 // is the frame of the scene in which the narration says it, so a layer, a highlight or a step of a diagram enters when the
@@ -46,10 +47,23 @@ export const useSince = (frame: number) => useCurrentFrame() - frame;
 export const useSayTimes = (phrases: (string | undefined)[]): (number | null)[] => {
   const { words } = useSceneTime();
   const { fps } = useVideoConfig();
+  const { reveal } = useSceneMotion();
   let after = -1;
-  return phrases.map((phrase) => {
+  const times = phrases.map((phrase) => {
     const s = phrase ? whenSaid(words, phrase, after) : null;
     if (s != null) after = s;
     return s == null ? null : Math.round(s * fps);
   });
+  if (reveal !== "together") return times;
+  const first = times.find((t) => t != null) ?? null;  // all together: when the first is said
+  return times.map(() => first);
+};
+
+/** The frame each item of a scene enters on: when the narration names it, else one after another from `start`, `step` frames
+ *  apart; with `reveal: together`, all on the first of them. */
+export const useSteps = (phrases: (string | undefined)[], start: number, step: number): number[] => {
+  const said = useSayTimes(phrases);
+  const { reveal } = useSceneMotion();
+  const frames = said.map((t, i) => t ?? start + i * step);
+  return reveal === "together" ? frames.map(() => frames[0] ?? start) : frames;
 };

@@ -1,12 +1,26 @@
 label: {en: "Closing", es: "Cierre"}
 description:
-  en: The close of a video, on the accent colour of the theme; what to keep, in a line, and what comes next.
-  es: El cierre de un vídeo, sobre el color de acento del tema; la idea con la que quedarse, en una línea, y lo que viene después.
-built_from: [Background, Heading, Text, Enter]
+  en: The close of a video, on the accent colour of the theme unless it says otherwise; what to keep, in a line, and what comes next.
+  es: El cierre de un vídeo, sobre el color de acento del tema salvo que diga otro fondo; la idea con la que quedarse, en una línea, y lo que viene después.
+built_from: [Ground (Background), Heading, Text, Enter]
 props:
+  kicker: {type: text, max_chars: 40, on_screen: true, label: true, help: {en: "a label over the title: it need not be said", es: "una etiqueta sobre el título: no hace falta locutarla"}}
   title: {type: text, required: true, max_chars: 48, on_screen: true}
   next: {type: text, max_chars: 70, on_screen: true}
+  background: {type: choice, values: [plain, surface, accent, photo], help: {en: "default: the accent", es: "por defecto: el acento"}}
+  photo: {type: media, when: {background: photo}, help: {en: "with background photo: a path inside the media folder of the course (files/…), under a veil (`veil`, `veil_opacity`); describe it in `shows` of the scene", es: "con background photo: una ruta dentro de la carpeta media del curso (files/…), bajo un velo (`veil`, `veil_opacity`); descríbela en `shows` de la escena"}}
+  veil: {type: choice, values: [background, surface, accent, none], when: {background: photo}, help: {en: "with a photo: the colour of the veil over it (default that of config/video.yaml › photo_veil); none, no veil, only for a calm, light photo", es: "con foto: el color del velo sobre ella (por defecto el de config/video.yaml › photo_veil); none, sin velo, solo para una foto tranquila y clara"}}
+  veil_opacity: {type: number, when: {background: photo}, help: {en: "with a photo: how opaque the veil is, from 0 to 1 (default that of config/video.yaml › photo_veil)", es: "con foto: lo opaco que es el velo, de 0 a 1 (por defecto el de config/video.yaml › photo_veil)"}}
+  credit: {type: text, max_chars: 80, on_screen: true, help: {en: "the credit of the image of the scene (its author and its licence), small at the bottom right: a CC-BY photo requires it", es: "el crédito de la imagen de la escena (su autor y su licencia), pequeño abajo a la derecha: una foto CC-BY lo exige"}}
+  align: {type: choice, values: [left, center], help: {en: "where the content goes across (default center)", es: "dónde va el contenido en horizontal (por defecto center)"}}
+  valign: {type: choice, values: [top, middle, bottom], help: {en: "where the content goes up and down (default middle); at the bottom it keeps clear of the captions", es: "dónde va el contenido en vertical (por defecto middle); abajo deja libre la zona de los subtítulos"}}
+  entrance: {type: choice, values: [auto, fade, rise, slide, scale, none], help: {en: "how its elements enter (default that of config/video.yaml › motion › entrance): auto, each its own way; fade; rise; slide, from its side; scale, they grow; none, no movement", es: "cómo entran sus elementos (por defecto el de config/video.yaml › motion › entrance): auto, cada uno a su manera; fade; rise, suben; slide, desde su lado; scale, crecen; none, sin movimiento"}}
 # What the gallery draws it with (`coursekit video gallery`), in each language of the courses.
 example:
   en: {title: "Long and unique", next: "Next: two-step verification"}
   es: {title: "Larga y única", next: "Siguiente: la verificación en dos pasos"}
+# Other ways the gallery draws it: the props of each over those of the example.
+variants:
+  - {name: plain, label: {en: "On the background", es: "Sobre el fondo"}, props: {background: plain, align: left, valign: bottom}}
+  - {name: surface, label: {en: "Surface", es: "Superficie"}, props: {background: surface}}
+  - {name: photo, label: {en: "Photo", es: "Foto"}, props: {background: photo, photo: gallery-sample-photo.jpg}}

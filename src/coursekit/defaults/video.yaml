@@ -2,10 +2,14 @@
 # families come from theme/tokens.json, never from here; the shapes and the weights, from here). A project changes it in
 # config/video.yaml, and a course in the `video:` section of its course.yaml (for example, a calmer motion for one course).
 
-# How things move. `character` picks a preset: calm (slow entrances, soft springs), balanced or lively (quick, snappy);
-# `enter`, `stagger`, `fade` and `damping` (frames, and the damping of the springs) override the preset one by one.
+# How things move. `character` picks a preset: calm (slow entrances, soft springs), balanced, lively (quick, snappy) or none
+# (everything appears at its moment, with no movement); `enter`, `stagger`, `fade` and `damping` (frames, and the damping of the
+# springs) override the preset one by one. `entrance` is how things enter: auto (each piece its own way: rising, from its side,
+# growing), fade (they appear), rise (they rise a little), slide (from their side), scale (they grow) or none; a scene may change
+# it (`entrance`), and also whether its items enter one by one as the narration names them or all together (`reveal`).
 motion:
   character: balanced
+  entrance: auto
   # enter: 18           # frames an element takes to enter
   # stagger: 6          # frames between the elements of a list
   # fade: 10            # frames a scene takes to fade in and out
@@ -13,6 +17,30 @@ motion:
 
 # The background of the scenes that do not ask for one: plain, shape (soft shapes of the accent) or band.
 background: shape
+
+# A scene with a photo for background (`background: photo`) lays a veil over it, so its texts and marks read: `color`, a colour
+# of the theme (background, surface or accent; the texts take the colours that read on it) or none (no veil: only for a calm,
+# light photo); `opacity`, from 0 (the photo as it is) to 1 (no photo). A scene may change both (`veil`, `veil_opacity`).
+# How one scene gives way to the next. `type`: cut, fade (one dissolves into the other: with the same background only the content
+# changes), dip (through the background colour), push (the new one pushes the old one aside, `direction`), wipe (a band of the
+# accent crosses the frame and uncovers the next) or auto (coursekit picks: fade between scenes on the same background, dip when
+# it changes, wipe into a chapter, fade into the close). `frames`: how long it lasts (null: those of motion.fade); it takes that
+# time from the margin after the narration of the scene before (pad_seconds), so voices never overlap. `allow`: the types a
+# script may ask for (empty: all). A scene asks for its own entrance with `transition:` in the script (a type, or type and
+# direction).
+transition:
+  type: auto
+  frames: null
+  direction: left
+  allow: []
+
+# How a scene marks the word the narration stresses (`stress` of a quote, a key phrase, a title): underline (a line that draws
+# itself under it), highlight (a band of the accent behind it) or colour (the word turns to the accent).
+stress: underline
+
+photo_veil:
+  color: background
+  opacity: 0.82
 
 # A logo on some scenes: `file` is a path from the project (an image of theme/branding/, for example), `corner` one of
 # top-left, top-right, bottom-left, bottom-right, `scenes` the types of scene it goes on, and `size` its height in px.
@@ -58,6 +86,7 @@ text:
   stat:       {size: 220, family: null, weight: null, style: null, transform: null, tracking: null, leading: null, color: null, numeric: null}  # the figure of a stat
   step:       {size: 40,  family: null, weight: null, style: null, transform: null, tracking: null, leading: null, color: null, numeric: null}  # the number of a step
   caption:    {size: 36,  family: null, weight: null, style: null, transform: null, tracking: null, leading: null, color: null}  # sources, notes, the smallest
+  code:       {size: 34,  family: null, weight: null, style: null, transform: null, tracking: null, leading: null, color: null}  # code (a monospaced font when the brand has none)
 
 # What the brand allows of the scenes and layers of the library (and of the project): coursekit offers every possibility, and
 # the project (or a course, in the `video:` section of its course.yaml) narrows them. For each piece, `allow` gives the values a

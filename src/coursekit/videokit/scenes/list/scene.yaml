@@ -2,11 +2,32 @@ label: {en: "List", es: "Lista"}
 description:
   en: A numbered list (steps, rules, keys); each item enters when the narration says it (`say`).
   es: Una lista numerada (pasos, reglas, claves); cada elemento entra cuando se locuta (`say`).
-built_from: [Background, Heading, Badge, Text, Enter]
+built_from: [Ground (Background), Heading, Badge, Text, Enter]
 props:
+  kicker: {type: text, max_chars: 40, on_screen: true, label: true, help: {en: "a label over the title: it need not be said", es: "una etiqueta sobre el título: no hace falta locutarla"}}
   title: {type: text, required: true, max_chars: 60, on_screen: true}
   items: {type: list, required: true, max_items: 5, items: {text: {type: text, max_chars: 60, on_screen: true}, say: {type: text, help: {en: "the words of the narration that say it", es: "las palabras con que se locuta"}}}}
+  background: {type: choice, values: [plain, surface, accent, photo], help: {en: "default: the background of the style of the project (config/video.yaml)", es: "por defecto: el fondo del estilo del proyecto (config/video.yaml)"}}
+  photo: {type: media, when: {background: photo}, help: {en: "with background photo: a path inside the media folder of the course (files/…), under a veil (`veil`, `veil_opacity`); describe it in `shows` of the scene", es: "con background photo: una ruta dentro de la carpeta media del curso (files/…), bajo un velo (`veil`, `veil_opacity`); descríbela en `shows` de la escena"}}
+  veil: {type: choice, values: [background, surface, accent, none], when: {background: photo}, help: {en: "with a photo: the colour of the veil over it (default that of config/video.yaml › photo_veil); none, no veil, only for a calm, light photo", es: "con foto: el color del velo sobre ella (por defecto el de config/video.yaml › photo_veil); none, sin velo, solo para una foto tranquila y clara"}}
+  veil_opacity: {type: number, when: {background: photo}, help: {en: "with a photo: how opaque the veil is, from 0 to 1 (default that of config/video.yaml › photo_veil)", es: "con foto: lo opaco que es el velo, de 0 a 1 (por defecto el de config/video.yaml › photo_veil)"}}
+  credit: {type: text, max_chars: 80, on_screen: true, help: {en: "the credit of the image of the scene (its author and its licence), small at the bottom right: a CC-BY photo requires it", es: "el crédito de la imagen de la escena (su autor y su licencia), pequeño abajo a la derecha: una foto CC-BY lo exige"}}
+  align: {type: choice, values: [left, center], help: {en: "where the content goes across (default left)", es: "dónde va el contenido en horizontal (por defecto left)"}}
+  valign: {type: choice, values: [top, middle, bottom], help: {en: "where the content goes up and down (default middle); at the bottom it keeps clear of the captions", es: "dónde va el contenido en vertical (por defecto middle); abajo deja libre la zona de los subtítulos"}}
+  marker: {type: choice, values: [number, bullet, none], help: {en: "what marks each item: its number (default), a bullet or nothing", es: "qué marca cada elemento: su número (por defecto), una viñeta o nada"}}
+  title_valign: {type: choice, values: [content, top], help: {en: "where the title goes: with the content (default) or at the top of the frame, while the content goes where valign says", es: "dónde va el título: con el contenido (por defecto) o arriba del todo, mientras el contenido va donde diga valign"}}
+  entrance: {type: choice, values: [auto, fade, rise, slide, scale, none], help: {en: "how its elements enter (default that of config/video.yaml › motion › entrance): auto, each its own way; fade; rise; slide, from its side; scale, they grow; none, no movement", es: "cómo entran sus elementos (por defecto el de config/video.yaml › motion › entrance): auto, cada uno a su manera; fade; rise, suben; slide, desde su lado; scale, crecen; none, sin movimiento"}}
+  reveal: {type: choice, values: [one-by-one, together], help: {en: "its items enter one by one, as the narration names them (default), or all together", es: "sus elementos entran uno a uno, según los nombra la locución (por defecto), o todos a la vez"}}
 # What the gallery draws it with (`coursekit video gallery`), in each language of the courses.
 example:
   en: {title: "Three habits", items: [{text: "Use a password manager"}, {text: "Turn on two-step verification"}, {text: "Never share a code"}]}
   es: {title: "Tres hábitos", items: [{text: "Usa un gestor de contraseñas"}, {text: "Activa la verificación en dos pasos"}, {text: "No compartas nunca un código"}]}
+# Other ways the gallery draws it: the props of each over those of the example.
+variants:
+  - {name: surface, label: {en: "Surface", es: "Superficie"}, props: {background: surface}}
+  - {name: accent, label: {en: "Accent", es: "Acento"}, props: {background: accent}}
+  - {name: title-top, label: {en: "Title at the top", es: "Título arriba"}, props: {title_valign: top, valign: bottom}}
+  - {name: bullets, label: {en: "Bullets", es: "Viñetas"}, props: {marker: bullet}}
+  - {name: no-marker, label: {en: "No marker", es: "Sin marca"}, props: {marker: none}}
+  - {name: photo, label: {en: "Photo", es: "Foto"}, props: {background: photo, photo: gallery-sample-photo.jpg}}
+  - {name: together, label: {en: "All together", es: "Todo a la vez"}, props: {reveal: together}}

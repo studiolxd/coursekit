@@ -194,4 +194,4 @@ def test_the_handoff_collects_a_finished_job_and_stops_while_one_waits(gemini, c
         handoff._tts_batch(Ctx(), c, send=False)
     api.state = "BATCH_STATE_SUCCEEDED"
     handoff._tts_batch(Ctx(), c, send=True)
-    assert queue(course) is None and video.resolve(c, "U1-S2-M1")["frames"] == 360
+    assert queue(course) is None and video.resolve(c, "U1-S2-M1")["frames"] == 340  # three scenes, two transitions of 10 frames

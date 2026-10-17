@@ -6,7 +6,12 @@ built_from: [Card, Text, Enter]
 props:
   text: {type: text, required: true, max_chars: 60, on_screen: true}
   corner: {type: choice, values: [top-left, top-right, bottom-left, bottom-right], help: {en: "default top-right", es: "por defecto top-right"}}
+  tone: {type: choice, values: [accent, correct, wrong, surface], help: {en: "the mark at its side: the accent (default, a tip), right (a good practice), wrong (a warning) or none (surface)", es: "la marca de su lado: el acento (por defecto, un consejo), correcto (una buena práctica), incorrecto (un aviso) o ninguna (surface)"}}
 # What the gallery draws it with (`coursekit video gallery`), in each language of the courses.
 example:
   en: {text: "Twelve characters or more"}
   es: {text: "Doce caracteres o más"}
+# Other ways the gallery draws it: the props of each over those of the example.
+variants:
+  - {name: wrong, label: {en: "Warning", es: "Aviso"}, props: {tone: wrong}}
+  - {name: correct, label: {en: "Good practice", es: "Buena práctica"}, props: {tone: correct}}

@@ -1,5 +1,5 @@
 import React from "react";
-import { AbsoluteFill, Easing, OffthreadVideo, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, Easing, OffthreadVideo, staticFile, useCurrentFrame, useVideoConfig, Img } from "remotion";
 import { useColor } from "../theme";
 import { useSceneTime, whenSaid } from "../timing";
 
@@ -14,6 +14,7 @@ export type Focus = { word?: string; at?: number; event?: string; fx?: number; f
 type Span = { from: number; to: number; fx: number; fy: number; scale: number };
 
 const EASE = 0.5;
+const IMAGE = /\.(svg|png|jpe?g|webp)$/i;  // a still of a screen (the example of the gallery): zoomed the same way
 const JOIN = 0.8;
 const normal = (text: string) =>
   text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9ñ]+/g, " ").trim();
@@ -93,8 +94,10 @@ export const ScreenRecording: React.FC<{ src: string; events?: ScreenEvent[]; fo
   return (
     <AbsoluteFill style={{ background: color("background"), overflow: "hidden" }}>
       <AbsoluteFill style={{ transform: `scale(${s})`, transformOrigin: origin }}>
-        <OffthreadVideo src={/^https?:/.test(src) ? src : staticFile(src)} startFrom={Math.round(startFrom * fps)} muted
-          style={{ width: "100%", height: "100%" }} />
+        {IMAGE.test(src)
+          ? <Img src={/^https?:/.test(src) ? src : staticFile(src)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          : <OffthreadVideo src={/^https?:/.test(src) ? src : staticFile(src)} startFrom={Math.round(startFrom * fps)} muted
+              style={{ width: "100%", height: "100%" }} />}
         {ring && s > 1.05 ? (
           <div style={{ position: "absolute", left: `${fx * 100}%`, top: `${fy * 100}%`, width: 64, height: 64, marginLeft: -32,
             marginTop: -32, borderRadius: "50%", border: `4px solid ${color("accent-ink")}`, opacity: Math.min(1, (s - 1) / (scale - 1)) }} />

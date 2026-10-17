@@ -52,7 +52,7 @@ def test_the_catalog_shows_the_library_and_how_it_is_built(course):  # noqa: F81
     text = "\n".join(lines)
     for name in ("title", "split", "stat", "outro", "screencast", "compare", "list", "quote", "diagram", "lower-third", "callout"):
         assert f"{name} [library]" in text
-    assert "built from: Background, TitleBlock" in text and "title: text, required, max 60, on screen" in text
+    assert "built from: Ground (Background), TitleBlock" in text and "title: text, required, max 60, on screen" in text
     assert "atoms: Arrow, Background, Badge, Card, Counter" in text and "molecules: BulletList, CompareColumn, StatBlock" in text
     assert text.index("Scenes:") < text.index("Layers (over a scene")
     assert "Two sides compared" in text and "— a figure is never shown without its source" in text
@@ -68,11 +68,11 @@ def test_the_catalog_speaks_the_language_of_the_person(course, monkeypatch):  # 
 def test_a_scene_of_the_course_hides_one_of_the_project_which_hides_one_of_the_library(course):  # noqa: F811
     root = course.parent.parent
     scene_folder(root / "tools" / "remotion" / "src" / "scenes", "title", "the title of the project")
-    scene_folder(root / "tools" / "remotion" / "src" / "scenes", "timeline", "a timeline of the project")
-    scene_folder(course / "video" / "scenes", "timeline", "a timeline of this course")
+    scene_folder(root / "tools" / "remotion" / "src" / "scenes", "roadmap", "a roadmap of the project")
+    scene_folder(course / "video" / "scenes", "roadmap", "a roadmap of this course")
     found = video.scenes(montage(course))
     assert found["title"]["origin"] == "project" and found["title"]["hides"] == "library"
-    assert found["timeline"]["origin"] == "course" and found["timeline"]["meta"]["description"] == "a timeline of this course"
+    assert found["roadmap"]["origin"] == "course" and found["roadmap"]["meta"]["description"] == "a roadmap of this course"
     assert found["split"]["origin"] == "library"
 
 
@@ -80,12 +80,12 @@ def test_the_registry_imports_the_scenes_that_win(course):  # noqa: F811
     root = course.parent.parent
     (root / "tools" / "remotion" / "node_modules").mkdir(parents=True)
     scene_folder(root / "tools" / "remotion" / "src" / "scenes", "title")
-    scene_folder(course / "video" / "scenes", "timeline")
+    scene_folder(course / "video" / "scenes", "roadmap")
     workspace = video.sync(montage(course))
     registry = (workspace / "kit" / "registry.generated.ts").read_text(encoding="utf-8")
     assert 'import s_title from "../src/scenes/title";' in registry and 'import s_split from "./scenes/split";' in registry
-    assert 'import s_timeline from "../src/.course/pwd-scenes-timeline";' in registry
-    assert (workspace / "src" / ".course" / "pwd-scenes-timeline" / "index.tsx").exists()
+    assert 'import s_roadmap from "../src/.course/pwd-scenes-roadmap";' in registry
+    assert (workspace / "src" / ".course" / "pwd-scenes-roadmap" / "index.tsx").exists()
     assert 'import l_lower_third from "./layers/lower-third";' in registry and '"lower-third": l_lower_third' in registry
     assert (workspace / "kit" / "Montage.tsx").exists() and not (workspace / "kit" / "__init__.py").exists()
 
@@ -133,8 +133,8 @@ def test_each_scene_lasts_what_its_voice_lasts_and_only_what_changed_is_voiced_a
     assert video.voice(voiced, "U1-S2-M1", lambda m: None) == 0  # nothing changed
     resolved = video.resolve(voiced, "U1-S2-M1")
     timing = [(s["id"], s["from"], s["frames"]) for s in resolved["scenes"]]
-    assert timing == [("opening", 0, 135), ("length", 135, 135), ("close", 270, 90)]
-    assert resolved["frames"] == 360 and resolved["scenes"][1]["audio"] == "files/U1-S2-M1/length.mp3"
+    assert timing == [("opening", 0, 135), ("length", 125, 135), ("close", 250, 90)]  # each enters over the end of the one before
+    assert resolved["frames"] == 340 and resolved["scenes"][1]["audio"] == "files/U1-S2-M1/length.mp3"
     assert resolved["scenes"][1]["words"][0] == {"w": "La", "start": 0.0, "end": 0.4}
     assert resolved["tokens"]["color"]["background"] and resolved["motion"]["enter"] == 18
     changed = json.loads(json.dumps(MONTAGE))
@@ -162,16 +162,17 @@ def test_render_leaves_the_video_with_its_captions_words_and_accessible_transcri
     files = course / "media" / "files"
     assert done["video"] == files / "U1-S2-M1.mp4" and done["scenes"] == 3
     vtt = (files / "U1-S2-M1.vtt").read_text(encoding="utf-8")
-    assert "Hoy vemos por qué las contraseñas largas protegen más." in vtt and "00:00:04.500 -->" in vtt  # the second scene, at 4.5 s
+    # the second scene at 4.5 s, less the transition it enters with
+    assert "Hoy vemos por qué las contraseñas largas protegen más." in vtt and "00:00:04.167 -->" in vtt
     words = json.loads((files / "U1-S2-M1.words.json").read_text(encoding="utf-8"))["words"]
-    assert words[0]["w"] == "Hoy" and any(w["w"] == "La" and w["start"] == 4.5 for w in words)
+    assert words[0]["w"] == "Hoy" and any(w["w"] == "La" and w["start"] == 4.167 for w in words)
     asset = manifest(course)[0]
     assert asset["status"] == "produced" and asset["recipe"] == "montage" and asset["file"] == "media/files/U1-S2-M1.mp4"
     assert asset["transcript"].startswith("[0:00]\nEn pantalla: Unidad 1. Contraseñas largas")
     scenes = yaml.safe_load((course / "media" / "scripts" / "U1-S2-M1.scenes.yaml").read_text(encoding="utf-8"))
-    assert scenes["scenes"][1]["text"] == ["La longitud manda", "Doce caracteres o más"] and scenes["scenes"][1]["at"] == 4.5
+    assert scenes["scenes"][1]["text"] == ["La longitud manda", "Doce caracteres o más"] and scenes["scenes"][1]["at"] == 4.167
     assert scenes["scenes"][0]["labels"] == ["Unidad 1"] and scenes["scenes"][0]["text"] == ["Contraseñas largas"]
-    assert "[0:09]\nEn pantalla: El cierre, sobre el color de acento" in asset["transcript"]  # a silent scene has its minute too
+    assert "[0:08]\nEn pantalla: El cierre, sobre el color de acento" in asset["transcript"]  # a silent scene has its minute too
 
 
 def test_a_new_montage_starts_from_the_resource(course, capsys):  # noqa: F811
@@ -242,11 +243,14 @@ def test_the_style_of_the_project_and_of_a_course_shape_the_video(voiced, course
     write_style(root, motion={"character": "calm", "stagger": 8}, background="band", format={"fps": 25},
                 logo={"file": "theme/branding/logo.png", "corner": "top-left", "scenes": ["title"]})
     resolved = video.resolve(montage(course), "U1-S2-M1")
-    assert resolved["motion"] == {"enter": 26, "stagger": 8, "fade": 14, "damping": 28} and resolved["fps"] == 25
+    assert resolved["motion"] == {"enter": 26, "stagger": 8, "fade": 14, "damping": 28, "entrance": "auto"} and resolved["fps"] == 25
     assert resolved["style"]["background"] == "band" and resolved["style"]["logo"]["src"].startswith("data:image/png;base64,")
     assert resolved["style"]["logo"]["corner"] == "top-left" and resolved["style"]["logo"]["scenes"] == ["title"]
     edit_course(course, lambda d: d.update(video={"motion": {"character": "lively"}}))  # one course, livelier
     assert video.resolve(montage(course), "U1-S2-M1")["motion"]["enter"] == 11
+    edit_course(course, lambda d: d.update(video={"motion": {"character": "none", "entrance": "fade"}}))  # no movement
+    still = video.resolve(montage(course), "U1-S2-M1")["motion"]
+    assert still["enter"] == 0 and still["fade"] == 10 and still["entrance"] == "fade"
     write_style(root, logo={"file": "theme/branding/none.png"})
     with pytest.raises(video.VideoError, match="does not exist"):
         video.resolve(montage(course), "U1-S2-M1")
@@ -281,9 +285,6 @@ def test_every_piece_of_the_library_has_an_example_in_each_language_with_its_req
     data = montage(course)
     for kind in ("scenes", "layers"):
         for name, piece in video.pieces(data, kind).items():
-            if name == "screencast":  # it needs a real recording
-                assert video.example(piece, "en") is None
-                continue
             for language in ("en", "es"):
                 props = video.example(piece, language)
                 assert props, f"{kind}/{name} has no example in {language}"
@@ -323,7 +324,7 @@ def test_the_gallery_draws_every_piece_with_the_theme_and_the_style_of_the_cours
     prepare_asset(course, capsys)
     root = course.parent.parent
     fake_app(monkeypatch, root)
-    scene_folder(course / "video" / "scenes", "timeline", "a timeline of this course")  # no example: listed, not drawn
+    scene_folder(course / "video" / "scenes", "roadmap", "a roadmap of this course")  # no example: listed, not drawn
     write_style(root, shapes={"radius": 0, "shadow": "none"})
     rendered, stills = [], []
 
@@ -341,19 +342,34 @@ def test_the_gallery_draws_every_piece_with_the_theme_and_the_style_of_the_cours
     page = video.gallery(montage(course), lambda m: None)
     props = json.loads(Path(next(a for a in rendered[0] if a.startswith("--props=")).split("=", 1)[1]).read_text(encoding="utf-8"))
     names = [s["layers"][0]["id"] if s["layers"] else s["id"] for s in props["scenes"]]
-    covers = ["title", "title-centred", "title-surface", "title-accent", "title-photo-side", "title-photo-panel", "title-photo-over"]
-    assert names == [*covers, "compare", "diagram", "list", "outro", "quote", "split", "stat", "statement",
-                     "statement-accent", "callout", "highlight", "lower-third"]
+    covers = ["title", "title-centred", "title-surface", "title-accent", "title-photo-side", "title-photo-panel", "title-photo-over",
+              "title-still"]
+    pairs = lambda name, *variants: [name, *(f"{name}-{v}" for v in variants)]  # noqa: E731
+    assert names == [*covers, *pairs("annotated", "together"), *pairs("chapter", "photo"), *pairs("chart", "stress"),
+                     "code", *pairs("compare", "surface", "accent", "title-top", "photo", "no-marks"),
+                     *pairs("diagram", "surface", "accent", "title-top", "no-arrows", "no-numbers", "photo", "together"),
+                     *pairs("image", "pan", "credit"),
+                     *pairs("list", "surface", "accent", "title-top", "bullets", "no-marker", "photo", "together"),
+                     *pairs("outro", "plain", "surface", "photo"), *pairs("question", "photo"),
+                     *pairs("quote", "surface", "accent", "photo", "bar", "portrait"),
+                     *pairs("screencast", "window"),
+                     *pairs("split", "surface", "accent", "numbers", "no-marker", "title-top", "photo", "screenshot", "wide-media"),
+                     *pairs("stat", "surface", "accent", "title-top", "photo", "side"),
+                     *pairs("statement", "accent", "surface", "title-top", "photo"), *pairs("timeline", "photo"),
+                     *pairs("callout", "wrong", "correct"), *pairs("highlight", "box-dim"), *pairs("lower-third", "right", "card"),
+                     *pairs("pointer", "top"), "progress",
+                     *[name for kind in video.TRANSITIONS for name in (f"transition-{kind}-from", f"transition-{kind}")]]
     assert props["scenes"][3]["props"]["background"] == "accent" and props["scenes"][3]["type"] == "title"  # a variant
-    layer = props["scenes"][-1]
+    layer = next(s for s in props["scenes"] if s["layers"] and s["layers"][0]["id"] == "lower-third")
     assert layer["type"] == "title" and layer["layers"][0]["props"]["subtitle"] == "Responsable de seguridad, ACME"
     assert props["style"]["shapes"] == {"radius": 0, "shadow": "none"} and props["tokens"]["color"]["background"]
-    assert "--scale=0.5" in rendered[0] and len(stills) == 2 * len(names)  # a frame and a clip of each
+    assert "--scale=0.5" in rendered[0] and len(stills) == 2 * (len(names) - len(video.TRANSITIONS))  # a frame and a clip each
+    # (one for the two scenes of a transition)
     data = gallery_data(page)  # the interface of the galleries, with the clips in place of the player
     assert data["rendered"] and data["clips"]["title-photo-over"] == {"clip": "clips/title-photo-over.mp4",
                                                                       "poster": "frames/title-photo-over.png"}
     pieces = {p["name"]: p for p in data["pieces"]}
-    assert pieces["title"]["label"] == "Cover" and pieces["timeline"]["example"] is None and "timeline" not in data["clips"]
+    assert pieces["title"]["label"] == "Cover" and pieces["roadmap"]["example"] is None and "roadmap" not in data["clips"]
     assert {v["label"] for v in pieces["title"]["variants"]} >= {"Accent", "Photo with a panel"}
     assert '<link rel="stylesheet" href="app.css">' in page.read_text(encoding="utf-8") and '<html lang="en">' in page.read_text()
     assert "app.css" not in page.with_name("stage.html").read_text(encoding="utf-8")  # the pieces, with no CSS of Studio LXD
@@ -396,7 +412,7 @@ def test_the_live_gallery_carries_every_piece_with_its_props_and_bundles_the_pla
     calls = fake_app(monkeypatch, root)
     page = video.live_gallery(montage(course), lambda m: None)
     data = gallery_data(page)
-    assert [p["name"] for p in data["pieces"]][:2] == ["title", "compare"] and data["montage"]["tokens"]["color"]
+    assert [p["name"] for p in data["pieces"]][:2] == ["title", "annotated"] and data["montage"]["tokens"]["color"]
     assert not data.get("rendered")
     title = data["pieces"][0]
     assert title["props"]["layout"]["when"] == {"background": "photo"} and {v["name"] for v in title["variants"]} >= {"accent"}
@@ -444,14 +460,14 @@ def test_without_a_code_the_gallery_is_the_one_of_the_project(course, capsys, mo
     prepare_asset(course, capsys)
     root = course.parent.parent
     fake_app(monkeypatch, root)
-    scene_folder(course / "video" / "scenes", "timeline", "a timeline of this course")  # of the course: not in the project's
+    scene_folder(course / "video" / "scenes", "roadmap", "a roadmap of this course")  # of the course: not in the project's
     monkeypatch.setattr(video, "_remotion", lambda workspace, args: Path(args[3]).write_bytes(b"mp4"))
     monkeypatch.setattr(video.mediatools, "run", lambda cmd, **kw: Path(cmd[-1]).write_bytes(b"png"))
     assert main(["video", "gallery"]) == 0
     page = root / ".cache" / "media" / "project" / "gallery" / "index.html"
     assert "media/project/gallery/index.html" in capsys.readouterr().out
-    assert "timeline" not in {p["name"] for p in gallery_data(page)["pieces"]}
-    assert main(["video", "catalog"]) == 0 and "timeline" not in capsys.readouterr().out
+    assert "roadmap" not in {p["name"] for p in gallery_data(page)["pieces"]}
+    assert main(["video", "catalog"]) == 0 and "roadmap" not in capsys.readouterr().out
     assert main(["video", "check"]) == 2 and "needs the code of the course" in capsys.readouterr().err
     guide = root / "theme" / "branding" / "media-style.md"  # the signature of the guide points to that gallery first
     guide.parent.mkdir(parents=True, exist_ok=True)
@@ -555,7 +571,7 @@ def test_export_leaves_each_piece_apart_and_the_timeline(voiced, course, monkeyp
     assert done == {"folder": folder, "scenes": 3, "layers": 1, "voices": 2}
     assert sorted(p.name for p in (folder / "scenes").iterdir()) == ["01-opening.mp4", "02-length.mp4", "03-close.mp4"]
     assert (folder / "layers" / "length-1.mov").exists() and not (folder / "clean.mp4").exists()
-    assert any("--prores-profile=4444" in a for a in rendered[1]) and "--frames=180-236" in rendered[1]
+    assert any("--prores-profile=4444" in a for a in rendered[1]) and "--frames=170-226" in rendered[1]
     props = json.loads((course.parent.parent / ".cache" / "video" / "PWD" / "U1-S2-M1.props.json").read_text(encoding="utf-8"))
     assert props["mode"] == {"layer": "length-1"}
     assert "timeline.fcpxml" in [p.name for p in folder.iterdir()]

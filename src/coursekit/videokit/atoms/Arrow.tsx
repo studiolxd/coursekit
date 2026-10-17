@@ -9,7 +9,7 @@ export const Arrow: React.FC<{ at?: number; length?: number; vertical?: boolean;
   const frame = useCurrentFrame();
   const { motion } = useTheme();
   const color = useColor();
-  const k = interpolate(frame - at, [0, motion.enter], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const k = interpolate(frame - at, [0, Math.max(1, motion.enter)], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   const head = thickness * 3;
   const w = vertical ? head * 2 : length;
   const h = vertical ? length : head * 2;

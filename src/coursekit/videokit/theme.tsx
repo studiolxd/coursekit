@@ -21,6 +21,23 @@ export type Motion = {
   fade: number;
   /** Damping of the springs: higher is calmer. */
   damping: number;
+  /** How things enter (config/video.yaml › motion › entrance): auto, each piece its own way. */
+  entrance?: Entrance;
+};
+
+export type Entrance = "auto" | "fade" | "rise" | "slide" | "scale" | "none";
+export type Reveal = "one-by-one" | "together";
+
+/** How the scene being drawn moves: its `entrance` and `reveal` props over those of the project. */
+const SceneMotionContext = React.createContext<{ entrance?: Entrance; reveal?: Reveal }>({});
+export const SceneMotion: React.FC<{ entrance?: Entrance; reveal?: Reveal; children: React.ReactNode }> = ({ entrance, reveal, children }) => (
+  <SceneMotionContext.Provider value={{ entrance, reveal }}>{children}</SceneMotionContext.Provider>
+);
+/** The entrance and the reveal of the scene: its own, else the project's (auto, one by one). */
+export const useSceneMotion = () => {
+  const own = React.useContext(SceneMotionContext);
+  const { motion } = useTheme();
+  return { entrance: own.entrance ?? motion.entrance ?? "auto", reveal: own.reveal ?? "one-by-one" } as { entrance: Entrance; reveal: Reveal };
 };
 
 export const DEFAULT_MOTION: Motion = { enter: 18, stagger: 6, fade: 10, damping: 18 };
@@ -29,6 +46,10 @@ export const DEFAULT_MOTION: Motion = { enter: 18, stagger: 6, fade: 10, damping
  *  shapes of the panels and the weights of the text (null: what each piece draws), and the fonts that go inside the video. */
 export type Style = {
   background?: "plain" | "band" | "shape";
+  /** The veil over a photo for background (config/video.yaml › photo_veil): its colour (a role, or none) and how opaque it is. */
+  veil?: { color: string; opacity: number };
+  /** How the stressed word of a scene is marked (config/video.yaml › stress). */
+  stress?: "underline" | "highlight" | "colour";
   logo?: { src: string; corner: string; scenes: string[]; size: number } | null;
   shapes?: { radius?: number | null; shadow?: "soft" | "none" | null; border?: number | null };
   weights?: { normal?: number | null; strong?: number | null };
@@ -107,8 +128,29 @@ export const useWeight = () => {
 /** A colour of the theme by its token name, with a fallback for a token the theme lacks. The accent is a fill (a close, the
  *  circle of a number); what is drawn thin on the background with it (a line, an arrow, a mark, a word) is `accent-ink`, the
  *  accent that reads on the background: the same colour when the accent already reads, a darker one when it is only a fill. */
-export const useColor = () => {
+export const useColor = (raw = false) => {
   const { tokens } = useTheme();
-  return (name: string, fallback?: string) => tokens.color[name] ?? (fallback ? tokens.color[fallback] : undefined)
-    ?? (name.endsWith("-ink") ? tokens.color[name.slice(0, -4)] : undefined) ?? "#000000";
+  const ground = React.useContext(GroundContext);
+  const swap = raw ? undefined : SWAPS[ground];
+  return (asked: string, fallback?: string) => {
+    const name = swap?.[asked] ?? asked;
+    return tokens.color[name] ?? (fallback ? tokens.color[swap?.[fallback] ?? fallback] : undefined)
+      ?? (name.endsWith("-ink") ? tokens.color[name.slice(0, -4)] : undefined) ?? "#000000";
+  };
 };
+
+/** What a scene is drawn on: its background (`base`, the background colour or a shape or a band of the style), the surface colour
+ *  whole or the accent whole. On the accent every ink of the piece (the text, the titles, the marks, the accent drawn thin) is
+ *  the text on the accent, and what is on the accent (a number in its circle) swaps with it; on the surface a panel takes the
+ *  background colour, so it still stands out. A panel puts its children back on `base`. */
+export type Ground = "base" | "surface" | "accent";
+const GroundContext = React.createContext<Ground>("base");
+const ON_ACCENT = ["text", "headings", "text-muted", "accent-ink", "link", "accent"];
+const SWAPS: Record<Ground, Record<string, string> | undefined> = {
+  base: undefined,
+  surface: { surface: "background" },
+  accent: { ...Object.fromEntries(ON_ACCENT.map((name) => [name, "on-accent"])), "on-accent": "accent" },
+};
+export const OnGround: React.FC<{ ground: Ground; children: React.ReactNode }> = ({ ground, children }) => (
+  <GroundContext.Provider value={ground}>{children}</GroundContext.Provider>
+);
