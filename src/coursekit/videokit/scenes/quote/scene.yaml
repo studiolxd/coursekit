@@ -5,3 +5,7 @@ props:
   author: {type: text, required: true, max_chars: 40, on_screen: true, label: true}
   role: {type: text, max_chars: 60, on_screen: true, label: true}
   stress: {type: text, help: "a word of the quote the narration stresses"}
+# What the gallery draws it with (`coursekit video gallery`), in each language of the courses.
+example:
+  en: {quote: "A password you can remember is a password you will not write down.", author: "Ana Ruiz", role: "Security lead, ACME", stress: "remember"}
+  es: {quote: "Una contraseña que recuerdas es una contraseña que no apuntas.", author: "Ana Ruiz", role: "Responsable de seguridad, ACME", stress: "recuerdas"}

@@ -312,12 +312,15 @@ def cmd_video(args: argparse.Namespace) -> int:
     project = _project()
     course = coursemod.load(project, args.code)
     root = project.root
-    if args.action != "catalog" and not args.id:
+    if args.action not in ("catalog", "gallery") and not args.id:
         print(t("video", "needs_id", action=args.action), file=sys.stderr)
         return 2
     try:
         if args.action == "catalog":
             print("\n".join(videomod.catalog(course)))
+            return 0
+        if args.action == "gallery":
+            print(t("video", "gallery_done", path=videomod.gallery(course).relative_to(root).as_posix()))
             return 0
         if args.action == "check":
             findings = videomod.check(course, args.id)
@@ -1388,7 +1391,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.set_defaults(func=cmd_media)
 
     p = sub.add_parser("video", help=t("commands", "help_video"))
-    p.add_argument("action", choices=("new", "check", "voice", "preview", "render", "catalog", "export"))
+    p.add_argument("action", choices=("new", "check", "voice", "preview", "render", "catalog", "gallery", "export"))
     p.add_argument("code")
     p.add_argument("id", nargs="?")
     p.add_argument("--batch", action="store_true", help=t("commands", "help_video_batch"))

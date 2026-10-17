@@ -55,3 +55,11 @@ fonts_missing: {es: "la hoja de fuentes de los vídeos ({path}, config/video.yam
 font_remote: {es: "{path} carga {url} de internet: las fuentes de un vídeo tienen que estar en el proyecto (descárgalas junto a la hoja)", en: "{path} loads {url} from the internet: the fonts of a video must be in the project (download them next to the stylesheet)"}
 font_file_missing: {es: "{path} apunta a {file}, que no está en el proyecto", en: "{path} points to {file}, which is not in the project"}
 fonts_empty: {es: "{path} no declara ninguna fuente (@font-face con font-family)", en: "{path} declares no font (@font-face with font-family)"}
+gallery_empty: {es: "ninguna escena ni capa de {code} tiene ejemplo (example: en su scene.yaml o layer.yaml)", en: "no scene or layer of {code} has an example (example: in its scene.yaml or layer.yaml)"}
+gallery_rendering: {es: "pintando {count} piezas con el tema y el estilo del curso…", en: "drawing {count} pieces with the theme and the style of the course…"}
+gallery_hides: {es: "tapa la de {origin}", en: "hides the {origin} one"}
+gallery_no_example: {es: "sin ejemplo: añade example: a su fichero de metadatos para verla aquí", en: "no example: add example: to its metadata file to see it here"}
+gallery_title: {es: "Galería de vídeo de {code}", en: "Video gallery of {code}"}
+gallery_fonts: {es: "Fuente: {family} · ficheros dentro del vídeo: {files}", en: "Font: {family} · files inside the video: {files}"}
+gallery_machine_fonts: {es: "ninguno (las de la máquina)", en: "none (the machine's)"}
+gallery_done: {es: "galería en {path} (ábrela en el navegador)", en: "gallery in {path} (open it in the browser)"}

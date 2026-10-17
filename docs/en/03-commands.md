@@ -846,14 +846,14 @@ coursekit media set PWD U1-S2-M1 --status produced --recipe agent-svg --file med
 A video as data: a montage of scenes (`media/scripts/<id>.video.yaml`) rendered with the library of scenes of coursekit in Remotion, in the theme of the course; see [Video montage](07-media.md#video-montage). Who: agents (the media agent) and people.
 
 ```
-coursekit video [--batch] {new,check,voice,preview,render,catalog,export} code [id]
+coursekit video [--batch] {new,check,voice,preview,render,catalog,gallery,export} code [id]
 ```
 
 | Argument | Values / default | Meaning |
 |---|---|---|
-| `action` | `new`, `check`, `voice`, `preview`, `render`, `catalog`, `export` | See below. |
+| `action` | `new`, `check`, `voice`, `preview`, `render`, `catalog`, `gallery`, `export` | See below. |
 | `code` | course code or folder | Course. |
-| `id` | asset id | The video resource; every action but `catalog` needs it (exit code 2 without it). |
+| `id` | asset id | The video resource; every action but `catalog` and `gallery` needs it (exit code 2 without it). |
 | `--batch` | flag | `voice` only: put the scenes in the queue of the Gemini batch instead of voicing them. |
 
 Actions:
@@ -863,6 +863,7 @@ Actions:
 - `voice`: the narration of each scene with the voice of the course, and the timings of its words (`media/files/<id>/<scene>.mp3` and `.words.json`); only the scenes whose text or voice changed are made again. It needs a voice (see [`coursekit voice`](#coursekit-voice)) and, except with ElevenLabs, `stable-ts`. With `--batch` (only the Gemini voice) the scenes whose text or voice changed go to the queue of the batch; [`coursekit tts-batch collect`](#coursekit-tts-batch) writes their audio and the timings of their words, and `render` goes on from there.
 - `preview`: a frame of each scene (at 70 % of it, when what enters has entered), small, in one image: `.cache/media/<CODE>/<id>-preview.png`, before the whole render.
 - `render`: the video in `media/files/<id>.mp4` (its voice at the loudness of `media › checks`), with its captions (`.vtt`, a cue per sentence that stays until the next one), its words (`.words.json`), its scenes described (`media/scripts/<id>.scenes.yaml`) and its accessible transcript and track of descriptions ([Accessibility of videos](07-media.md#accessibility-of-videos)); the asset becomes `produced` with the recipe `montage` (`screen-recording` when it shows a real interface and has a `screencast` of a real recording). Like any generated resource, it says first what it shows (`coursekit media set CODE ID --depicts`).
+- `gallery`: every scene and layer the course can use, drawn with its example (`example:` of its `scene.yaml` or `layer.yaml`) in the theme of the course and the style of `config/video.yaml`: one short video with all of them, a frame of each and a page to look at them, `.cache/media/<CODE>/gallery/index.html` (each piece with its name, where it comes from, its props and its motion). What has no example is listed without a picture. To see how the library looks with your tokens before writing a montage; run it again when the theme or the style change. It needs the Remotion workspace and `ffmpeg`.
 - `catalog`: the scenes and the layers the course can use, from the library, the project and the course (which hides which), with what each one is, what it is built from and its props (type, required, maximum characters, on screen); and the atoms and molecules of the library, marking those the project or the course replaces.
 
 - `export`: the pieces of the video, apart, and its timeline, to retouch it by hand in an editor (DaVinci Resolve, Final Cut, Premiere), in `media/edit/<id>/` (ignored by git): each scene clean, without its layers or sound (`scenes/NN-<scene>.mp4`, exact to the frame); each layer alone with transparency (`layers/<layer>.mov`, ProRes 4444); the voice of each scene (`voices/`); the captions in `captions.srt`; and the timeline in `timeline.fcpxml` (FCPXML 1.10: the scenes in the main storyline, the layers connected above, the voices below, a marker on each scene; in DaVinci, File › Import › Timeline) and `timeline.otio` (OpenTimelineIO). The paths inside are absolute: the export is for this machine.
@@ -876,6 +877,7 @@ coursekit video voice PWD U1-S2-M1
 coursekit video preview PWD U1-S2-M1
 coursekit video render PWD U1-S2-M1
 coursekit video catalog PWD
+coursekit video gallery PWD
 coursekit video export PWD U1-S2-M1
 ```
 

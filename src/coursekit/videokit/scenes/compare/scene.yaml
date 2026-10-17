@@ -4,3 +4,9 @@ props:
   title: {type: text, max_chars: 60, on_screen: true}
   left: {type: object, required: true, fields: {title: {type: text, max_chars: 28, on_screen: true}, items: {type: list, max_items: 4, items_max_chars: 48, on_screen: true}, say: {type: text, help: "the words that name it"}, mood: {type: choice, values: [good, bad, neutral], help: "default bad"}}}
   right: {type: object, required: true, fields: {title: {type: text, max_chars: 28, on_screen: true}, items: {type: list, max_items: 4, items_max_chars: 48, on_screen: true}, say: {type: text}, mood: {type: choice, values: [good, bad, neutral], help: "default good"}}}
+# What the gallery draws it with (`coursekit video gallery`), in each language of the courses.
+example:
+  en: {title: "Short or long?", left: {title: "Short", items: ["Easy to guess", "Cracked in minutes"], mood: bad},
+       right: {title: "Long", items: ["Easy to remember", "Takes centuries"], mood: good}}
+  es: {title: "¿Corta o larga?", left: {title: "Corta", items: ["Fácil de adivinar", "Se rompe en minutos"], mood: bad},
+       right: {title: "Larga", items: ["Fácil de recordar", "Tarda siglos"], mood: good}}

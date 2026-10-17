@@ -846,14 +846,14 @@ coursekit media set PWD U1-S2-M1 --status produced --recipe agent-svg --file med
 Un vídeo como datos: un montaje de escenas (`media/scripts/<id>.video.yaml`) que se renderiza con la biblioteca de escenas de coursekit en Remotion, con el tema del curso; mira [Montaje de vídeo](07-media.md#montaje-de-vídeo). Quién: agentes (el agente de multimedia) y personas.
 
 ```
-coursekit video [--batch] {new,check,voice,preview,render,catalog,export} code [id]
+coursekit video [--batch] {new,check,voice,preview,render,catalog,gallery,export} code [id]
 ```
 
 | Argumento | Valores / por defecto | Significado |
 |---|---|---|
-| `action` | `new`, `check`, `voice`, `preview`, `render`, `catalog`, `export` | Mira abajo. |
+| `action` | `new`, `check`, `voice`, `preview`, `render`, `catalog`, `gallery`, `export` | Mira abajo. |
 | `code` | código o carpeta del curso | Curso. |
-| `id` | id del recurso | El recurso de vídeo; todas las acciones salvo `catalog` lo necesitan (código de salida 2 sin él). |
+| `id` | id del recurso | El recurso de vídeo; todas las acciones salvo `catalog` y `gallery` lo necesitan (código de salida 2 sin él). |
 | `--batch` | indicador | Solo `voice`: añade las escenas a la cola del batch de Gemini en lugar de locutarlas. |
 
 Acciones:
@@ -863,6 +863,7 @@ Acciones:
 - `voice`: la locución de cada escena con la voz del curso, y los tiempos de sus palabras (`media/files/<id>/<escena>.mp3` y `.words.json`); solo se vuelven a hacer las escenas cuyo texto o voz cambió. Necesita una voz (mira [`coursekit voice`](#coursekit-voice)) y, salvo con ElevenLabs, `stable-ts`. Con `--batch` (solo la voz de Gemini) las escenas cuyo texto o voz cambió van a la cola del batch; [`coursekit tts-batch collect`](#coursekit-tts-batch) escribe su audio y los tiempos de sus palabras, y `render` sigue desde ahí.
 - `preview`: un fotograma de cada escena (al 70 %, cuando ya ha entrado lo que entra), pequeño, en una sola imagen: `.cache/media/<CODE>/<id>-preview.png`, antes del render completo.
 - `render`: el vídeo en `media/files/<id>.mp4` (su voz a la sonoridad de `media › checks`), con sus subtítulos (`.vtt`, uno por frase que sigue hasta que empieza el siguiente), sus palabras (`.words.json`), sus escenas descritas (`media/scripts/<id>.scenes.yaml`) y su transcripción accesible y pista de descripciones ([Accesibilidad de los vídeos](07-media.md#accesibilidad-de-los-vídeos)); el recurso pasa a `produced` con la receta `montage` (`screen-recording` cuando muestra una interfaz real y tiene un `screencast` de una grabación real). Como todo recurso generado, dice antes qué muestra (`coursekit media set CODE ID --depicts`).
+- `gallery`: todas las escenas y capas que puede usar el curso, pintadas con su ejemplo (`example:` de su `scene.yaml` o `layer.yaml`) en el tema del curso y el estilo de `config/video.yaml`: un vídeo corto con todas, un fotograma de cada una y una página para verlas, `.cache/media/<CODE>/gallery/index.html` (cada pieza con su nombre, de dónde viene, sus props y su movimiento). Lo que no tiene ejemplo se lista sin imagen. Para ver cómo queda la biblioteca con tus tokens antes de escribir un montaje; vuelve a ejecutarlo cuando cambien el tema o el estilo. Necesita el espacio de Remotion y `ffmpeg`.
 - `catalog`: las escenas y las capas que puede usar el curso, de la biblioteca, del proyecto y del curso (cuál tapa a cuál), con qué es cada una, de qué está hecha y sus props (tipo, obligatoria, máximo de caracteres, en pantalla); y los átomos y moléculas de la biblioteca, marcando los que sustituyen el proyecto o el curso.
 
 - `export`: las piezas del vídeo, por separado, y su línea de tiempo, para retocarlo a mano en un editor (DaVinci Resolve, Final Cut, Premiere), en `media/edit/<id>/` (git lo ignora): cada escena limpia, sin sus capas ni sonido (`scenes/NN-<escena>.mp4`, exacta al fotograma); cada capa sola con transparencia (`layers/<capa>.mov`, ProRes 4444); la voz de cada escena (`voices/`); los subtítulos en `captions.srt`; y la línea de tiempo en `timeline.fcpxml` (FCPXML 1.10: las escenas en la línea principal, las capas conectadas encima, las voces debajo, una marca en cada escena; en DaVinci, Archivo › Importar › Línea de tiempo) y `timeline.otio` (OpenTimelineIO). Las rutas de dentro son absolutas: la exportación es para esta máquina.
@@ -876,6 +877,7 @@ coursekit video voice PWD U1-S2-M1
 coursekit video preview PWD U1-S2-M1
 coursekit video render PWD U1-S2-M1
 coursekit video catalog PWD
+coursekit video gallery PWD
 coursekit video export PWD U1-S2-M1
 ```
 

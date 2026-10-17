@@ -165,13 +165,15 @@ credits.
   `media/scripts/<id>.video.yaml`, scenes one after another, each with its `type`, its `props` and what it `says`; each lasts
   what its voice lasts, in the theme of the course. The order of decision for each scene:
   1. a scene that exists tells the idea well: use it (`coursekit video catalog <CODE>` lists the scenes of the library, of
-     the project and of the course, their props, their limits and what each one is built from);
+     the project and of the course, their props, their limits and what each one is built from; `coursekit video gallery
+     <CODE>` draws them in the theme of the course, in a page you can look at);
   2. none does: **create one**, composed from the atoms and molecules of the library (`Heading`, `Text`, `Enter`, `Stagger`,
      `Underline`, `Counter`, `MediaSlot`, `Ring`, `Background`, `Card`, `Badge`, `Arrow`, `TitleBlock`, `BulletList`,
      `StatBlock`, `CompareColumn`, `StepNode`, `ScreenRecording`;
      read the scenes of `tools/remotion/kit/scenes/` to see how they are put together). A scene is a folder with
      `index.tsx` (`export default` a component that receives `{props}`, importing from `"../../../kit"`) and `scene.yaml`
-     (`description`, `built_from`, and its `props` with `type`, `required`, `max_chars`, `on_screen`, `label`). It goes in
+     (`description`, `built_from`, its `props` with `type`, `required`, `max_chars`, `on_screen`, `label`, and an
+     `example:` with props to draw it in the gallery, one block per language: `en:`, `es:`). It goes in
      `tools/remotion/src/scenes/<name>/` when other courses can use it, or in `courses/<CODE>/video/scenes/<name>/` when it
      only makes sense in this course; the same name hides the scene of the library (or of the project);
   3. an atom is missing: write it inside your scene, with the same rules.

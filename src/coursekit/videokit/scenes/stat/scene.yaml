@@ -9,3 +9,7 @@ props:
   source: {type: text, required: true, max_chars: 80, help: "a figure is never shown without its source"}
   say: {type: text, help: "the words of the narration that say the figure: it counts up then"}
   locale: {type: text, help: "how the number is written (default the language of the course)"}
+# What the gallery draws it with (`coursekit video gallery`), in each language of the courses.
+example:
+  en: {value: 81, suffix: "%", label: "of breaches start with a weak or reused password", source: "Invented figure for the gallery"}
+  es: {value: 81, suffix: " %", label: "de las brechas empiezan por una contraseña débil o repetida", source: "Cifra inventada para la galería"}

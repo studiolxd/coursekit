@@ -6,3 +6,9 @@ props:
   points: {type: list, max_items: 4, items: {text: {type: text, max_chars: 70, on_screen: true}, say: {type: text, help: "the words of the narration that name it"}}}
   media: {type: media, help: "a path inside the media folder of the course: files/… or recordings/…"}
   side: {type: choice, values: [left, right], help: "where the medium goes (default right)"}
+# What the gallery draws it with (`coursekit video gallery`), in each language of the courses.
+example:
+  en: {kicker: "The key", title: "Length comes first", media: "gallery-sample.svg",
+       points: [{text: "Twelve characters or more"}, {text: "Four words at random"}, {text: "One password per account"}]}
+  es: {kicker: "La clave", title: "La longitud manda", media: "gallery-sample.svg",
+       points: [{text: "Doce caracteres o más"}, {text: "Cuatro palabras al azar"}, {text: "Una contraseña por cuenta"}]}

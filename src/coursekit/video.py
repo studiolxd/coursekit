@@ -337,6 +337,14 @@ def motion(course: dict, data: dict) -> dict:
     return {**preset, **own, **{k: int(v) for k, v in (data.get("motion") or {}).items() if k in MOTION["balanced"]}}
 
 
+def _look(course: dict) -> dict:
+    """What the montage receives of the style: the background, the logo, the shapes, the weights and the fonts."""
+    look = style(course)
+    return {"background": str(look.get("background") or "shape"), "logo": _logo(course),
+            "shapes": _numbers(look.get("shapes"), ("radius", "border"), ("shadow",)),
+            "weights": _numbers(look.get("weights"), ("normal", "strong")), "fonts": fonts(course)}
+
+
 def _numbers(block, numbers: tuple[str, ...], words: tuple[str, ...] = ()) -> dict:
     """The keys of a block of the style that are set: numbers as numbers, words as text."""
     block = block if isinstance(block, dict) else {}
@@ -559,10 +567,7 @@ def resolve(course: dict, asset_id: str) -> dict:
         cursor += frames
     return {"fps": fps, "width": int(fmt["width"]), "height": int(fmt["height"]), "frames": cursor,
             "tokens": {k: tokens[k] for k in ("color", "font", "radius", "space") if k in tokens},
-            "motion": motion(course, data), "style": {"background": str(look.get("background") or "shape"), "logo": _logo(course),
-                                                      "shapes": _numbers(look.get("shapes"), ("radius", "border"), ("shadow",)),
-                                                      "weights": _numbers(look.get("weights"), ("normal", "strong")),
-                                                      "fonts": fonts(course)},
+            "motion": motion(course, data), "style": _look(course),
             "scenes": resolved}
 
 
@@ -672,6 +677,118 @@ def preview(course: dict, asset_id: str) -> Path:
             sheet.paste(frame, (8 + (i % columns) * (width + 8), 8 + (i // columns) * (height + 8)))
         sheet.save(out)
     return out
+
+
+GALLERY_SECONDS = 3.5  # each piece in the gallery: enough to enter and settle
+GALLERY_BASE = "title"  # the scene a layer is drawn over
+
+
+def example(piece: dict, language: str) -> dict | None:
+    """The props a piece is drawn with in the gallery (`example:` of its scene.yaml or layer.yaml, in the language of the
+    course, else English)."""
+    block = piece["meta"].get("example")
+    if not isinstance(block, dict) or not block:
+        return None
+    chosen = block.get(language) or block.get("en") or next(iter(block.values()))
+    return dict(chosen) if isinstance(chosen, dict) else None
+
+
+def _sample_image(tokens: dict) -> str:
+    """An image for the examples that show a medium, drawn with the colours of the theme."""
+    color = tokens.get("color") or {}
+    surface, accent, line = (color.get(k) or fallback for k, fallback in (("surface", "#f2f2f2"), ("accent", "#0b5fff"),
+                                                                          ("line", "#d0d0d0")))
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800">'
+            f'<rect width="1280" height="800" fill="{surface}"/><rect x="80" y="80" width="1120" height="64" fill="{line}"/>'
+            f'<rect x="80" y="200" width="520" height="520" fill="{accent}"/><rect x="660" y="200" width="540" height="40" fill="{line}"/>'
+            f'<rect x="660" y="280" width="420" height="40" fill="{line}"/><rect x="660" y="360" width="480" height="40" fill="{line}"/>'
+            "</svg>")
+
+
+def gallery(course: dict, say=print) -> Path:
+    """Every scene and layer the course can use, drawn with its example in the theme and the style of the course: one short
+    video with all of them (`gallery.mp4`), a frame of each and a page to look at them (`index.html`), in
+    .cache/media/<CODE>/gallery/. What has no example is listed without a picture."""
+    import html
+
+    try:
+        tokens = thememod.load(course["_project"], course)
+    except thememod.ThemeError as exc:
+        raise VideoError(str(exc)) from None
+    language = coursemod.language(course)
+    look = style(course)
+    fmt = {**DEFAULT_FORMAT, **(look.get("format") or {})}
+    fps = int(fmt["fps"])
+    frames = round(GALLERY_SECONDS * fps)
+    found = [("scenes", name, piece) for name, piece in sorted(pieces(course, "scenes").items())]
+    found += [("layers", name, piece) for name, piece in sorted(pieces(course, "layers").items())]
+    base = example(pieces(course, "scenes").get(GALLERY_BASE) or {"meta": {}}, language) or {"title": ""}
+    drawn, cursor = [], 0
+    for kind, name, piece in found:
+        props = example(piece, language)
+        if props is None:
+            continue
+        if kind == "scenes":
+            scene = {"id": name, "type": name, "props": props, "layers": []}
+        else:
+            scene = {"id": f"layer-{name}", "type": GALLERY_BASE, "props": base,
+                     "layers": [{"id": name, "type": name, "from": 0, "frames": frames, "props": props}]}
+        drawn.append({**scene, "from": cursor, "frames": frames, "audio": None, "words": [], "says": ""})
+        cursor += frames
+    if not drawn:
+        raise VideoError(t("video", "gallery_empty", code=course["code"]))
+    resolved = {"fps": fps, "width": int(fmt["width"]), "height": int(fmt["height"]), "frames": cursor,
+                "tokens": {k: tokens[k] for k in ("color", "font", "radius", "space") if k in tokens},
+                "motion": motion(course, {}), "style": _look(course), "scenes": drawn}
+    out = course["_project"].cache_dir / "media" / course["code"] / "gallery"
+    shutil.rmtree(out, ignore_errors=True)
+    (out / "frames").mkdir(parents=True)
+    (out / "gallery-sample.svg").write_text(_sample_image(tokens), encoding="utf-8")
+    root = sync(course)
+    props = _props_file(course, "gallery", resolved)
+    say(t("video", "gallery_rendering", count=len(drawn)))
+    video_file = out / "gallery.mp4"
+    _remotion(root, ["render", f"{KIT}/entry.ts", "Montage", str(video_file), f"--props={props}", f"--public-dir={out}", "--muted",
+                     "--scale=0.5", "--log=error"])
+    starts = {}
+    for scene in drawn:
+        name = scene["layers"][0]["id"] if scene["layers"] else scene["id"]
+        starts[name] = (scene["from"] / fps, (scene["from"] + scene["frames"]) / fps)
+        at = (scene["from"] + scene["frames"] - resolved["motion"]["fade"] - 2) / fps  # all in, before it fades out
+        mediatools.run(["ffmpeg", "-loglevel", "error", "-y", "-ss", f"{at:.3f}", "-i", str(video_file), "-frames:v", "1",
+                        str(out / "frames" / f"{name}.png")])
+    cards = []
+    for kind, name, piece in found:
+        meta = piece["meta"]
+        origin = piece["origin"] + (f" · {t('video', 'gallery_hides', origin=piece['hides'])}" if piece["hides"] else "")
+        props = ", ".join(f"{k}{'*' if isinstance(v, dict) and v.get('required') else ''}" for k, v in (meta.get("props") or {}).items())
+        if name in starts:
+            a, b = starts[name]
+            picture = (f'<video src="gallery.mp4#t={a:.2f},{b:.2f}" poster="frames/{html.escape(name)}.png" controls muted '
+                       f'preload="none"></video>')
+        else:
+            picture = f'<div class="none">{html.escape(t("video", "gallery_no_example"))}</div>'
+        cards.append(f'<article>{picture}<h3>{html.escape(name)} <small>{html.escape(kind[:-1])} · {html.escape(origin)}</small></h3>'
+                     f'<p>{html.escape(str(meta.get("description") or ""))}</p><p class="props">{html.escape(props)}</p></article>')
+    colours = "".join(f'<span title="{html.escape(k)}" style="background:{html.escape(str(v))}"></span>'
+                      for k, v in (tokens.get("color") or {}).items() if str(v).startswith("#"))
+    family = html.escape(str((tokens.get("font") or {}).get("family") or "—"))
+    shapes = html.escape(json.dumps({k: resolved["style"][k] for k in ("background", "shapes", "weights")}, ensure_ascii=False))
+    fonts_line = html.escape(", ".join((resolved["style"]["fonts"] or {}).get("families") or []) or t("video", "gallery_machine_fonts"))
+    page = (f'<!doctype html><html lang="{language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, '
+            f'initial-scale=1"><title>{html.escape(t("video", "gallery_title", code=course["code"]))}</title><style>'
+            "body{font-family:system-ui,sans-serif;margin:24px;background:#fafafa;color:#1a1a1a}"
+            "main{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:20px}"
+            "article{background:#fff;border:1px solid #ddd;padding:12px}"
+            "video,.none{width:100%;aspect-ratio:16/9;background:#eee;display:block}"
+            ".none{display:flex;align-items:center;justify-content:center;color:#666}h3{margin:10px 0 4px}small{color:#666;font-weight:400}"
+            ".props{color:#555;font-size:13px}"
+            ".swatches span{display:inline-block;width:28px;height:28px;margin-right:4px;border:1px solid #ccc}"
+            f'</style></head><body><h1>{html.escape(t("video", "gallery_title", code=course["code"]))}</h1>'
+            f'<p class="swatches">{colours}</p><p>{html.escape(t("video", "gallery_fonts", family=family, files=fonts_line))}</p>'
+            f'<p class="props">{shapes}</p><main>{"".join(cards)}</main></body></html>\n')
+    (out / "index.html").write_text(page, encoding="utf-8", newline="\n")
+    return out / "index.html"
 
 
 def _captions(resolved: dict) -> tuple[str, list[dict]]:

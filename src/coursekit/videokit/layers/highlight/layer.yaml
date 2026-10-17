@@ -4,3 +4,7 @@ props:
   fx: {type: number, required: true}
   fy: {type: number, required: true}
   size: {type: number}
+# What the gallery draws it with (`coursekit video gallery`), in each language of the courses.
+example:
+  en: {fx: 0.3, fy: 0.42}
+  es: {fx: 0.3, fy: 0.42}

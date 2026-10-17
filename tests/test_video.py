@@ -1,6 +1,7 @@
 """`coursekit video`: a video as data, a montage of scenes of the library, the project or the course."""
 
 import json
+from pathlib import Path
 
 import pytest
 import yaml
@@ -265,6 +266,53 @@ def test_the_shapes_weights_and_fonts_of_a_brand_go_inside_the_video(voiced, cou
     (fonts / "fonts.css").write_text("@font-face { font-family: X; src: url('../../../../outside.woff2'); }\n", encoding="utf-8")
     with pytest.raises(video.VideoError, match="which is not in the project"):
         video.resolve(montage(course), "U1-S2-M1")
+
+
+def test_every_piece_of_the_library_has_an_example_in_each_language_with_its_required_props(course):  # noqa: F811
+    data = montage(course)
+    for kind in ("scenes", "layers"):
+        for name, piece in video.pieces(data, kind).items():
+            if name == "screencast":  # it needs a real recording
+                assert video.example(piece, "en") is None
+                continue
+            for language in ("en", "es"):
+                props = video.example(piece, language)
+                assert props, f"{kind}/{name} has no example in {language}"
+                required = [k for k, v in (piece["meta"].get("props") or {}).items() if isinstance(v, dict) and v.get("required")]
+                assert all(props.get(k) not in (None, "", []) for k in required), f"{kind}/{name} ({language})"
+    assert video.example(video.pieces(data)["title"], "es")["title"] == "Las contraseñas largas protegen más"
+
+
+def test_the_gallery_draws_every_piece_with_the_theme_and_the_style_of_the_course(course, capsys, monkeypatch):  # noqa: F811
+    prepare_asset(course, capsys)
+    root = course.parent.parent
+    (root / "tools" / "remotion" / "node_modules").mkdir(parents=True)
+    scene_folder(course / "video" / "scenes", "timeline", "a timeline of this course")  # no example: listed, not drawn
+    write_style(root, shapes={"radius": 0, "shadow": "none"})
+    rendered, stills = [], []
+
+    def remotion(workspace, args):
+        rendered.append(args)
+        out = Path(args[3])
+        out.write_bytes(b"mp4")
+
+    def run(cmd, **kw):
+        stills.append(cmd)
+        Path(cmd[-1]).write_bytes(b"png")
+
+    monkeypatch.setattr(video, "_remotion", remotion)
+    monkeypatch.setattr(video.mediatools, "run", run)
+    page = video.gallery(montage(course), lambda m: None)
+    props = json.loads(Path(next(a for a in rendered[0] if a.startswith("--props=")).split("=", 1)[1]).read_text(encoding="utf-8"))
+    names = [s["layers"][0]["id"] if s["layers"] else s["id"] for s in props["scenes"]]
+    assert names == ["compare", "diagram", "list", "outro", "quote", "split", "stat", "title", "callout", "highlight", "lower-third"]
+    layer = props["scenes"][-1]
+    assert layer["type"] == "title" and layer["layers"][0]["props"]["subtitle"] == "Responsable de seguridad, ACME"
+    assert props["style"]["shapes"] == {"radius": 0, "shadow": "none"} and props["tokens"]["color"]["background"]
+    assert "--scale=0.5" in rendered[0] and len(stills) == len(names)
+    assert (page.parent / "gallery-sample.svg").exists() and (page.parent / "frames" / "title.png").exists()
+    text = page.read_text(encoding="utf-8")
+    assert 'src="gallery.mp4#t=0.00,3.50"' in text and "timeline" in text and "no example" in text and "lower-third" in text
 
 
 def test_an_atom_of_the_project_or_of_a_course_takes_the_place_of_the_library(course):  # noqa: F811

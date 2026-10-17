@@ -3,3 +3,7 @@ built_from: [Background, Heading, StepNode (Card, Badge, Heading, Text), Arrow, 
 props:
   title: {type: text, max_chars: 60, on_screen: true}
   steps: {type: list, required: true, max_items: 5, items: {label: {type: text, max_chars: 22, on_screen: true}, text: {type: text, max_chars: 60, on_screen: true}, say: {type: text, help: "the words of the narration that name it"}}}
+# What the gallery draws it with (`coursekit video gallery`), in each language of the courses.
+example:
+  en: {title: "How a manager helps", steps: [{label: "Create", text: "It makes a long password"}, {label: "Keep", text: "It stores it encrypted"}, {label: "Fill in", text: "It types it for you"}]}
+  es: {title: "Cómo ayuda un gestor", steps: [{label: "Crea", text: "Genera una contraseña larga"}, {label: "Guarda", text: "La guarda cifrada"}, {label: "Rellena", text: "La escribe por ti"}]}
