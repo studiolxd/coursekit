@@ -1,6 +1,6 @@
 # The style of the videos made as a montage (`coursekit video`), on top of the theme of the course (its colours and font
-# families come from theme/tokens.json, never from here; the files of those fonts, the shapes and the weights, from here). A project changes it in config/video.yaml, and a course in the `video:` section of
-# its course.yaml (for example, a calmer motion for one course).
+# families come from theme/tokens.json, never from here; the shapes and the weights, from here). A project changes it in
+# config/video.yaml, and a course in the `video:` section of its course.yaml (for example, a calmer motion for one course).
 
 # How things move. `character` picks a preset: calm (slow entrances, soft springs), balanced or lively (quick, snappy);
 # `enter`, `stagger`, `fade` and `damping` (frames, and the damping of the springs) override the preset one by one.
@@ -36,7 +36,7 @@ weights:
 
 # The fonts of the videos, so that they do not depend on what the machine has: a stylesheet of the project with @font-face
 # rules (the font files it points to, relative to it, inside the project; they go inside the video). The family names must
-# be the ones of the theme. null: the fonts of the theme by name, as the machine has them.
+# be the ones of the theme. null: the fonts of the brand (media.yaml › fonts: theme/branding/fonts/fonts.css by default).
 fonts: null             # e.g. theme/branding/fonts/fonts.css
 
 # The frame of a new video, and the air after the narration of each scene.

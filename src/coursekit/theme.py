@@ -90,7 +90,10 @@ FINGERPRINT_KEYS = ("color", "font", "radius", "space", "shadow")
 
 def fingerprint(tokens: dict) -> str:
     """Identifies the look of the tokens (not their origin or date): media made with other tokens must be redone."""
-    return hashlib.sha256(json.dumps({k: tokens.get(k) for k in FINGERPRINT_KEYS}, sort_keys=True).encode()).hexdigest()[:12]
+    look = {k: tokens.get(k) for k in FINGERPRINT_KEYS}
+    if tokens.get("border"):  # only when fixed: the fingerprints of the tokens without it stay as they were
+        look["border"] = tokens["border"]
+    return hashlib.sha256(json.dumps(look, sort_keys=True).encode()).hexdigest()[:12]
 
 
 def css(tokens: dict) -> str:
@@ -104,11 +107,14 @@ def css(tokens: dict) -> str:
     for name, value in (tokens.get("palette") or {}).items():  # the named colours of the brand, to draw with (not roles)
         lines.append(f"  --palette-{name}: {value};")
     for key, var in (("family", "font-family"), ("headings", "font-family-headings"), ("ui", "font-family-ui"),
-                     ("size-base", "font-size-base"), ("line-height", "line-height")):
+                     ("size-base", "font-size-base"), ("line-height", "line-height"), ("weight", "font-weight"),
+                     ("weight-strong", "font-weight-strong")):
         if font.get(key):
             lines.append(f"  --{var}: {font[key]};")
     if tokens.get("radius"):
         lines.append(f"  --radius: {tokens['radius']};")
+    if tokens.get("border"):
+        lines.append(f"  --border-width: {tokens['border']};")
     for group in ("shadow", "space"):
         for name, value in (tokens.get(group) or {}).items():
             lines.append(f"  --{group}-{name}: {value};")
@@ -116,18 +122,21 @@ def css(tokens: dict) -> str:
         "}",
         "",
         "/* Base for simulations: import this file and build on these classes. */",
-        "body { margin: 0; font-family: var(--font-family); font-size: var(--font-size-base);",
+        "body { margin: 0; font-family: var(--font-family); font-size: var(--font-size-base); font-weight: var(--font-weight, 400);",
         "  line-height: var(--line-height); color: var(--color-text); background: var(--color-background); }",
-        ".btn { font: 700 1rem var(--font-family); color: var(--color-on-accent); background: var(--color-accent);",
-        "  border: 2px solid var(--color-accent); border-radius: var(--radius);",
+        ".btn { font: var(--font-weight-strong, 700) 1rem var(--font-family); color: var(--color-on-accent);",
+        "  background: var(--color-accent); border: var(--border-width, 2px) solid var(--color-accent); border-radius: var(--radius);",
         "  padding: var(--space-sm) var(--space-md); cursor: pointer; }",
-        ".btn:hover { color: var(--color-accent); background: var(--color-background); }",
+        "/* the accent is a fill; as text on the background it is accent-strong, the accent that reads there */",
+        ".btn:hover { color: var(--color-accent-strong, var(--color-accent)); background: var(--color-background); }",
         ".btn:focus-visible, [tabindex]:focus-visible {",
         "  outline: 3px solid var(--color-accent-strong, var(--color-accent)); outline-offset: 2px; }",
-        ".card { background: var(--color-background); border: 1px solid var(--color-line); border-radius: var(--radius);",
+        ".card { background: var(--color-background); border: var(--border-width, 1px) solid var(--color-line);",
+        "  border-radius: var(--radius);",
         "  box-shadow: var(--shadow-soft); padding: var(--space-md); }",
         ".is-correct { color: var(--color-correct); } .is-wrong { color: var(--color-wrong); }",
-        ".note { background: var(--color-highlight); border-left: 4px solid var(--color-accent); padding: var(--space-md); }",
+        ".note { background: var(--color-highlight); border-left: 4px solid var(--color-accent-strong, var(--color-accent));",
+        "  padding: var(--space-md); }",
         "",
     ]
     return "\n".join(lines)
@@ -400,6 +409,84 @@ def from_css(base: str, overrides: str, source: str, digest: str) -> dict:
     }
 
 
+# The colour roles of the tokens, in the order `coursekit theme roles` shows them. Each one has its uses in the messages
+# (`role_use_<role>` of lang/messages/theme.yaml): where it is seen in the media, so a person can tell which colour fits.
+ROLES = ("background", "text", "headings", "accent", "on-accent", "link", "correct", "on-correct", "wrong", "on-wrong",
+         "text-soft", "surface", "highlight", "line", "accent-strong")
+ADJUSTABLE = ("roles", "radius", "shadow", "border", "weights")
+
+
+def settings(project: Project, course: dict | None = None) -> dict:
+    """What the project (project.yaml › theme) and, for the own tokens of a course, its course.yaml › theme fix of the tokens:
+    `roles` (a role → a colour of the palette of the theme, another role or a hex), `radius` (px), `shadow` (none or a CSS
+    shadow), `border` (px of the borders) and `weights` (`normal` and `strong`). The course wins key by key, and role by role."""
+    project_block = config.project_data(project).get("theme") or {}
+    course_block = (course.get("theme") or {}) if course is not None else {}
+    out: dict = {"roles": {}}
+    for block in (project_block, course_block):
+        if not isinstance(block, dict):
+            continue
+        out["roles"].update({str(k): str(v) for k, v in (block.get("roles") or {}).items() if v not in (None, "")})
+        for key in ("radius", "shadow", "border"):
+            if block.get(key) is not None:
+                out[key] = block[key]
+        weights = block.get("weights") if isinstance(block.get("weights"), dict) else {}
+        for key in ("normal", "strong"):
+            if weights.get(key) is not None:
+                out.setdefault("weights", {})[key] = weights[key]
+    return out
+
+
+def adjust(tokens: dict, fixed: dict) -> dict:
+    """The tokens with what the project fixes instead of what was derived or defaulted, recorded in `origin.set`."""
+    palette, colors = tokens.get("palette") or {}, tokens["color"]
+    origin = tokens["origin"]
+    chosen: dict[str, str] = {}
+    for role, ref in (fixed.get("roles") or {}).items():
+        if role not in ROLES:
+            raise ThemeError(t("theme", "unknown_role", role=role, roles=", ".join(ROLES)))
+        value = palette.get(ref) or (colors.get(ref) if ref in ROLES and ref != role else None) or to_hex(ref)
+        if not value:
+            raise ThemeError(t("theme", "unknown_colour", role=role, ref=ref, palette=", ".join(palette) or "—"))
+        colors[role] = value
+        chosen[role] = ref
+    if fixed.get("radius") is not None:
+        tokens["radius"] = f"{float(fixed['radius']):g}px"
+        chosen["radius"] = str(fixed["radius"])
+    if fixed.get("shadow") is not None:
+        tokens["shadow"] = {"soft": "none" if str(fixed["shadow"]) == "none" else str(fixed["shadow"])}
+        chosen["shadow"] = str(fixed["shadow"])
+    if fixed.get("border") is not None:
+        tokens["border"] = f"{float(fixed['border']):g}px"
+        chosen["border"] = str(fixed["border"])
+    for key, token in (("normal", "weight"), ("strong", "weight-strong")):
+        if (fixed.get("weights") or {}).get(key) is not None:
+            tokens.setdefault("font", {})[token] = str(fixed["weights"][key])
+            chosen[f"weights.{key}"] = str(fixed["weights"][key])
+    if chosen:
+        origin["set"] = chosen
+        origin["derived"] = [r for r in origin.get("derived") or [] if r not in chosen]
+        origin["defaults"] = [r for r in origin.get("defaults") or [] if r not in chosen]
+    return tokens
+
+
+def roles(tokens: dict) -> list[dict]:
+    """Each colour role of the tokens: its value, where it comes from (the theme, derived by coursekit, fixed by the project)
+    and where it is seen."""
+    origin = tokens.get("origin") or {}
+    fixed, derived = origin.get("set") or {}, set(origin.get("derived") or [])
+    names = {v.upper(): k for k, v in (tokens.get("palette") or {}).items()}
+    out = []
+    for role in ROLES:
+        value = (tokens.get("color") or {}).get(role)
+        if not value:
+            continue
+        where = "set" if role in fixed else "derived" if role in derived else "theme"
+        out.append({"role": role, "value": value, "from": where, "ref": fixed.get(role), "palette": names.get(str(value).upper()),
+                    "use": t("theme", f"role_use_{role}")})
+    return out
+
+
 def source(project: Project) -> str:
     """Where the theme of the creator backend comes from: `tenant_default` (the default theme of the organization) or `branding`
     (made from the material in theme/branding/). project.yaml › theme › source."""
@@ -445,6 +532,7 @@ def import_creator(project: Project, course: dict | None, file: Path | None) -> 
         if not isinstance(response, dict):
             raise ThemeError(t("theme", "not_a_theme"))
         tokens = from_creator(response)
+    tokens = adjust(tokens, settings(project, course))
     folder = course_theme_dir(course) if course is not None else project.theme_dir
     folder.mkdir(parents=True, exist_ok=True)
     path = folder / "tokens.json"

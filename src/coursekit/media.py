@@ -363,6 +363,10 @@ def plan(course: dict) -> tuple[list[str], list[str]]:
             warnings.append(t("media", "no_generator", fallback=style["fallback"]))
         if not style_approval(course):
             warnings.append(t("media", "style_not_approved", code=course["code"]))
+    from coursekit import mediastyle
+
+    if mediastyle.waiting(course):
+        warnings.append(t("media", "media_style_not_approved", code=course["code"]))
     required, real = depicts_rules(cfg)
     for a in (a for a in data["assets"] if a.get("status") in ("pending", "scripted")):
         chain = options_for(a["type"], cfg, root)
@@ -498,7 +502,14 @@ def image_tool(course: dict, asset_id: str, action: str, size: str | None = None
         return mediatools.fit(path, mediatools.parse_size(size or ""))
     if path.suffix.lower() != ".svg":
         raise MediaError(t("media", "render_needs_svg", asset=asset_id))
-    return mediatools.render_svg(path, path.with_suffix(".png"), mediatools.parse_size(size) if size else None)
+    from coursekit import brand
+
+    sheet = brand.fonts_stylesheet(course["_project"], course)
+    try:
+        fonts_css = brand.inline_fonts(sheet, course["_project"].root)[0] if sheet else None
+    except brand.BrandError as exc:
+        raise MediaError(str(exc)) from None
+    return mediatools.render_svg(path, path.with_suffix(".png"), mediatools.parse_size(size) if size else None, fonts_css)
 
 
 def optimize(course: dict, ids: list[str] | None = None) -> list[str]:
@@ -600,6 +611,12 @@ def set_asset(course: dict, asset_id: str, **values) -> str:
     if values.get("status") in ("produced", "uploaded") and asset.get("kind") in SIMULATION_KINDS and not values.get("force"):
         if not style_approval(course):
             raise MediaError(t("media", "style_not_approved", code=course["code"]))
+    visual_types = set(cfg.get("uses_theme") or []) | {"image"}
+    if values.get("status") in ("produced", "uploaded") and asset["type"] in visual_types and not values.get("force"):
+        from coursekit import mediastyle
+
+        if mediastyle.waiting(course):
+            raise MediaError(t("media", "media_style_not_approved", code=course["code"]))
     if values.get("status") in ("produced", "uploaded") and asset["type"] in (cfg.get("uses_theme") or []):
         found = thememod.status(course["_project"], course)
         if found.state != "derived" and not values.get("force"):

@@ -19,6 +19,11 @@ theme:
   # Creator backend: tenant_default (the default theme of the organization in creator) | branding (a theme made from the
   # material in theme/branding/). With the html backend the look is theme/maqueta.css (or the base look) and this is not used.
   source: {theme_source}
+  # The colour of the brand for the roles the platform has no colour for (coursekit theme roles lists them, with where each
+  # one is seen, and the palette of the theme), and the radius and the shadow of the media; the platform theme is not touched.
+  # roles: {surface: grey-lightest, line: grey-light}
+  # radius: 0
+  # shadow: none
 
 platform:
   slxd:

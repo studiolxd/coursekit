@@ -55,7 +55,7 @@ MANAGED = {
     "githooks/post-checkout": ".githooks/post-checkout",
 }
 EXECUTABLE = (".githooks/post-merge", ".githooks/post-checkout")
-FOLDERS = ("courses", "brief/sources", "config", "theme", "theme/branding", ".agents")
+FOLDERS = ("courses", "brief/sources", "config", "theme", "theme/branding", "theme/branding/sources", ".agents")
 
 LANGUAGES = ("es", "en")
 BACKENDS = ("creator", "html")

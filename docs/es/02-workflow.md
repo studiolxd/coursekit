@@ -428,11 +428,13 @@ Los gráficos, simulaciones y vídeos de un curso usan los colores y las fuentes
 
 Qué hace `/define-theme [CODE]` (rol de diseño, skill `theme-definition`):
 
-1. Mira `coursekit theme show` para saber si los tokens ya vienen de un theme de la plataforma (si es así, pregunta antes de rehacerlos) y lee el material de marca en busca de colores, fuentes y logotipos: `theme/branding/` (logos, ficheros de tipografías, guía, listas de colores) y `brief/`. La elección hecha al crear el proyecto es `project.yaml › theme.source`.
+1. Mira `coursekit theme show` para saber si los tokens ya vienen de un theme de la plataforma (si es así, pregunta antes de rehacerlos) y lee el material de marca: ejecuta [`coursekit brand`](03-commands.md#coursekit-brand), que convierte lo que dejaste en `theme/branding/` (un libro de marca, un Storybook, la web de la empresa, fuentes, logos) y escribe su índice, y lo lee junto con `brief/`. La elección hecha al crear el proyecto es `project.yaml › theme.source`.
 2. Con `tenant_default` toma el theme que la plataforma marca por defecto (`isDefault`) y no crea ni cambia nada. Con `branding` crea el theme a partir de `theme/branding/` (sin material, usa el por defecto y lo dice). En una sesión con una persona, o cuando esta pide otra cosa, lista los themes de la plataforma y eliges uno o creas uno nuevo: desde cero, desde un preset o como copia de uno existente. Un cambio en un theme cambia todos los contenidos que lo usan, así que, para cambiar solo un curso, el agente copia el theme y enlaza la copia.
 3. Lo adapta con los colores y las fuentes de la marca (`update_theme`) y te cuenta los avisos de la plataforma.
 4. Guarda el resultado de `get_theme` en `.cache/theme/get_theme.json` y ejecuta `coursekit theme import .cache/theme/get_theme.json`. Eso escribe `theme/tokens.json` y `theme/tokens.css` con un `origin`: id del theme, nombre, versión y fecha. Imprime las notas y el contraste de cada par de colores; si algún par no llega al mínimo, el color se corrige en la plataforma y se vuelve a importar, nunca se edita en los tokens.
-5. Te resume el resultado. **El theme lo validas tú, como validas el diseño.**
+5. Compara los tokens con la marca ([Colores de la marca para los roles](07-media.md#colores-de-la-marca-para-los-roles)): para cada color que calcula coursekit, y para el radio y la sombra, te propone el de la marca, diciendo dónde se verá y dónde lo dice la marca, y te pregunta; lo que aceptas va a `project.yaml › theme` y los tokens se vuelven a importar. Propone también las formas y los pesos de los vídeos (`config/video.yaml`).
+6. Escribe la guía de estilo de los recursos, `theme/branding/media-style.md`, a partir de la marca, cada regla con su fuente; tú la lees y la firmas para cada curso, `coursekit approve media-style PWD` ([La guía de estilo de los recursos](07-media.md#la-guía-de-estilo-de-los-recursos)).
+7. Te resume el resultado. **El theme lo validas tú, como validas el diseño.**
 
 Dónde están los tokens:
 

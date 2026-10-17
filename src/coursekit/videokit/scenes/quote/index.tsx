@@ -22,7 +22,7 @@ export default function Quote({ props }: SceneProps<QuoteProps>) {
     <AbsoluteFill>
       <Background />
       <AbsoluteFill style={{ justifyContent: "center", padding: "0 220px", gap: 48 }}>
-        <Enter scale><div style={{ fontSize: 220, lineHeight: 0.6, color: color("accent"), fontWeight: weightOf(900) }}>“</div></Enter>
+        <Enter scale><div style={{ fontSize: 220, lineHeight: 0.6, color: color("accent-strong"), fontWeight: weightOf(900) }}>“</div></Enter>
         <Enter at={6}><Heading size={84} weight={700}>{quote}</Heading></Enter>
         <Enter at={18}>
           <Text size={44} weight={700}>{props.author}</Text>

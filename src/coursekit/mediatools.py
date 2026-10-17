@@ -428,21 +428,28 @@ def svg_size(svg: Path) -> tuple[int, int]:
     return (round(float(w.group(1))), round(float(h.group(1)))) if w and h else (1600, 900)
 
 
-def render_svg(svg: Path, out: Path, size: tuple[int, int] | None = None) -> str:
-    """An SVG as a PNG, drawn by the Chrome, Chromium or Edge of the machine (headless): to look at it and for creator."""
+def render_svg(svg: Path, out: Path, size: tuple[int, int] | None = None, fonts_css: str | None = None) -> str:
+    """An SVG as a PNG, drawn by the Chrome, Chromium or Edge of the machine (headless): to look at it and for creator. With
+    `fonts_css` (@font-face rules, their files inside as data) its text is drawn in those fonts, whatever the machine has."""
     require_file(svg)
     exe = browser()
     if not exe:
         raise ToolError(t("mediatools", "no_browser"))
     width, height = size or svg_size(svg)
     page = out.with_suffix(".render.html")
+    if fonts_css:  # an <img> loads no fonts: the drawing goes inside the page, next to them
+        markup = re.sub(r"^\s*(<\?xml[^>]*\?>|<!DOCTYPE[^>]*>)\s*", "", svg.read_text(encoding="utf-8"), flags=re.I)
+        body = f'<div class="svg">{markup}</div>'
+        extra = f"{fonts_css}\n.svg,.svg>svg{{display:block;width:{width}px;height:{height}px}}"
+    else:
+        body, extra = f'<img src="{svg.resolve().as_uri()}">', ""
     page.write_text(f'<!doctype html><html><head><meta charset="utf-8"><style>html,body{{margin:0;background:transparent}}'
-                    f'img{{display:block;width:{width}px;height:{height}px}}</style></head>'
-                    f'<body><img src="{svg.resolve().as_uri()}"></body></html>', encoding="utf-8")
+                    f'img{{display:block;width:{width}px;height:{height}px}}{extra}</style></head>'
+                    f'<body>{body}</body></html>', encoding="utf-8")
     try:
         run([exe, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--allow-file-access-from-files",
              "--default-background-color=00000000", f"--window-size={width},{height}", f"--screenshot={out.resolve()}",
-             page.resolve().as_uri()])
+             "--virtual-time-budget=3000", page.resolve().as_uri()])
     finally:
         page.unlink(missing_ok=True)
     if not out.exists():

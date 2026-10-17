@@ -84,3 +84,7 @@ script_summary: {es: "guion de {id} ({code}): {files}, en media/scripts/ (los pa
 script_confirm: {es: "¿Aprobar el {summary}? Firmas como {who}", en: "Approve the {summary}? You sign as {who}"}
 script_approved: {es: "guion de {id} aprobado por {who}", en: "script of {id} approved by {who}"}
 script_approved_uncommitted: {es: "guion de {id} aprobado por {who} (sin commit: no es un repositorio git o no hay cambios)", en: "script of {id} approved by {who} (not committed: not a git repository or nothing changed)"}
+media_style_missing: {es: "{code} no tiene guía de estilo de los recursos (theme/branding/media-style.md, del proyecto o del curso): la escribe /define-theme a partir de la marca (coursekit brand)", en: "{code} has no style guide of the media (theme/branding/media-style.md, of the project or of the course): /define-theme writes it from the brand (coursekit brand)"}
+media_style_confirm: {es: "¿Has leído la guía de estilo de los recursos {path} y la apruebas para {code}? Firmas como {who}", en: "Have you read the style guide of the media {path}, and do you approve it for {code}? You sign as {who}"}
+media_style_approved: {es: "guía de estilo {path} aprobada por {who}", en: "style guide {path} approved by {who}"}
+media_style_approved_uncommitted: {es: "guía de estilo {path} aprobada por {who} (registrado, sin commit)", en: "style guide {path} approved by {who} (recorded, not committed)"}

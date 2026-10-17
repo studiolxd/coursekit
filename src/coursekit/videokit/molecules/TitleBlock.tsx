@@ -15,7 +15,7 @@ export const TitleBlock: React.FC<{ kicker?: string; title: string; stress?: str
     : null;
   return (
     <div>
-      {kicker ? <Enter at={at}><Text size={36} tone="accent" weight={800} style={{ textTransform: "uppercase", letterSpacing: 2, marginBottom: 18 }}>{kicker}</Text></Enter> : null}
+      {kicker ? <Enter at={at}><Text size={36} tone="accent-strong" weight={800} style={{ textTransform: "uppercase", letterSpacing: 2, marginBottom: 18 }}>{kicker}</Text></Enter> : null}
       <Enter at={at + 6}>
         <Heading size={size}>{parts ? <>{parts[0]}<Underline at={underlineAt}>{parts[1]}</Underline>{parts[2]}</> : title}</Heading>
       </Enter>

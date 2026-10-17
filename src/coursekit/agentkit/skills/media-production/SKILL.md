@@ -19,7 +19,10 @@ measures and positions for each element. What it says about the look and composi
 appear) overrides the defaults of this skill for the types it covers; the rest of this skill still applies. If an instruction
 cannot be followed (a font that is not available, a type the file does not cover), say so and do the closest thing: never invent
 extra elements to fill the gap. It only needs what is in the project: anything it mentions from outside (logos, fonts) is read from
-`theme/branding/`, because this session cannot read other folders.
+`theme/branding/`, because this session cannot read other folders. It must be signed (`coursekit approve media-style <CODE>`)
+before a visual resource is marked produced: when `coursekit media plan` warns that it is not, stop and ask the person to read
+and sign it; never sign it yourself. Where the guide and `tokens.css` differ, the guide wins; the material behind it is in
+`theme/branding/index.md` (fonts in `fonts/fonts.css`, logos in `logo/`, icons, the converted brand pages in `text/`).
 
 {{> _slxd-tools}}
 

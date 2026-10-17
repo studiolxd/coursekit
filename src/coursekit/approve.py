@@ -181,6 +181,29 @@ def approve_style(course: dict, confirm: Confirm, do_commit: bool = True, who: i
     return t("approve", "style_approved", who=who, style=signed_style)
 
 
+def approve_media_style(course: dict, confirm: Confirm, do_commit: bool = True, who: identity.Identity | None = None,
+                        via: str | None = None) -> str:
+    """The sign-off of the style guide of the media in force for the course (theme/branding/media-style.md, or its own): a
+    person has read it. Its fingerprint is kept; when it changes it is signed again."""
+    from coursekit import mediastyle
+
+    found = mediastyle.path(course)
+    if found is None:
+        raise ApprovalError(t("approve", "media_style_missing", code=course["code"]))
+    rel = found.relative_to(course["_project"].root).as_posix()
+    who = who or signer()
+    if not confirm(t("approve", "media_style_confirm", path=rel, code=course["code"], who=who)):
+        raise ApprovalError(t("approve", "cancelled"))
+    entry = {"gate": "media_style", "by": str(who), "at": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
+             "path": rel, "sha256": sha256_file(found)}
+    if via:
+        entry["via"] = via
+    _record(course["_dir"], entry, None, "Media style guide approved")
+    if do_commit and not commit([course["_dir"]], f"Media style approval {course['code']}", who, course["_dir"]):
+        return t("approve", "media_style_approved_uncommitted", who=who, path=rel)
+    return t("approve", "media_style_approved", who=who, path=rel)
+
+
 def approve_script(course: dict, asset_id: str, confirm: Confirm, do_commit: bool = True, who: identity.Identity | None = None,
                    via: str | None = None) -> str:
     """The sign-off of the script of a resource: the brief of a screen recording (its steps and its narration) and the montage

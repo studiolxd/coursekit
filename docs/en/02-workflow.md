@@ -428,11 +428,13 @@ The graphics, simulations and videos of a course use the colours and fonts of it
 
 What `/define-theme [CODE]` does (design role, skill `theme-definition`):
 
-1. Looks at `coursekit theme show` to see whether the tokens already come from a platform theme (if so, it asks before redoing them) and reads the brand material for colours, fonts and logos: `theme/branding/` (logos, font files, guidelines, colour lists) and `brief/`. The choice made when the project was created is `project.yaml › theme.source`.
+1. Looks at `coursekit theme show` to see whether the tokens already come from a platform theme (if so, it asks before redoing them) and reads the brand material: it runs [`coursekit brand`](03-commands.md#coursekit-brand), which converts what you left in `theme/branding/` (a brand book, a Storybook, the website of the company, fonts, logos) and writes its index, and reads it with `brief/`. The choice made when the project was created is `project.yaml › theme.source`.
 2. With `tenant_default` it takes the theme the platform marks as default (`isDefault`) and does not create or change anything. With `branding` it makes the theme from `theme/branding/` (without material, it uses the default one and says so). In a session with a person, or when the person asks for something else, it lists the themes of the platform and you choose one or create a new one: from nothing, from a preset or as a copy of an existing one. A change to a theme changes every content that uses it, so to change only one course the agent copies the theme and links the copy.
 3. Adapts it with the brand colours and fonts (`update_theme`) and reports the platform's warnings.
 4. Saves the result of `get_theme` to `.cache/theme/get_theme.json` and runs `coursekit theme import .cache/theme/get_theme.json`. That writes `theme/tokens.json` and `theme/tokens.css` with an `origin`: theme id, name, version and date. It prints the notes and the contrast of each colour pair; if a pair is below the minimum the colour is fixed in the platform and imported again, never edited in the tokens.
-5. Summarises the result for you. **You validate the theme as you validate the design.**
+5. Compares the tokens with the brand ([Colours of the brand for the roles](07-media.md#colours-of-the-brand-for-the-roles)): for each colour coursekit derives, and for the radius and the shadow, it proposes the one of the brand, saying where it will be seen and where the brand says it, and asks you; what you accept goes in `project.yaml › theme` and the tokens are imported again. It also proposes the shapes and weights of the videos (`config/video.yaml`).
+6. Writes the style guide of the media, `theme/branding/media-style.md`, from the brand, each rule with its source; you read it and sign it for each course, `coursekit approve media-style PWD` ([The style guide of the media](07-media.md#the-style-guide-of-the-media)).
+7. Summarises the result for you. **You validate the theme as you validate the design.**
 
 Where the tokens live:
 

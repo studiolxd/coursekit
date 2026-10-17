@@ -433,6 +433,14 @@ def _produce(ctx: Context, course: dict) -> None:
         _agent(ctx, "design", "define-theme", "", "theme", theme_note(ctx.project, coursemod.backend(course)))
         if thememod.status(ctx.project, ctx.course()).state != "derived":
             raise _stuck(ctx, "theme_missing")
+    from coursekit import mediastyle
+
+    if mediastyle.waiting(ctx.course()):  # the style guide the theme agent wrote from the brand: coursekit signs it
+        try:
+            ctx.log(t("handoff", "signed_line", text=approve.approve_media_style(ctx.course(), lambda question: True, who=HANDOFF,
+                                                                                    via=VIA)))
+        except approve.ApprovalError as exc:
+            raise _stuck(ctx, "media_style_missing", None, why=str(exc)) from exc
     if any(a.get("kind") in mediamod.SIMULATION_KINDS for a in pending) and not mediamod.style_approval(ctx.course()):
         # the images of the simulations need a signed style sheet: the media agent makes the samples, coursekit signs them
         _agent(ctx, "media", "produce-media", ctx.code, "style", STYLE_NOTE)

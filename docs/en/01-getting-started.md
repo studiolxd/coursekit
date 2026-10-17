@@ -138,7 +138,7 @@ acme-courses/
 ├── courses/                one folder per course (empty until you create one)
 ├── config/                 *.example.yaml: every default, for reference
 ├── theme/                  design tokens of the project theme (derived from the platform or, with html, from the stylesheet)
-│   └── branding/           brand material: logos, fonts, guidelines, colours
+│   └── branding/           brand material: sources/, links.md, notes.md (coursekit brand); the style guide of the media
 ├── .agents/                your overrides of skills, commands and agents
 ├── .githooks/              post-merge, post-checkout
 ├── .claude/                skills, commands and settings for Claude Code

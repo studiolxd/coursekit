@@ -208,7 +208,7 @@ A scene has an `id`, a `type`, its `props`, what it `says` (or a `duration` when
 | Scenes | whole compositions | `title`, `split`, `stat`, `compare`, `list`, `quote`, `diagram` (a process that builds itself), `outro`, `screencast` |
 | Layers | over a scene, from a word of its narration | `lower-third` (a name and a role), `callout` (a short note at a corner), `highlight` (a ring on a point) |
 
-The tokens reach the video as data, so a course with another theme gives another video with no change. A brand with its own rules (square corners, no shadows, two weights, its font files) sets them in `config/video.yaml` (`shapes`, `weights`, `fonts`; see [Configuration](04-configuration.md#video-the-style-of-the-videos-made-as-a-montage)), and every piece of the library follows them. A scene is a folder with `index.tsx` (its component) and `scene.yaml` (a layer, `layer.yaml`) (what it is, what it is built from, and its props: type, required, maximum characters, on screen, label); `coursekit video catalog` lists them all, so the pieces and how they are put together can be seen. `coursekit video gallery` draws them: each piece with the props of its `example:` (in its `scene.yaml` or `layer.yaml`, one block per language of the courses, `en:` and `es:`), in the theme and the style of the course, in a page of `.cache/media/<CODE>/gallery/`. A scene of the project or of a course is drawn too when it brings its `example:`.
+The tokens reach the video as data, so a course with another theme gives another video with no change. The accent is a fill (the close, the circle of a number); what is drawn thin on the background with it (an underline, an arrow, the mark of a list, a word) takes `accent-strong`, the accent that reads on the background: the same colour when the accent already reads, a darker one, or the one the project fixes, when the accent is only a fill. A brand with its own rules (square corners, no shadows, two weights, its font files) sets them in `config/video.yaml` (`shapes`, `weights`, `fonts`; see [Configuration](04-configuration.md#video-the-style-of-the-videos-made-as-a-montage)), and every piece of the library follows them. A scene is a folder with `index.tsx` (its component) and `scene.yaml` (a layer, `layer.yaml`) (what it is, what it is built from, and its props: type, required, maximum characters, on screen, label); `coursekit video catalog` lists them all, so the pieces and how they are put together can be seen. `coursekit video gallery` draws them: each piece with the props of its `example:` (in its `scene.yaml` or `layer.yaml`, one block per language of the courses, `en:` and `es:`), in the theme and the style of the course, in a page of `.cache/media/<CODE>/gallery/`. A scene of the project or of a course is drawn too when it brings its `example:`.
 
 **Where the scenes are, and which one wins.** A scene of the course hides one of the project with the same name, and one of the project hides one of the library:
 
@@ -488,11 +488,11 @@ A project has one theme, in `theme/`, which every course inherits. A course that
 | Tokens | Origin |
 |---|---|
 | `background`, `text`, `headings`, `accent`, `on-accent` (the `accentText` role), `link`, `correct`, `on-correct`, `wrong`, `on-wrong` | The semantic colour roles of the platform theme, with palette references resolved. A text role the theme does not set inherits the text colour. |
-| `text-soft`, `surface`, `highlight`, `line`, `accent-strong` | Derived by coursekit from the colours above (mixes of text, background and accent); the soft text is kept at least 4.5:1 on the background. `accent-strong` equals `accent`. Listed in `origin.derived`. |
+| `text-soft`, `surface`, `highlight`, `line`, `accent-strong` | Derived by coursekit from the colours above (mixes of text, background and accent); the soft text is kept at least 4.5:1 on the background. `accent-strong` equals `accent`. Listed in `origin.derived`; a role the project fixes (`theme.roles`) takes its colour instead and goes to `origin.set`. |
 | `palette.<id>` | The named colours of the platform theme (`emerald`, `cayenne`, `prussian`…), imported with their ids, to draw with: portraits, illustrations. They are not roles and they do not change the fingerprint of the tokens. In `tokens.css` they are `--palette-<id>`. |
 | `font.family`, `font.headings`, `font.ui` | The font assignments of the theme: the system font stack, an uploaded font by its name (followed by the system stack as fallback), or a font included in the platform by its id, with a note because the name may not match its CSS family. |
 | `font.size-base`, `font.line-height` | The base font size and line height of the theme. |
-| `radius`, `space`, `shadow` | Package defaults: the platform has no such values. Listed in `origin.defaults`. |
+| `radius`, `space`, `shadow` | Package defaults: the platform has no such values. Listed in `origin.defaults`; the project can fix the radius and the shadow (`theme.radius`, `theme.shadow`). |
 
 With the html backend the tokens come from the CSS variables of the base layout of the package with the stylesheet over it (`coursekit theme import FILE.css`); a `var(--x)` reference is resolved, the last declaration of a variable wins, and nothing is derived by coursekit:
 
@@ -521,9 +521,44 @@ The asset types that use the tokens are listed in `uses_theme` of the media conf
 
 The media agent stops and asks the person to run `/define-theme` when the tokens are missing, instead of inventing colours.
 
-### House style for media
+### The brand material
+
+The theme of the platform gives the colours and the fonts of the course; the brand says how they are used. You leave the brand material in `theme/branding/` (or, for a course with a brand of its own, in `courses/<CODE>/theme/branding/`, which wins as a whole over the project's) as you leave the reference material in `brief/`, and [`coursekit brand`](03-commands.md#coursekit-brand) converts it for the agents:
+
+```
+theme/branding/
+  sources/      ← what you leave: brand book, token files, fonts, logos, images
+  links.md      ← two parts: the brand material read whole (a Storybook, a brand website, a documentation)
+                  and "# Websites to infer the style from" (the website of the company, observed in a browser)
+  notes.md      ← your indications ("lavender only as a fill", "no logo in the videos"…)
+  index.md      ← written by coursekit brand: what there is and where; the agents read it first
+  text/         ← written by coursekit brand: the material as Markdown, what was observed
+  fonts/        ← fonts/fonts.css and the font files (yours, or Google Fonts with an open licence)
+  logo/, tokens/, style/
+  media-style.md  ← the style guide of the media, written by the agent from all of this and signed by you
+```
+
+A brand kit (`.zip`) or the package of a design system (`.tgz`) left in `sources/` is opened and only its fonts, icons, logos and token files are taken; the icons go to `icons/`, to be used as they are. A Storybook is read whole: every page of documentation and every component, with its props, its stories and its page, from the manifests it publishes. A website under the second heading is not read but looked at: its CSS variables, the styles of its headings, links, buttons and cards, its colours weighted by the area they cover, its fonts, its logo and a screenshot. What is observed is a clue for the agent, never a rule: when it contradicts the brand material, the brand wins. The fonts of `fonts/fonts.css` go inside the videos and the SVGs exported as PNG (`media › fonts`), so they look the same on any machine; a font the brand uses with no usable files (a font served by a website is not licensed to copy) is listed in the index for you to provide.
+
+### Colours of the brand for the roles
+
+Some colour roles of the tokens do not exist in the platform and coursekit derives them (`text-soft`, `surface`, `highlight`, `line`, `accent-strong`, mixed from the text, the background and the accent), and the radius and the shadow are package defaults. A brand usually has its own colour for those uses. The project fixes them in `project.yaml › theme` (a course with its own tokens, in `course.yaml › theme`), without touching the platform theme:
+
+```yaml
+theme:
+  source: tenant_default
+  roles: {surface: grey-lightest, line: grey-light, text-soft: grey-darkest, accent-strong: text}
+  radius: 0
+  shadow: none
+```
+
+`border` and `weights` (`{normal: 300, strong: 500}`) fix the width of the borders and the two weights of the text the same way. Any role can be fixed, also one the platform gives when the brand says otherwise (the text on a fill of state, for example); the course in the platform keeps the platform's. A role takes the name of a colour of the palette of the theme (`coursekit theme roles` lists it), another role, or a hex when the brand defines it and the palette lacks it. `coursekit theme import` applies them instead of deriving, records them in `origin.set` and, if a name is not in the palette, stops with the list. `coursekit theme roles` shows each role, its value, where it comes from and where it is seen in the media (the background of the cards of a comparison, the source under a figure…), which is how a person chooses, and what the agent of `/define-theme` quotes when it proposes a colour. The radius and the shadow of the theme also reach the videos.
+
+### The style guide of the media
 
 `theme/branding/media-style.md` (or, for one course, `courses/<CODE>/theme/branding/media-style.md`, which wins) is an optional file in which you write, in plain Markdown, how the media of your courses must look: the exact composition of a video cover, colours by token name, typography, and above all what must **not** appear. The media agent reads it before producing anything and it overrides coursekit's defaults for the types it covers; it can be as narrow (only the cover of videos) or as wide as you want, and you add a section per type as you need it. Be exact: sizes in pixels and the position of each element make every cover come out the same. Colours are best named by their token (`--palette-<id>` and `--color-<role>` of `theme/tokens.css`), which are already in the project; what the file mentions from outside the project (a logo, a font file) must be copied into `theme/branding/`, because the headless session of the agent only reads the project. `coursekit agents` is not needed after editing it: it is read as it is. If an instruction cannot be followed the agent says so and does the closest thing without adding elements.
+
+With brand material, the agent of `/define-theme` writes the guide from it ([The brand material](#the-brand-material)): colour, data graphics, typography, shape, icons, motion, images, logo and what never appears, each rule with the place of the brand it comes from in brackets; what the brand does not state goes as a question, not as a rule. A person reads it and signs it for each course with `coursekit approve media-style CODE`: while it is not signed, or after it changes, no visual resource is marked produced (`rules › review › media_style: none` turns the signature off; the handoff signs it itself). In a session with no one to ask, the agent applies only what the brand says in so many words and lists the rest in `theme/branding/brand-report.md`.
 
 The visual style of the scenes, characters, objects and illustrations is chosen with `media › visual › style` (`flat`, `pixel-art`, `3d`, `isometric`, `illustration` or `photo`; see [`media`](04-configuration.md#media-production-options)); `media-style.md` adds the details. Reference images of the style go in `theme/branding/style/` (or the course's `theme/branding/style/`). Without an image generator the style is `visual.fallback` (`flat`), drawn as SVG.
 

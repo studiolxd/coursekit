@@ -11,7 +11,7 @@ export const CompareColumn: React.FC<{ title: string; items: string[]; mood?: "g
   times?: (number | null)[] }> = ({ title, items, mood = "neutral", at = 0, times }) => {
   const color = useColor();
   const weightOf = useWeight();
-  const tone = mood === "good" ? color("correct", "accent") : mood === "bad" ? color("wrong", "text-soft") : color("accent");
+  const tone = mood === "good" ? color("correct", "accent") : mood === "bad" ? color("wrong", "text-soft") : color("accent-strong");
   const mark = mood === "good" ? "✔" : mood === "bad" ? "✘" : "·";
   return (
     <Card padding={56} style={{ flex: 1, borderTop: `10px solid ${tone}` }}>

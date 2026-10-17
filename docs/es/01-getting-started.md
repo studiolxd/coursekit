@@ -138,7 +138,7 @@ acme-courses/
 ├── courses/                una carpeta por curso (vacía hasta que crees uno)
 ├── config/                 *.example.yaml: todos los valores por defecto, de referencia
 ├── theme/                  tokens de diseño del theme del proyecto (derivados de la plataforma o, con html, de la hoja de estilos)
-│   └── branding/           material de marca: logos, tipografías, guía, colores
+│   └── branding/           material de marca: sources/, links.md, notes.md (coursekit brand); la guía de estilo de los recursos
 ├── .agents/                tus sustituciones de skills, comandos y agentes
 ├── .githooks/              post-merge, post-checkout
 ├── .claude/                skills, comandos y ajustes para Claude Code

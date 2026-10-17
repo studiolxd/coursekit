@@ -9,6 +9,7 @@ export type Tokens = {
   font: { family: string; headings?: string; ui?: string };
   radius?: string | number;
   space?: Record<string, string>;
+  shadow?: Record<string, string>;
 };
 
 export type Motion = {
@@ -57,7 +58,7 @@ export const useShapes = () => {
     radius: (own: number) => shapes.radius ?? tokens.radius ?? own,
     /** A small rounding (a marker, a chip): never rounder than the radius of the style. */
     corner: (own: number) => (shapes.radius == null ? own : Math.min(own, shapes.radius)),
-    shadow: (own: string) => (shapes.shadow === "none" ? "none" : own),
+    shadow: (own: string) => (shapes.shadow === "none" || tokens.shadow?.soft === "none" ? "none" : own),
     border: (own: number) => shapes.border ?? own,
   };
 };
@@ -69,8 +70,11 @@ export const useWeight = () => {
   return (weight: number) => (weight >= 600 ? weights.strong ?? weight : weights.normal ?? weight);
 };
 
-/** A colour of the theme by its token name, with a fallback for a token the theme lacks. */
+/** A colour of the theme by its token name, with a fallback for a token the theme lacks. The accent is a fill (a close, the
+ *  circle of a number); what is drawn thin on the background with it (a line, an arrow, a mark, a word) is `accent-strong`, the
+ *  accent that reads on the background: the same colour when the accent already reads, a darker one when it is only a fill. */
 export const useColor = () => {
   const { tokens } = useTheme();
-  return (name: string, fallback?: string) => tokens.color[name] ?? (fallback ? tokens.color[fallback] : undefined) ?? "#000000";
+  return (name: string, fallback?: string) => tokens.color[name] ?? (fallback ? tokens.color[fallback] : undefined)
+    ?? (name === "accent-strong" ? tokens.color.accent : undefined) ?? "#000000";
 };

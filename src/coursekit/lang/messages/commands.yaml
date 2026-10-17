@@ -295,8 +295,8 @@ help_brief:
 help_brief_code: {es: "código del curso (por defecto: el brief/ del proyecto)", en: "course code (default: the project brief/)"}
 help_brief_refresh: {es: "descarga de nuevo las URL de links.md", en: "download the URLs of links.md again"}
 help_theme_action:
-  es: "tokens escribe tokens.css; check mide el contraste; import deriva los tokens del resultado guardado de get_theme; show dice de dónde salen"
-  en: "tokens writes tokens.css; check measures the contrast; import derives the tokens from the saved get_theme result; show says where they come from"
+  es: "tokens escribe tokens.css; check mide el contraste; import deriva los tokens del resultado guardado de get_theme; show dice de dónde salen; roles lista cada color, de dónde sale y dónde se ve"
+  en: "tokens writes tokens.css; check measures the contrast; import derives the tokens from the saved get_theme result; show says where they come from; roles lists each colour, where it comes from and where it is seen"
 help_theme_file: {es: "import: fichero con el resultado de get_theme, o la hoja de estilos .css del backend html", en: "import: file with the get_theme result, or the .css stylesheet of the html backend"}
 help_theme_course: {es: "usa (o crea con import) los tokens propios de este curso", en: "use (or create with import) the tokens of this course"}
 media_upload_needs:

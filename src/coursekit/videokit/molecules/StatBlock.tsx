@@ -10,7 +10,7 @@ export const StatBlock: React.FC<{ value: number; prefix?: string; suffix?: stri
   source: string; at?: number; locale?: string }> = ({ value, prefix, suffix, decimals, label, source, at = 0, locale }) => (
   <div>
     <Enter at={at} scale>
-      <Heading size={220} tone="accent" weight={900}>
+      <Heading size={220} tone="accent-strong" weight={900}>
         <Counter value={value} at={at} prefix={prefix} suffix={suffix} decimals={decimals} locale={locale} />
       </Heading>
     </Enter>

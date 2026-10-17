@@ -540,6 +540,8 @@ def cmd_approve(args: argparse.Namespace) -> int:
         print(approve.approve_design(course, confirm, do_commit=not args.no_commit))
     elif args.gate == "style":
         print(approve.approve_style(course, confirm, do_commit=not args.no_commit))
+    elif args.gate == "media-style":
+        print(approve.approve_media_style(course, confirm, do_commit=not args.no_commit))
     elif args.gate == "script":
         if not args.asset:
             print(t("commands", "approve_needs_asset"), file=sys.stderr)
@@ -1042,6 +1044,20 @@ def cmd_tts(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_brand(args: argparse.Namespace) -> int:
+    from coursekit import brand
+
+    project = _project()
+    course = coursemod.load(project, args.code) if args.code else None
+    done = brand.build(project, course, args.refresh, log=print)
+    rel = done["folder"].relative_to(project.root).as_posix()
+    print(t("brand", "done", path=rel, documents=done["documents"], webs=done["webs"], observed=done["observed"],
+            fonts=", ".join(done["fonts"]) or "—", logos=done["logos"], icons=done["icons"], index=f"{rel}/index.md"))
+    if done["missing_fonts"]:
+        print(t("brand", "done_missing_fonts", families=", ".join(done["missing_fonts"])))
+    return 1 if done["failed"] else 0
+
+
 def cmd_tts_batch(args: argparse.Namespace) -> int:
     course = coursemod.load(_project(), args.code)
     if args.action == "list":
@@ -1199,6 +1215,17 @@ def cmd_theme(args: argparse.Namespace) -> int:
         if not _print_contrast(tokens):
             print(t("commands", "theme_contrast_hint_css" if origin["source"] == "css" else "theme_contrast_hint"))
         return 0
+    if args.action == "roles":
+        tokens = thememod.load(project, course)
+        for row in thememod.roles(tokens):
+            origin = t("theme", f"role_from_{row['from']}", ref=row["ref"] or "")
+            print(t("theme", "role_line", role=row["role"], value=row["value"], name=f" ({row['palette']})" if row["palette"] else "",
+                    origin=origin))
+            print(t("theme", "role_seen", use=row["use"]))
+        palette = tokens.get("palette") or {}
+        if palette:
+            print(t("theme", "roles_palette", palette=", ".join(f"{k} {v}" for k, v in palette.items())))
+        return 0
     if args.action == "show":
         found = thememod.status(project, course)
         print(t("commands", "theme_scope_course" if found.scope == "course" else "theme_scope_project", path=rel(found.path)))
@@ -1313,7 +1340,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.set_defaults(func=cmd_reviewed)
 
     p = sub.add_parser("approve", help=t("commands", "help_approve"))
-    p.add_argument("gate", choices=("design", "content", "style", "script"))
+    p.add_argument("gate", choices=("design", "content", "style", "media-style", "script"))
     p.add_argument("code")
     p.add_argument("--unit", type=int, help=t("commands", "help_approve_unit"))
     p.add_argument("--asset", help=t("commands", "help_approve_asset"))
@@ -1436,6 +1463,11 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--batch", action="store_true", help=t("commands", "help_tts_batch"))
     p.set_defaults(func=cmd_tts)
 
+    p = sub.add_parser("brand", help=t("brand", "help"))
+    p.add_argument("code", nargs="?", help=t("brand", "help_code"))
+    p.add_argument("--refresh", action="store_true", help=t("brand", "help_refresh"))
+    p.set_defaults(func=cmd_brand)
+
     p = sub.add_parser("tts-batch", help=t("commands", "help_tts_batch_command"))
     p.add_argument("action", choices=("list", "send", "status", "collect"))
     p.add_argument("code")
@@ -1491,7 +1523,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.set_defaults(func=cmd_catalog)
 
     p = sub.add_parser("theme", help=t("commands", "help_theme"))
-    p.add_argument("action", choices=("tokens", "check", "import", "show"), help=t("commands", "help_theme_action"))
+    p.add_argument("action", choices=("tokens", "check", "import", "show", "roles"), help=t("commands", "help_theme_action"))
     p.add_argument("file", nargs="?", help=t("commands", "help_theme_file"))
     p.add_argument("--course", help=t("commands", "help_theme_course"))
     p.set_defaults(func=cmd_theme)

@@ -59,3 +59,6 @@ note_exe_report: {es: "paquete de eXeLearning: el detalle de la conversión est�
 note_exe_missing_words: {es: "faltan {count} palabras del origen en el Markdown (ver `import-report.md`)", en: "{count} words of the source are missing in the Markdown (see `import-report.md`)"}
 note_exe_unmapped: {es: "iDevices sin regla importados como texto: {kinds}", en: "iDevices with no rule imported as text: {kinds}"}
 note_exe_missing_images: {es: "{count} imágenes que el paquete no trae", en: "{count} images the package does not contain"}
+downloading_storybook: {es: "descargando el Storybook {url} entero (páginas y componentes) …", en: "downloading the whole Storybook {url} (pages and components) …"}
+note_storybook: {es: "un Storybook: todas sus páginas y componentes, con sus props e historias (índice en su README.md)", en: "a Storybook: all its pages and components, with their props and stories (index in its README.md)"}
+note_storybook_index_only: {es: "un Storybook sin manifiestos publicados: solo la lista de sus entradas, no su contenido", en: "a Storybook with no published manifests: only the list of its entries, not their content"}

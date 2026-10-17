@@ -206,17 +206,32 @@ def write_import_report(brief: Path, state: dict, lang: str) -> None:
     path.write_text(exelearning.render_report(reports, lang), encoding="utf-8", newline="\n")
 
 
-def download_links(brief: Path, state: dict, refresh: bool, log=None) -> tuple[list[dict], int]:
+def download_links(brief: Path, state: dict, refresh: bool, log=None, links: list[tuple[str, str]] | None = None
+                   ) -> tuple[list[dict], int]:
+    """Each link of links.md (or the `links` given) as Markdown in text/web/<site>/: a Storybook read whole from its manifests,
+    any other site with web2md."""
+    from coursekit import storybook
+
     web_root = brief / "text" / "web"
     previous = state.get("web", {})
     current, rows, failed = {}, [], 0
-    links = parse_links(brief / "links.md")
+    links = parse_links(brief / "links.md") if links is None else links
     node = shutil.which("node")
     for url, comment in links:
         slug = site_slug(url)
         folder = web_root / slug
         info = dict(previous.get(slug, {}), url=url)
-        if refresh or not folder.exists():
+        root = storybook.detect(url) if refresh or not folder.exists() else info.get("storybook")
+        if root and (refresh or not folder.exists()):
+            if folder.exists():
+                shutil.rmtree(folder)
+            if log:
+                log(i18n.t("brief", "downloading_storybook", url=url))
+            done = storybook.download(root, folder)
+            info.update(downloaded=dt.date.today().isoformat(), errors=False, storybook=root,
+                        files=[p.relative_to(brief).as_posix() for p in done["files"]], manifests=done["manifests"])
+        elif refresh or not folder.exists():
+            info.pop("storybook", None)
             if node is None:
                 failed += 1
                 rows.append({"url": url, "note": comment, "folder": None, "pages": 0, "words": 0,
@@ -232,6 +247,8 @@ def download_links(brief: Path, state: dict, refresh: bool, log=None) -> tuple[l
             info["errors"] = proc.returncode != 0
         pages = [p for p in folder.rglob("*.md") if p.name != "README.md"] if folder.exists() else []
         notes = [note("pages_failed")] if info.get("errors") else []
+        if info.get("storybook"):
+            notes.append(note("storybook" if info.get("manifests") else "storybook_index_only"))
         if folder.exists() and not pages:
             notes.append(note("no_web_text"))
         rows.append({"url": url, "note": comment, "folder": folder.relative_to(brief).as_posix() if folder.exists() else None,

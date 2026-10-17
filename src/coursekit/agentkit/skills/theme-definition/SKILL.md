@@ -15,8 +15,15 @@ come from. One theme per project, which every course inherits; a course can have
 
 1. `coursekit theme show` (project) or `coursekit theme show --course <CODE>`. If the tokens already come from a
    platform theme, say which and ask whether to redo them; do not change them unprompted.
-2. Read the brand material of the client for colours, fonts and logos: the files in `theme/branding/` (logos, font files,
-   guidelines, colour lists: open images and PDFs directly) and `brief/index.md`, `brief/notes.md`.
+2. The brand material: run `coursekit brand` (the project's) or `coursekit brand <CODE>` (a course with a brand of its own).
+   It converts what the person left in `theme/branding/` (`sources/`: brand book, token files, fonts, logos; `links.md`: a
+   Storybook or brand website read whole, and websites whose style is observed in a browser; `notes.md`: their indications)
+   and writes `theme/branding/index.md`. Read the index, then `notes.md`, then the material: every page of brand and
+   foundations whole (colours, typography, iconography, data graphics, motion, shape, logo), the index of the components
+   whole, and whole the components that resources draw like (cards, charts, icons, alerts, tags, buttons); search the rest
+   with `coursekit brief --find`. What was observed on a website is a clue, never a rule: when it contradicts the brand
+   material, the brand wins. Also `brief/index.md` and `brief/notes.md`. If the index lists fonts without files, ask the
+   person for them (with their licence) instead of using others.
 3. The choice made when the project was created is `project.yaml › theme › source` (creator backend): `tenant_default` (the
    default theme of the organization) or `branding` (a theme made from `theme/branding/`). Follow it; ask only when you can ask.
 
@@ -54,14 +61,68 @@ Otherwise, or when the person asks for something else:
 2. `coursekit theme import .cache/theme/get_theme.json` (project) or add `--course <CODE>` (own theme of the
    course; it also records `slxd.theme_id` in `course.yaml`). It writes `tokens.json` (with its origin) and
    `tokens.css`, prints the notes and the contrast of each pair.
-3. If a pair fails the contrast, fix the colour in the platform (`update_theme`) and import again. Never edit the
-   tokens by hand.
+3. If a pair fails the contrast, fix the colour in the platform (`update_theme`) and import again, unless the theme is
+   read-only or the brand says the platform theme is not to be touched: then explain the failure and how the brand already
+   handles it (a colour used only as a fill, for example) and let the person decide. Never edit the tokens by hand.
 
-## 4. Link and tell the person
+## 4. The brand in the media
+
+The tokens come from the platform theme; some roles the platform does not have are derived by coursekit (mixed from other
+colours, `origin.derived`), and the radius and the shadow are its defaults. The media must follow the brand, so compare:
+
+1. `coursekit theme roles` (or `--course <CODE>`): each colour role, its value, where it comes from and **where it is seen**;
+   the palette of the theme with its names. For each role derived by coursekit, and for the radius and the shadow, look for
+   the colour or the value the brand gives for that use.
+2. Propose, never decide alone, what differs. Each proposal or question says, in the language of the person, the role, its
+   value now, where it is seen (the text of `coursekit theme roles`, as it is), the colour of the brand you propose with
+   its name in the palette, and the place of the brand material you read it from (file and section). One example:
+   «`surface` es `#F5F6F7`, calculado por coursekit. Se ve en el fondo de las tarjetas de una comparación en un vídeo y en
+   la banda de fondo de una escena. La marca tiene el gris `grey-lightest` `#F2F2F2` para las superficies secundarias
+   (Foundations › Colores, neutrales). ¿Lo uso?». When the brand has no answer, say so and ask.
+3. Write each answer of the person in `theme/branding/notes.md` (a course with its own brand: its `notes.md`), one line per
+   decision, in their words: it is the source the guide cites for it (`[notes.md]`), and the next time the guide is written
+   nobody asks again. Never cite «agreed» or a conversation: what is not in a file is not a source.
+4. What the person accepts goes in `project.yaml › theme` (a course with its own tokens: `course.yaml › theme`): `roles`
+   (a role → the name of a colour of the palette, or another role; a hex only when the brand defines it and the palette of
+   the theme lacks it), `radius` (px), `shadow` (`none`, or a CSS shadow), `border` (px) and `weights` (`normal`, `strong`).
+   Every colour role can be fixed, also one that comes from the platform when the brand says otherwise (the text on a fill
+   of state, for example): say so, because the course in the platform keeps the platform's. Then import the tokens again (step 3): they
+   come out with those values, recorded as fixed by the project. The platform theme is not touched.
+5. The style of the videos: propose in `config/video.yaml` what the brand says of shapes and weights (`shapes`: radius,
+   shadow, border; `weights`: the normal and the strong weight); the fonts reach the videos by themselves from
+   `theme/branding/fonts/fonts.css`. A logo in the videos only if the brand or the person asks for it.
+6. Write `theme/branding/media-style.md` (a course with its own brand: `courses/<CODE>/theme/branding/media-style.md`), in the
+   language of the courses, with these sections and only what the brand material says, each rule followed by its source
+   (file and section) in brackets:
+   - what the guide is for, and that in the resources it wins over the tokens when they differ;
+   - the material of the folder (foundations, tokens, fonts, icons, logos) and where each one is;
+   - colour: a table with each colour of the brand (name, hex, use), which ones are fills and which can be ink, what the
+     colours of state are for; no colour outside the brand;
+   - data graphics: the palettes and the order of their colours, how many series, how the rest is grouped;
+   - typography: the families, their weights and what each one is for, and that the files are in `fonts/`;
+   - shape: corners, borders, shadows;
+   - icons: which set and where its files are (`icons/`, when the brand brings them), its rules measured on those files
+     (grid, stroke, joins, live area), and how to draw a missing one with the same criteria;
+   - motion: durations and curves, reduced motion;
+   - images and illustration: what the brand says of photography and illustration;
+   - logo: when it is used and when not;
+   - what never appears.
+   A rule you infer and the brand does not state is not written as a rule: it goes as a question. The person's
+   `notes.md` weighs more than the rest.
+7. Tell the person to read the guide and sign it for each course (`coursekit approve media-style <CODE>`): no visual
+   resource is produced until it is signed, and it is signed again when it changes. You never sign it.
+
+In a session with no one to ask (`--headless`, the handoff): apply only what has one clear answer in the brand (a colour of
+the palette named for that same use, a rule stated in so many words), leave everything else as it is, write the guide, and
+list in `theme/branding/brand-report.md` each difference found, what you applied (with its source) and each question you
+could not ask. The handoff signs the guide itself.
+
+## 5. Link and tell the person
 
 - Content that already exists: `set_content_theme` with the theme id (`coursekit theme show --course <CODE>`). Contents
   created later get it in the assembly.
-- Summarise: the theme chosen, its id and version, the colours and fonts that resulted, what is derived and not in
-  the platform (soft text, surfaces, radii, spacing), the notes (dark mode: the tokens are the light mode) and
-  the contrast result. The person validates the theme as they validate the design.
+- Summarise: the theme chosen, its id and version, the colours and fonts that resulted, what is derived by coursekit,
+  what is fixed by the project and from which colour of the brand, the notes (dark mode: the tokens are the light mode),
+  the contrast result, the guide written and what is pending (questions, fonts without files, the signature of the guide).
+  Say which values come from the platform and which do not, never mixing them.
 - Do not commit unless asked.

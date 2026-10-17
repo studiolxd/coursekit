@@ -1,0 +1,83 @@
+# Output of `coursekit brand` and the files it writes in the brand folder (theme/branding/, or a course's).
+links_style_heading: {es: "# Webs de las que inferir el estilo", en: "# Websites to infer the style from"}
+links_template:
+  es: |
+    # Material de marca
+
+    <!-- Una URL por línea (sola o como elemento de lista), con una nota opcional detrás de " — ". Se lee su contenido:
+    un Storybook entero (páginas y componentes), una web de marca o una documentación, en Markdown en text/web/. -->
+
+    # Webs de las que inferir el estilo
+
+    <!-- La web de la empresa, del proyecto o de un producto: no se lee su texto, se abre en un navegador y se observa su
+    estilo (variables CSS, colores, tipografías, radios, sombras, logo, capturas) en text/observed/. Son pistas, no reglas. -->
+  en: |
+    # Brand material
+
+    <!-- One URL per line (alone or as a list item), with an optional note after " — ". Its content is read: a whole
+    Storybook (pages and components), a brand website or a documentation, as Markdown in text/web/. -->
+
+    # Websites to infer the style from
+
+    <!-- The website of the company, of the project or of a product: its text is not read, it is opened in a browser and its
+    style is observed (CSS variables, colours, fonts, radius, shadows, logo, screenshots) in text/observed/. Clues, not rules. -->
+notes_template:
+  es: |
+    # Indicaciones sobre la marca
+
+    <!-- Lo que el material no dice o lo que quieres que pese más: «la lavanda solo como relleno», «sin logo en los vídeos»,
+    «nada de fotografía de stock con personas posando»… El agente lo lee antes que el resto. -->
+  en: |
+    # Notes on the brand
+
+    <!-- What the material does not say or what should weigh more: "lavender only as a fill", "no logo in the videos",
+    "no stock photographs of people posing"… The agent reads it before the rest. -->
+google_licence: {es: "{family}: Google Fonts, con licencia abierta (OFL o Apache): https://fonts.google.com/specimen/{family}/license", en: "{family}: Google Fonts, under an open licence (OFL or Apache): https://fonts.google.com/specimen/{family}/license"}
+sheet_kept: {es: "{path} no lo escribió coursekit: se conserva tal cual (bórralo para que lo genere con las fuentes de la marca)", en: "{path} was not written by coursekit: it is kept as it is (delete it to have it written from the fonts of the brand)"}
+index_title: {es: "# Material de marca", en: "# Brand material"}
+index_intro:
+  es: "> Generado por `coursekit brand`. No lo edites: cambia `sources/`, `links.md` o `notes.md` y vuelve a ejecutarlo. Agentes: leed este índice, luego `notes.md`, y después el material de `text/` que os toque."
+  en: "> Written by `coursekit brand`. Do not edit it: change `sources/`, `links.md` or `notes.md` and run it again. Agents: read this index, then `notes.md`, then the material of `text/` your task needs."
+index_notes: {es: "Indicaciones en `notes.md`: {answer}", en: "Notes in `notes.md`: {answer}"}
+"yes": {es: "sí", en: "yes"}
+"no": {es: "no", en: "no"}
+index_empty: {es: "Aún no hay material: deja ficheros en `sources/` o URL en `links.md` y vuelve a ejecutar `coursekit brand`.", en: "No material yet: leave files in `sources/` or URLs in `links.md` and run `coursekit brand` again."}
+section_documents: {es: "## Documentos", en: "## Documents"}
+header_documents: {es: "| Fichero | Texto | Palabras | Avisos |", en: "| File | Text | Words | Warnings |"}
+section_webs: {es: "## Webs y Storybooks", en: "## Websites and Storybooks"}
+header_webs: {es: "| URL | Nota | Índice | Páginas | Avisos |", en: "| URL | Note | Index | Pages | Warnings |"}
+section_observed: {es: "## Estilo observado en webs", en: "## Style observed on websites"}
+observed_intro: {es: "Pistas, no reglas de marca: si contradicen el material de marca, gana la marca.", en: "Clues, not rules of the brand: when they contradict the brand material, the brand wins."}
+header_observed: {es: "| URL | Nota | Lo observado | Error |", en: "| URL | Note | What was observed | Error |"}
+section_fonts: {es: "## Fuentes", en: "## Fonts"}
+fonts_intro: {es: "En `{path}` (los vídeos y los SVG exportados a PNG las llevan dentro):", en: "In `{path}` (the videos and the SVGs exported as PNG carry them inside):"}
+header_fonts: {es: "| Familia | De dónde sale |", en: "| Family | Where it comes from |"}
+origin_sheet: {es: "una hoja @font-face de sources/", en: "an @font-face sheet of sources/"}
+origin_file: {es: "un fichero de sources/ (familia deducida del nombre: revísala)", en: "a file of sources/ (family guessed from its name: check it)"}
+origin_google: {es: "Google Fonts (licencia abierta)", en: "Google Fonts (open licence)"}
+section_missing_fonts: {es: "## Fuentes sin ficheros", en: "## Fonts without files"}
+missing_fonts: {es: "La marca usa {families} y no hay ficheros que se puedan usar: hay que pedírselos a la persona (con su licencia) y dejarlos en `sources/`.", en: "The brand uses {families} and there are no files that can be used: ask the person for them (with their licence) and leave them in `sources/`."}
+section_logos: {es: "## Logos", en: "## Logos"}
+section_tokens: {es: "## Ficheros de tokens", en: "## Token files"}
+section_images: {es: "## Imágenes", en: "## Images"}
+section_other: {es: "## Otros ficheros", en: "## Other files"}
+observing: {es: "observando el estilo de {url} en el navegador …", en: "observing the style of {url} in the browser …"}
+observe_no_node: {es: "falta Node (nodejs.org) para abrir la web en el navegador", en: "Node is missing (nodejs.org) to open the website in the browser"}
+observe_no_workspace: {es: "no se pudo preparar el navegador (npm)", en: "the browser could not be prepared (npm)"}
+observe_failed: {es: "no se pudo observar {url}: {error}", en: "{url} could not be observed: {error}"}
+observed_title: {es: "# Estilo observado en {url}", en: "# Style observed on {url}"}
+observed_warning: {es: "> Lo que el navegador dibuja, no la marca: sirve para proponer y preguntar. Una fuente que la web sirve no da permiso para copiarla.", en: "> What the browser draws, not the brand: it is for proposing and asking. A font the website serves gives no permission to copy it."}
+observed_vars: {es: "## Variables CSS de :root", en: "## CSS variables of :root"}
+observed_elements: {es: "## Estilos calculados", en: "## Computed styles"}
+observed_backgrounds: {es: "## Fondos, por superficie", en: "## Backgrounds, by area"}
+observed_text: {es: "## Colores de texto, por cantidad de texto", en: "## Text colours, by amount of text"}
+observed_fonts: {es: "## Fuentes", en: "## Fonts"}
+observed_logos: {es: "## Candidatos a logo", en: "## Logo candidates"}
+observed_shots: {es: "## Capturas", en: "## Screenshots"}
+done: {es: "marca en {path}: {documents} documento(s), {webs} web(s), {observed} web(s) observada(s), fuentes: {fonts}, {logos} logo(s), {icons} icono(s) → {index}", en: "brand in {path}: {documents} document(s), {webs} website(s), {observed} observed website(s), fonts: {fonts}, {logos} logo(s), {icons} icon(s) → {index}"}
+done_missing_fonts: {es: "  faltan los ficheros de: {families} (pídelos con su licencia y déjalos en sources/)", en: "  the files of {families} are missing (ask for them with their licence and leave them in sources/)"}
+help: {es: "material de marca (Storybook, libro de marca, webs): lo convierte para los agentes, saca fuentes, logos y tokens", en: "brand material (Storybook, brand book, websites): converts it for the agents, takes out fonts, logos and tokens"}
+help_code: {es: "la marca de este curso (courses/<CODE>/theme/branding/); sin él, la del proyecto", en: "the brand of this course (courses/<CODE>/theme/branding/); without it, the project's"}
+help_refresh: {es: "vuelve a descargar las URL y a observar las webs", en: "download the URLs and observe the websites again"}
+section_icons: {es: "## Iconos", en: "## Icons"}
+icons_line: {es: "{count} iconos de la marca en `{path}`: usa esos dibujos; un icono que falte se dibuja con su mismo criterio.", en: "{count} icons of the brand in `{path}`: use those drawings; a missing icon is drawn with their same criteria."}

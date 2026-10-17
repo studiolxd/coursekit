@@ -31,3 +31,26 @@ note_css_color:
 note_dark:
   es: "el theme tiene modo oscuro: los tokens son los del modo claro"
   en: "the theme has a dark mode: the tokens are those of the light mode"
+unknown_role: {es: "theme › roles: {role} no es un rol de color (los roles: {roles})", en: "theme › roles: {role} is not a colour role (the roles: {roles})"}
+unknown_colour: {es: "theme › roles › {role}: {ref} no es un color de la paleta del tema, otro rol ni un hex (la paleta: {palette})", en: "theme › roles › {role}: {ref} is not a colour of the palette of the theme, another role or a hex (the palette: {palette})"}
+role_from_theme: {es: "del tema", en: "from the theme"}
+role_from_derived: {es: "calculado por coursekit", en: "derived by coursekit"}
+role_from_set: {es: "fijado por el proyecto ({ref})", en: "fixed by the project ({ref})"}
+role_line: {es: "{role}  {value}{name}  · {origin}", en: "{role}  {value}{name}  · {origin}"}
+role_seen: {es: "    se ve en: {use}", en: "    seen in: {use}"}
+roles_palette: {es: "Paleta del tema (para theme › roles): {palette}", en: "Palette of the theme (for theme › roles): {palette}"}
+role_use_background: {es: "el fondo de las escenas de un vídeo, de una simulación y de los diagramas e infografías", en: "the background of the scenes of a video, of a simulation and of the diagrams and infographics"}
+role_use_text: {es: "el texto de los vídeos, las simulaciones y los SVG; el texto sobre las tarjetas", en: "the text of the videos, the simulations and the SVGs; the text on cards"}
+role_use_headings: {es: "los títulos de las escenas de un vídeo y el nombre del rótulo inferior", en: "the titles of the scenes of a video and the name of the lower third"}
+role_use_accent: {es: "el color que destaca: el subrayado de una palabra, las marcas de una lista, los números de los pasos, las flechas, el fondo de la escena de cierre y los botones de una simulación", en: "the colour that stands out: the underline of a word, the marks of a list, the numbers of the steps, the arrows, the background of the closing scene and the buttons of a simulation"}
+role_use_on-accent: {es: "el texto sobre el color de acento: la escena de cierre de un vídeo, los números de los pasos, los botones de una simulación", en: "the text on the accent colour: the closing scene of a video, the numbers of the steps, the buttons of a simulation"}
+role_use_link: {es: "los enlaces del texto", en: "the links of the text"}
+role_use_correct: {es: "lo correcto: la columna buena de una comparación, la respuesta acertada de una simulación", en: "what is right: the good column of a comparison, the right answer of a simulation"}
+role_use_on-correct: {es: "el texto sobre el color de correcto", en: "the text on the colour of what is right"}
+role_use_wrong: {es: "lo incorrecto: la columna mala de una comparación, la respuesta fallida de una simulación", en: "what is wrong: the bad column of a comparison, the wrong answer of a simulation"}
+role_use_on-wrong: {es: "el texto sobre el color de incorrecto", en: "the text on the colour of what is wrong"}
+role_use_text-soft: {es: "el texto secundario: la fuente bajo una cifra, el cargo bajo un nombre, la explicación pequeña de un paso, el autor de una cita", en: "the secondary text: the source under a figure, the role under a name, the small explanation of a step, the author of a quote"}
+role_use_surface: {es: "el fondo de las tarjetas (las columnas de una comparación, los pasos de un diagrama) y la banda de fondo de una escena", en: "the background of the cards (the columns of a comparison, the steps of a diagram) and the background band of a scene"}
+role_use_highlight: {es: "el fondo de una nota destacada en una simulación", en: "the background of a highlighted note in a simulation"}
+role_use_line: {es: "el borde de las tarjetas de un vídeo y de una simulación, las líneas que separan bloques", en: "the border of the cards of a video and of a simulation, the lines that separate blocks"}
+role_use_accent-strong: {es: "el acento como texto o línea fina sobre el fondo: el contorno del foco en una simulación (quien navega con teclado lo ve al pasar por un botón)", en: "the accent as text or a thin line on the background: the focus outline in a simulation (who browses with the keyboard sees it on a button)"}

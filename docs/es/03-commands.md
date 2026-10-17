@@ -82,7 +82,7 @@ Mientras un curso está en `on_hold`, los comandos que cambian su trabajo se rec
 | Verificación y firma | `coursekit verify`, `coursekit paths`, `coursekit reviewed`, `coursekit approve` |
 | Estado del curso y revisión del cliente | `coursekit hold`, `coursekit resume`, `coursekit client` |
 | Lanzar agentes | `coursekit write`, `coursekit review`, `coursekit run` |
-| Multimedia | `coursekit media`, `coursekit video`, `coursekit voice`, `coursekit tts`, `coursekit tts-batch`, `coursekit subtitles`, `coursekit theme`, `coursekit capture` |
+| Multimedia | `coursekit media`, `coursekit video`, `coursekit voice`, `coursekit tts`, `coursekit tts-batch`, `coursekit subtitles`, `coursekit brand`, `coursekit theme`, `coursekit capture` |
 | Montaje y entrega | `coursekit assemble`, `coursekit preview`, `coursekit directives`, `coursekit delivery`, `coursekit publish`, `coursekit catalog` |
 
 ## Proyecto y máquina
@@ -596,12 +596,12 @@ coursekit reviewed PWD 1 --by "Ana Pérez" --note "Revisada con la formadora del
 Firma el diseño instruccional o una unidad, en nombre de la persona que lo ejecuta. Solo personas: las configuraciones de agente generadas lo deniegan y los comandos de barra solo preparan la firma. Quién: personas.
 
 ```
-coursekit approve [--unit UNIT] [--asset ASSET] [--yes] [--no-commit] [--force] {design,content,style,script} code
+coursekit approve [--unit UNIT] [--asset ASSET] [--yes] [--no-commit] [--force] {design,content,style,media-style,script} code
 ```
 
 | Argumento | Valores / por defecto | Significado |
 |---|---|---|
-| `gate` | `design`, `content`, `style` o `script` | Qué firmar: el diseño instruccional, el contenido de una unidad, la lámina de estilo de las imágenes de las simulaciones o el guion de un recurso. |
+| `gate` | `design`, `content`, `style`, `media-style` o `script` | Qué firmar: el diseño instruccional, el contenido de una unidad, la lámina de estilo de las imágenes de las simulaciones, la guía de estilo de los recursos o el guion de un recurso. |
 | `code` | código o carpeta del curso | Curso. |
 | `--unit UNIT` | número de unidad | Unidad que firmar (obligatorio con `content`; sin él el comando termina con código 2). |
 | `--asset ASSET` | id del recurso | El recurso cuyo guion se firma (obligatorio con `script`; código de salida 2 sin él). |
@@ -614,6 +614,8 @@ Sin `--yes` necesita una terminal interactiva (si no, código de salida 1) y pre
 `design`: necesita `design/matrix.json`; con un diseño local, también que `design/design.yaml` diga lo mismo que esa exportación (si no, ejecuta [`coursekit design`](#coursekit-design)); se niega si `design/validation.json` contiene hallazgos de severidad `error`. Ejecuta [`coursekit sync`](#coursekit-sync), añade la aprobación a `course.yaml › approvals` (firmante, fecha y hora, id de la matriz, SHA-256 de `matrix.json`, nombre del Excel), pone el curso en `design_approved` y hace commit de la carpeta del curso como `Design approval <CODE>`. Cualquier cambio posterior de `matrix.json` invalida la firma. En un curso basado en decisiones necesita además la biblia narrativa `design/story.md` con una cabecera válida, registra su SHA-256 (`story_sha256`) y un cambio posterior de ella también invalida la firma (ver [Biblia narrativa](06-content.md#biblia-narrativa)). Cuando `misconceptions.per_objective` es mayor que 0 (2 por defecto) necesita además `design/misconceptions.yaml`, con al menos esos errores típicos para cada objetivo del diseño e ids válidos, registra su SHA-256 (`misconceptions_sha256`, también cuando la regla es 0 y el fichero existe) y un cambio posterior de él invalida la firma (ver [Errores típicos](06-content.md#errores-típicos)).
 
 `style`: necesita las muestras de la lámina de estilo en `courses/<CODE>/media/style/` (PNG, JPG, WebP o SVG) y un `media › visual` válido. Registra el estilo firmado (el configurado, o `visual.fallback` cuando no hay generador de imágenes) y el SHA-256 de cada muestra, y hace commit de la carpeta del curso como `Style approval <CODE>`. Mientras no está firmada, `coursekit media set … --status produced` (o `uploaded`) rechaza las imágenes de las simulaciones salvo con `--force`; se vuelve a firmar cuando cambia el estilo. Ver [Imágenes de las simulaciones](07-media.md#imágenes-de-las-simulaciones).
+
+`media-style`: la guía de estilo de los recursos en vigor para el curso (`theme/branding/media-style.md`, o la propia del curso, que gana): la has leído. Anota su ruta y su SHA-256 y hace commit de la carpeta del curso como `Media style approval <CODE>`. Mientras `rules › review › media_style` sea `required` (por defecto) y haya guía, `coursekit media set … --status produced` (o `uploaded`) rechaza un recurso visual (una imagen o un tipo de `uses_theme`) hasta que esté firmada, o después de que haya cambiado, salvo con `--force`; `coursekit media plan` lo avisa. Una sesión del handoff la firma sola. Ver [La guía de estilo de los recursos](07-media.md#la-guía-de-estilo-de-los-recursos).
 
 `content`: necesita el diseño aprobado y sin cambios, la unidad pasando `verify` sin errores, el estado de la unidad en `reviewed` (o `approved`) y el informe de la revisión con IA, salvo que una persona haya registrado su propia revisión (`coursekit reviewed --by`) o el proyecto omita la revisión con IA (`rules › review › ai: skip`, donde basta una unidad `verified`). Se rechaza si el contenido cambió después de la revisión con IA: la referencia es la huella de cada apartado y actividad que guardó `coursekit reviewed`, y el mensaje nombra las partes que cambiaron (revísalas de nuevo con `coursekit review`, o firma igualmente con `--force`). Registra el SHA-256 de `content.md` y `assessment.md`, mueve la unidad a `approved` y hace commit de `course.yaml`, la carpeta de la unidad y el informe de revisión como `Content approval <CODE> U<N>`.
 
@@ -981,17 +983,43 @@ Junto a `OUT` escribe también los tiempos de cada palabra dicha, `<nombre>.word
 coursekit subtitles --audio media/files/u1-s2-m1.mp3 --text media/scripts/u1-s2-m1.txt --out media/files/u1-s2-m1.vtt --course PWD
 ```
 
+### `coursekit brand`
+
+El material de marca del proyecto (o de un curso), listo para los agentes: lo que dejas en `theme/branding/`, convertido a Markdown con un índice, y las fuentes, los logos y los ficheros de tokens sacados donde los recursos pueden usarlos. Funciona como [`coursekit brief`](#coursekit-brief): dejas el material en una carpeta y lo ejecutas. Ver [El material de marca](07-media.md#el-material-de-marca). Quién: ambos (`/define-theme` lo ejecuta).
+
+```
+coursekit brand [--refresh] [code]
+```
+
+| Argumento | Valores / por defecto | Significado |
+|---|---|---|
+| `code` | código o carpeta del curso; opcional | La marca de ese curso, en `courses/<CODE>/theme/branding/`, que gana a la del proyecto. Sin él, la del proyecto, `theme/branding/`. |
+| `--refresh` | indicador | Vuelve a descargar los enlaces y a observar las webs (por defecto solo lo nuevo). |
+
+Lo que lee, en la carpeta de marca (crea `sources/`, `links.md` y `notes.md` la primera vez):
+
+- `sources/`: el libro de marca (PDF, Word, PowerPoint…), ficheros de tokens (`.json`, un `.css` con propiedades personalizadas), fuentes (`.woff2`, `.ttf`, `.otf`, una hoja `@font-face`, su licencia), logos (una imagen cuyo nombre lleva la palabra `logo`), iconos (SVG en una carpeta `icons/` o `glyphs/`), otras imágenes, y un kit de marca (`.zip`) o el paquete de un sistema de diseño (`.tgz`, como lo publica npm), del que solo se toman sus fuentes, iconos, logos y ficheros de tokens, nunca su código.
+- `links.md`, en dos partes. Bajo el primer encabezado, los enlaces cuyo **contenido** se lee: un Storybook (se reconoce por su `index.json`) se lee entero desde sus manifiestos (todas las páginas y todos los componentes con sus props, historias y página) y los ficheros que enlazan sus páginas; cualquier otra web se descarga como hace `coursekit brief`. Bajo `# Webs de las que inferir el estilo` (`# Websites to infer the style from`), los enlaces cuyo **estilo** se observa: la web se abre en el Chrome o el Edge de la máquina y se anotan sus variables CSS, los estilos calculados de su cuerpo, títulos, enlaces, botones y tarjetas, sus colores por superficie, sus fuentes, su logo y una captura, como pistas, nunca como reglas.
+- `notes.md`: tus indicaciones sobre la marca.
+
+Lo que escribe: `text/` (los documentos, las páginas y los componentes en Markdown, los ficheros de tokens, lo observado), `fonts/fonts.css` con las fuentes de la marca (una hoja dejada en `sources/` con sus ficheros; ficheros de fuente sueltos, con la familia deducida del nombre; y las Google Fonts que usa la marca, que tienen licencia abierta, solo los alfabetos latinos), `logo/`, `icons/`, `tokens/`, las capturas en `style/`, e `index.md`, que los agentes leen primero. Una fuente que la marca usa y cuyos ficheros no se pueden usar (una fuente que sirve una web no da permiso para copiarla) se lista para que la aportes. Imprime lo que encontró y, si faltan fuentes, cuáles. Código de salida 1 cuando un enlace no se pudo leer o una web no se pudo observar; lo que funcionó se conserva.
+
+```
+coursekit brand
+coursekit brand PWD --refresh
+```
+
 ### `coursekit theme`
 
 Deriva los tokens de diseño del tema (`tokens.json`, `tokens.css`) a partir del tema de la plataforma de montaje (backend creator) o de la hoja de estilos del proyecto (backend html), indica de dónde salen y comprueba su contraste. Los recursos multimedia (infografías, esquemas, simulaciones, vídeos) usan estos tokens para que parezcan parte del curso. Los tokens nunca se escriben a mano. Quién: ambos (`/define-theme` lo ejecuta).
 
 ```
-coursekit theme [--course COURSE] {tokens,check,import,show} [file]
+coursekit theme [--course COURSE] {tokens,check,import,show,roles} [file]
 ```
 
 | Argumento | Valores / por defecto | Significado |
 |---|---|---|
-| `action` | `tokens`, `check`, `import`, `show` | Ver más abajo. |
+| `action` | `tokens`, `check`, `import`, `show`, `roles` | Ver más abajo. |
 | `file` | ruta; obligatorio en `import` con el backend creator | Backend creator: el fichero con el resultado guardado de la herramienta de la plataforma `get_theme` (el agente lo guarda en `.cache/theme/get_theme.json`). Backend html: la hoja de estilos `.css` del proyecto (por ejemplo `theme/maqueta.css`). La extensión decide: un fichero que acaba en `.css` se lee como hoja de estilos, cualquier otro como resultado de `get_theme`. Con el backend html el fichero puede omitirse: los tokens son entonces los de la maqueta base sola (el origen dice `base layout`). |
 | `--course COURSE` | código o carpeta del curso | Trabaja con el tema propio de ese curso (`courses/<CODE>/theme/`) en lugar del del proyecto (`theme/`). |
 
@@ -1001,6 +1029,8 @@ Acciones:
 
 - `import FILE` con un resultado de `get_theme` (backend creator): lo convierte en `tokens.json` y `tokens.css`, en la carpeta del proyecto o, con `--course`, en la del curso; además el curso recibe `slxd.theme_id` en su `course.yaml`. Los colores `background`, `text`, `headings`, `accent`, `on-accent`, `link`, `correct`, `on-correct`, `wrong` y `on-wrong` salen de los roles semánticos de color del tema, con las referencias a la paleta resueltas. Los tokens `text-soft`, `surface`, `highlight`, `line` y `accent-strong` no existen en la plataforma y se derivan de esos colores (el texto suave se mantiene al menos a 4,5:1 sobre el fondo). Las tipografías (`font.family`, `font.headings`, `font.ui`) salen de las asignaciones de fuentes, y `size-base` y `line-height` del tamaño base y del interlineado. `radius`, `space` y `shadow` son valores por defecto del paquete, porque la plataforma no los tiene. `tokens.json` anota en `origin` de dónde sale todo. Imprime el fichero escrito, las notas como líneas `AVISO` (una fuente incluida en la plataforma que se usa por su nombre, un rol de color que no se pudo resolver, un modo oscuro) y el contraste de cada par. Un par por debajo de su mínimo no hace fallar la importación: la salida indica que corrijas el color en la plataforma con `update_theme` y vuelvas a importar, nunca que edites los tokens a mano.
 - `import FILE` con un fichero `.css` (backend html): los tokens se derivan de las variables CSS de la maqueta base del paquete con ese fichero encima, así que la hoja de estilos solo necesita declarar lo que cambia. Las variables que se leen son `--color-<nombre>` (cada una pasa a ser `color.<nombre>`: `background`, `text`, `text-soft`, `headings`, `accent`, `accent-strong`, `on-accent`, `link`, `surface`, `highlight`, `line`, `correct`, `wrong` y cualquier otra que añadas), `--font-family`, `--font-family-headings` y `--font-family-ui` (`font.family`, `font.headings`, `font.ui`), `--font-size-base`, `--line-height`, `--radius`, `--space-<nombre>` y `--shadow-<nombre>`. Una referencia `var(--x)` se resuelve con los valores de la maqueta base y del fichero (`--color-headings: var(--color-text)` toma el color del texto); gana la última declaración de una variable, esté donde esté en el fichero, y los comentarios se ignoran. `tokens.json` anota en `origin`: `source: css`, `file` (el nombre de la hoja de estilos), `sha256` (los 12 primeros caracteres del hash del fichero), `imported_at` y `notes`; no hay id de theme, así que el curso no recibe `slxd.theme_id`. Imprime `tokens escritos en <ruta> desde las variables CSS de <fichero> (sobre la maqueta base del paquete) y tokens.css al lado`, un `AVISO` por cada color que no es un valor simple (un degradado o un `color-mix()`, por ejemplo: se conserva tal como está escrito y queda fuera de la comprobación de contraste) y el contraste de cada par. Un par por debajo de su mínimo tampoco hace fallar la importación; la indicación que imprime dice que corrijas el color en la hoja de estilos y la vuelvas a importar.
+- `import` aplica además lo que el proyecto fija en `project.yaml › theme` (y, para los tokens propios de un curso, su `course.yaml › theme`): `roles` (un rol de color tomado de un color de la paleta del tema, de otro rol o de un hex, en lugar de calcularse), `radius` y `shadow`; quedan anotados en `origin.set`. Un nombre que no está en la paleta para la importación con la lista de la paleta. Ver [Colores de la marca para los roles](07-media.md#colores-de-la-marca-para-los-roles).
+- `roles`: cada rol de color de los tokens en vigor, su valor (con el nombre del color de la paleta con el que coincide), de dónde sale (del tema, calculado por coursekit, fijado por el proyecto) y dónde se ve en los recursos; después, la paleta del tema. Es lo que lee una persona para elegir el color de un rol, y lo que cita el agente cuando pregunta.
 - `tokens`: reescribe `tokens.css` a partir del `tokens.json` que corresponde: propiedades personalizadas de `:root` y clases base para simulaciones. No edites el CSS a mano.
 - `check`: imprime el contraste WCAG de los pares de colores que usan los recursos y los componentes, una línea por par, `ok` o `FALLO`.
 - `show`: imprime qué tokens se aplican (`tokens del proyecto: theme/tokens.json` o `tokens propios del curso: courses/<CODE>/theme/tokens.json`) y en qué estado están: ausentes (indica que definas el tema con `/define-theme`), escritos a mano (no derivados; indica que los importes) o derivados. Un tema de la plataforma muestra `origen: theme «ACME training» de la plataforma (<id del theme>, versión 3), importado el <fecha>`; una hoja de estilos muestra `origen: variables CSS de maqueta.css (huella <12 caracteres>), importado el <fecha>`. Los agentes leen de la primera forma el id del theme para vincularlo a los contenidos con `set_content_theme`. Los tokens derivados de una hoja de estilos cuentan como derivados para [el control de los recursos](07-media.md#el-control-de-los-recursos) y para `coursekit doctor`.
@@ -1013,6 +1043,7 @@ coursekit theme import .cache/theme/get_theme.json --course PWD
 coursekit theme import theme/maqueta.css
 coursekit theme show --course PWD
 coursekit theme check
+coursekit theme roles
 ```
 
 ### `coursekit capture`

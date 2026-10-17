@@ -113,3 +113,6 @@ tts_batch_waiting: {es: "las locuciones de {code} están en el batch de Gemini (
 tts_batch_collected: {es: "batch de Gemini recogido para {code}: {done} locución(es) escrita(s), {failed} de vuelta en la cola", en: "Gemini batch collected for {code}: {done} narration(s) written, {failed} back in the queue"}
 tts_batch_sent: {es: "batch de Gemini enviado para {code}: {job} ({items} locución(es))", en: "Gemini batch sent for {code}: {job} ({items} narration(s))"}
 tts_batch_failed: {es: "el batch de Gemini de {code} no se pudo enviar o recoger: {error}", en: "the Gemini batch of {code} could not be sent or collected: {error}"}
+media_style_missing:
+  es: "{code}: no se ha podido firmar la guía de estilo de los recursos: "
+  en: "{code}: the style guide of the media could not be signed: "
