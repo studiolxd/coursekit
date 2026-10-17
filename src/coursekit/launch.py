@@ -73,6 +73,9 @@ CLAUDE_DENY = ["Bash(git commit:*)", "Bash(git push:*)", "Bash(coursekit approve
                "Edit(courses/*/assembly/*.json)"]
 
 
+SEARCH_ROLES = ("design", "writer", "reviewer", "media")  # the roles that may search the web (WebSearch in Claude Code)
+
+
 class LaunchError(Exception):
     pass
 
@@ -239,6 +242,8 @@ def headless_args(agent: Agent, text: str, last_message: Path, mcp_name: str, co
             allowed += ["WebFetch", "WebSearch"]  # to find an equivalent video on an official channel
         if agent.role in ("design", "media", "illustration", "assembly"):
             allowed += [f"mcp__{mcp_name}", *([f"mcp__{connector}"] if connector else []), "Bash(coursekit:*)", "WebFetch"]
+        if agent.role == "design":
+            allowed.append("WebSearch")  # the reference documentation, when coursekit research has no search provider
         if agent.role == "media":
             allowed.append("WebSearch")  # to look for the official video that can stand in for a tutorial of a real application
             allowed.append(f"mcp__{agentsmod.CAPTURE_SERVER}")  # captures of a real application, when a person allowed them
@@ -252,7 +257,11 @@ def headless_args(agent: Agent, text: str, last_message: Path, mcp_name: str, co
     if agent.tool == "opencode":
         named = ["--agent", agent.role] if agent.role in ("writer", "reviewer") else []
         return [exe, "run", *named, *with_model, "--auto", "--format", "json", text]
-    return [exe, "exec", *with_model, "--sandbox", "workspace-write", "--json", "-o", str(last_message), text]
+    # The workspace-write sandbox of Codex has no network unless it is opened: coursekit research, brief with links and the media
+    # providers need it. Web search (`--search`, an option of codex before `exec`) for the roles that search, as in Claude Code.
+    search = ["--search"] if agent.role in SEARCH_ROLES else []
+    return [exe, *search, "exec", *with_model, "--sandbox", "workspace-write", "-c", "sandbox_workspace_write.network_access=true",
+            "--json", "-o", str(last_message), text]
 
 
 def mcp_blocker(project: Project, log: Path) -> str | None:

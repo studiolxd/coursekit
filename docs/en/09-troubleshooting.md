@@ -158,6 +158,7 @@ Paths may use `~` and environment variables; the first one that exists on the ma
 - **Exit code 3, "there is no search provider"**: not an error. The agent goes on with its own web search; to use an API, see [Web research](04-configuration.md#web-research-optional).
 - **"rejected the key"** or **"has no credit left"**: check the key in `.env` and the account of the provider. The key never appears in a message or in the log.
 - **"already made N searches"**: the course reached `research › max_per_course`. `coursekit research CODE --status` shows the searches made and an estimate of those left; raise the limit in `config/research.yaml` (or `course.yaml › research`) if more are really needed. An agent that searches again and again for the same thing is better stopped and asked why.
+- **A page "answered empty or with a check against robots"** in the index of the brief: the site refuses a direct download and there was no Chrome or Edge to open it (or it stayed blocked in the browser too). Install one of them, run `coursekit brief CODE --refresh`, or look for another official source (for European law, the text of the Official Journal on boe.es).
 - **A candidate "not found in the language of the course"**: the site has no translation, or has one it neither declares nor reaches by changing the language in its address. If it has one, add a rule to `research › localize_rules`.
 
 ### Mirror folder problems

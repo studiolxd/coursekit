@@ -30,6 +30,9 @@ from coursekit.lang import format_number
 from coursekit.util import sha256_file
 
 WEB2MD = Path(str(resources.files("coursekit.tools").joinpath("web2md.js")))
+BLOCKED = re.compile(r"^BLOCKED\t(\S+)", re.M)  # what web2md says of a page that answered empty or with a check against robots
+RENDERED = re.compile(r"^RENDERED\t(\S+)", re.M)  # ...and of one it read in the browser of the machine instead
+PAGES_FAILED = re.compile(r"^\d+ errores\.$", re.M)
 
 
 def fmt(number: int, lang: str) -> str:
@@ -206,6 +209,25 @@ def write_import_report(brief: Path, state: dict, lang: str) -> None:
     path.write_text(exelearning.render_report(reports, lang), encoding="utf-8", newline="\n")
 
 
+def browser_args(log=None) -> list[str]:
+    """`--browser` and `--playwright` for web2md: the Chrome or Edge of the machine and the store workspace with playwright-core
+    (installed the first time a blocked page needs it). Empty when there is no browser or the workspace cannot be installed."""
+    from coursekit import store
+    from coursekit.htmlkit.build import template_dir
+    from coursekit.htmlkit.playcheck import find_browser
+
+    browser = find_browser()
+    if not browser:
+        return []
+    workspace = store.ensure_workspace("html-checker", template_dir() / "checker" / "package.json", log or (lambda m: None))
+    return ["--browser", browser, "--playwright", str(workspace)] if workspace else []
+
+
+def _web2md(node: str, url: str, folder: Path, extra: list[str] | None = None) -> subprocess.CompletedProcess:
+    return subprocess.run([node, str(WEB2MD), url, "--out", str(folder), *(extra or [])],
+                          capture_output=True, text=True, encoding="utf-8", errors="replace")
+
+
 def download_links(brief: Path, state: dict, refresh: bool, log=None, links: list[tuple[str, str]] | None = None
                    ) -> tuple[list[dict], int]:
     """Each link of links.md (or the `links` given) as Markdown in text/web/<site>/: a Storybook read whole from its manifests,
@@ -241,15 +263,28 @@ def download_links(brief: Path, state: dict, refresh: bool, log=None, links: lis
                 shutil.rmtree(folder)
             if log:
                 log(i18n.t("brief", "downloading", url=url))
-            proc = subprocess.run([node, str(WEB2MD), url, "--out", str(folder)],
-                                  capture_output=True, text=True, encoding="utf-8", errors="replace")
+            proc = _web2md(node, url, folder)
+            if BLOCKED.search(proc.stderr or ""):  # empty or a check against robots: again, in the browser of the machine
+                extra = browser_args(log)
+                if extra:
+                    if log:
+                        log(i18n.t("brief", "rendering", url=url))
+                    shutil.rmtree(folder, ignore_errors=True)
+                    proc = _web2md(node, url, folder, extra)
+            said = proc.stderr or ""
             info["downloaded"] = dt.date.today().isoformat()
-            info["errors"] = proc.returncode != 0
+            info["blocked"] = BLOCKED.findall(said)
+            info["rendered"] = len(RENDERED.findall(said))
+            info["errors"] = bool(PAGES_FAILED.search(said)) or (proc.returncode != 0 and not info["blocked"])
         pages = [p for p in folder.rglob("*.md") if p.name != "README.md"] if folder.exists() else []
         notes = [note("pages_failed")] if info.get("errors") else []
+        if info.get("blocked"):
+            notes.append(note("pages_blocked", count=len(info["blocked"]), pages=", ".join(info["blocked"][:3])))
+        if info.get("rendered"):
+            notes.append(note("pages_rendered", count=info["rendered"]))
         if info.get("storybook"):
             notes.append(note("storybook" if info.get("manifests") else "storybook_index_only"))
-        if folder.exists() and not pages:
+        if folder.exists() and not pages and not info.get("blocked"):
             notes.append(note("no_web_text"))
         rows.append({"url": url, "note": comment, "folder": folder.relative_to(brief).as_posix() if folder.exists() else None,
                      "pages": len(pages), "words": sum(words(p.read_text(encoding="utf-8")) for p in pages),

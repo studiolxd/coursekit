@@ -11,9 +11,15 @@
  * Pensado para sitios Starlight/Astro, pero el conversor es genérico
  * (cabeceras, listas, tablas, código, citas, imágenes, pestañas y avisos).
  *
+ * Una página que responde vacía o con un reto contra robots (un 202, un cuerpo casi vacío) no cuenta como
+ * descargada: con --browser (y --playwright, la carpeta con node_modules/playwright-core) se abre en ese
+ * navegador y se convierte lo que dibuja; si sigue bloqueada, se anota en stderr como «BLOCKED\t<url>».
+ * Una URL con consulta (?uri=…) es un documento: se descarga tal cual y no se siguen sus enlaces.
+ *
  * Uso:
  *   node web2md.js <url> [--out <dir>] [--scope </ruta/>] [--content <selector>]
  *                              [--concurrency 4] [--delay 150] [--no-images] [--merge]
+ *                              [--browser <ejecutable> --playwright <carpeta>]
  */
 const fs = require('fs');
 const path = require('path');
@@ -22,7 +28,7 @@ const crypto = require('crypto');
 /* ---------- CLI ---------- */
 
 function parseArgs(argv) {
-  const opts = { concurrency: 4, delay: 150, images: true, merge: false, content: null, scope: null, out: null };
+  const opts = { concurrency: 4, delay: 150, images: true, merge: false, content: null, scope: null, out: null, browser: null, playwright: null };
   const rest = [];
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -33,6 +39,8 @@ function parseArgs(argv) {
     else if (a === '--delay') opts.delay = Number(argv[++i]);
     else if (a === '--no-images') opts.images = false;
     else if (a === '--merge') opts.merge = true;
+    else if (a === '--browser') opts.browser = argv[++i];
+    else if (a === '--playwright') opts.playwright = argv[++i];
     else if (a === '-h' || a === '--help') opts.help = true;
     else rest.push(a);
   }
@@ -123,8 +131,11 @@ const SKIP = new Set(['script', 'style', 'svg', 'button', 'link', 'meta', 'nav',
 const INLINE = new Set(['a', 'span', 'strong', 'b', 'em', 'i', 'code', 'kbd', 'img', 'br', 'del', 's', 'sup', 'sub', 'mark', 'abbr', 'small', 'u', 'time', 'cite', 'q', 'samp', 'var']);
 const BLOCK = new Set(['p', 'div', 'ul', 'ol', 'li', 'pre', 'table', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'figure', 'aside', 'details', 'section', 'article']);
 
+// A tablist is the bar of tab labels, read apart (tabLabels); a long one is not a bar but the panels themselves (a Bootstrap
+// accordion puts role="tablist" on the group of panels, the whole document on some sites).
 function shouldSkip(n) {
-  return isText(n) ? false : SKIP.has(n.tag) || hasClass(n, 'sr-only') || n.attrs.role === 'tablist';
+  if (isText(n)) return false;
+  return SKIP.has(n.tag) || hasClass(n, 'sr-only') || (n.attrs.role === 'tablist' && textContent(n).length < 1000);
 }
 
 function hasBlockDesc(n) {
@@ -337,6 +348,38 @@ async function fetchWithRetry(url, tries = 3) {
   throw new Error(`${url}: ${err.message}`);
 }
 
+// A page that is not the content: an empty answer (202), almost no text, or a check against robots.
+const CHALLENGE = /(challenge-platform|cf-chl-|awswaf|_Incapsula_Resource|captcha-delivery|Just a moment\.\.\.|Enable JavaScript and cookies to continue|Please enable JavaScript)/i;
+function isBlocked(status, html) {
+  if (status === 202 || status === 204) return true;
+  const text = html.replace(/<(script|style)[\s\S]*?<\/\1>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  return text.length < 80 || (text.length < 2000 && CHALLENGE.test(html));
+}
+
+// The browser of the machine, opened once and only when a page needs it.
+let browserPromise = null;
+async function render(url, opts) {
+  if (!opts.browser || !opts.playwright) return null;
+  if (!browserPromise) {
+    const { chromium } = require(require.resolve('playwright-core', { paths: [opts.playwright] }));
+    browserPromise = chromium.launch({ headless: true, executablePath: opts.browser });
+  }
+  const browser = await browserPromise;
+  const page = await browser.newPage({ locale: 'es-ES' });
+  try {
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    try { await page.waitForLoadState('networkidle', { timeout: 20000 }); } catch {}
+    for (let i = 0; i < 10; i++) {  // a check against robots answers first and reloads the page by itself
+      const html = await page.content();
+      if (!isBlocked(200, html)) return { html, url: page.url() };
+      await page.waitForTimeout(1500);
+    }
+    return null;
+  } finally {
+    await page.close();
+  }
+}
+
 const normPath = (p) => (p.replace(/\/+$/, '') || '/');
 
 function inScope(u, origin, scope) {
@@ -400,11 +443,13 @@ async function main() {
     if (queued.has(key) || !inScope(u, origin, scope)) return;
     queued.add(key);
     order.push(key);
-    queue.push(new URL(key === '/' ? '/' : key + '/', origin));
+    // the address given keeps its query (?uri=…): on some sites it is what says which document; the rest go by their path
+    queue.push(u === start && u.search ? new URL(u.href) : new URL(key === '/' ? '/' : key + '/', origin));
   };
   const queue = [];
   enqueue(start);
   const failed = [];
+  const blocked = [];
   let active = 0;
   await new Promise((resolve) => {
     const pump = () => {
@@ -416,9 +461,21 @@ async function main() {
           try {
             const res = await fetchWithRetry(u.href);
             if (!(res.headers.get('content-type') || '').includes('html')) return;
-            const html = await res.text();
+            let html = await res.text();
+            let finalUrl = res.url || u.href;
+            if (isBlocked(res.status, html)) {
+              const seen = await render(u.href, opts).catch((e) => { console.warn(`  ✗ ${u.href}: ${e.message}`); return null; });
+              if (!seen) {
+                blocked.push(u.href);
+                console.error(`BLOCKED\t${u.href}`);
+                return;
+              }
+              ({ html } = seen);
+              finalUrl = seen.url;
+              console.error(`RENDERED\t${u.href}`);
+            }
             pages.set(normPath(u.pathname), { url: u.href, html });
-            for (const l of extractLinks(html, res.url || u.href)) enqueue(l);
+            if (!start.search) for (const l of extractLinks(html, finalUrl)) enqueue(l);  // an address with a query is one document
             console.log(`  ✓ ${u.pathname}`);
           } catch (e) {
             failed.push(e.message);
@@ -494,7 +551,7 @@ async function main() {
         const res = await fetchWithRetry(url);
         fs.writeFileSync(path.join(assetsDir, name), Buffer.from(await res.arrayBuffer()));
         n++;
-      } catch (e) { failed.push(e.message); console.warn(`  ✗ imagen ${e.message}`); }
+      } catch (e) { console.warn(`  ✗ imagen ${e.message}`); }  // a missing image is not a missing page
       await sleep(opts.delay);
     }
     console.log(`${n}/${images.size} imágenes descargadas.`);
@@ -508,6 +565,8 @@ async function main() {
 
   console.log(`Salida: ${path.relative(process.cwd(), outDir) || '.'}`);
   if (failed.length) { console.warn(`${failed.length} errores.`); process.exitCode = 1; }
+  if (blocked.length) { console.warn(`${blocked.length} páginas bloqueadas.`); process.exitCode = 1; }
+  if (browserPromise) await (await browserPromise).close();
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });

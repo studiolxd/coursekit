@@ -88,3 +88,39 @@ def test_a_site_with_pages_that_failed_keeps_its_note_and_says_so(tmp_path, monk
     rows, failed = brief.download_links(tmp_path, {}, refresh=False)
     assert failed == 0 and rows[0]["note"] == "the ACME guide" and rows[0]["pages"] == 1
     assert [key for key, _ in rows[0]["notes"]] == ["pages_failed"]
+
+
+def test_a_blocked_page_is_opened_in_the_browser_of_the_machine(tmp_path, monkeypatch):
+    """A site that answers empty or with a check against robots is not a downloaded page: brief tries again in the browser of
+    the machine, and says so when there is none."""
+    import subprocess
+
+    from coursekit import brief
+
+    url = "https://law.acme.example/doc?id=1"
+    (tmp_path / "links.md").write_text(f"- {url} — the law\n", encoding="utf-8")
+    calls = []
+
+    def web2md(cmd, **kwargs):
+        calls.append(cmd)
+        out = tmp_path / "text" / "web" / brief.site_slug(url)
+        out.mkdir(parents=True, exist_ok=True)
+        if "--browser" not in cmd:
+            return subprocess.CompletedProcess(cmd, 1, "0 páginas descargadas.\n", f"BLOCKED\t{url}\n")
+        (out / "index.md").write_text("# Ley\n\nArtículo 1. Texto de la ley.\n", encoding="utf-8")
+        return subprocess.CompletedProcess(cmd, 0, "1 páginas descargadas.\n", f"RENDERED\t{url}\n")
+
+    monkeypatch.setattr(brief.shutil, "which", lambda name: "node")
+    monkeypatch.setattr(brief.subprocess, "run", web2md)
+    monkeypatch.setattr(brief, "browser_args", lambda log=None: ["--browser", "/fake/chrome", "--playwright", "/store/ws"])
+    rows, failed = brief.download_links(tmp_path, {}, refresh=False)
+    assert len(calls) == 2 and calls[1][-4:] == ["--browser", "/fake/chrome", "--playwright", "/store/ws"]
+    assert failed == 0 and rows[0]["pages"] == 1 and [key for key, _ in rows[0]["notes"]] == ["pages_rendered"]
+
+    calls.clear()
+    monkeypatch.setattr(brief, "browser_args", lambda log=None: [])  # no Chrome or Edge here
+    rows, failed = brief.download_links(tmp_path, {}, refresh=True)
+    assert len(calls) == 1 and rows[0]["pages"] == 0
+    keys = [key for key, _ in rows[0]["notes"]]
+    assert keys == ["pages_blocked"]  # not "pages failed", nor "no text": what to do about it
+    assert url in rows[0]["notes"][0][1]["pages"]

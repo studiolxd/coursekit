@@ -190,6 +190,25 @@ def test_a_candidate_in_another_language_is_looked_for_in_the_course_language(co
     assert "docs.example.org/en/guide" in text and '"en"' in text
 
 
+def test_a_site_that_blocks_a_direct_download_is_marked(course, api, monkeypatch):
+    use(monkeypatch, "exa")
+    blocked, empty = "https://law.example.eu/doc?id=1", "https://other.example.org/page"
+    api.answer = {"results": [{"url": u, "title": "t"} for u in (blocked, empty)]}
+    api.pages = {empty: "<html><head></head><body><script>challenge-platform</script>Just a moment...</body></html>"}
+
+    real = research.urllib.request.urlopen
+
+    def urlopen(req, timeout=None):
+        if req.full_url == blocked:
+            return Response(b"", status=202, content_type="text/html")
+        return real(req, timeout)
+
+    monkeypatch.setattr(research.urllib.request, "urlopen", urlopen)
+    found = research.search(_load(course), "x")
+    assert [r.blocked for r in found.results] == [True, True]
+    assert "Chrome or Edge" in research.render(found, "es")
+
+
 def test_rewrites_keep_the_way_each_site_writes_its_locale():
     assert research.rewrites("https://support.microsoft.com/en-us/excel/x", "es", "ES", []) == [
         "https://support.microsoft.com/es-es/excel/x", "https://support.microsoft.com/es/excel/x"]

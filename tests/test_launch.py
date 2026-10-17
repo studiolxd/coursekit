@@ -207,3 +207,18 @@ def test_media_agents_without_interface_get_the_connectors_of_the_media_configur
     assert "mcp__claude_ai_Magnific" in tools.calls[1]
     assert main(["run", "assemble", "PWD", "--headless"]) == 0
     assert "mcp__claude_ai_Magnific" not in tools.calls[2]
+
+
+def test_codex_without_interface_has_network_and_web_search(agent_tool):
+    """The workspace-write sandbox of Codex cuts the network unless it is opened: research, brief and the media providers need it."""
+    from pathlib import Path
+
+    from coursekit import launch
+
+    writer = launch.headless_args(launch.Agent("writer", "codex", ""), "x", Path("last.txt"), "slxd")
+    assert writer[1:3] == ["--search", "exec"]  # an option of codex, before exec
+    assert writer[writer.index("-c") + 1] == "sandbox_workspace_write.network_access=true"
+    assembly = launch.headless_args(launch.Agent("assembly", "codex", ""), "x", Path("last.txt"), "slxd")
+    assert "--search" not in assembly and "sandbox_workspace_write.network_access=true" in assembly
+    design = launch.headless_args(launch.Agent("design", "claude", ""), "x", Path("last.txt"), "slxd")
+    assert "WebSearch" in design and "Bash(coursekit research:*)" in design  # the reference documentation, with or without a provider

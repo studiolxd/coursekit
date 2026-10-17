@@ -47,6 +47,10 @@ THREE_LETTERS = {"es": "spa", "en": "eng", "fr": "fra", "de": "deu", "it": "ita"
 LOCALE_SEGMENT = re.compile(r"^([a-z]{2})(?:[-_]([a-z]{2}))?$", re.I)
 LOCALE_PARAMS = ("hl", "lang", "locale", "language")
 WORD = re.compile(r"[^\W_]+", re.U)
+# The same signs web2md reads of a page that is not the content: a check against robots.
+CHALLENGE = re.compile(r"challenge-platform|cf-chl-|awswaf|_Incapsula_Resource|captcha-delivery|Just a moment\.\.\.|"
+                       r"Enable JavaScript and cookies to continue|Please enable JavaScript", re.I)
+BLOCKING = (202, 204, 401, 403, 429)
 
 
 class ResearchError(Exception):
@@ -65,6 +69,7 @@ class Result:
     date: str = ""
     language: str = ""   # the language the page says it is in, when it was looked at
     original: str = ""   # the address the provider gave, when the one in `url` is its translation
+    blocked: bool = False  # the site refuses a direct download (empty answer, a check against robots)
 
 
 # ---------- provider ----------
@@ -219,6 +224,7 @@ class Head:
     lang: str
     alternates: dict[str, str]
     title: str
+    blocked: bool = False
 
 
 def page_head(url: str) -> Head | None:
@@ -227,11 +233,17 @@ def page_head(url: str) -> Head | None:
     req = urllib.request.Request(url, headers={"User-Agent": f"Mozilla/5.0 (compatible; {USER_AGENT})"})
     try:
         with urllib.request.urlopen(req, timeout=PAGE_TIMEOUT) as resp:
+            if resp.status in BLOCKING:
+                return Head("", {}, "", blocked=True)
             if resp.status != 200 or "html" not in (resp.headers.get("Content-Type") or ""):
                 return None
             text = resp.read(HEAD_BYTES).decode("utf-8", "replace")
+    except urllib.error.HTTPError as exc:
+        return Head("", {}, "", blocked=True) if exc.code in BLOCKING else None
     except (urllib.error.URLError, TimeoutError, OSError, ValueError):
         return None
+    if not text.strip() or (len(text) < 20_000 and CHALLENGE.search(text)):
+        return Head("", {}, "", blocked=True)
     end = text.lower().find("</head>")
     parser = _Head()
     parser.feed(text if end < 0 else text[: end + 7])
@@ -285,6 +297,9 @@ def localize(result: Result, language: str, where: str | None, rules: list[dict]
     head = page_head(result.url)
     if not head:
         return result
+    if head.blocked:
+        result.blocked = True
+        return result
     result.language = _base(head.lang) if head.lang else ""
     if not result.language or result.language == language:
         return result
@@ -294,7 +309,7 @@ def localize(result: Result, language: str, where: str | None, rules: list[dict]
     candidates += rewrites(result.url, language, where, rules)
     for candidate in dict.fromkeys(candidates):
         found = page_head(candidate)
-        if found and _base(found.lang) == language:
+        if found and not found.blocked and _base(found.lang) == language:
             result.original, result.url, result.language = result.url, candidate, language
             result.title = found.title or result.title
             break
@@ -401,6 +416,8 @@ def render(found: Found, language: str) -> str:
     for i, r in enumerate(found.results, 1):
         meta = " · ".join(x for x in (host(r.url), r.date, r.language) if x)
         out += ["", f"{i}. {r.title or r.url}", f"   {r.url}", f"   {meta}"]
+        if r.blocked:
+            out.append("   " + t("research", "blocked"))
         if r.original:
             out.append("   " + t("research", "translated_from", url=r.original))
         elif r.language and r.language != language:

@@ -51,6 +51,11 @@ note_node_missing: {es: "falta Node (nodejs.org)", en: "Node is missing (nodejs.
 note_pages_failed:
   es: "algunas páginas fallaron (coursekit brief --refresh)"
   en: "some pages failed (coursekit brief --refresh)"
+note_pages_blocked:
+  es: "{count} página(s) respondieron vacías o con un control contra robots y no se pudieron abrir con un navegador de la máquina (Chrome o Edge): {pages}. Busca otra fuente oficial (para la normativa europea, el texto del DOUE en boe.es)"
+  en: "{count} page(s) answered empty or with a check against robots and could not be opened in a browser of the machine (Chrome or Edge): {pages}. Look for another official source (for European law, the text of the Official Journal on boe.es)"
+note_pages_rendered: {es: "{count} página(s) leídas con el navegador de la máquina (la descarga directa estaba bloqueada)", en: "{count} page(s) read with the browser of the machine (the direct download was blocked)"}
+rendering: {es: "{url} está bloqueada para una descarga directa: abriéndola con el navegador de la máquina …", en: "{url} is blocked for a direct download: opening it with the browser of the machine …"}
 note_no_web_text:
   es: "no se extrajo texto (¿web con JavaScript?)"
   en: "no text was extracted (a web page that needs JavaScript?)"

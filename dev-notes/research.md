@@ -4,7 +4,7 @@ Nota de desarrollo: se borra cuando la función esté validada y publicada (lo q
 
 **Estado (17 de octubre de 2026):** implementado (`research.py`, `defaults/research.yaml`, skills, `doctor`, docs en/es,
 `tests/test_research.py`) y probado a mano contra los cuatro servicios reales. Falta: que los agentes lo usen en un curso
-entero, comprobar la búsqueda nativa de opencode y Codex, y lo del punto 9.
+entero y comprobar la búsqueda nativa de opencode y Codex (los puntos 8 y 9 están resueltos).
 
 Objetivo: que el diseño y la redacción encuentren **fuentes oficiales** (documentación del fabricante, boletines y diarios
 oficiales, organismos) a través de una API de búsqueda configurada por la persona, con el mismo resultado sea cual sea el
@@ -195,18 +195,19 @@ da `--json`. Tampoco se usan los servidores MCP ni los conectores de los proveed
 la localización, el registro, el límite y la salida común, y traen herramientas que redactan. El orden es
 `coursekit research` con proveedor y clave, y si no hay, la búsqueda nativa del agente.
 
-## 8. Problema aparte: EUR-Lex y `web2md`
+## 8. Resuelto: páginas bloqueadas (EUR-Lex)
 
-EUR-Lex responde `202` con el cuerpo vacío a una petición HTTP normal, y también a la de `web2md`. `web2md` da por buena
-cualquier respuesta 2xx (`res.ok`), así que `coursekit brief` probablemente guarda hoy una página vacía de EUR-Lex sin
-avisar. Hay que comprobarlo y, como mínimo, que `brief` avise de las páginas vacías. Mientras tanto, para la normativa
-europea en español, el BOE publica los textos del DOUE y se descargan bien. Comprobado con el RGPD,
-`boe.es/buscar/doc.php?id=DOUE-L-2016-80807`, con el agente de usuario de `web2md`. Es una buena pista para
-`prefer_domains`.
-ISO responde `403`. Sus normas son de pago, así que no es una fuente que se pueda descargar al brief.
+EUR-Lex responde `202` vacío a una petición normal (un control contra robots). Ahora `web2md` no cuenta como descargada una
+página vacía o con un reto, y `brief` la vuelve a abrir con el Chrome o el Edge de la máquina (espacio `html-checker` del
+almacén, el de `brand` y `assemble check`, instalado solo cuando hace falta); si no hay navegador, el índice lo avisa con el
+consejo del DOUE en el BOE. De paso: una URL con consulta (`?uri=…`) se descarga entera y no se rastrea, `web2md` ya no salta
+un `role="tablist"` largo (el acordeón de Bootstrap que envuelve todo el texto de EUR-Lex) y una imagen que falla ya no es
+"algunas páginas fallaron". `research` marca las candidatas bloqueadas. Probado con el RGPD: 66.119 palabras, con el
+artículo 33. ISO responde `403` y sus normas son de pago: no es fuente para el brief.
 
-## 9. Pendiente: Codex sin red
+## 9. Resuelto: Codex sin red
 
-`launch.py` lanza Codex sin interfaz con `--sandbox workspace-write`, y ese sandbox corta la red por defecto: `coursekit
-research` (y `coursekit brief` con enlaces) no llegarían a la red en esa sesión. Comprobarlo y, si es así, decidir si se
-abre la red del sandbox para esos comandos o se documenta como límite.
+Comprobado con `codex sandbox`: con `workspace-write` no hay red. `launch.py` añade
+`-c sandbox_workspace_write.network_access=true` a Codex sin interfaz, y `--search` (opción de `codex`, antes de `exec`) a los
+roles que buscan (diseño, redacción, revisión, multimedia). Falta verlo en una sesión real de Codex: que `--search` funcione con
+`exec` no está comprobado. Claude Code sin interfaz da ahora `WebSearch` también al diseño.

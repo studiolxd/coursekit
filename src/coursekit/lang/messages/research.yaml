@@ -19,6 +19,9 @@ log_header:
   en: "# Source searches\n\nWritten by `coursekit research`: each search, with its provider and the candidates it proposed. The sources that are used go to `links.md`."
 log_nothing: {es: "(sin resultados)", en: "(no results)"}
 title: {es: "Búsqueda · {provider} · {shown} de {total} · «{query}»", en: "Search · {provider} · {shown} of {total} · \"{query}\""}
+blocked:
+  es: "el sitio bloquea la descarga directa: coursekit brief la abrirá con el Chrome o el Edge de la máquina; si no hay, busca otra fuente"
+  en: "the site blocks a direct download: coursekit brief will open it with the Chrome or Edge of the machine; without one, look for another source"
 translated_from: {es: "traducción de {url}", en: "translation of {url}"}
 other_language: {es: "en «{language}»: no se encontró en el idioma del curso", en: "in \"{language}\": not found in the language of the course"}
 nothing: {es: "Sin resultados: prueba con otras palabras.", en: "No results: try other words."}

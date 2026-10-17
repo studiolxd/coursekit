@@ -158,6 +158,7 @@ Las rutas pueden usar `~` y variables de entorno; se usa la primera que exista e
 - **Código de salida 3, «no hay proveedor de búsqueda»**: no es un error. El agente sigue con su propia búsqueda web; para usar una API, mira [Búsqueda de fuentes](04-configuration.md#búsqueda-de-fuentes-opcional).
 - **«rechazó la clave»** o **«no tiene saldo»**: revisa la clave del `.env` y la cuenta del proveedor. La clave nunca aparece en un mensaje ni en el registro.
 - **«ya hizo N búsquedas»**: el curso llegó a `research › max_per_course`. `coursekit research CODE --status` muestra las búsquedas hechas y una estimación de las que faltan; sube el límite en `config/research.yaml` (o `course.yaml › research`) si de verdad hacen falta más. A un agente que busca una y otra vez lo mismo es mejor pararlo y preguntarle por qué.
+- **Una página que «respondió vacía o con un control contra robots»** en el índice del brief: el sitio rechaza la descarga directa y no había Chrome ni Edge para abrirla (o siguió bloqueada también en el navegador). Instala uno de ellos y ejecuta `coursekit brief CODE --refresh`, o busca otra fuente oficial (para la normativa europea, el texto del DOUE en boe.es).
 - **Una candidata «no se encontró en el idioma del curso»**: el sitio no tiene traducción, o la tiene pero ni la declara ni se llega a ella cambiando el idioma en su dirección. Si la tiene, añade una regla a `research › localize_rules`.
 
 ### Problemas con la carpeta espejo
