@@ -1,4 +1,5 @@
 # Messages of `coursekit video` (a video as a montage of scenes).
+needs_code: {es: "{action} necesita el código del curso; solo gallery y catalog funcionan sin él (los del proyecto)", en: "{action} needs the code of the course; only gallery and catalog work without it (those of the project)"}
 needs_id: {es: "{action} necesita el código del curso y el recurso", en: "{action} needs the code of the course and the resource"}
 no_montage: {es: "no hay montaje en {path}: créalo con coursekit video new {code} {id}", en: "there is no montage in {path}: create it with coursekit video new {code} {id}"}
 bad_yaml: {es: "{path} no es YAML válido: {error}", en: "{path} is not valid YAML: {error}"}

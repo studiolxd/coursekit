@@ -92,7 +92,9 @@ colours, `origin.derived`), and the radius and the shadow are its defaults. The 
    of state, for example): say so, because the course in the platform keeps the platform's. Then import the tokens again (step 3): they
    come out with those values, recorded as fixed by the project. The platform theme is not touched.
 5. The style of the videos: propose in `config/video.yaml` what the brand says of shapes and weights (`shapes`: radius,
-   shadow, border; `weights`: the normal and the strong weight); the fonts reach the videos by themselves from
+   shadow, border; `weights`: the normal and the strong weight), of the background of the scenes (`background`: `plain`,
+   `band` or `shape`, soft shapes of the accent, a tint a brand without tints does not admit) and of the motion (`motion`:
+   its character and its timings, from the durations and curves of the brand); the fonts reach the videos by themselves from
    `theme/branding/fonts/fonts.css`. A logo in the videos only if the brand or the person asks for it.
 6. Write `theme/branding/media-style.md` (a course with its own brand: `courses/<CODE>/theme/branding/media-style.md`), in the
    language of the courses, with these sections and only what the brand material says, each rule followed by its source
@@ -107,6 +109,9 @@ colours, `origin.derived`), and the radius and the shadow are its defaults. The 
    - icons: which set and where its files are (`icons/`, when the brand brings them), its rules measured on those files
      (grid, stroke, joins, live area), and how to draw a missing one with the same criteria;
    - motion: durations and curves, reduced motion;
+   - videos: what the brand and `notes.md` say of the videos made as a montage: the background of the scenes, the shapes and
+     the weights, the character of the motion (each with the value of `config/video.yaml` it becomes), how the text enters
+     and stays on screen, and the scenes to prefer or to avoid; the gallery (`coursekit video gallery`) shows them drawn;
    - images and illustration: what the brand and `notes.md` say of photography and of each kind of illustration (a concept
      illustration that goes with the content, a scene with characters, a diagram): its style, its palette, when the accent
      may appear, and its sources (the illustration sources of `links.md`, with the previews of `style/`; the reference scenes of `style/scenes/`);
@@ -114,7 +119,8 @@ colours, `origin.derived`), and the radius and the shadow are its defaults. The 
    - what never appears.
    A rule you infer and the brand does not state is not written as a rule: it goes as a question. The person's
    `notes.md` weighs more than the rest.
-7. Tell the person to read the guide and sign it: the guide of the project once for every course that uses it
+7. Tell the person to look at the gallery of the videos (`coursekit video gallery`, the project's; with `<CODE>`, a course's),
+   to read the guide and to sign it: the guide of the project once for every course that uses it
    (`coursekit approve media-style`), the own guide of a course with its code (`coursekit approve media-style <CODE>`). No
    visual resource is produced until it is signed, and it is signed again when it changes. You never sign it.
 

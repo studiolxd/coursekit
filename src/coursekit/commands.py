@@ -312,7 +312,10 @@ def cmd_capture(args: argparse.Namespace) -> int:
 
 def cmd_video(args: argparse.Namespace) -> int:
     project = _project()
-    course = coursemod.load(project, args.code)
+    if args.code is None and args.action not in ("catalog", "gallery"):
+        print(t("video", "needs_code", action=args.action), file=sys.stderr)
+        return 2
+    course = coursemod.load(project, args.code) if args.code else videomod.project_scope(project)
     root = project.root
     if args.action not in ("catalog", "gallery") and not args.id:
         print(t("video", "needs_id", action=args.action), file=sys.stderr)
@@ -1469,7 +1472,7 @@ def register(sub: argparse._SubParsersAction) -> None:
 
     p = sub.add_parser("video", help=t("commands", "help_video"))
     p.add_argument("action", choices=("new", "check", "voice", "preview", "render", "catalog", "gallery", "export"))
-    p.add_argument("code")
+    p.add_argument("code", nargs="?", help=t("commands", "help_video_code"))
     p.add_argument("id", nargs="?")
     p.add_argument("--batch", action="store_true", help=t("commands", "help_video_batch"))
     p.set_defaults(func=cmd_video)

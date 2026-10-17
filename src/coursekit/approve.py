@@ -192,7 +192,8 @@ def approve_media_style(course: dict, confirm: Confirm, do_commit: bool = True, 
         raise ApprovalError(t("approve", "media_style_missing", code=course["code"]))
     rel = found.relative_to(course["_project"].root).as_posix()
     who = who or signer()
-    if not confirm(t("approve", "media_style_confirm", path=rel, code=course["code"], who=who)):
+    if not confirm(_gallery_first(course["_project"], course["code"]) + "\n"
+                   + t("approve", "media_style_confirm", path=rel, code=course["code"], who=who)):
         raise ApprovalError(t("approve", "cancelled"))
     entry = {"gate": "media_style", "by": str(who), "at": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
              "path": rel, "sha256": sha256_file(found)}
@@ -202,6 +203,18 @@ def approve_media_style(course: dict, confirm: Confirm, do_commit: bool = True, 
     if do_commit and not commit([course["_dir"]], f"Media style approval {course['code']}", who, course["_dir"]):
         return t("approve", "media_style_approved_uncommitted", who=who, path=rel)
     return t("approve", "media_style_approved", who=who, path=rel)
+
+
+def _gallery_first(project, code: str | None) -> str:
+    """The reminder before signing a guide: look first at how the videos come out with the brand, in the gallery."""
+    from coursekit import video
+
+    scope = code or video.PROJECT_SCOPE
+    page = project.cache_dir / "media" / scope / "gallery" / "index.html"
+    command = "coursekit video gallery" + (f" {code}" if code else "")
+    if page.is_file():
+        return t("approve", "media_style_gallery", path=page.relative_to(project.root).as_posix(), command=command)
+    return t("approve", "media_style_no_gallery", command=command)
 
 
 def approve_project_media_style(project, confirm: Confirm, do_commit: bool = True, who: identity.Identity | None = None) -> str:
@@ -215,7 +228,7 @@ def approve_project_media_style(project, confirm: Confirm, do_commit: bool = Tru
         raise ApprovalError(t("approve", "media_style_missing_project"))
     rel = found.relative_to(project.root).as_posix()
     who = who or signer()
-    if not confirm(t("approve", "media_style_confirm_project", path=rel, who=who)):
+    if not confirm(_gallery_first(project, None) + "\n" + t("approve", "media_style_confirm_project", path=rel, who=who)):
         raise ApprovalError(t("approve", "cancelled"))
     ry, data = edit_yaml(project.file)
     if data.get("approvals") is None:

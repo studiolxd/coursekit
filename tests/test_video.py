@@ -331,6 +331,27 @@ def test_the_gallery_draws_every_piece_with_the_theme_and_the_style_of_the_cours
         assert english not in text
 
 
+def test_without_a_code_the_gallery_is_the_one_of_the_project(course, capsys, monkeypatch):  # noqa: F811
+    prepare_asset(course, capsys)
+    root = course.parent.parent
+    (root / "tools" / "remotion" / "node_modules").mkdir(parents=True)
+    scene_folder(course / "video" / "scenes", "timeline", "a timeline of this course")  # of the course: not in the project's
+    monkeypatch.setattr(video, "_remotion", lambda workspace, args: Path(args[3]).write_bytes(b"mp4"))
+    monkeypatch.setattr(video.mediatools, "run", lambda cmd, **kw: Path(cmd[-1]).write_bytes(b"png"))
+    assert main(["video", "gallery"]) == 0
+    page = root / ".cache" / "media" / "project" / "gallery" / "index.html"
+    assert "media/project/gallery/index.html" in capsys.readouterr().out and "timeline" not in page.read_text(encoding="utf-8")
+    assert main(["video", "catalog"]) == 0 and "timeline" not in capsys.readouterr().out
+    assert main(["video", "check"]) == 2 and "needs the code of the course" in capsys.readouterr().err
+    guide = root / "theme" / "branding" / "media-style.md"  # the signature of the guide points to that gallery first
+    guide.parent.mkdir(parents=True, exist_ok=True)
+    guide.write_text("# Style\n", encoding="utf-8")
+    assert main(["approve", "media-style", "--yes", "--no-commit"]) == 0
+    assert ".cache/media/project/gallery/index.html" in capsys.readouterr().out
+    assert main(["approve", "media-style", "PWD", "--yes", "--no-commit"]) == 0
+    assert "coursekit video gallery PWD draws the gallery" in capsys.readouterr().out
+
+
 def test_an_atom_of_the_project_or_of_a_course_takes_the_place_of_the_library(course):  # noqa: F811
     root = course.parent.parent
     (root / "tools" / "remotion" / "node_modules").mkdir(parents=True)

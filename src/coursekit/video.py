@@ -77,6 +77,17 @@ def montage_file(course: dict, asset_id: str) -> Path:
     return course["_dir"] / "media" / "scripts" / f"{asset_id}.video.yaml"
 
 
+PROJECT_SCOPE = "project"  # the folder in .cache/media/ of the gallery of the project (the codes of the courses are in capitals)
+
+
+def project_scope(project) -> dict:
+    """The project as a course with nothing of its own, for the gallery and the catalog of the project: its theme, its style
+    (config/video.yaml), its scenes and those of the library, before any course exists or changes them."""
+    data = configmod.project_data(project)
+    return {"code": PROJECT_SCOPE, "_label": str(data.get("name") or project.root.name), "_project": project,
+            "_dir": project.root / ".coursekit" / "project-scope", "language": data.get("content_language") or "es"}
+
+
 def workspace(course: dict) -> Path:
     return course["_project"].root / "tools" / "remotion"
 
@@ -740,7 +751,7 @@ def gallery(course: dict, say=print) -> Path:
         drawn.append({**scene, "from": cursor, "frames": frames, "audio": None, "words": [], "says": ""})
         cursor += frames
     if not drawn:
-        raise VideoError(t("video", "gallery_empty", code=course["code"]))
+        raise VideoError(t("video", "gallery_empty", code=course.get("_label") or course["code"]))
     resolved = {"fps": fps, "width": int(fmt["width"]), "height": int(fmt["height"]), "frames": cursor,
                 "tokens": {k: tokens[k] for k in ("color", "font", "radius", "space", "shadow") if k in tokens},
                 "motion": motion(course, {}), "style": _look(course), "scenes": drawn}
@@ -785,8 +796,9 @@ def gallery(course: dict, say=print) -> Path:
                            border=f"{shape.get('border', 0):g}", shadow=shape.get("shadow"), normal=f"{weight.get('normal', 0):g}",
                            strong=f"{weight.get('strong', 0):g}"))
     fonts_line = ", ".join((resolved["style"]["fonts"] or {}).get("families") or []) or t("video", "gallery_machine_fonts")
+    title = t("video", "gallery_title", code=course.get("_label") or course["code"])
     page = (f'<!doctype html><html lang="{i18n.language()}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, '
-            f'initial-scale=1"><title>{html.escape(t("video", "gallery_title", code=course["code"]))}</title><style>'
+            f'initial-scale=1"><title>{html.escape(title)}</title><style>'
             "body{font-family:system-ui,sans-serif;margin:24px;background:#fafafa;color:#1a1a1a}"
             "main{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:20px}"
             "article{background:#fff;border:1px solid #ddd;padding:12px}"
@@ -794,7 +806,7 @@ def gallery(course: dict, say=print) -> Path:
             ".none{display:flex;align-items:center;justify-content:center;color:#666}h3{margin:10px 0 4px}small{color:#666;font-weight:400}"
             ".props{color:#555;font-size:13px}"
             ".swatches span{display:inline-block;width:28px;height:28px;margin-right:4px;border:1px solid #ccc}"
-            f'</style></head><body><h1>{html.escape(t("video", "gallery_title", code=course["code"]))}</h1>'
+            f'</style></head><body><h1>{html.escape(title)}</h1>'
             f'<p class="swatches">{colours}</p><p>{html.escape(t("video", "gallery_fonts", family=family, files=fonts_line))}</p>'
             f'<p class="props">{shapes}</p><main>{"".join(cards)}</main></body></html>\n')
     (out / "index.html").write_text(page, encoding="utf-8", newline="\n")
