@@ -156,7 +156,9 @@ credits.
       A colour version is refused: take the line version of the same concept. When nothing fits, combine elements of
       several or generate it in the same style, with the previews of `theme/branding/style/` as reference;
     - a **scene** (a simulation, a story) has characters who look the same in every image: generate it with the configured
-      provider in the style of the guide, or draw it as SVG without a generator;
+      provider in the style of the guide, or draw it as SVG without a generator. When the brand has reference scenes
+      (`theme/branding/style/scenes/` or the course's), follow the method of 3.1: a model sheet per character, the closest
+      reference scene as a style reference, a simple composition, edits one at a time and a look at the hands;
     - a **diagram** is a resource of its own type (`diagram`), drawn as SVG with the tokens.
     Generated images: prompt from the description and specifications, sober and coherent style, no embedded text.
   - The portraits of characters and the images of the simulations are never decorative: they follow their own rules
@@ -237,6 +239,18 @@ character) and the house style before producing. They must look **high quality a
    isometric, illustration, photo). Without an image generator it is `visual.fallback` (flat) drawn as SVG, and that drawing is
    for the **illustration role**: the person or the handoff runs `coursekit run produce-media <CODE> --role illustration`. Use
    the reference images in `theme/branding/style/` (or the course's) when there are.
+   With a generator and reference scenes (`style/scenes/`), each image follows this method:
+   - **Model sheet per character**: front, side and back views, full body, on white, generated with a reference scene as
+     the style. Check that clothes and details match in every view before using it.
+   - **References**: the model sheets of the characters that appear as image references, and the reference scene closest to
+     the case (inside or outside, with or without children) as the style reference. A whole scene goes only as a style
+     reference, never as an image reference: as an image, the model copies it.
+   - **Simple composition**: people facing each other, at either side of a table, standing or seated. A complex arrangement
+     (someone behind a counter while another person sits under a lower section of it) the models do not resolve: rethink it.
+   - **Edits one at a time, on the whole image**, never with a mask over a character: an object or the background with an
+     edit model that keeps the framing; hands and fine details with a model that redraws them without touching the rest. An
+     edit does not change the geometry of what is hidden: regenerate instead.
+   - **Finish** with a subtle creative upscale for illustration, which cleans and sharpens the line.
 2. **Style sheet first.** Before any image of the simulations, produce in `courses/<CODE>/media/style/` a sample in that style:
    one background of the course, one character of the cast in three expressions (neutral and two the simulations use) and two
    objects as layers. Then **stop**: a person signs it with `coursekit approve style <CODE>` (you cannot);
@@ -256,7 +270,8 @@ character) and the house style before producing. They must look **high quality a
    <CODE> <id>` draws an SVG as a PNG next to it, to look at it before marking it `produced` (and the PNG creator needs).
    Before uploading to creator, run `coursekit media optimize <CODE>`: it scales down and recompresses images and re-encodes
    MP4 videos in place (the html backend does it by itself when it builds the package).
-9. **Look at every image** before marking it `produced`: style, consistency with the sheet and with the other images of the
+9. **Look at every image** before marking it `produced`, the hands up close (five fingers each, no merged hands) and the details
+   that give away a real place (a famous skyscraper, a colour outside the palette): style, consistency with the sheet and with the other images of the
    same character, deformed hands or objects, text that slipped in, contrast with what goes on top. Redo what fails.
 
 **Narration of the scenes** (`VO-…`, simulations with `audio: true`): do not produce them one by one; run

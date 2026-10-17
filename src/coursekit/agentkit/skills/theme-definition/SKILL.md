@@ -106,7 +106,7 @@ colours, `origin.derived`), and the radius and the shadow are its defaults. The 
    - motion: durations and curves, reduced motion;
    - images and illustration: what the brand and `notes.md` say of photography and of each kind of illustration (a concept
      illustration that goes with the content, a scene with characters, a diagram): its style, its palette, when the accent
-     may appear, and its sources (the illustration sources of `links.md`, with the previews of `style/`);
+     may appear, and its sources (the illustration sources of `links.md`, with the previews of `style/`; the reference scenes of `style/scenes/`);
    - logo: when it is used and when not;
    - what never appears.
    A rule you infer and the brand does not state is not written as a rule: it goes as a question. The person's
