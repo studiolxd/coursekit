@@ -8,7 +8,7 @@ A media placeholder is written in `content.md` (format in [06-content.md](06-con
 
 | Id | Meaning | Options, in order of preference (what each one needs) |
 |---|---|---|
-| `image` | Image | `creator-stock` (agent MCP tool `search_stock_images`; only decorative images) · `magnific-api` (`MAGNIFIC_API_KEY`) · `magnific-mcp` (agent MCP tool `images_generate`) · `agent-svg` (nothing) · `creator-stock` (any image) · `screenshot` (only a real interface: a capture from a person) |
+| `image` | Image | `creator-stock` (agent MCP tool `search_stock_images`; only decorative images) · `magnific-stock` (`MAGNIFIC_API_KEY` and illustration sources; only concept illustrations) · `magnific-api` (`MAGNIFIC_API_KEY`) · `magnific-mcp` (agent MCP tool `images_generate`) · `agent-svg` (nothing) · `creator-stock` (any image) · `screenshot` (only a real interface: a capture from a person) |
 | `infographic` | Infographic | `agent-svg` (nothing) · `magnific-api` |
 | `diagram` | Diagram | `agent-svg` |
 | `animated_gif` | Animated GIF | `vhs` (command `vhs`; terminal content only) · `agent-svg-animated` (nothing; with the creator backend it goes up as an EMBED package, see [Upload](#upload-to-creator)) · `remotion-gif` (`node` and `tools/remotion/node_modules`) |
@@ -553,6 +553,16 @@ theme:
 ```
 
 `border` and `weights` (`{normal: 300, strong: 500}`) fix the width of the borders and the two weights of the text the same way. Any role can be fixed, also one the platform gives when the brand says otherwise (the text on a fill of state, for example); the course in the platform keeps the platform's. A role takes the name of a colour of the palette of the theme (`coursekit theme roles` lists it), another role, or a hex when the brand defines it and the palette lacks it. `coursekit theme import` applies them instead of deriving, records them in `origin.set` and, if a name is not in the palette, stops with the list. `coursekit theme roles` shows each role, its value, where it comes from and where it is seen in the media (the background of the cards of a comparison, the source under a figure…), which is how a person chooses, and what the agent of `/define-theme` quotes when it proposes a colour. The radius and the shadow of the theme also reach the videos.
+
+### Illustration sources
+
+The illustrations of a brand look alike: one hand, one line, one palette. When a studio's illustrations fit the brand, its page on Magnific goes under `# Illustration sources` in `theme/branding/links.md` (`https://www.magnific.com/author/<name>`). With `MAGNIFIC_API_KEY`, [`coursekit brand`](03-commands.md#coursekit-brand) finds the id of that author, keeps a few previews of its work in `style/` (references of the style; a preview costs no download) and writes the source to `theme/branding/illustration-sources.json`.
+
+The media agent then looks there first for a **concept illustration**, one that goes with a concept of the content and reinforces it: [`coursekit media stock CODE ID --find "…"`](03-commands.md#coursekit-media) lists the illustrations of the sources that match (in English, the language of the catalog) and come as SVG, and `--take` downloads the chosen one, recolours it to the ink and the paper of the brand (`media › stock`) and records in the manifest where it comes from and its licence. A studio usually publishes each illustration in several versions; with `stock.color: black` only the line versions are searched and a colour one is refused. What the script asks for on top (the accent on one element) is added by hand, and when nothing fits the agent combines elements of several or generates one in the same style, with the previews as reference.
+
+A download through the API of a plan with stock downloads costs no credits, within its daily limit; a premium plan needs no attribution. The option is `magnific-stock` in `media.yaml › types.image` (`only: illustration`), offered when there are sources and a key.
+
+The kinds of illustration are those the style guide describes: a **diagram** (a type of its own, drawn as SVG with the tokens), a **concept illustration** (from the sources, in the colours of the guide) and a **scene** with characters (the simulations, a story), which a course can draw in a style of its own in its guide. The script of each resource says which kind it is.
 
 ### The style guide of the media
 

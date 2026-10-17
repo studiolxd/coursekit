@@ -8,7 +8,7 @@ Un recurso multimedia se escribe en `content.md` (formato en [06-content.md](06-
 
 | Id | Significado | Opciones, por orden de preferencia (qué necesita cada una) |
 |---|---|---|
-| `image` | Imagen | `creator-stock` (herramienta MCP del agente `search_stock_images`; solo imágenes decorativas) · `magnific-api` (`MAGNIFIC_API_KEY`) · `magnific-mcp` (herramienta MCP del agente `images_generate`) · `agent-svg` (nada) · `creator-stock` (cualquier imagen) · `screenshot` (solo una interfaz real: una captura de una persona) |
+| `image` | Imagen | `creator-stock` (herramienta MCP del agente `search_stock_images`; solo imágenes decorativas) · `magnific-stock` (`MAGNIFIC_API_KEY` y fuentes de ilustraciones; solo ilustraciones de concepto) · `magnific-api` (`MAGNIFIC_API_KEY`) · `magnific-mcp` (herramienta MCP del agente `images_generate`) · `agent-svg` (nada) · `creator-stock` (cualquier imagen) · `screenshot` (solo una interfaz real: una captura de una persona) |
 | `infographic` | Infografía | `agent-svg` (nada) · `magnific-api` |
 | `diagram` | Esquema o diagrama | `agent-svg` |
 | `animated_gif` | GIF animado | `vhs` (comando `vhs`; solo contenido de terminal) · `agent-svg-animated` (nada; con el backend creator se sube como paquete EMBED, mira [Subida](#subida-a-creator)) · `remotion-gif` (`node` y `tools/remotion/node_modules`) |
@@ -553,6 +553,16 @@ theme:
 ```
 
 `border` y `weights` (`{normal: 300, strong: 500}`) fijan del mismo modo el grosor de los bordes y los dos pesos del texto. Se puede fijar cualquier rol, también uno que da la plataforma cuando la marca dice otra cosa (el texto sobre un relleno de estado, por ejemplo); el curso en la plataforma conserva el de la plataforma. Un rol toma el nombre de un color de la paleta del tema (`coursekit theme roles` la lista), otro rol, o un hex cuando la marca lo define y la paleta no lo tiene. `coursekit theme import` los aplica en lugar de calcularlos, los anota en `origin.set` y, si un nombre no está en la paleta, se detiene con la lista. `coursekit theme roles` muestra cada rol, su valor, de dónde sale y dónde se ve en los recursos (el fondo de las tarjetas de una comparación, la fuente bajo una cifra…), que es como elige una persona, y lo que cita el agente de `/define-theme` cuando propone un color. El radio y la sombra del tema llegan también a los vídeos.
+
+### Fuentes de ilustraciones
+
+Las ilustraciones de una marca se parecen entre sí: una mano, una línea, una paleta. Cuando las ilustraciones de un estudio encajan con la marca, su página de Magnific va bajo `# Fuentes de ilustraciones` en `theme/branding/links.md` (`https://www.magnific.com/author/<nombre>`). Con `MAGNIFIC_API_KEY`, [`coursekit brand`](03-commands.md#coursekit-brand) obtiene el id de ese autor, guarda unas cuantas vistas previas de su obra en `style/` (referencias del estilo; una vista previa no gasta descargas) y escribe la fuente en `theme/branding/illustration-sources.json`.
+
+El agente de multimedia busca ahí primero una **ilustración de concepto**, la que acompaña un concepto del contenido y lo refuerza: [`coursekit media stock CODE ID --find "…"`](03-commands.md#coursekit-media) lista las ilustraciones de las fuentes que coinciden (en inglés, el idioma del catálogo) y se pueden descargar en SVG, y `--take` descarga la elegida, la recolorea a la tinta y el papel de la marca (`media › stock`) y anota en el manifiesto de dónde sale y su licencia. Un estudio suele publicar cada ilustración en varias versiones; con `stock.color: black` solo se buscan las de línea y una a color se rechaza. Lo que pida el guion además (el acento en un elemento) se añade a mano, y cuando nada encaja el agente combina elementos de varias o genera una en el mismo estilo, con las vistas previas como referencia.
+
+Una descarga por la API de un plan con descargas de stock no gasta créditos, dentro de su límite diario; un plan premium no necesita atribución. La opción es `magnific-stock` en `media.yaml › types.image` (`only: illustration`), que se ofrece cuando hay fuentes y clave.
+
+Los tipos de ilustración son los que describe la guía de estilo: un **diagrama** (un tipo propio, dibujado en SVG con los tokens), una **ilustración de concepto** (de las fuentes, en los colores de la guía) y una **escena** con personajes (las simulaciones, una historia), que un curso puede dibujar con un estilo propio en su guía. El guion de cada recurso dice de qué tipo es.
 
 ### La guía de estilo de los recursos
 

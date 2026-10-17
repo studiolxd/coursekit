@@ -104,7 +104,9 @@ colours, `origin.derived`), and the radius and the shadow are its defaults. The 
    - icons: which set and where its files are (`icons/`, when the brand brings them), its rules measured on those files
      (grid, stroke, joins, live area), and how to draw a missing one with the same criteria;
    - motion: durations and curves, reduced motion;
-   - images and illustration: what the brand says of photography and illustration;
+   - images and illustration: what the brand and `notes.md` say of photography and of each kind of illustration (a concept
+     illustration that goes with the content, a scene with characters, a diagram): its style, its palette, when the accent
+     may appear, and its sources (the illustration sources of `links.md`, with the previews of `style/`);
    - logo: when it is used and when not;
    - what never appears.
    A rule you infer and the brand does not state is not written as a rule: it goes as a question. The person's

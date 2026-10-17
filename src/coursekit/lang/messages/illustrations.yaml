@@ -1,0 +1,12 @@
+# Errors of the illustration sources and of `coursekit media stock`.
+no_key: {es: "falta MAGNIFIC_API_KEY en el .env del proyecto (la API de Magnific busca y descarga las ilustraciones)", en: "MAGNIFIC_API_KEY is missing from the .env of the project (the Magnific API finds and downloads the illustrations)"}
+api_failed: {es: "la API de Magnific respondió {status}: {detail}", en: "the Magnific API answered {status}: {detail}"}
+network_failed: {es: "no se pudo conectar con Magnific: {reason}", en: "could not reach Magnific: {reason}"}
+author_not_found: {es: "no se encontró al autor {author} en Magnific (revisa la URL)", en: "the author {author} was not found on Magnific (check the URL)"}
+no_svg: {es: "el recurso {resource} no se puede descargar en SVG", en: "the resource {resource} cannot be downloaded as SVG"}
+no_sources: {es: "no hay fuentes de ilustraciones: añade la página de un autor de Magnific bajo «# Fuentes de ilustraciones» en theme/branding/links.md y ejecuta coursekit brand", en: "there are no illustration sources: add the page of an author on Magnific under \"# Illustration sources\" in theme/branding/links.md and run coursekit brand"}
+candidate: {es: "  {id}  {title} ({author}; licencia: {licenses})\n      vista previa: {preview}", en: "  {id}  {title} ({author}; licence: {licenses})\n      preview: {preview}"}
+none_found: {es: "nada en las fuentes de ilustraciones para «{term}» (busca en inglés, con otras palabras)", en: "nothing in the illustration sources for \"{term}\" (search in English, with other words)"}
+taken: {es: "{asset}: {path} (recurso {resource} de {author}, recoloreado a {ink}); revísalo, pásalo a PNG con coursekit media render y márcalo con coursekit media set", en: "{asset}: {path} (resource {resource} by {author}, recoloured to {ink}); check it, make its PNG with coursekit media render and mark it with coursekit media set"}
+stock_needs: {es: "media stock necesita el recurso y --find TÉRMINOS (buscar) o --take ID (tomar uno)", en: "media stock needs the asset and --find TERMS (search) or --take ID (take one)"}
+not_line_art: {es: "el recurso {resource} es una versión a color, no de línea: busca la de línea del mismo concepto (otro id) o elige otra", en: "the resource {resource} is a colour version, not a line one: look for the line version of the same concept (another id) or choose another"}

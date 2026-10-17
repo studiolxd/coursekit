@@ -419,7 +419,7 @@ coursekit outline PWD --section 1.2
 
 ### `coursekit download`
 
-Saves what an `https` address serves in a file of the project: the design agent uses it for the Excel that slxd exports (`design_matrix_export` gives a `downloadUrl`), because a session without an interface may run `coursekit` but not `curl`. Who: both.
+Saves what an `https` address serves in a file of the project: the design agent uses it for the Excel that slxd exports (`design_matrix_export` gives a `downloadUrl`; the agent asks for it with the labels in `project.yaml › ui_language`), because a session without an interface may run `coursekit` but not `curl`. Who: both.
 
 ```
 coursekit download --out OUT url
@@ -813,13 +813,13 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
                 [--alt ALT] [--transcript TRANSCRIPT] [--subtitles-path SUBTITLES_PATH]
                 [--made-with MADE_WITH] [--download DOWNLOAD] [--download-title DOWNLOAD_TITLE]
                 [--download-asset-path DOWNLOAD_ASSET_PATH] [--depicts {interface,concept}] [--force]
-                [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all] [--clean] [--size SIZE] [--fix] [--frames FRAMES] [--batch]
-                {extract,plan,providers,set,upload,redo,embed,fit,render,narrate,optimize,adopt,check,sheet,transcript} [code] [id] [more ...]
+                [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all] [--clean] [--find FIND] [--take TAKE] [--color COLOR] [--size SIZE] [--fix] [--frames FRAMES] [--batch]
+                {extract,plan,providers,set,upload,redo,embed,fit,render,narrate,optimize,adopt,check,sheet,transcript,stock} [code] [id] [more ...]
 ```
 
 | Argument | Values / default | Meaning |
 |---|---|---|
-| `action` | `extract`, `plan`, `providers`, `set`, `upload`, `redo`, `embed`, `fit`, `render`, `narrate`, `optimize`, `adopt`, `check`, `sheet`, `transcript` | See below. |
+| `action` | `extract`, `plan`, `providers`, `set`, `upload`, `redo`, `embed`, `fit`, `render`, `narrate`, `optimize`, `adopt`, `check`, `sheet`, `transcript`, `stock` | See below. |
 | `code` | course code or folder | Required by every action except `providers` (exit code 2 without it). |
 | `id` | asset id such as `U1-S2-M1` | Required by `set` (exit code 2 without it). |
 | `--status STATUS` | `pending`, `scripted`, `produced`, `uploaded` | New status of the asset (checked against `coursekit config media`). |
@@ -840,6 +840,9 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
 | `--fix` | flag | `check` only: bring to the target loudness the audios and videos out of it, in place. |
 | `--frames FRAMES` | number; default `media › checks › sheet_frames` | `sheet` only: frames of the contact sheet. |
 | `--batch` | flag | `narrate` only: put the scenes in the queue of the Gemini batch instead of voicing them ([`coursekit tts-batch`](#coursekit-tts-batch)). |
+| `--find FIND` | text, in English | `stock` only: search the illustration sources of the brand. |
+| `--take TAKE` | resource id | `stock` only: take that illustration as the SVG of the asset, recoloured to the brand. |
+| `--color COLOR` | default `media › stock › color` (`black`) | `stock` only: the colour the search filters by. |
 | `--size SIZE` | `WIDTHxHEIGHT` | `fit` (required) and `render`: the size, e.g. `1920x1080`. |
 | `--all` | flag | `redo` only: redo every asset that uses the theme, not only those made with other tokens. |
 | `--clean` | flag | `redo` only: the assets also forget their file, alt text, transcript, captions and the tool that made them (the files stay on disk), for what is made again from nothing, such as a resource that showed an invented interface. |
@@ -860,6 +863,7 @@ Actions:
 - `narrate`: produces the narration of the scenes of the simulations with `audio: true` (the `VO-…` assets) with the configured voices: the character of a conversation with its own voice (`coursekit voice set --character`), the rest with the voice of the course. By default the pending ones; with ids, those; with `--all`, all of them again. Each one goes to `media/files/<id>.mp3`, with the text as its transcript, and is marked `produced`. Prints `N scene narration(s) produced`; exit code 1 if the voice provider fails (what was produced before is kept). With `--batch` (only the Gemini voice) the scenes go to the queue of the batch and stay `pending` until [`coursekit tts-batch collect`](#coursekit-tts-batch) writes them and marks them `produced`.
 - `check`: looks at the audios and videos `produced` or `uploaded` (the ones named, or all): their loudness against `media › checks` (EBU R128 for the web: -16 LUFS, peak -1 dBTP, measured with ffmpeg); the cues of their captions (the `.vtt` or `.srt` next to the file, with its name) faster than `max_cps` characters per second; and, for a video whose scenes are described ([Accessibility of videos](07-media.md#accessibility-of-videos)), the text on screen its narration does not say. One `WARNING <id> [<code>] <what>` line each (codes `LOUDNESS`, `CAPTIONS_FAST`, `NOT_SAID`, `NOT_CHECKED`), and exit code 1 while there is one; `--fix` brings the loudness to its target in place (two passes of `loudnorm`; the picture of a video is copied, not encoded again). It needs `ffmpeg` and `ffprobe`.
 - `sheet`: the contact sheet of the video `id`: `--frames` frames (default 24) spread over its length in one image, with the time of each one, in `.cache/media/<CODE>/<id>-sheet.png`, to look at a video without playing it.
+- `stock`: an illustration of the illustration sources of the brand ([Illustration sources](07-media.md#illustration-sources)) for the asset `id`. With `--find`, the illustrations of those sources that match the terms and come as SVG (`media › stock › color` filters them; `black`, the line versions): one line each, with its resource id, title, author, licence and the address of its preview. With `--take`, downloads that one as SVG, recolours it (its dark colours to the role `media › stock › ink` of the tokens, the text; its light ones to `paper`, the background) into `media/files/<id>.svg`, and records in the manifest `recipe: magnific-stock` and `source` (provider, resource, author, address and licence); it does not mark it produced: make its PNG with `render` and mark it with `set`. A colour version is refused when the filter is `black` (take the line one). It needs `MAGNIFIC_API_KEY` and the sources (`coursekit brand`); exit code 2 without `id`, `--find` or `--take`, 1 when the API fails.
 - `transcript`: from the scenes described in `media/scripts/<id>.scenes.yaml`, writes the accessible transcript of the video `id` (scene by scene, the minute, what is seen and what is said) in `<file>.transcript.txt` and a WebVTT track of descriptions in `<file>.descriptions.vtt`, and makes that transcript the one of the asset (what the assembly puts in the course). See [Accessibility of videos](07-media.md#accessibility-of-videos).
 - `redo`: marks assets to be produced again and prints their ids. With one or more ids (`redo CODE U1-S3-M1 U1-S5-M4`), those; without them, the produced or uploaded assets of the types that use the theme (`uses_theme`) whose fingerprint differs from the current tokens (all of them with `--all`). They go back to `scripted` and forget their fingerprint and uploaded path; their script and file stay. Then `/produce-media` (or `coursekit handoff`) produces them again. See [Change the theme after producing the media](07-media.md#change-the-theme-after-producing-the-media). Refused while the course is on hold.
 
@@ -1031,6 +1035,7 @@ What it reads, in the brand folder (it creates `sources/`, `links.md` and `notes
 
 - `sources/`: the brand book (PDF, Word, PowerPoint…), token files (`.json`, a `.css` with custom properties), fonts (`.woff2`, `.ttf`, `.otf`, an `@font-face` stylesheet, their licence), logos (an image whose name has the word `logo`), icons (SVGs in a folder `icons/` or `glyphs/`), other images, and a brand kit (`.zip`) or the package of a design system (`.tgz`, as npm publishes it), of which only its fonts, icons, logos and token files are taken, never its code.
 - `links.md`, in two parts. Under the first heading, the links whose **content** is read: a Storybook (recognised by its `index.json`) is read whole from its manifests (every page and every component with its props, stories and page) and the files its pages link to; any other website is downloaded as `coursekit brief` does. Under `# Websites to infer the style from` (`# Webs de las que inferir el estilo`), the links whose **style** is observed: the website is opened in the Chrome or Edge of the machine and its CSS variables, the computed styles of its body, headings, links, buttons and cards, its colours by area, its fonts, its logo and a screenshot are written down, as clues, never rules.
+- Under `# Illustration sources` (`# Fuentes de ilustraciones`), the page of an author on Magnific whose illustrations fit the brand (`https://www.magnific.com/author/<name>`): with `MAGNIFIC_API_KEY` its author id is found, a few previews of its work are kept in `style/` and the source is written to `illustration-sources.json`, where [`coursekit media stock`](#coursekit-media) searches.
 - `notes.md`: your indications on the brand.
 
 What it writes: `text/` (the documents, the pages and the components as Markdown, the token files, what was observed), `fonts/fonts.css` with the fonts of the brand (a stylesheet left in `sources/` with its files; font files left alone, their family guessed from the name; and the Google Fonts the brand uses, which have an open licence, only the Latin alphabets), `logo/`, `icons/`, `tokens/`, the screenshots in `style/`, and `index.md`, which the agents read first. A font the brand uses whose files cannot be used (a font the website serves is not licensed to copy) is listed for you to provide. It prints what it found and, when fonts are missing, which. Exit code 1 when a link could not be read or a website observed; what worked is kept.

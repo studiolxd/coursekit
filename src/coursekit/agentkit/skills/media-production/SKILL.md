@@ -146,10 +146,19 @@ credits.
     if it fits the visual style of the course (`visual.style`) and the other images of the unit (one stock photograph
     among illustrations stands out), shows nothing that contradicts the text and, when it shows people, varied people. If
     nothing fits, generate it as a necessary one.
-  - **Necessary**: it shows something specific of the content (a situation the text describes, a scene of the story, a
-    character who must look the same in every image, something a catalog will not have). Generate it with the configured
-    provider (prompt from the description and specifications, sober and coherent style, no embedded text), or draw it
-    as SVG without a generator.
+  - **Necessary**: it shows something specific of the content. The style guide says how each kind of illustration looks;
+    the script of the resource says which kind it is (the guide of a course can add kinds):
+    - a **concept illustration** goes with a concept of the content and reinforces it. When the brand has illustration
+      sources (`coursekit media plan` offers `magnific-stock`), look there first: `coursekit media stock <CODE> <id> --find
+      "<terms in English>"` lists illustrations of those sources as SVG; look at their previews, take the one that tells
+      the concept with `--take <resource id>` (it comes recoloured to the ink and the paper of the brand, and the manifest
+      records where it comes from) and add by hand only what the script asks for (the accent on one element, for example).
+      A colour version is refused: take the line version of the same concept. When nothing fits, combine elements of
+      several or generate it in the same style, with the previews of `theme/branding/style/` as reference;
+    - a **scene** (a simulation, a story) has characters who look the same in every image: generate it with the configured
+      provider in the style of the guide, or draw it as SVG without a generator;
+    - a **diagram** is a resource of its own type (`diagram`), drawn as SVG with the tokens.
+    Generated images: prompt from the description and specifications, sober and coherent style, no embedded text.
   - The portraits of characters and the images of the simulations are never decorative: they follow their own rules
     (above, and the style sheet of the simulations).
   Record in the manifest the recipe actually used (`creator-stock` or the generator).

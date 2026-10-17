@@ -159,9 +159,12 @@ def test_the_links_are_read_or_observed_by_their_heading_in_either_language(tmp_
     links.write_text("- https://a.example/\n# Brand material\n- https://b.example/ — the book\n<!-- - https://hidden.example/ -->\n"
                      "# Websites to infer the style from\n- https://c.example/\n## Más\n- https://d.example/\n"
                      "# Webs de las que inferir el estilo\n- https://e.example/\n", encoding="utf-8")
-    content, style = brand.parse_links(links)
+    links.write_text(links.read_text(encoding="utf-8") + "# Fuentes de ilustraciones\n- https://www.magnific.com/author/acme-art\n",
+                     encoding="utf-8")
+    content, style, sources = brand.parse_links(links)
     assert [u for u, _ in content] == ["https://a.example/", "https://b.example/", "https://d.example/"]
     assert [u for u, _ in style] == ["https://c.example/", "https://e.example/"] and content[1][1] == "the book"
+    assert sources == [("https://www.magnific.com/author/acme-art", "")]
 
 
 def test_the_brief_also_reads_a_storybook_whole(course, monkeypatch):  # noqa: F811
@@ -273,3 +276,69 @@ def test_the_borders_and_weights_of_the_brand_reach_the_simulations_and_the_vide
     assert ".btn:hover { color: var(--color-accent-strong" in css and "border-left: 4px solid var(--color-accent-strong" in css
     assert video._weights(montage(course), {}) == {"normal": 300.0, "strong": 500.0}
     assert video._weights(montage(course), {"weights": {"strong": 600}}) == {"normal": 300.0, "strong": 600.0}
+
+
+# ── the illustration sources and coursekit media stock ──────────────────────────────────────
+
+LINE = '<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path d="M0 0h5"/>' \
+       '<rect style="fill:#FFFFFF;" width="2" height="2"/><circle fill="#010102" r="1"/></svg>'
+COLOUR = '<svg xmlns="http://www.w3.org/2000/svg"><path fill="#E38DDD" d="M0 0"/><path fill="#311944" d="M1 1"/></svg>'
+
+
+def fake_magnific(path, params=None):
+    params = params or {}
+    item = lambda rid, title: {"id": rid, "title": title, "author": {"id": 99, "slug": "acme-art"},  # noqa: E731
+                               "licenses": [{"type": "freemium"}], "image": {"source": {"url": f"https://img.example/{rid}.jpg"}},
+                               "meta": {"available_formats": {"svg": {}, "eps": {}}}}
+    if path == "resources" and params.get("term") == "acme art":
+        return {"data": [item(1, "Something"), {**item(2, "Other"), "author": {"id": 7, "slug": "someone"}}]}
+    if path == "resources" and params.get("filters[author]") == 99:
+        return {"data": [item(11, "Password security concept"), item(12, "Lock concept")]}
+    if path.startswith("resources/") and path.endswith("/download/svg"):
+        return {"data": [{"filename": "x.svg", "url": f"https://dl.example/{path.split('/')[1]}.svg"}]}
+    if path.startswith("resources/"):
+        return {"data": {"url": "https://www.magnific.com/free-vector/x_11.htm", "premium": False, "author": {"slug": "acme-art"},
+                         "license": "https://www.magnific.com/profile/license/pdf/11"}}
+    return {"data": []}
+
+
+def test_an_author_of_magnific_becomes_an_illustration_source_and_its_illustrations_come_recoloured(course, capsys, monkeypatch):  # noqa: F811
+    from coursekit import illustrations
+
+    monkeypatch.setenv("MAGNIFIC_API_KEY", "mk")
+    monkeypatch.setattr(illustrations, "get", fake_magnific)
+    monkeypatch.setattr(illustrations, "fetch", lambda url: (COLOUR if "12" in url else LINE).encode() if url.endswith(".svg")
+                        else b"jpg")
+    root = course.parent.parent
+    assert main(["theme", "import", str(THEME)]) == 0
+    base = root / "theme" / "branding"
+    brand.prepare(base, "es")
+    (base / "links.md").write_text("# Fuentes de ilustraciones\n\n- https://www.magnific.com/author/acme-art — line art\n"
+                                   "- https://illustrations.example/ — a reference\n", encoding="utf-8")
+    brand.build(find_project())
+    sources = illustrations.load(base)
+    assert sources[0]["author_id"] == 99 and sources[1]["provider"] is None
+    assert sorted(p.name for p in (base / "style").glob("source-*")) == ["source-acme-art-11.jpg", "source-acme-art-12.jpg"]
+    assert "autor acme-art de Magnific (id 99)" in (base / "index.md").read_text(encoding="utf-8")
+    prepare_asset(course, capsys)
+    assert main(["media", "stock", "PWD", "U1-S2-M1", "--find", "password"]) == 0
+    out = capsys.readouterr().out
+    assert "11  Password security concept (acme-art; licence: freemium)" in out and "https://img.example/12.jpg" in out
+    assert main(["media", "stock", "PWD", "U1-S2-M1", "--take", "12"]) == 1  # a colour version
+    assert "is a colour version, not a line one" in capsys.readouterr().err
+    assert main(["media", "stock", "PWD", "U1-S2-M1", "--take", "11"]) == 0
+    svg = (course / "media" / "files" / "U1-S2-M1.svg").read_text(encoding="utf-8")
+    ink = json.loads((root / "theme" / "tokens.json").read_text(encoding="utf-8"))["color"]["text"]
+    assert f'<svg fill="{ink}"' in svg and "#010102" not in svg and f'fill="{ink}"' in svg and "fill:#FFFFFF" in svg
+    asset = next(a for a in yaml.safe_load((course / "media" / "manifest.yaml").read_text(encoding="utf-8"))["assets"]
+                 if a["id"] == "U1-S2-M1")
+    assert asset["recipe"] == "magnific-stock" and asset["source"]["resource"] == 11 and asset["source"]["license"] == "freemium"
+    assert asset.get("status") != "produced"  # the agent checks it, makes its PNG and marks it
+
+
+def test_media_stock_says_what_it_needs(course, capsys, monkeypatch):  # noqa: F811
+    prepare_asset(course, capsys)
+    assert main(["media", "stock", "PWD", "U1-S2-M1"]) == 2
+    monkeypatch.setenv("MAGNIFIC_API_KEY", "mk")
+    assert main(["media", "stock", "PWD", "U1-S2-M1", "--find", "lock"]) == 1
+    assert "there are no illustration sources" in capsys.readouterr().err

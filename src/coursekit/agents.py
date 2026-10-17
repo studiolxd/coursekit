@@ -144,6 +144,7 @@ def context(project: Project) -> dict[str, str]:
         "tone": str(data.get("tone") or "the one in course.yaml"),
         "language_name": LANGUAGE_NAMES.get(content_language, content_language),
         "ui_language_name": LANGUAGE_NAMES.get(ui_language, ui_language),
+        "ui_language": ui_language,
         "address_rule": ADDRESS_RULES.get(address, f"address the learner as «{address}»"),
         "backend": str((data.get("assembly") or {}).get("backend") or "creator"),
         "mcp_name": str(slxd.get("mcp_name") or "slxd-creator"),

@@ -1,5 +1,6 @@
 # Output of `coursekit brand` and the files it writes in the brand folder (theme/branding/, or a course's).
 links_style_heading: {es: "# Webs de las que inferir el estilo", en: "# Websites to infer the style from"}
+links_illustrations_heading: {es: "# Fuentes de ilustraciones", en: "# Illustration sources"}
 links_template:
   es: |
     # Material de marca
@@ -11,6 +12,12 @@ links_template:
 
     <!-- La web de la empresa, del proyecto o de un producto: no se lee su texto, se abre en un navegador y se observa su
     estilo (variables CSS, colores, tipografías, radios, sombras, logo, capturas) en text/observed/. Son pistas, no reglas. -->
+
+    # Fuentes de ilustraciones
+
+    <!-- La página de un autor de Magnific cuyas ilustraciones encajan con la marca (https://www.magnific.com/author/<nombre>):
+    con MAGNIFIC_API_KEY, el agente busca ahí primero una ilustración de concepto (coursekit media stock) y la recolorea a la
+    marca. Unas cuantas se guardan como referencia de estilo en style/. -->
   en: |
     # Brand material
 
@@ -21,6 +28,12 @@ links_template:
 
     <!-- The website of the company, of the project or of a product: its text is not read, it is opened in a browser and its
     style is observed (CSS variables, colours, fonts, radius, shadows, logo, screenshots) in text/observed/. Clues, not rules. -->
+
+    # Illustration sources
+
+    <!-- The page of an author on Magnific whose illustrations fit the brand (https://www.magnific.com/author/<name>): with
+    MAGNIFIC_API_KEY, the agent looks there first for a concept illustration (coursekit media stock) and recolours it to the
+    brand. A few are kept as references of the style in style/. -->
 notes_template:
   es: |
     # Indicaciones sobre la marca
@@ -81,3 +94,8 @@ help_code: {es: "la marca de este curso (courses/<CODE>/theme/branding/); sin é
 help_refresh: {es: "vuelve a descargar las URL y a observar las webs", en: "download the URLs and observe the websites again"}
 section_icons: {es: "## Iconos", en: "## Icons"}
 icons_line: {es: "{count} iconos de la marca en `{path}`: usa esos dibujos; un icono que falte se dibuja con su mismo criterio.", en: "{count} icons of the brand in `{path}`: use those drawings; a missing icon is drawn with their same criteria."}
+section_illustrations: {es: "## Fuentes de ilustraciones", en: "## Illustration sources"}
+illustrations_intro: {es: "Donde se busca primero una ilustración de concepto (`coursekit media stock`), que se recolorea a la marca; sus referencias de estilo están en `style/`.", en: "Where a concept illustration is looked for first (`coursekit media stock`), recoloured to the brand; its references of style are in `style/`."}
+header_illustrations: {es: "| URL | Nota | Estado | Referencias |", en: "| URL | Note | State | References |"}
+source_author: {es: "autor {author} de Magnific (id {id})", en: "author {author} on Magnific (id {id})"}
+source_reference: {es: "solo referencia: no es la página de un autor de Magnific", en: "reference only: not the page of an author on Magnific"}

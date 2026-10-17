@@ -109,24 +109,77 @@ def style_headings() -> set[str]:
     return {i18n.t_in(code, "brand", "links_style_heading").strip("# ").lower() for code in ("es", "en")}
 
 
-def parse_links(path: Path) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
-    """(links whose content is read, links whose style is observed): the second are those under the heading of the websites
-    to infer the style from, in either language; a link under any other heading, or under none, is read."""
+def illustration_headings() -> set[str]:
+    return {i18n.t_in(code, "brand", "links_illustrations_heading").strip("# ").lower() for code in ("es", "en")}
+
+
+def parse_links(path: Path) -> tuple[list[tuple[str, str]], list[tuple[str, str]], list[tuple[str, str]]]:
+    """(links whose content is read, links whose style is observed, sources of illustrations): by the heading they are under,
+    in either language; a link under any other heading, or under none, is read."""
     from coursekit import brief
 
     if not path.exists():
-        return [], []
-    content, style, section = [], [], "content"
+        return [], [], []
+    found_by = {"content": [], "style": [], "illustrations": []}
+    section = "content"
     text = re.sub(r"<!--.*?-->", "", path.read_text(encoding="utf-8"), flags=re.S)
-    headings = style_headings()
+    style, illustrations = style_headings(), illustration_headings()
     for line in text.splitlines():
         if line.lstrip().startswith("#"):
-            section = "style" if line.strip("# \t").lower() in headings else "content"
+            title = line.strip("# \t").lower()
+            section = "style" if title in style else "illustrations" if title in illustrations else "content"
             continue
         found = brief.LINK.match(line)
         if found:
-            (style if section == "style" else content).append((found.group(1), (found.group(2) or "").strip()))
-    return content, style
+            found_by[section].append((found.group(1), (found.group(2) or "").strip()))
+    return found_by["content"], found_by["style"], found_by["illustrations"]
+
+
+REFERENCES = 6  # previews of a source of illustrations kept in style/ (a preview costs no download)
+
+
+def _illustration_sources(base: Path, links: list[tuple[str, str]], refresh: bool) -> list[dict]:
+    """The sources of illustrations in illustration-sources.json, each with the id of its author on Magnific and a few previews
+    of its work in style/. A link that is not the page of an author on Magnific is kept as a reference only."""
+    from coursekit import illustrations
+
+    known = {s["url"]: s for s in illustrations.load(base)}
+    sources = []
+    for url, comment in links:
+        source = {"url": url, "note": comment, "provider": None, "author": None, "author_id": None, "error": None}
+        slug = illustrations.author_of(url)
+        if slug:
+            source.update(provider="magnific", author=slug)
+            if url in known and known[url].get("author_id") and not refresh:
+                source["author_id"] = known[url]["author_id"]
+            else:
+                try:
+                    source["author_id"] = illustrations.resolve(slug)
+                    if source["author_id"] is None:
+                        source["error"] = i18n.t("illustrations", "author_not_found", author=slug)
+                    else:
+                        _previews(base, source)
+                except illustrations.IllustrationError as exc:
+                    source["error"] = str(exc)
+        sources.append(source)
+    path = base / illustrations.SOURCES
+    if sources:
+        path.write_text(json.dumps(sources, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    else:
+        path.unlink(missing_ok=True)
+    return sources
+
+
+def _previews(base: Path, source: dict) -> None:
+    from coursekit import illustrations
+
+    found = illustrations.get("resources", {"term": "illustration", "filters[author]": source["author_id"], "limit": REFERENCES})
+    style = base / "style"
+    style.mkdir(parents=True, exist_ok=True)
+    for item in (found.get("data") or [])[:REFERENCES]:
+        url = ((item.get("image") or {}).get("source") or {}).get("url")
+        if url:
+            (style / f"source-{source['author']}-{item['id']}.jpg").write_bytes(illustrations.fetch(url))
 
 
 def _words(name: str) -> list[str]:
@@ -304,7 +357,7 @@ def build(project: Project, course: dict | None = None, refresh: bool = False, l
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(f"---\nsource: {src.relative_to(base).as_posix()}\n---\n\n```{src.suffix[1:]}\n{text}\n```\n", encoding="utf-8")
     logos = [_copy(src, base / "logo") for src in found.get("logo", []) if src.suffix.lower() in IMAGES]
-    content, style = parse_links(base / "links.md")
+    content, style, illustration_links = parse_links(base / "links.md")
     webs, failed = brief.download_links(base, state, refresh, log, links=content)
     google: list[str] = []
     for info in (state.get("web") or {}).values():
@@ -319,6 +372,8 @@ def build(project: Project, course: dict | None = None, refresh: bool = False, l
         observed.append(row)
         google += row.get("google") or []
         failed += 1 if row.get("error") else 0
+    sources = _illustration_sources(base, illustration_links, refresh)
+    failed += sum(1 for s in sources if s.get("error"))
     rules = _font_rules(base, found, sorted(set(google)))
     sheet = base / FONTS_SHEET
     notes = []
@@ -331,7 +386,7 @@ def build(project: Project, course: dict | None = None, refresh: bool = False, l
     missing = sorted({f for row in observed for f in row.get("families") or [] if f.lower() not in have})
     state_path.parent.mkdir(parents=True, exist_ok=True)
     state_path.write_text(json.dumps(state, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    write_index(base, lang, documents, webs, observed, rules, missing, logos, found, notes, icons)
+    write_index(base, lang, documents, webs, observed, rules, missing, logos, found, notes, icons, sources)
     return {"folder": base, "documents": len(documents), "webs": len(webs), "observed": len(observed),
             "fonts": sorted({r["family"] for r in rules}), "missing_fonts": missing, "logos": len(logos), "icons": len(icons),
             "failed": failed}
@@ -385,7 +440,7 @@ def _cell(text: object) -> str:
 
 def write_index(base: Path, lang: str, documents: list[dict], webs: list[dict], observed: list[dict], rules: list[dict],
                 missing: list[str], logos: list[Path], found: dict[str, list[Path]], notes: list[str],
-                icons: list[Path] | None = None) -> None:
+                icons: list[Path] | None = None, sources: list[dict] | None = None) -> None:
     from coursekit import brief
 
     def say(key: str, **values) -> str:
@@ -421,6 +476,14 @@ def write_index(base: Path, lang: str, documents: list[dict], webs: list[dict], 
         out += [say("section_missing_fonts"), "", say("missing_fonts", families=", ".join(missing)), ""]
     if icons:
         out += [say("section_icons"), "", say("icons_line", count=len(icons), path="icons/"), ""]
+    if sources:
+        out += [say("section_illustrations"), "", say("illustrations_intro"), "", say("header_illustrations"), "|---|---|---|---|"]
+        for s in sources:
+            state = s.get("error") or (say("source_author", author=s["author"], id=s["author_id"]) if s.get("author_id")
+                                       else say("source_reference"))
+            out.append(f"| {s['url']} | {_cell(s.get('note') or '')} | {_cell(state)} | "
+                       + ", ".join(f"`{rel(p)}`" for p in sorted((base / "style").glob(f"source-{s.get('author')}-*.jpg"))[:3]) + " |")
+        out.append("")
     listed = [("section_logos", logos), ("section_tokens", sorted((base / "tokens").glob("*")) if (base / "tokens").is_dir() else []),
               ("section_images", found.get("image", [])), ("section_other", found.get("other", []))]
     for key, files in listed:

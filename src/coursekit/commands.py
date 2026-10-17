@@ -952,6 +952,12 @@ def cmd_media(args: argparse.Namespace) -> int:
             print(t("commands", "error_line", text=exc), file=sys.stderr)
             return 1
         return 0
+    if args.action == "stock":
+        if not args.id or not (args.find or args.take):
+            print(t("illustrations", "stock_needs"), file=sys.stderr)
+            return 2
+        print("\n".join(mediamod.stock(course, args.id, find=args.find, take=args.take, color=args.color)))
+        return 0
     if args.action == "embed":
         if not args.id:
             print(t("commands", "media_set_needs_id"), file=sys.stderr)
@@ -1421,7 +1427,7 @@ def register(sub: argparse._SubParsersAction) -> None:
 
     p = sub.add_parser("media", help=t("commands", "help_media"))
     p.add_argument("action", choices=("extract", "plan", "providers", "set", "upload", "redo", "embed", "fit", "render", "narrate",
-                                      "optimize", "adopt", "check", "sheet", "transcript"))
+                                      "optimize", "adopt", "check", "sheet", "transcript", "stock"))
     p.add_argument("code", nargs="?")
     p.add_argument("id", nargs="?")
     p.add_argument("more", nargs="*", help=t("commands", "help_media_more"))
@@ -1439,6 +1445,9 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--fix", action="store_true", help=t("commands", "help_media_fix"))
     p.add_argument("--frames", type=int, help=t("commands", "help_media_frames"))
     p.add_argument("--batch", action="store_true", help=t("commands", "help_media_batch"))
+    p.add_argument("--find", help=t("commands", "help_media_find"))
+    p.add_argument("--take", type=int, help=t("commands", "help_media_take"))
+    p.add_argument("--color", help=t("commands", "help_media_color"))
     p.set_defaults(func=cmd_media)
 
     p = sub.add_parser("video", help=t("commands", "help_video"))

@@ -9,7 +9,8 @@
 #   none       always available (the agent does it itself)
 # `only:` limits an option to some content — the agent decides from the placeholder's description: `terminal` (it shows a
 # terminal), `decorative` (an image that sets the scene and explains nothing: a header, people at work, a place, a generic
-# object; what shows something specific of the content is generated or drawn).
+# object; what shows something specific of the content is generated or drawn), `illustration` (an illustration that goes with
+# a concept of the content and reinforces it: not a diagram, not a photograph, not a scene of a simulation).
 # An id may appear twice: once limited with `only:` and higher, once without it and lower.
 # `shows: interface` marks an option that works from real material of an application (a capture or a recording that a person
 # provides): it is offered only for a resource that `depicts` a real interface (see `depicts` below).
@@ -23,6 +24,14 @@
 visual:
   style: illustration          # flat | pixel-art | 3d | isometric | illustration | photo
   fallback: flat               # the style when there is no image generator: the illustration role draws it as SVG
+
+# The illustrations taken from the illustration sources of the brand (`coursekit media stock`): `color` filters the search
+# (black: the line versions; null: any), and the taken SVG is recoloured, its dark colours to the role `ink` of the tokens and
+# its light ones to the role `paper` (an accent the script asks for is added by hand afterwards).
+stock:
+  color: black
+  ink: text
+  paper: background
 
 # The fonts of the brand every resource made on this machine is drawn with (a video, an SVG exported as PNG), so it does not
 # depend on the fonts installed: a stylesheet of the project with @font-face rules (its font files next to it, inside the
@@ -69,6 +78,8 @@ types:
   image:
     # decorative images come from the catalog first (licensed, no credits); what is specific to the content is generated
     - {id: creator-stock, needs: {mcp: search_stock_images}, only: decorative, how: "Licensed stock from creator (Pexels, Pixabay, Unsplash, Freepik) + import_stock_image; nothing that fits the style of the course: go on with the next option"}
+    # a concept illustration comes first from the illustration sources of the brand (theme/branding/links.md), recoloured
+    - {id: magnific-stock, needs: {env: MAGNIFIC_API_KEY, path: theme/branding/illustration-sources.json}, only: illustration, how: "An illustration of the illustration sources of the brand, recoloured to it (coursekit media stock); nothing that fits: go on with the next option"}
     - {id: magnific-api, needs: {env: MAGNIFIC_API_KEY}, how: "Image generated with the Magnific API"}
     - {id: magnific-mcp, needs: {mcp: images_generate}, how: "Claude's Magnific connector"}
     - {id: agent-svg, needs: none, how: "Illustration drawn by the agent as SVG with the theme colours and exported to PNG (creator does not take SVG as an image); portraits of characters as flat busts"}

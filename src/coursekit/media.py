@@ -486,6 +486,51 @@ def narrate(course: dict, ids: list[str] | None = None, again: bool = False, say
     return done
 
 
+def stock(course: dict, asset_id: str, find: str | None = None, take: int | None = None, color: str | None = None,
+          limit: int = 12) -> list[str]:
+    """`coursekit media stock`: the illustrations of the illustration sources of the brand for a resource (`find`, in English),
+    or one of them taken as its SVG (`take`), recoloured to the brand and recorded with where it comes from."""
+    from coursekit import brand, illustrations
+
+    ry, path, data = load_manifest(course["_dir"])
+    asset = next((a for a in data["assets"] if a["id"] == asset_id), None)
+    if asset is None:
+        raise MediaError(t("media", "asset_not_found", asset_id=asset_id))
+    if not find and not take:
+        raise MediaError(t("illustrations", "stock_needs"))
+    cfg = config(course=course).get("stock") or {}
+    sources = illustrations.load(brand.folder(course["_project"], course))
+    if not any(s.get("author_id") for s in sources):
+        raise MediaError(t("illustrations", "no_sources"))
+    try:
+        if find:
+            found = illustrations.search(sources, find, color if color is not None else cfg.get("color"), limit)
+            return [t("illustrations", "candidate", id=f["id"], title=f["title"], author=f["author"],
+                      licenses=", ".join(f["licenses"]) or "?", preview=f["preview"] or "—") for f in found] \
+                or [t("illustrations", "none_found", term=find)]
+        svg, _ = illustrations.download_svg(int(take))
+        about = illustrations.detail(int(take))
+    except illustrations.IllustrationError as exc:
+        raise MediaError(str(exc)) from None
+    if cfg.get("color") == "black" and not illustrations.is_line_art(svg):  # a colour version: the line one is another resource
+        raise MediaError(t("illustrations", "not_line_art", resource=take))
+    try:
+        colors = thememod.load(course["_project"], course).get("color") or {}
+    except thememod.ThemeError as exc:
+        raise MediaError(str(exc)) from None
+    ink, paper = colors.get(str(cfg.get("ink") or "text"), "#000000"), colors.get(str(cfg.get("paper") or "background"), "#FFFFFF")
+    out = course["_dir"] / "media" / "files" / f"{asset_id}.svg"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(illustrations.recolour(svg, ink, paper), encoding="utf-8", newline="\n")
+    author = about.get("author")
+    asset.update(file=f"media/files/{out.name}", recipe="magnific-stock",
+                 source={"provider": "magnific", "resource": int(take), "author": author, "url": about.get("url"),
+                         "license": about.get("license"), "license_url": about.get("license_url")})
+    with path.open("w", encoding="utf-8", newline="\n") as fh:
+        ry.dump(data, fh)
+    return [t("illustrations", "taken", asset=asset_id, path=f"media/files/{out.name}", resource=take, author=author or "?", ink=ink)]
+
+
 def image_tool(course: dict, asset_id: str, action: str, size: str | None = None) -> str:
     """`fit`: the file of an asset to an exact size; `render`: its SVG as a PNG next to it (to look at it, and for creator)."""
     from coursekit import mediatools

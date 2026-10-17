@@ -221,7 +221,8 @@ characters:
 1. `design_matrix_get` → save the JSON **as it is** in `courses/<CODE>/design/matrix.json`, with your file-writing tool
    (the whole response, including `updatedAt`): never patch the previous file by hand or with a script.
 2. `design_matrix_validate` → `courses/<CODE>/design/validation.json`.
-3. `design_matrix_export` → download the `downloadUrl` (expires in 24 h) with
+3. `design_matrix_export` with `locale: "{{ui_language}}"` (the language of the sheet labels: without it slxd writes them in
+   its default language, not the project's) → download the `downloadUrl` (expires in 24 h) with
    `coursekit download "<downloadUrl>" --out courses/<CODE>/design/<CODE>-instructional-design.xlsx` (not `curl`: a
    session without an interface cannot run it). That is what the person reviews.
 4. `coursekit sync <CODE> --check` to confirm the structure is understood and the hours add up.
