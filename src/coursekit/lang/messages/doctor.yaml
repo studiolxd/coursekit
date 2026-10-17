@@ -6,6 +6,11 @@ section_base: {es: Base, en: Base}
 section_tools: {es: Herramientas de agente, en: Agent tools}
 section_network: {es: Red, en: Network}
 section_mirror: {es: Carpeta espejo, en: Mirror folder}
+section_research: {es: "Búsqueda de fuentes (coursekit research)", en: "Source search (coursekit research)"}
+research_provider: {es: "proveedor {name} con su clave", en: "provider {name} with its key"}
+research_native:
+  es: "sin RESEARCH_PROVIDER: los agentes usan su propia búsqueda web (opcional: exa, perplexity, brave o tavily con su clave)"
+  en: "no RESEARCH_PROVIDER: the agents use their own web search (optional: exa, perplexity, brave or tavily with its key)"
 store: {es: "almacén de coursekit {path} ({size})", en: "coursekit store {path} ({size})"}
 remotion_deps: {es: "dependencias de Remotion (tools/remotion/node_modules)", en: "Remotion dependencies (tools/remotion/node_modules)"}
 html_builder: {es: "constructor del backend html (@studiolxd/scorm y esbuild)", en: "html backend builder (@studiolxd/scorm and esbuild)"}

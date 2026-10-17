@@ -21,5 +21,6 @@ Load the `content-writing` skill and follow it. Before writing anything, check w
 - Write section by section and run `coursekit verify <CODE> --unit N` after each one. Do not go
   on with errors.
 - {{language_name}}, {{address_rule}}, no emojis.
-- If a fact cannot be verified, mark it with `<!-- VERIFICAR: … -->`; do not invent it.
+- A fact the brief does not have: look for its official source with `coursekit research`, as the skill says. If it
+  cannot be verified, mark it with `<!-- VERIFICAR: … -->`; do not invent it.
 - Do not commit or push, and never run `coursekit approve`.

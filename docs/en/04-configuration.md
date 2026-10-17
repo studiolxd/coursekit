@@ -181,6 +181,18 @@ A provider is used only if its key is set. See [Media](07-media.md) for how cour
 | `PIPER_VOICE` | empty | Path to a Piper voice model (`.onnx`) for local draft narration. `coursekit setup --media` downloads one and fills this in. |
 | `PIPER_SPEAKER` | `0` in `.env.example` | Speaker number of the Piper voice. |
 
+### Web research (optional)
+
+[`coursekit research`](03-commands.md#coursekit-research) looks for official sources with one search API: the one `RESEARCH_PROVIDER` names, with its key. A key alone does nothing; without both, the agents use their own web search. In the tests of official sources made to choose them, Exa found the official source most often, above all for single facts; Perplexity, Brave and Tavily follow. The queries go to the provider, so they tell it the subject of the course: check its terms on the data it keeps. How it searches is in [`research`](#research-official-sources-through-a-search-api).
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `RESEARCH_PROVIDER` | empty | `exa`, `perplexity`, `brave` or `tavily`. |
+| `EXA_API_KEY` | empty | Exa key. |
+| `PERPLEXITY_API_KEY` | empty | Perplexity key (its Search API). |
+| `BRAVE_API_KEY` | empty | Brave Search API key. |
+| `TAVILY_API_KEY` | empty | Tavily key. |
+
 ### Variables outside `.env`
 
 | Variable | Meaning |
@@ -193,7 +205,7 @@ A provider is used only if its key is set. See [Media](07-media.md) for how cour
 
 ## The `config/` files
 
-The seven configurations are `rules`, `directives`, `media`, `delivery`, `import`, `capture` and `video`. Every project gets `config/<name>.example.yaml` with the complete package defaults (a reference, never read). To change something, create `config/<name>.yaml` with **only the keys you change**; `coursekit init --update` refreshes the examples without touching your overrides.
+The eight configurations are `rules`, `directives`, `media`, `delivery`, `import`, `capture`, `video` and `research`. Every project gets `config/<name>.example.yaml` with the complete package defaults (a reference, never read). To change something, create `config/<name>.yaml` with **only the keys you change**; `coursekit init --update` refreshes the examples without touching your overrides.
 
 The same keys can be written in a `<name>:` section of `project.yaml` (wins over `config/`) or of a course's `course.yaml` (wins over both, for that course only).
 
@@ -398,6 +410,29 @@ On top of the theme of the course (its colours and font families come from `them
 | `fonts` | `null` | A stylesheet of the project with `@font-face` rules (e.g. `theme/branding/fonts/fonts.css`): the font files it points to (relative to it, inside the project) go inside the video, and the render waits until they are loaded, so a video does not depend on the fonts of the machine. The family names are those of the theme. A font loaded from the internet, or a file that is missing, stops the render with a message. `null`: the fonts of the brand (`media › fonts`), else those of the theme by name. |
 | `format` | `{width: 1920, height: 1080, fps: 30}` | The frame of a video whose montage does not say it. |
 | `pad_seconds` | `0.5` | Seconds of air after the narration of each scene. |
+
+### `research`: official sources through a search API
+
+How [`coursekit research`](03-commands.md#coursekit-research) searches. Which API is personal, in the `.env` ([Web research](#web-research-optional)); the rest is here.
+
+| Key | Default | Meaning |
+|---|---|---|
+| `results` | `10` | Candidates asked to the provider per search. |
+| `show` | `5` | Candidates printed (and looked for in the language of the course). |
+| `country` | `auto` | ISO code of the country of the search (`ES`, `MX`...). `auto`: `ES` for content in Spanish, none for any other language. |
+| `prefer_domains` | `[]` | Official domains the project trusts (a domain covers its subdomains): their candidates go first. It reorders, never filters. |
+| `localize` | `true` | Look for each candidate in the language of the course: the translation its page declares (`hreflang`), its address with the language changed, then `localize_rules`. Taken only when the page says it is in that language. |
+| `localize_rules` | `[]` | Rewrites for sites that have the translation but neither declare it nor follow the usual pattern: `{host, from, to}`, with `{lang}` for the language of the course. |
+| `max_per_course` | `150` | Searches per course (counted in `brief/research-log.md`) before the command refuses. |
+| `warn_at` | `0.8` | Fraction of the limit from which it warns. |
+| `providers.<id>` | | What each provider receives: `exa.type` (`auto`), `perplexity.search_type` (`web`), `brave.extra_snippets` (`true`), `tavily.search_depth` (`basic`). |
+
+```yaml
+# config/research.yaml
+prefer_domains: [boe.es, aepd.es, incibe.es]
+localize_rules:
+  - {host: docs.python.org, from: "/3/", to: "/{lang}/3/"}
+```
 
 ## `course.yaml`: what a person may set per course
 

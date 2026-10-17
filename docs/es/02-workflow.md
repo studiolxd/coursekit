@@ -218,6 +218,8 @@ coursekit brief --refresh  # vuelve a descargar las URLs
 
 Esto escribe `brief/index.md` y el texto convertido en `brief/text/`, que es lo que leen los agentes. Solo se convierten los ficheros nuevos o cambiados.
 
+Con una API de búsqueda en el `.env` ([Búsqueda de fuentes](04-configuration.md#búsqueda-de-fuentes-opcional)), los agentes buscan fuentes oficiales con `coursekit research` y las proponen para `links.md`: el diseño, la documentación de referencia (y el material base de un curso sin brief); quien redacta, los datos que el brief no tiene. Mira [Búsqueda de fuentes](05-agents.md#búsqueda-de-fuentes).
+
 ### Importar desde eXeLearning
 
 Un curso que ya existe como paquetes de eXeLearning (`.elp`, eXeLearning 2 y 3) no se escribe otra vez desde cero: su contenido se convierte a Markdown, conservando su estructura y su tipo de interactividad, y los agentes trabajan a partir de él. Deja los `.elp` en `brief/sources/` y `coursekit brief` los convierte como cualquier otro documento, o crea cursos enteros con [`coursekit import`](03-commands.md#coursekit-import).

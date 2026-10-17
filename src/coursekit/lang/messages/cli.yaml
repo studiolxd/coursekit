@@ -85,8 +85,8 @@ next_brief:
   es: "  · Material de partida: deja los documentos en brief/sources/, las URLs en brief/links.md y las indicaciones generales en brief/notes.md. `coursekit brief` los convierte para que los agentes los lean."
   en: "  · Reference material: drop the documents in brief/sources/, the URLs in brief/links.md and the general indications in brief/notes.md. `coursekit brief` converts them for the agents to read."
 next_config:
-  es: "  · Valores por defecto del proyecto: mira config/*.example.yaml (reglas, directivas, multimedia, entrega, importación, captura y vídeo) y, para cambiar alguno, crea config/<nombre>.yaml solo con lo que cambies. `coursekit config` muestra lo que está en vigor."
-  en: "  · Project defaults: look at config/*.example.yaml (rules, directives, media, delivery, import, capture and video) and, to change one, create config/<name>.yaml with only what you change. `coursekit config` shows what is in force."
+  es: "  · Valores por defecto del proyecto: mira config/*.example.yaml (reglas, directivas, multimedia, entrega, importación, captura, vídeo y búsqueda de fuentes) y, para cambiar alguno, crea config/<nombre>.yaml solo con lo que cambies. `coursekit config` muestra lo que está en vigor."
+  en: "  · Project defaults: look at config/*.example.yaml (rules, directives, media, delivery, import, capture, video and source search) and, to change one, create config/<name>.yaml with only what you change. `coursekit config` shows what is in force."
 next_then: {es: "Después:", en: "Then:"}
 bad_mcp_url:
   es: "coursekit: --mcp-url debe empezar por http:// o https://"

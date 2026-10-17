@@ -403,6 +403,12 @@ help_media_frames: {es: "sheet: cuántos fotogramas tiene la hoja de contactos (
 help_media_batch: {es: "narrate: añade las escenas a la cola del batch de Gemini en lugar de locutarlas", en: "narrate: put the scenes in the Gemini batch queue instead of voicing them"}
 help_video: {es: "vídeos como datos (montaje de escenas con el tema del curso): crear, comprobar, voz, vista previa, render y catálogo", en: "videos as data (a montage of scenes in the theme of the course): create, check, voice, preview, render and catalog"}
 help_video_batch: {es: "voice: añade las escenas a la cola del batch de Gemini en lugar de locutarlas", en: "voice: put the scenes in the Gemini batch queue instead of voicing them"}
+help_research: {es: "fuentes oficiales para un curso con la API de búsqueda del .env (RESEARCH_PROVIDER): solo propone direcciones", en: "official sources for a course with the search API of the .env (RESEARCH_PROVIDER): it only proposes addresses"}
+help_research_query: {es: "lo que se busca, en el idioma del curso", en: "what to search for, in the language of the course"}
+help_research_fact: {es: "buscar la fuente oficial de un dato concreto (un VERIFICAR): se muestra el fragmento que lo contiene", en: "look for the official source of one fact (a VERIFICAR): the passage that holds it is shown"}
+help_research_json: {es: "salida en JSON", en: "output as JSON"}
+help_research_status: {es: "el proveedor, las búsquedas del curso y su límite, y una estimación de las que faltan", en: "the provider, the searches of the course and their limit, and an estimate of those left"}
+research_needs_query: {es: "research necesita lo que se busca (o --status)", en: "research needs what to search for (or --status)"}
 help_videos: {es: "vídeos de sitios prohibidos que son de un canal oficial: comprobar, proponer, aprobar o rechazar", en: "videos on forbidden sites that come from an official channel: check, propose, approve or reject"}
 help_videos_why: {es: "propose: la evidencia de que el canal del vídeo es oficial", en: "propose: the evidence that the channel of the video is official"}
 help_videos_for: {es: "propose: el recurso del manifiesto al que sustituiría (mientras espera, o si se aprueba, ese recurso no se captura ni se locuta)", en: "propose: the resource of the manifest it would stand in for (while it waits, or once approved, that resource is neither captured nor voiced)"}

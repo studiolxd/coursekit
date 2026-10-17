@@ -12,6 +12,7 @@ from pathlib import Path
 
 from coursekit import __version__, config, identity, store, updatecheck
 from coursekit import agents as agentsmod
+from coursekit import research as researchmod
 from coursekit import theme as thememod
 from coursekit.i18n import t
 from coursekit.project import Project
@@ -102,6 +103,15 @@ def collect(project: Project) -> list[Section]:
     else:
         net.add(None, t("doctor", "ca_none"))
 
+    research = Section(t("doctor", "section_research"))
+    try:
+        research.add(True, t("doctor", "research_provider", name=researchmod.provider()[0]))
+    except researchmod.NoProvider as exc:  # declared without its key is a mistake; not declared, the agents' own search
+        research.add(False if os.environ.get("RESEARCH_PROVIDER", "").strip() else None,
+                     str(exc) if os.environ.get("RESEARCH_PROVIDER", "").strip() else t("doctor", "research_native"))
+    except researchmod.ResearchError as exc:
+        research.add(False, str(exc))
+
     mirror = Section(t("doctor", "section_mirror"))
     provider = str((config.project_data(project).get("mirror") or {}).get("provider") or "none")
     if provider == "none":
@@ -138,7 +148,7 @@ def collect(project: Project) -> list[Section]:
         media.add(bool(os.environ.get(key)) or None, t("doctor", "key_optional", key=key))
     if os.environ.get("AZURE_SPEECH_KEY") and not os.environ.get("AZURE_SPEECH_REGION"):
         media.add(False, "AZURE_SPEECH_REGION", t("doctor", "azure_region_hint"))
-    sections = [base, tool_sections(project), net, mirror, theme, media]
+    sections = [base, tool_sections(project), net, research, mirror, theme, media]
     capture = capture_section(project)
     return [*sections, capture] if capture else sections
 

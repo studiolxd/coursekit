@@ -39,6 +39,7 @@ from coursekit import importer as importermod
 from coursekit import init as initmod
 from coursekit import media as mediamod
 from coursekit import publish as publishmod
+from coursekit import research as researchmod
 from coursekit import setup as setupmod
 from coursekit import states as statesmod
 from coursekit import theme as thememod
@@ -615,6 +616,29 @@ def cmd_brief(args: argparse.Namespace) -> int:
     for source, note in summary["notes"]:
         print(t("commands", "brief_note", source=source, note=note))
     return 1 if summary["failed"] else 0
+
+
+def cmd_research(args: argparse.Namespace) -> int:
+    """Official sources through the search API of the `.env`; without one, the agent uses its own web search."""
+    project = _project()
+    course = coursemod.load(project, args.code)
+    if args.status:
+        for line in researchmod.status(course):
+            print(line)
+        return 0
+    if not args.query:
+        print(t("commands", "research_needs_query"), file=sys.stderr)
+        return 2
+    statesmod.ensure_active(course)
+    try:
+        found = researchmod.search(course, args.query, fact=args.fact)
+    except researchmod.NoProvider as exc:
+        print(exc, file=sys.stderr)
+        return researchmod.NO_PROVIDER
+    print(found.as_json() if args.json else researchmod.render(found, coursemod.language(course)))
+    if found.warning:
+        print(found.warning, file=sys.stderr)
+    return 0
 
 
 def _launch_report(result: launch.UnitResult, project: Project) -> None:
@@ -1551,8 +1575,17 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--top", type=int, help=t("commands", "help_brief_top"))
     p.set_defaults(func=cmd_brief)
 
+    p = sub.add_parser("research", help=t("commands", "help_research"))
+    p.add_argument("code")
+    p.add_argument("query", nargs="?", help=t("commands", "help_research_query"))
+    p.add_argument("--fact", action="store_true", help=t("commands", "help_research_fact"))
+    p.add_argument("--json", action="store_true", help=t("commands", "help_research_json"))
+    p.add_argument("--status", action="store_true", help=t("commands", "help_research_status"))
+    p.set_defaults(func=cmd_research)
+
 
 ERRORS = (handoffmod.HandoffError, coursemod.CourseNotFound, coursemod.RuleError, approve.ApprovalError, FileExistsError,
           launch.LaunchError, assemblemod.AssembleError, directives.CatalogError, mediamod.MediaError, voices.VoiceError,
           mediatools.ToolError, deliverymod.DeliveryError, publishmod.PublishError, thememod.ThemeError, statesmod.StateError,
-          clientreview.ClientReviewError, HtmlBuildError, localdesign.DesignError, ttsbatch.BatchError)
+          clientreview.ClientReviewError, HtmlBuildError, localdesign.DesignError, ttsbatch.BatchError,
+          researchmod.ResearchError)

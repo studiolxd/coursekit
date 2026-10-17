@@ -218,6 +218,8 @@ coursekit brief --refresh  # download the URLs again
 
 This writes `brief/index.md` and the converted text in `brief/text/`, which is what the agents read. Only new or changed files are converted.
 
+With a search API in the `.env` ([Web research](04-configuration.md#web-research-optional)), the agents look for official sources with `coursekit research` and propose them for `links.md`: the design for the reference documentation (and for the base material of a course without a brief), the writer for the facts the brief does not have. See [Source search](05-agents.md#source-search).
+
 ### Import from eXeLearning
 
 A course that already exists as eXeLearning packages (`.elp`, eXeLearning 2 and 3) is not written again from scratch: its content is converted to Markdown, keeping its structure and its kind of interactivity, and the agents work from it. Drop the `.elp` files in `brief/sources/` and `coursekit brief` converts them like any other document, or create whole courses with [`coursekit import`](03-commands.md#coursekit-import).

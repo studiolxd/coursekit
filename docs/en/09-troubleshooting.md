@@ -47,6 +47,15 @@ It prints what is installed and configured on this machine for the current proje
 | `corporate CA certificate: NODE_EXTRA_CA_CERTS` | a certificate listed in `project.yaml › network › ca_bundles` exists but `NODE_EXTRA_CA_CERTS` is not set. Fix: `coursekit setup` |
 | `no corporate CA certificate configured or found` | `info`: nothing to do unless you are behind a TLS-inspecting proxy (see below) |
 
+### Source search
+
+| Check | Meaning and fix |
+|---|---|
+| `provider <id> with its key` | `coursekit research` uses that search API |
+| `no RESEARCH_PROVIDER: ...` | `info`: the agents use their own web search. Optional: set `RESEARCH_PROVIDER` and the key of that provider in `.env` ([Web research](04-configuration.md#web-research-optional)) |
+| `the provider <id> has no key (...)` | `RESEARCH_PROVIDER` is set but its key is empty. Fix: set the key it names in `.env` |
+| `RESEARCH_PROVIDER=<x> is not a known provider` | Fix: `exa`, `perplexity`, `brave` or `tavily` |
+
 ### Mirror folder
 
 | Check | Meaning and fix |
@@ -143,6 +152,13 @@ network:
 ```
 
 Paths may use `~` and environment variables; the first one that exists on the machine is used. Then run `coursekit setup`: it offers to set `NODE_EXTRA_CA_CERTS` and `UV_NATIVE_TLS=1` for your user (the Windows user environment, or a line in `~/.zshrc`, or `~/.bashrc` if your shell is bash). Open new terminals and restart the AI tools afterwards. To do it by hand, set both variables yourself.
+
+### Source search: refused, key rejected or no credit
+
+- **Exit code 3, "there is no search provider"**: not an error. The agent goes on with its own web search; to use an API, see [Web research](04-configuration.md#web-research-optional).
+- **"rejected the key"** or **"has no credit left"**: check the key in `.env` and the account of the provider. The key never appears in a message or in the log.
+- **"already made N searches"**: the course reached `research › max_per_course`. `coursekit research CODE --status` shows the searches made and an estimate of those left; raise the limit in `config/research.yaml` (or `course.yaml › research`) if more are really needed. An agent that searches again and again for the same thing is better stopped and asked why.
+- **A candidate "not found in the language of the course"**: the site has no translation, or has one it neither declares nor reaches by changing the language in its address. If it has one, add a rule to `research › localize_rules`.
 
 ### Mirror folder problems
 

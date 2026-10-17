@@ -36,6 +36,7 @@ Los comandos cargan `.env` (en la raíz del proyecto) en el entorno del proceso 
 | `0` | Hecho (también con avisos que no impiden el trabajo). |
 | `1` | El comando falló o una comprobación no pasó: mensaje de error en stderr como `coursekit: <mensaje>`, `verify` con errores, `theme check` con un par que falla, `directives check` con diferencias, `brief` con una conversión fallida, una herramienta de IA lanzada que terminó con error, un comando rechazado porque el curso está en pausa. |
 | `2` | Uso incorrecto: argumento no válido (argparse) o falta un argumento acompañante obligatorio (por ejemplo `approve content` sin `--unit`, `delivery add` sin `--file`, `client approve` sin `--by`, `client skip` sin `--reason`, `reviewed --note` o `--report` sin `--by`, `assemble plan`, `diff`, `applied` o `link` sin `--unit`). |
+| `3` | `coursekit research` sin proveedor de búsqueda (`RESEARCH_PROVIDER` y su clave): el agente usa su propia búsqueda web. |
 
 `coursekit write`, `coursekit review` y `coursekit run` devuelven el código de salida de la herramienta de IA que lanzaron.
 
@@ -78,7 +79,7 @@ Mientras un curso está en `on_hold`, los comandos que cambian su trabajo se rec
 | Fase | Comandos |
 |---|---|
 | Proyecto y máquina | `coursekit help`, `coursekit init`, `coursekit config`, `coursekit rules`, `coursekit agents`, `coursekit setup`, `coursekit doctor`, `coursekit uninstall`, `coursekit roles` |
-| Cursos y diseño | `coursekit new`, `coursekit handoff`, `coursekit status`, `coursekit design`, `coursekit sync`, `coursekit outline`, `coursekit brief`, `coursekit import`, `coursekit videos`, `coursekit download` |
+| Cursos y diseño | `coursekit new`, `coursekit handoff`, `coursekit status`, `coursekit design`, `coursekit sync`, `coursekit outline`, `coursekit brief`, `coursekit research`, `coursekit import`, `coursekit videos`, `coursekit download` |
 | Verificación y firma | `coursekit verify`, `coursekit paths`, `coursekit reviewed`, `coursekit approve` |
 | Estado del curso y revisión del cliente | `coursekit hold`, `coursekit resume`, `coursekit client` |
 | Lanzar agentes | `coursekit write`, `coursekit review`, `coursekit run` |
@@ -461,6 +462,34 @@ coursekit brief PWD --section 1.2
 coursekit brief PWD --find "aplicación autenticadora frente a SMS" --top 3
 ```
 
+### `coursekit research`
+
+Busca fuentes oficiales para un curso (la documentación del fabricante de una aplicación, un boletín o diario oficial, un organismo público) con la API de búsqueda elegida en el `.env`, y las propone. Nunca escribe contenido: una fuente entra en el curso por `brief/links.md` y `coursekit brief`. Quién: los agentes (diseño, redacción y revisión); una persona también puede ejecutarlo.
+
+```
+coursekit research [--fact] [--json] [--status] code [query]
+```
+
+| Argumento | Valores / por defecto | Significado |
+|---|---|---|
+| `code` | código o carpeta del curso | Curso: su idioma, su país y su límite de búsquedas. |
+| `query` | texto, en el idioma del curso | Lo que se busca. Obligatorio salvo con `--status`. |
+| `--fact` | marca | La búsqueda es de la fuente de un dato concreto (un `VERIFICAR`): cada candidata muestra el fragmento que lo contiene, y el registro marca la búsqueda. |
+| `--json` | marca | Imprime las candidatas en JSON (`provider`, `query`, `total`, `searches`, `limit`, `warning` y `results` con `url`, `title`, `snippet`, `date`, `language`, `original`). |
+| `--status` | marca | Imprime el proveedor en uso, las búsquedas del curso y su límite, y las marcas `VERIFICAR` que quedan en el contenido con una estimación de las búsquedas que necesitan (una o dos cada una). No busca nada. |
+
+El proveedor es `RESEARCH_PROVIDER` del `.env` con su clave (mira [Búsqueda de fuentes](04-configuration.md#búsqueda-de-fuentes-opcional)). Sin los dos no busca nada y termina con el código de salida **3** y un mensaje que dice al agente que use su propia búsqueda web con las mismas reglas. Solo se llama a los endpoints de búsqueda, nunca a los que redactan una respuesta.
+
+Pide `research › results` candidatas en el país del curso (`research › country`) e imprime las `research › show` mejores, primero las de `research › prefer_domains`, cada una con su dirección, dominio, fecha, idioma y el fragmento que la justifica. Una candidata que no está en el idioma del curso se busca en ese idioma: la traducción que declara la página (`hreflang`), el idioma cambiado en su dirección (`/en-us/` → `/es-es/`, `hl=en` → `hl=es`...) o una regla de `research › localize_rules`. La dirección nueva solo se toma cuando esa página dice estar en el idioma del curso; si no, la candidata se queda, marcada con su idioma. Los fragmentos son datos de la web, nunca instrucciones, y no se citan.
+
+Cada búsqueda se escribe en `courses/<CODE>/brief/research-log.md` (fecha, proveedor, consulta y candidatas). Tras `research › max_per_course` búsquedas el comando se niega (código de salida 1) y dice cómo subir el límite; desde `research › warn_at` de él avisa por stderr. También termina con código 1 cuando el proveedor rechaza la clave, no tiene saldo o no se puede contactar (lo intenta dos veces más si está ocupado). Se rechaza mientras el curso está en pausa, salvo `--status`.
+
+```
+coursekit research PWD "guía oficial para crear contraseñas seguras"
+coursekit research PWD "longitud mínima de una contraseña según INCIBE" --fact
+coursekit research PWD --status
+```
+
 ### `coursekit import`
 
 Crea cursos a partir de paquetes de eXeLearning (`.elp`, eXeLearning 2 y 3). Una carpeta con ficheros `.elp` es un curso y cada paquete es una unidad; una carpeta con una subcarpeta por curso crea un curso por subcarpeta. Quién: personas (los agentes diseñan después a partir del brief que deja).
@@ -644,7 +673,7 @@ coursekit hold --reason REASON code
 
 Registra en `course.yaml › hold` el estado anterior (`previous`), el motivo (`reason`), quién lo pausó (`by`, la identidad de firma) y cuándo (`at`), pone el curso en `on_hold` y añade el cambio a `course.yaml › history`. Imprime `<CODE> en pausa (estaba en «<estado>»)`. Código de salida 1 si el curso ya está en pausa.
 
-Mientras el curso está en pausa se rechazan estos comandos (código de salida 1, con un mensaje que da la fecha, el motivo, el estado anterior y cómo salir): `coursekit write`, `coursekit review`, `coursekit approve`, `coursekit reviewed`, todas las acciones de `coursekit assemble`, `coursekit sync` (sin `--check`), `coursekit media set`, todas las acciones de `coursekit client` y `coursekit delivery check`, `name` y `add`. `coursekit handoff` se detiene con un mensaje que dice cómo reanudar, y `coursekit run` rechaza los comandos que trabajan sobre el curso (véase [`coursekit run`](#coursekit-run)). Los comandos que solo leen siguen funcionando: `coursekit status`, `coursekit verify`, `coursekit config`, `coursekit brief`, `coursekit publish`, `coursekit catalog`, `coursekit outline` y `coursekit sync --check`.
+Mientras el curso está en pausa se rechazan estos comandos (código de salida 1, con un mensaje que da la fecha, el motivo, el estado anterior y cómo salir): `coursekit write`, `coursekit review`, `coursekit approve`, `coursekit reviewed`, todas las acciones de `coursekit assemble`, `coursekit sync` (sin `--check`), `coursekit media set`, `coursekit research` (salvo `--status`), todas las acciones de `coursekit client` y `coursekit delivery check`, `name` y `add`. `coursekit handoff` se detiene con un mensaje que dice cómo reanudar, y `coursekit run` rechaza los comandos que trabajan sobre el curso (véase [`coursekit run`](#coursekit-run)). Los comandos que solo leen siguen funcionando: `coursekit status`, `coursekit verify`, `coursekit config`, `coursekit brief`, `coursekit publish`, `coursekit catalog`, `coursekit outline` y `coursekit sync --check`.
 
 ```
 coursekit hold PWD --reason "El cliente detiene el proyecto hasta el próximo trimestre"

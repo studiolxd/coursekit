@@ -63,7 +63,7 @@ HEADLESS_NOTE = (
     "a short summary of what you did and what is pending."
 )
 _BASE_TOOLS = ["Read", "Edit", "Write", "Glob", "Grep", "Skill", "TodoWrite",
-               "Bash(coursekit verify:*)", "Bash(coursekit brief:*)", "Bash(coursekit status:*)",
+               "Bash(coursekit verify:*)", "Bash(coursekit brief:*)", "Bash(coursekit research:*)", "Bash(coursekit status:*)",
                "Bash(coursekit outline:*)", "Bash(coursekit paths:*)", "Bash(coursekit config:*)", "Bash(git status:*)", "Bash(git diff:*)"]
 CLAUDE_DENY = ["Bash(git commit:*)", "Bash(git push:*)", "Bash(coursekit approve:*)", "Bash(coursekit videos approve:*)",
                "Bash(coursekit videos reject:*)", "Bash(coursekit client:*)", "Bash(coursekit hold:*)",

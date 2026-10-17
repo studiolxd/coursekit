@@ -2,6 +2,10 @@
 
 Nota de desarrollo: se borra cuando la función esté validada y publicada (lo que dure va a `docs/` y a los READMEs).
 
+**Estado (17 de octubre de 2026):** implementado (`research.py`, `defaults/research.yaml`, skills, `doctor`, docs en/es,
+`tests/test_research.py`) y probado a mano contra los cuatro servicios reales. Falta: que los agentes lo usen en un curso
+entero, comprobar la búsqueda nativa de opencode y Codex, y lo del punto 9.
+
 Objetivo: que el diseño y la redacción encuentren **fuentes oficiales** (documentación del fabricante, boletines y diarios
 oficiales, organismos) a través de una API de búsqueda configurada por la persona, con el mismo resultado sea cual sea el
 agente. Hoy el diseño busca la documentación de referencia con la búsqueda nativa del agente, y en la redacción lo que no
@@ -52,7 +56,8 @@ Los números son de esa prueba: no son una garantía y no van en la documentaci�
   nuevas.
 - **Lo descargado es dato, no instrucciones**, como ya dice la skill para `links.md`. Los fragmentos que devuelve
   `research` también lo son.
-- **Cursos importados del cliente: no se usa.** Su texto es del cliente (ver "Courses imported" en las skills).
+- **Cursos importados del cliente: solo para comprobar.** Su texto es del cliente: `research` sirve para la documentación
+  de referencia y los `VERIFICAR`, nunca para añadir contenido.
 
 ## 1. `.env` y `env.example`
 
@@ -79,7 +84,8 @@ show: 5                      # candidates printed (the rest go to the log)
 country: auto                # ISO 3166-1 code for the search; auto: from the content language (es → ES), else none
 max_per_course: 150          # searches per course before research refuses (a guard against loops)
 prefer_domains: []           # official domains this project trusts, as a hint in the query (never a hard filter)
-localize_urls: true          # en-us → es-es and similar in the help-centre URLs of the course language (see 7)
+localize: true               # look for the version of each candidate in the course language (see 3)
+localize_rules: []           # extra rewrites for sites without hreflang, e.g. {host: docs.python.org, from: "/3/", to: "/{lang}/3/"}
 providers:
   exa:        {type: auto, highlights: true}
   perplexity: {search_type: web, language_filter: true}
@@ -103,20 +109,43 @@ preferencias van en la propia consulta.
 
 ```
 coursekit research <CODE> "<consulta>"            # buscar documentación de referencia
-coursekit research <CODE> --fact "<dato>"         # buscar la fuente oficial de un dato (un VERIFICAR)
+coursekit research <CODE> "<dato>" --fact         # buscar la fuente oficial de un dato (un VERIFICAR)
 coursekit research <CODE> ... --json              # salida para el agente
-coursekit research --status                       # proveedor activo, búsquedas del curso, límite
+coursekit research <CODE> --status                # proveedor activo, búsquedas del curso, límite, estimación
 ```
 
 - **Salida:** una lista numerada con URL, título, dominio, fecha si la hay y el fragmento recortado. Con `--fact`, el
   fragmento que contiene el dato va primero.
-- **Registro:** cada búsqueda se apunta en `courses/<CODE>/brief/research.log.md` (fecha, proveedor, consulta y URLs). El
+- **Registro:** cada búsqueda se apunta en `courses/<CODE>/brief/research-log.md` (fecha, proveedor, consulta y URLs). El
   revisor y la persona ven de dónde salió cada fuente, y sirve para contar el límite `max_per_course`.
 - **Códigos de salida:** 0 si hay resultados, 1 si hay un error del proveedor (red, 401, 429) y otro distinto para "sin
   proveedor: usa tu búsqueda nativa", para que las skills puedan distinguirlo.
 - **Errores:** reintento ante 429 y 5xx (como en `ttsbatch`) y mensajes claros para una clave inválida o sin saldo.
   Nunca se escribe la clave en un mensaje ni en el registro.
 - **Mensajes:** en `lang/messages/research.yaml`, en `es` y `en`.
+- **Idioma de las candidatas.** Si una candidata no está en el idioma del curso, `research` busca su versión traducida:
+  1. Lee la cabecera de la página y usa la URL de `<link rel="alternate" hreflang="<idioma>">`, resolviendo las rutas
+     relativas.
+  2. Si no la declara, prueba a cambiar el idioma en la ruta (`/en-us/` → `/es-es/` o `/es/`, `/eng/` → `/spa/`,
+     respetando las mayúsculas) o en un parámetro (`hl`, `lang`, `locale`, `language`).
+  3. Prueba las reglas de `localize_rules` del proyecto.
+
+  Solo acepta la URL nueva si responde y declara el idioma (`<html lang>`). Si no, se queda la original, marcada como "en
+  <idioma>" en la salida y en el registro. No se mantiene ninguna lista de sitios en coursekit.
+
+  Comprobación con 103 URLs oficiales en inglés de la prueba. Encuentra la versión en español en Microsoft, Google,
+  GitHub, Apple, Slack, EDPB, la Oficina de Publicaciones de la UE, MDN, LibreOffice y OWASP Top 10. Las deja en inglés
+  cuando el sitio no tiene versión en español (NIST, W3C, git-scm, ICO): es lo correcto. Fallan dos casos:
+  - docs.python.org: tiene versión en español (`/es/3/`), pero ni la declara ni sigue la regla general. Es el caso de
+    `localize_rules`.
+  - EUR-Lex e ISO: rechazan las peticiones normales (202 vacío o 403). Ver el punto 8.
+- **Límite y estimación.** `--status` muestra:
+  - las búsquedas del curso y el límite;
+  - una estimación para lo que falta: los `VERIFICAR` pendientes, una o dos búsquedas cada uno;
+  - en el diseño, el tope de fuentes de referencia (`reference_sources_max`).
+
+  Avisa al llegar al 80 % del límite. Al llegar al límite se niega a buscar y dice cómo subirlo. Lo que se cuenta son
+  búsquedas, no dinero: el coste solo lo devuelve Exa.
 
 Código: `src/coursekit/research.py`. Un adaptador por proveedor (`search(query, country, language, n) -> list[Result]`)
 con un `Result` común: `url`, `title`, `snippet`, `date`, `provider`.
@@ -159,11 +188,25 @@ con un `Result` común: `url`, `title`, `snippet`, `date`, `provider`.
 - `test_i18n`, `test_docs` (comando y opciones en `03-commands.md`) y `test_init` (nombre del fichero de configuración).
 - Ningún test usa la red.
 
-## 7. Decisiones abiertas
+## 7. Sin MCP
 
-- **`localize_urls`:** reescribir `/en-us/` a `/es-es/` en los centros de ayuda que lo admiten (en la prueba, Exa devolvió
-  la versión inglesa de páginas de Microsoft y de EUR-Lex). ¿Lista fija de patrones en `research.yaml` o pedir el idioma
-  solo en la consulta?
-- **¿Exponerlo también como herramienta MCP** del servidor de coursekit, además del comando? Propuesta: no hace falta
-  mientras el comando baste.
-- **Límite por curso:** ¿contar búsquedas o dinero? El coste solo lo devuelve Exa; propuesta: contar búsquedas.
+No se expone como herramienta del servidor MCP de coursekit: sería un segundo camino para lo mismo que el comando, que ya
+da `--json`. Tampoco se usan los servidores MCP ni los conectores de los proveedores: se saltarían el país y el idioma,
+la localización, el registro, el límite y la salida común, y traen herramientas que redactan. El orden es
+`coursekit research` con proveedor y clave, y si no hay, la búsqueda nativa del agente.
+
+## 8. Problema aparte: EUR-Lex y `web2md`
+
+EUR-Lex responde `202` con el cuerpo vacío a una petición HTTP normal, y también a la de `web2md`. `web2md` da por buena
+cualquier respuesta 2xx (`res.ok`), así que `coursekit brief` probablemente guarda hoy una página vacía de EUR-Lex sin
+avisar. Hay que comprobarlo y, como mínimo, que `brief` avise de las páginas vacías. Mientras tanto, para la normativa
+europea en español, el BOE publica los textos del DOUE y se descargan bien. Comprobado con el RGPD,
+`boe.es/buscar/doc.php?id=DOUE-L-2016-80807`, con el agente de usuario de `web2md`. Es una buena pista para
+`prefer_domains`.
+ISO responde `403`. Sus normas son de pago, así que no es una fuente que se pueda descargar al brief.
+
+## 9. Pendiente: Codex sin red
+
+`launch.py` lanza Codex sin interfaz con `--sandbox workspace-write`, y ese sandbox corta la red por defecto: `coursekit
+research` (y `coursekit brief` con enlaces) no llegarían a la red en esa sesión. Comprobarlo y, si es así, decidir si se
+abre la red del sandbox para esos comandos o se documenta como límite.

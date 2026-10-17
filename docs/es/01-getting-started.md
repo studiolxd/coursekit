@@ -220,7 +220,7 @@ Siguiente paso: crea tu primer curso.
 
 Antes de empezar (opcional, pero conviene):
   · Material de partida: deja los documentos en brief/sources/, las URLs en brief/links.md y las indicaciones generales en brief/notes.md. `coursekit brief` los convierte para que los agentes los lean.
-  · Valores por defecto del proyecto: mira config/*.example.yaml (reglas, directivas, multimedia, entrega, importación, captura y vídeo) y, para cambiar alguno, crea config/<nombre>.yaml solo con lo que cambies. `coursekit config` muestra lo que está en vigor.
+  · Valores por defecto del proyecto: mira config/*.example.yaml (reglas, directivas, multimedia, entrega, importación, captura, vídeo y búsqueda de fuentes) y, para cambiar alguno, crea config/<nombre>.yaml solo con lo que cambies. `coursekit config` muestra lo que está en vigor.
 
 Después:
   1. Entra en el proyecto:  cd acme-courses

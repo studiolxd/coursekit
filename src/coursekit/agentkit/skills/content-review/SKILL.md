@@ -16,7 +16,12 @@ unit in `course.yaml`; if it matches, say so in the report and carry on.
    `design/story.md` and the paths report (`coursekit paths <CODE> --unit N`).
 3. Reference material: `coursekit brief <CODE>`, then `brief/index.md` and `brief/notes.md` of the
    course and of the project. Check technical accuracy (criterion 1) against `brief/text/` and
-   resolve the `<!-- VERIFICAR -->` with it; anything contradicting the material is **blocking**.
+   resolve the `<!-- VERIFICAR -->` with it; anything contradicting the material is **blocking**. For a mark the brief does
+   not settle, `coursekit research <CODE> "<the fact>" --fact` (with no search provider, your own web search) and propose
+   in the report the official source and what it says.
+4. The sources the writer added to `brief/links.md` (after `<!-- added by the writer -->`; `brief/research-log.md` says
+   which search found each): each one must be official and say what the content takes from it. One that is not is
+   **blocking**: the content cannot rest on it and its line leaves `links.md`.
 
 ## Rubric
 

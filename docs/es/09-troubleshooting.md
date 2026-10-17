@@ -47,6 +47,15 @@ Imprime qué hay instalado y configurado en este equipo para el proyecto actual.
 | `certificado CA corporativo: NODE_EXTRA_CA_CERTS` | existe un certificado de `project.yaml › network › ca_bundles` pero `NODE_EXTRA_CA_CERTS` no está definido. Solución: `coursekit setup` |
 | `ningún certificado CA corporativo configurado ni encontrado` | `info`: no hay nada que hacer salvo que estés detrás de un proxy que inspecciona TLS (mira más abajo) |
 
+### Búsqueda de fuentes
+
+| Comprobación | Significado y solución |
+|---|---|
+| `proveedor <id> con su clave` | `coursekit research` usa esa API de búsqueda |
+| `sin RESEARCH_PROVIDER: ...` | `info`: los agentes usan su propia búsqueda web. Opcional: define `RESEARCH_PROVIDER` y la clave de ese proveedor en `.env` ([Búsqueda de fuentes](04-configuration.md#búsqueda-de-fuentes-opcional)) |
+| `el proveedor <id> no tiene clave (...)` | `RESEARCH_PROVIDER` está definido pero su clave está vacía. Solución: define en `.env` la clave que nombra |
+| `RESEARCH_PROVIDER=<x> no es un proveedor conocido` | Solución: `exa`, `perplexity`, `brave` o `tavily` |
+
 ### Carpeta espejo
 
 | Comprobación | Significado y solución |
@@ -143,6 +152,13 @@ network:
 ```
 
 Las rutas pueden usar `~` y variables de entorno; se usa la primera que exista en el equipo. Después ejecuta `coursekit setup`: te ofrece definir `NODE_EXTRA_CA_CERTS` y `UV_NATIVE_TLS=1` para tu usuario (el entorno de usuario de Windows, o una línea en `~/.zshrc`, o en `~/.bashrc` si tu shell es bash). Abre terminales nuevas y reinicia las herramientas de IA después. Para hacerlo a mano, define tú ambas variables.
+
+### Búsqueda de fuentes: rechazada, clave rechazada o sin saldo
+
+- **Código de salida 3, «no hay proveedor de búsqueda»**: no es un error. El agente sigue con su propia búsqueda web; para usar una API, mira [Búsqueda de fuentes](04-configuration.md#búsqueda-de-fuentes-opcional).
+- **«rechazó la clave»** o **«no tiene saldo»**: revisa la clave del `.env` y la cuenta del proveedor. La clave nunca aparece en un mensaje ni en el registro.
+- **«ya hizo N búsquedas»**: el curso llegó a `research › max_per_course`. `coursekit research CODE --status` muestra las búsquedas hechas y una estimación de las que faltan; sube el límite en `config/research.yaml` (o `course.yaml › research`) si de verdad hacen falta más. A un agente que busca una y otra vez lo mismo es mejor pararlo y preguntarle por qué.
+- **Una candidata «no se encontró en el idioma del curso»**: el sitio no tiene traducción, o la tiene pero ni la declara ni se llega a ella cambiando el idioma en su dirección. Si la tiene, añade una regla a `research › localize_rules`.
 
 ### Problemas con la carpeta espejo
 

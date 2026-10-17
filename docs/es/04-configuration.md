@@ -181,6 +181,18 @@ Un proveedor se usa solo si su clave está definida. En [Multimedia](07-media.md
 | `PIPER_VOICE` | vacío | Ruta a un modelo de voz de Piper (`.onnx`) para locuciones locales de borrador. `coursekit setup --media` descarga uno y rellena esta variable. |
 | `PIPER_SPEAKER` | `0` en `.env.example` | Número de hablante de la voz de Piper. |
 
+### Búsqueda de fuentes (opcional)
+
+[`coursekit research`](03-commands.md#coursekit-research) busca fuentes oficiales con una API de búsqueda: la que nombra `RESEARCH_PROVIDER`, con su clave. Una clave sola no activa nada; sin las dos, los agentes usan su propia búsqueda web. En las pruebas con fuentes oficiales que se hicieron para elegirlas, Exa fue la que más veces encontró la fuente oficial, sobre todo para datos concretos; le siguen Perplexity, Brave y Tavily. Las consultas van al proveedor, así que le dicen el tema del curso: revisa sus condiciones sobre los datos que guarda. Cómo busca está en [`research`](#research-fuentes-oficiales-con-una-api-de-búsqueda).
+
+| Variable | Por defecto | Significado |
+|---|---|---|
+| `RESEARCH_PROVIDER` | vacío | `exa`, `perplexity`, `brave` o `tavily`. |
+| `EXA_API_KEY` | vacío | Clave de Exa. |
+| `PERPLEXITY_API_KEY` | vacío | Clave de Perplexity (su Search API). |
+| `BRAVE_API_KEY` | vacío | Clave de Brave Search API. |
+| `TAVILY_API_KEY` | vacío | Clave de Tavily. |
+
 ### Variables fuera de `.env`
 
 | Variable | Significado |
@@ -193,7 +205,7 @@ Un proveedor se usa solo si su clave está definida. En [Multimedia](07-media.md
 
 ## Los ficheros de `config/`
 
-Las siete configuraciones son `rules`, `directives`, `media`, `delivery`, `import`, `capture` y `video`. Cada proyecto recibe `config/<name>.example.yaml` con los valores por defecto completos del paquete (referencia, nunca se lee). Para cambiar algo, crea `config/<name>.yaml` con **solo las claves que cambias**; `coursekit init --update` actualiza los ejemplos sin tocar tus cambios.
+Las ocho configuraciones son `rules`, `directives`, `media`, `delivery`, `import`, `capture`, `video` y `research`. Cada proyecto recibe `config/<name>.example.yaml` con los valores por defecto completos del paquete (referencia, nunca se lee). Para cambiar algo, crea `config/<name>.yaml` con **solo las claves que cambias**; `coursekit init --update` actualiza los ejemplos sin tocar tus cambios.
 
 Las mismas claves se pueden escribir en una sección `<name>:` de `project.yaml` (gana a `config/`) o del `course.yaml` de un curso (gana a ambos, solo para ese curso).
 
@@ -398,6 +410,29 @@ Por encima del tema del curso (sus colores y familias tipográficas salen de `th
 | `fonts` | `null` | Una hoja de estilos del proyecto con reglas `@font-face` (p. ej. `theme/branding/fonts/fonts.css`): los ficheros de fuente a los que apunta (relativos a ella, dentro del proyecto) entran en el vídeo, y el render espera a que carguen, así que un vídeo no depende de las fuentes de la máquina. Los nombres de familia son los del tema. Una fuente cargada de internet, o un fichero que falta, para el render con un mensaje. `null`: las fuentes de la marca (`media › fonts`), o si no las del tema por su nombre. |
 | `format` | `{width: 1920, height: 1080, fps: 30}` | El encuadre de un vídeo cuyo montaje no lo dice. |
 | `pad_seconds` | `0.5` | Segundos de aire tras la locución de cada escena. |
+
+### `research`: fuentes oficiales con una API de búsqueda
+
+Cómo busca [`coursekit research`](03-commands.md#coursekit-research). Qué API se usa es personal y va en el `.env` ([Búsqueda de fuentes](#búsqueda-de-fuentes-opcional)); el resto está aquí.
+
+| Clave | Por defecto | Significado |
+|---|---|---|
+| `results` | `10` | Candidatas que se piden al proveedor en cada búsqueda. |
+| `show` | `5` | Candidatas que se imprimen (y se buscan en el idioma del curso). |
+| `country` | `auto` | Código ISO del país de la búsqueda (`ES`, `MX`...). `auto`: `ES` para contenido en español, ninguno para otro idioma. |
+| `prefer_domains` | `[]` | Dominios oficiales en los que confía el proyecto (un dominio incluye sus subdominios): sus candidatas van primero. Reordena, nunca filtra. |
+| `localize` | `true` | Buscar cada candidata en el idioma del curso: la traducción que declara su página (`hreflang`), su dirección con el idioma cambiado y después `localize_rules`. Solo se toma cuando la página dice estar en ese idioma. |
+| `localize_rules` | `[]` | Reescrituras para sitios que tienen la traducción pero ni la declaran ni siguen el patrón habitual: `{host, from, to}`, con `{lang}` para el idioma del curso. |
+| `max_per_course` | `150` | Búsquedas por curso (contadas en `brief/research-log.md`) antes de que el comando se niegue. |
+| `warn_at` | `0.8` | Fracción del límite a partir de la cual avisa. |
+| `providers.<id>` | | Lo que recibe cada proveedor: `exa.type` (`auto`), `perplexity.search_type` (`web`), `brave.extra_snippets` (`true`), `tavily.search_depth` (`basic`). |
+
+```yaml
+# config/research.yaml
+prefer_domains: [boe.es, aepd.es, incibe.es]
+localize_rules:
+  - {host: docs.python.org, from: "/3/", to: "/{lang}/3/"}
+```
 
 ## `course.yaml`: qué puede fijar una persona por curso
 

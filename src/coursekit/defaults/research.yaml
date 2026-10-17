@@ -1,0 +1,44 @@
+# Web research (`coursekit research`): the design, writing and review agents look for official sources (the documentation
+# of the maker of an application, an official gazette or journal, a public body) through a search API, and coursekit
+# proposes them; it never writes content. A source enters a course the usual way: its address goes to brief/links.md,
+# `coursekit brief` downloads it and the writer cites the brief.
+#
+# Which API is personal, as its key: RESEARCH_PROVIDER in the .env (exa | perplexity | brave | tavily) and the key of that
+# provider (EXA_API_KEY, PERPLEXITY_API_KEY, BRAVE_API_KEY, TAVILY_API_KEY). A key alone does nothing. Without both the agents
+# use their own web search, under the same rules.
+
+results: 10                    # candidates asked to the provider per search
+show: 5                        # candidates printed (and localised), the best first
+
+# Country of the search (ISO 3166-1, e.g. ES, MX): `auto` is ES for content in Spanish and none for any other language.
+country: auto
+
+# Official domains this project trusts (e.g. [boe.es, aepd.es, support.microsoft.com]; a domain covers its subdomains): the
+# candidates on them go first. It reorders, never filters: a search still finds sources outside the list.
+prefer_domains: []
+
+# A candidate that is not in the language of the course is looked for in that language: first the translation the page
+# itself declares (<link rel="alternate" hreflang>), then the language changed in its address (/en-us/ → /es-es/,
+# hl=en → hl=es...), then `localize_rules`. A new address is taken only when the page answers and says it is in the
+# language of the course; otherwise the original stays, marked with its language.
+localize: true
+# Rewrites for sites that have the translation but neither declare it nor follow the usual pattern. {lang} is the language
+# of the course. E.g. {host: docs.python.org, from: "/3/", to: "/{lang}/3/"}
+localize_rules: []
+
+# Searches per course before `coursekit research` refuses (a guard against an agent that loops): it warns at
+# `warn_at` of the limit. Every search is written in courses/<CODE>/brief/research-log.md.
+max_per_course: 150
+warn_at: 0.8
+
+# What each provider receives (the ids of RESEARCH_PROVIDER). Only the search endpoints: the ones that write an answer
+# (Exa answer and agent, Perplexity Sonar, Tavily answer and research, Brave answers) are never used.
+providers:
+  exa:
+    type: auto                 # auto | fast | instant | deep
+  perplexity:
+    search_type: web           # web | fast
+  brave:
+    extra_snippets: true       # more passages per result (the one that holds a fact is shown)
+  tavily:
+    search_depth: basic        # basic | advanced (2 credits) | fast | ultra-fast

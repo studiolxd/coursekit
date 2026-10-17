@@ -26,7 +26,7 @@ import yaml
 from coursekit.i18n import t
 from coursekit.project import Project
 
-NAMES = ("rules", "directives", "media", "delivery", "import", "capture", "video")
+NAMES = ("rules", "directives", "media", "delivery", "import", "capture", "video", "research")
 LAYERS = ("package", "config", "project", "course")
 
 

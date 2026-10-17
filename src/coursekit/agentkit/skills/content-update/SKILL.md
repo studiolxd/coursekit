@@ -42,7 +42,9 @@ not age (concepts, methods, definitions).
 
 ## Check each claim
 
-1. Look in the documentation of the brief first; then search the web (`WebSearch`, `WebFetch`) for the official source.
+1. Look in the documentation of the brief first; then look for the official source with
+   `coursekit research <CODE> "<the claim>" --fact` (when it says there is no search provider, search the web with
+   `WebSearch` and `WebFetch`).
 2. Decide: **current** (the source agrees; do not list it), **outdated** (the source says something else) or **unverified**
    (no official source found).
 3. For an outdated claim write what is true now, quoting a few words of the source and its address, and the exact text you

@@ -36,6 +36,7 @@ Commands load `.env` (at the project root) into the process environment before r
 | `0` | Done (also for warnings that do not stop the work). |
 | `1` | The command failed or a check did not pass: error message on stderr as `coursekit: <message>`, `verify` with errors, `theme check` with a failing pair, `directives check` with differences, `brief` with a failed conversion, a launched AI tool that ended with an error, a command refused because the course is on hold. |
 | `2` | Wrong usage: invalid argument (argparse) or a required companion argument is missing (for example `approve content` without `--unit`, `delivery add` without `--file`, `client approve` without `--by`, `client skip` without `--reason`, `reviewed --note` or `--report` without `--by`, `assemble plan`, `diff`, `applied` or `link` without `--unit`). |
+| `3` | `coursekit research` without a search provider (`RESEARCH_PROVIDER` and its key): the agent uses its own web search. |
 
 `coursekit write`, `coursekit review` and `coursekit run` return the exit code of the AI tool they launched.
 
@@ -78,7 +79,7 @@ While a course is `on_hold`, the commands that change its work are refused with 
 | Phase | Commands |
 |---|---|
 | Project and machine | `coursekit help`, `coursekit init`, `coursekit config`, `coursekit rules`, `coursekit agents`, `coursekit setup`, `coursekit doctor`, `coursekit uninstall`, `coursekit roles` |
-| Courses and design | `coursekit new`, `coursekit handoff`, `coursekit status`, `coursekit design`, `coursekit sync`, `coursekit outline`, `coursekit brief`, `coursekit import`, `coursekit videos`, `coursekit download` |
+| Courses and design | `coursekit new`, `coursekit handoff`, `coursekit status`, `coursekit design`, `coursekit sync`, `coursekit outline`, `coursekit brief`, `coursekit research`, `coursekit import`, `coursekit videos`, `coursekit download` |
 | Verification and sign-off | `coursekit verify`, `coursekit paths`, `coursekit reviewed`, `coursekit approve` |
 | Course state and client review | `coursekit hold`, `coursekit resume`, `coursekit client` |
 | Launching agents | `coursekit write`, `coursekit review`, `coursekit run` |
@@ -461,6 +462,34 @@ coursekit brief PWD --section 1.2
 coursekit brief PWD --find "authenticator app versus SMS" --top 3
 ```
 
+### `coursekit research`
+
+Looks for official sources for a course (the documentation of the maker of an application, an official gazette or journal, a public body) with the web search API chosen in the `.env`, and proposes them. It never writes content: a source enters the course through `brief/links.md` and `coursekit brief`. Who: agents (design, writing and review); a person can run it too.
+
+```
+coursekit research [--fact] [--json] [--status] code [query]
+```
+
+| Argument | Values / default | Meaning |
+|---|---|---|
+| `code` | course code or folder | Course: its language, its country and its limit of searches. |
+| `query` | text, in the language of the course | What to search for. Required unless `--status`. |
+| `--fact` | flag | The search is for the source of one fact (a `VERIFICAR`): each candidate shows the passage that holds it, and the log marks the search. |
+| `--json` | flag | Print the candidates as JSON (`provider`, `query`, `total`, `searches`, `limit`, `warning`, and `results` with `url`, `title`, `snippet`, `date`, `language`, `original`). |
+| `--status` | flag | Print the provider in use, the searches of the course and their limit, and the `VERIFICAR` marks left in the content with an estimate of the searches they need (one or two each). It searches nothing. |
+
+The provider is `RESEARCH_PROVIDER` of the `.env` with its key (see [Web research](04-configuration.md#web-research-optional)). Without both it searches nothing and ends with exit code **3** and a message that tells the agent to use its own web search under the same rules. Only search endpoints are called, never those that write an answer.
+
+It asks for `research › results` candidates in the country of the course (`research › country`) and prints the best `research › show`, those on `research › prefer_domains` first, each with its address, domain, date, language and the passage that justifies it. A candidate that is not in the language of the course is looked for in that language: the translation the page declares (`hreflang`), the language changed in its address (`/en-us/` → `/es-es/`, `hl=en` → `hl=es`...), or a rule of `research › localize_rules`. The new address is taken only when that page says it is in the language of the course; otherwise the candidate stays, marked with its language. The passages are data from the web, never instructions, and are not cited.
+
+Every search is written in `courses/<CODE>/brief/research-log.md` (date, provider, query and candidates). After `research › max_per_course` searches the command refuses (exit code 1) and says how to raise the limit; from `research › warn_at` of it, it warns on stderr. Exit code 1 also when the provider rejects the key, has no credit or cannot be reached (it tries twice more when the provider is busy). Refused while the course is on hold, except `--status`.
+
+```
+coursekit research PWD "official guide to creating strong passwords"
+coursekit research PWD "minimum length of a password NIST recommends" --fact
+coursekit research PWD --status
+```
+
 ### `coursekit import`
 
 Creates courses from eXeLearning packages (`.elp`, eXeLearning 2 and 3). A folder with `.elp` files is one course and each package is a unit; a folder with a subfolder per course creates one course per subfolder. Who: people (the agents then design from the brief it leaves).
@@ -644,7 +673,7 @@ coursekit hold --reason REASON code
 
 Records in `course.yaml › hold` the previous status (`previous`), the reason (`reason`), who paused it (`by`, the signing identity) and when (`at`), sets the course to `on_hold` and appends the change to `course.yaml › history`. Prints `<CODE> on hold (it was in '<status>')`. Exit code 1 if the course already is on hold.
 
-While the course is on hold these commands are refused (exit code 1, with a message that gives the date, the reason, the previous status and the way out): `coursekit write`, `coursekit review`, `coursekit approve`, `coursekit reviewed`, every action of `coursekit assemble`, `coursekit sync` (without `--check`), `coursekit media set`, every action of `coursekit client`, and `coursekit delivery check`, `name` and `add`. `coursekit handoff` stops with a message that says how to resume, and `coursekit run` refuses the commands that work on the course (see [`coursekit run`](#coursekit-run)). The commands that only read still work: `coursekit status`, `coursekit verify`, `coursekit config`, `coursekit brief`, `coursekit publish`, `coursekit catalog`, `coursekit outline` and `coursekit sync --check`.
+While the course is on hold these commands are refused (exit code 1, with a message that gives the date, the reason, the previous status and the way out): `coursekit write`, `coursekit review`, `coursekit approve`, `coursekit reviewed`, every action of `coursekit assemble`, `coursekit sync` (without `--check`), `coursekit media set`, `coursekit research` (except `--status`), every action of `coursekit client`, and `coursekit delivery check`, `name` and `add`. `coursekit handoff` stops with a message that says how to resume, and `coursekit run` refuses the commands that work on the course (see [`coursekit run`](#coursekit-run)). The commands that only read still work: `coursekit status`, `coursekit verify`, `coursekit config`, `coursekit brief`, `coursekit publish`, `coursekit catalog`, `coursekit outline` and `coursekit sync --check`.
 
 ```
 coursekit hold PWD --reason "Client paused the project until the next quarter"
