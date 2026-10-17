@@ -23,3 +23,9 @@ total_hours_mismatch:
 headings_differ:
   es: "{unit} {n}: los encabezados de content.md difieren del diseño; actualízalos a mano"
   en: "{unit} {n}: content.md headings differ from the design; update them by hand"
+framing_too_long:
+  es: "{unit} {n}: «{title}» tiene {hours} h, más del {share} % de las horas de la unidad ({limit} h): la introducción y el resumen presentan y repasan, no enseñan (rules › design)"
+  en: "{unit} {n}: '{title}' takes {hours} h, more than {share} % of the hours of the unit ({limit} h): the introduction and the summary present and recap, they do not teach (rules › design)"
+unit_hours_step:
+  es: "{unit} {n}: tiene {hours} h y las unidades van en múltiplos de {step} h (rules › design › unit_hours_step): reparte de nuevo las horas entre las unidades; los apartados, como quieras"
+  en: "{unit} {n}: takes {hours} h and the units go in multiples of {step} h (rules › design › unit_hours_step): split the hours of the units again; the sections, as you like"

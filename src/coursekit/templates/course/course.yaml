@@ -20,9 +20,9 @@ design:
   structure: {structure}   # slxd patronEstructural: sin_modulos | con_modulos
   intro_section: {intro}   # every unit opens with the introduction section
   summary_section: {summary} # every unit closes with the summary section
-  audience: ""
-  level: ""
-  prerequisites: ""
+  audience: ""             # empty: project.yaml › audience; text: who this course is for (or {who, context, knowledge, level, learning})
+  level: ""                # empty: project.yaml › audience › level
+  prerequisites: ""        # empty: project.yaml › audience › knowledge
   tone: {tone}
   notes: {notes}            # extra instructions from the person who created the course
   grading:

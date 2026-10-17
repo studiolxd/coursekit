@@ -1,3 +1,4 @@
+label: {en: "Diagram", es: "Diagrama"}
 description:
   en: A process that builds itself, step by step; each step enters when the narration names it (`say`), with the arrow that leads to it.
   es: Un proceso que se construye paso a paso; cada paso entra cuando la locución lo nombra (`say`), con la flecha que lleva a él.

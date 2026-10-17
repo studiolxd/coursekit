@@ -17,7 +17,7 @@ export const BulletList: React.FC<{ items: Bullet[]; at?: number; size?: number 
     <Stagger at={at} times={times} style={{ display: "flex", flexDirection: "column", gap: 26 }}>
       {items.map((item, i) => (
         <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 22 }}>
-          <div style={{ width: 22, height: 22, borderRadius: shapes.corner(5), background: color("accent-strong"), marginTop: size * 0.45, flex: "none" }} />
+          <div style={{ width: 22, height: 22, borderRadius: shapes.corner(5), background: color("accent-ink"), marginTop: size * 0.45, flex: "none" }} />
           <Text size={size}>{item.text}</Text>
         </div>
       ))}

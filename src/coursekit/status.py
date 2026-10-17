@@ -51,10 +51,11 @@ def detail(course: dict) -> str:
               objectives=len(u.get("objectives") or []), words=fmt(words), status=u.get("status"), tool=u.get("written_with"))
         )
     placement, fmt = coursemod.assessment_delivery(course)
-    tests = coursemod.assessment_unit(course)
+    tests, bank = coursemod.assessment_unit(course), coursemod.bank_unit(course)
     if placement != "unit" or fmt != "platform":
-        lines.append(t("status", "assessment_line", placement=t("status", f"assessment_{placement}"),
-                       format=fmt, package=t("status", "assessment_package", n=tests["n"]) if tests else ""))
+        lines.append(t("status", "assessment_line", placement=t("status", f"assessment_{placement}"), format=fmt,
+                       package=(t("status", "assessment_package", n=tests["n"]) if tests else "")
+                       + (t("status", "assessment_bank", n=bank["n"]) if bank else "")))
     if course["status"] == "on_hold":
         hold = course.get("hold") or {}
         lines.append(t("status", "hold_line", since=str(hold.get("at") or "")[:10], by=hold.get("by") or "-",

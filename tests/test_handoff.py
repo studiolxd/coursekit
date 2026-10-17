@@ -354,7 +354,8 @@ def test_what_the_agents_record_is_signed_by_the_handoff(project, monkeypatch):
 
     monkeypatch.setattr(launch, "execute", execute)
     assert main(["handoff", "Contraseñas seguras", "1", "--code", "PWD"]) == 0
-    assert seen and all(e == {"COURSEKIT_USER_NAME": "Coursekit Handoff", "COURSEKIT_USER_EMAIL": "handoff@coursekit.local"} for e in seen)
+    assert seen and all(e == {"COURSEKIT_USER_NAME": "Coursekit Handoff", "COURSEKIT_USER_EMAIL": "handoff@coursekit.local",
+                                "COURSEKIT_HANDOFF": "1"} for e in seen)
     assert launch.SESSION_ENV == {}  # it does not leak to the next command
 
 

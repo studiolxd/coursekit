@@ -186,7 +186,7 @@ def check_bank_format(course: dict, path: Path, directives, rules: dict, report:
     fmt = coursemod.assessment_delivery(course)[1]
     if fmt == "platform":
         return
-    allowed = coursemod.BANK_QUESTIONS[fmt]
+    allowed = coursemod.bank_questions(fmt, coursemod.backend(course))
     for line, name, body in directives:
         if name in (rules.get("question_directives") or ()) and name not in allowed:
             report.error(t("verify", "bank_type", file=path.name, line=line, name=name, format=fmt, allowed=", ".join(allowed)))

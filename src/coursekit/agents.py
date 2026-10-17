@@ -157,6 +157,7 @@ def context(project: Project) -> dict[str, str]:
         "ui_language": ui_language,
         "address_rule": ADDRESS_RULES.get(address, f"address the learner as «{address}»"),
         "assessment_delivery": assessment_delivery_rule(project),
+        "project_audience": project_audience(data),
         "inclusive_rule": f"inclusive language: {INCLUSIVE_RULES[inclusive]} (`rules › inclusive_language: {inclusive}`; a course "
                           "may set its own, see `coursekit config rules --course <CODE>`)",
         "backend": str((data.get("assembly") or {}).get("backend") or "creator"),
@@ -188,7 +189,9 @@ def context(project: Project) -> dict[str, str]:
         "allowed_symbols": " ".join(content["allowed_symbols"]),
         "competencies_per_course": str(design.get("competencies_per_course", "2–4")),
         "objectives_per_unit": str(design.get("objectives_per_unit", "2–4")),
-        "intro_summary_hours": str(design.get("intro_summary_hours", "0.2–0.3")),
+        "unit_hours_step": f"{float(design.get('unit_hours_step', 0.5)):g}",
+        "intro_share": f"{float(design.get('intro_share', 0.05)) * 100:g} %",
+        "summary_share": f"{float(design.get('summary_share', 0.05)) * 100:g} %",
         **decision_tokens(rules.get("decision_based") or {}),
         "misconceptions_per_objective": str(int((rules.get("misconceptions") or {}).get("per_objective") or 0)),
         **readability_tokens(rules.get("readability") or {}),
@@ -200,17 +203,26 @@ def context(project: Project) -> dict[str, str]:
     }
 
 
+def project_audience(data: dict) -> str:
+    """`project.yaml › audience`, as the skills give it (what is empty is said to be missing)."""
+    given = data.get("audience") if isinstance(data.get("audience"), dict) else {}
+    lines = [f"{key}: {str(given.get(key) or '').strip() or '(not set)'}" for key in coursemod.AUDIENCE_KEYS]
+    return "; ".join(lines)
+
+
 def assessment_delivery_rule(project: Project) -> str:
     """Where the tests go and in which format (`delivery › assessment`), as the skills tell it."""
     cfg = config.effective("delivery", project).value.get("assessment") or {}
     placement, fmt = str(cfg.get("placement") or "unit"), str(cfg.get("format") or "platform")
+    backend = str((config.project_data(project).get("assembly") or {}).get("backend") or "creator")
     where = ("in the package of their unit" if placement == "unit" else
              "apart, in one package of their own after the units (one more unit to assemble and deliver)")
     if fmt == "platform":
         how = "as evaluation lessons of the package"
     else:
-        how = (f"as a {fmt} question bank the LMS imports (`coursekit delivery questions`): the question bank of assessment.md "
-               f"may use only {', '.join(coursemod.BANK_QUESTIONS[fmt])}; scored simulations stay in a package")
+        how = (f"as a {fmt} question bank the LMS imports (exported by creator with the creator backend, written by `coursekit "
+               f"delivery questions` with html or in aiken): the question bank of assessment.md may use only "
+               f"{', '.join(coursemod.bank_questions(fmt, backend))}; scored simulations stay in a package")
     return (f"the tests go {where}, {how} (`delivery › assessment`: placement {placement}, format {fmt}; a course may set its own, "
             "see `coursekit config delivery --course <CODE>`)")
 

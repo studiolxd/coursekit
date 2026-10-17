@@ -83,7 +83,7 @@ def header_color(project: Project) -> str:
     if path.exists():
         try:
             colors = json.loads(path.read_text(encoding="utf-8")).get("color") or {}
-            value = colors.get("accent-strong") or colors.get("accent")
+            value = colors.get("accent-ink") or colors.get("accent")
             if value:
                 return value.lstrip("#").upper()
         except ValueError:

@@ -3,7 +3,8 @@
 With `delivery › assessment › format` set to a bank format, the questions of the tests leave the packages: they are read from the
 question bank of each assessment activity of `assessment.md` (the same parse as the plan) and written in `delivery/`:
 
-- `gift` and `moodle-xml`: one file per course, with one category per activity (`<CODE>/U1 E1.1 <activity>`);
+- `gift` and `moodle-xml`: one file per course, with one category per activity (`<CODE>/U1 E1.1 <activity>`); Moodle XML
+  writes a sorting question as the core «ordering» type (Moodle 4.4 or later);
 - `aiken`: one file per activity (the format has no categories), single-choice questions only.
 
 The feedback, the objective of each question (in its name) and the HTML of the texts are kept where the format allows it; the id of
@@ -83,7 +84,7 @@ def problems(course: dict, fmt: str, found: list[Activity]) -> list[str]:
 def export(course: dict, version: str, fmt: str | None = None) -> list[Path]:
     """Writes the question bank of the course in `delivery/` and returns the files."""
     fmt = fmt or coursemod.assessment_delivery(course)[1]
-    if fmt not in EXTENSIONS:
+    if fmt not in EXTENSIONS:  # qti comes from creator (`coursekit delivery questions --url`), not from here
         raise BankError(t("questionbank", "not_a_bank_format", format=fmt, valid=", ".join(EXTENSIONS)))
     found, errors = activities(course)
     errors += problems(course, fmt, found)
@@ -210,7 +211,7 @@ def html_text(tag: str, value: str, extra: str = "") -> str:
 def moodle_question(q: Question) -> str:
     content, data = q.data["content"], q.data
     kinds = {"SINGLE_CHOICE": "multichoice", "MULTI_SELECT": "multichoice", "TRUE_FALSE": "truefalse", "MATCH": "matching",
-             "SORTING_GROUPS": "matching", "SHORT_ANSWER": "shortanswer", "FILL_IN_THE_BLANK": "cloze"}
+             "SORTING_GROUPS": "matching", "SHORT_ANSWER": "shortanswer", "FILL_IN_THE_BLANK": "cloze", "SORTING": "ordering"}
     if q.kind not in kinds:
         raise BankError(t("questionbank", "type_not_allowed", name=q.name, kind=DIRECTIVES[q.kind], format="moodle-xml", allowed=""))
     question = content["question"]
@@ -245,6 +246,13 @@ def moodle_question(q: Question) -> str:
                   html_text("partiallycorrectfeedback", wrong), html_text("incorrectfeedback", wrong)]
         parts += [f'<subquestion format="html"><text>{cdata(a)}</text><answer><text>{xml_escape(plain(b))}</text></answer></subquestion>'
                   for a, b in pairs]
+    elif q.kind == "SORTING":  # the core «ordering» type (Moodle 4.4 or later): the items in their right order, all of them
+        parts += ["<layouttype>VERTICAL</layouttype>", "<selecttype>ALL</selecttype>", "<selectcount>0</selectcount>",
+                  "<gradingtype>ABSOLUTE_POSITION</gradingtype>", "<showgrading>SHOW</showgrading>",
+                  "<numberingstyle>none</numberingstyle>", html_text("correctfeedback", right),
+                  html_text("partiallycorrectfeedback", wrong), html_text("incorrectfeedback", wrong)]
+        parts += [f'<answer fraction="{n}.0000000" format="html"><text>{cdata(item["content"])}</text></answer>'
+                  for n, item in enumerate(data["items"], 1)]
     elif q.kind == "SHORT_ANSWER":
         parts.append("<usecase>0</usecase>")
         parts += [f'<answer fraction="100" format="moodle_auto_format"><text>{xml_escape(i["text"])}</text>'

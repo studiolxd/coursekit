@@ -1,16 +1,17 @@
+label: {en: "Text and medium", es: "Texto y recurso"}
 description:
   en: Text and a medium side by side; the points enter when the narration names them (`say` of each point).
   es: Texto y un recurso uno al lado del otro; los puntos entran cuando la locución los nombra (`say` de cada punto).
 built_from: [Background, TitleBlock, BulletList (Stagger, Text), MediaSlot, Enter]
 props:
-  kicker: {type: text, max_chars: 40, on_screen: true, label: true, help: {en: "a label over the title: it need not be said", es: "una etiqueta sobre el título: no hace falta decirla"}}
+  kicker: {type: text, max_chars: 40, on_screen: true, label: true, help: {en: "a label over the title: it need not be said", es: "una etiqueta sobre el título: no hace falta locutarla"}}
   title: {type: text, required: true, max_chars: 60, on_screen: true}
   points: {type: list, max_items: 4, items: {text: {type: text, max_chars: 70, on_screen: true}, say: {type: text, help: {en: "the words of the narration that name it", es: "las palabras de la locución que lo nombran"}}}}
   media: {type: media, help: {en: "a path inside the media folder of the course: files/… or recordings/…", es: "una ruta dentro de la carpeta media del curso: files/… o recordings/…"}}
   side: {type: choice, values: [left, right], help: {en: "where the medium goes (default right)", es: "dónde va el recurso (por defecto right)"}}
 # What the gallery draws it with (`coursekit video gallery`), in each language of the courses.
 example:
-  en: {kicker: "The key", title: "Length comes first", media: "gallery-sample.svg",
+  en: {kicker: "The key", title: "Length comes first", media: "gallery-sample-photo.jpg",
        points: [{text: "Twelve characters or more"}, {text: "Four words at random"}, {text: "One password per account"}]}
-  es: {kicker: "La clave", title: "La longitud manda", media: "gallery-sample.svg",
+  es: {kicker: "La clave", title: "La longitud manda", media: "gallery-sample-photo.jpg",
        points: [{text: "Doce caracteres o más"}, {text: "Cuatro palabras al azar"}, {text: "Una contraseña por cuenta"}]}

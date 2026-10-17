@@ -53,32 +53,44 @@ sections the course needs, and justify it.
 1. **Matrix.** `design_matrix_create` with `nombre`, `duracionHoras`, `patronEstructural`
    (`design.structure`; **it cannot be changed later**; `con_modulos` only for long courses with
    clear blocks), `palabrasPorHora: {{words_per_hour}}` ({{pages_per_hour}} pages per hour ×
-   {{words_per_page}} words per page; never the tool default) and the profile
-   (`publicoObjetivo`, `nivel`, `conocimientosPrevios`, `tono`, `contexto`). Save
+   {{words_per_page}} words per page; never the tool default), `idioma` (the language of the course, `course.yaml ›
+   language`) and the profile (`publicoObjetivo`, `nivel`, `conocimientosPrevios`, `tono`, `contexto`). The profile starts
+   from the audience of the project ({{project_audience}}), which `course.yaml › design` changes for this course
+   (`audience`, as text or with the same keys; `level`; `prerequisites`): `who` → `publicoObjetivo`, `level` → `nivel`,
+   `knowledge` → `conocimientosPrevios`, `context` and `learning` → `contexto`. Make it concrete with the brief. Without a
+   `level`, set it by the subject of the course, starting from basic; without `knowledge`, nothing is required and the
+   learners do not have any prior knowledge of the subject: the course starts from zero. Do not ask for either. Save
    `slxd.matrix_id` in `course.yaml` as soon as you have it.
 2. **Competencies** (`design_matrix_competencia_create`): the ones the course needs (usually
    {{competencies_per_course}}), as verb + object + context.
 3. **Units and objectives.** Split the syllabus into units that make sense on their own. Each
    unit has the objectives its content needs (usually {{objectives_per_unit}}; fewer than 2 or
    more than 5 must be justified). Revised Bloom, **one observable verb**, `nivelBloom` coherent
-   with the verb, linked to their competencies, progressing along the course.
+   with the verb, linked to their competencies, progressing along the course. Give each objective its `clave`: `U<unit>.<k>`,
+   `k` counting the objectives of the unit in the order its sections develop them (the ids `coursekit sync` gives and
+   `misconceptions.yaml` uses; `coursekit design <CODE>` warns when one differs).
 4. **Sections** (`design_matrix_node_create`, type `apartado`) per unit, with real titles:
-   - if `intro_section` is `true`, the **first** is "{{t_intro_title}}";
-   - if `summary_section` is `true`, the **last** is "{{t_summary_title}}";
-   - in between, the content sections the subject needs (one or several per objective);
-     optionally an activities section if the practice is not integrated.
+   - if `intro_section` is `true`, the **first** is "{{t_intro_title}}", with `rol: introduccion`;
+   - if `summary_section` is `true`, the **last** is "{{t_summary_title}}", with `rol: resumen` (neither develops an
+     objective: with the `rol` slxd does not report them as orphan content);
+   - in between, the content sections the subject needs (one or several per objective).
    - Subsections only if they add real structure.
 5. **Links** (`design_matrix_node_link_objetivo`): each content section with the objectives it
    develops. Every objective is covered by at least one section.
 6. **Activities** per unit: learning activities (`design_matrix_aa_create`, formative, not
-   graded) to practise each objective (in slxd they hang from the unit, the only place the tool takes; the writer puts
-   each one inside the section that develops its objectives), and assessment activities (`design_matrix_ae_create`)
+   graded) to practise each objective, each hanging from the section that develops its objectives (`nodeId` of that
+   `apartado`; the unit only for one that practises objectives of several sections): the writer puts it inside that
+   section. Assessment activities (`design_matrix_ae_create`, on the unit)
    that give evidence of all of them. Instrument according to the Bloom level (the validator
    requires it: questionnaire up to *apply*; case study up to *evaluate*; portfolio/rubric for
    *create*). Delivery of the tests: {{assessment_delivery}}. With a question-bank format, design each test with the
    question types it takes, and a scored simulation when an objective needs more than those. Grading: give each assessment activity its `peso` (weight in the unit's score; 1 when the tests count
    the same), `notaAprobado` and `intentosMax` (0 = unlimited) in `design_matrix_ae_create` / `_ae_update`; what you
-   leave empty takes `design.grading` of `course.yaml` (`passing_score`, `attempts`) and weight 1 when assembling.
+   leave empty takes `design.grading` of `course.yaml` (`passing_score`, `attempts`) and weight 1 when assembling. **What
+   the project sets is not yours to change:** the pass mark and the attempts of `course.yaml › design.grading` and the
+   {{questions_per_objective}} questions per objective of the bank (`rules › content.questions_per_objective`). Use them
+   (leave `notaAprobado` and `intentosMax` empty, or give the same values), and never propose another one; a test that
+   needs a different value is the person's decision, made in `course.yaml` or the project's rules.
 7. **Common errors** in `courses/<CODE>/design/misconceptions.yaml`, written in {{language_name}}: for each objective,
    at least {{misconceptions_per_objective}} things the audience gets wrong today and why (habits, pressure, beliefs),
    from the material and the person's notes; never invented as foils. They are signed with the design, and the content
@@ -93,20 +105,47 @@ sections the course needs, and justify it.
 8. **Hours, last.** With the content defined, split the hours **by real load**: breadth, Bloom
    level (apply/analyse/evaluate need more time than remember), practice and activities. Never
    split evenly. `design_matrix_node_update_horas` on sections and units; the total must be
-   exactly `design.hours`. Introduction and summary usually take {{intro_summary_hours}} h per
-   unit. Each hour means {{words_per_hour}} minimum words (pages round up per section: `coursekit sync <CODE> --check`
+   exactly `design.hours`. **Each unit takes a multiple of {{unit_hours_step}} h** (people see the hours of the units: the
+   course sheet, the catalog, a certificate); the sections split their unit freely, nobody but the team sees them. The introduction takes at most {{intro_share}} of the hours of its unit and the summary at most
+   {{summary_share}} (a unit of 2 h: 0.1 h each; rounded up to the next 0.05 h): they present and recap, they do not
+   teach, and a longer one only makes them longer to read. `coursekit sync <CODE> --check` warns about one that takes
+   more. Each hour means {{words_per_hour}} minimum words (pages round up per section: `coursekit sync <CODE> --check`
    prints the total; copy it, never work it out). In an expository course **the activities have no hours of their own**:
    the hours of a content section hold its reading, the practice of its objectives (the writer puts the learning
    activities inside the section that develops them) and its share of the unit's assessment (the questions on its
    objectives). Give more hours to the sections whose objectives carry more practice and assessment, and say in the
    proposal notes how each unit's practice and assessment are spread.
-9. **Validation.** `design_matrix_validate` until **0 errors**. Review every warning.
+9. **Validation.** `design_matrix_validate` until **0 errors**. Review every warning. **Never change a word only to
+   silence a warning.** When the validator says a verb belongs to another Bloom level, decide what the learner really has
+   to do: if the activity and the test ask them to choose, judge or decide, the level is that one (change `nivelBloom`, and
+   the instrument if it falls short); if the level is right, change the task so it asks for what the verb says. The verb
+   describes what the activity and the assessment ask for, never the other way round. Say each change and why in the
+   proposal notes.
 10. **Own pedagogical review** (without spending slxd credits): apply the "Self-review" rubric
    below and fix what you find before presenting the proposal.
 11. **Export** (see "Export").
-12. **Proposal notes** in `courses/<CODE>/design/proposal-notes.md` ({{ui_language_name}}):
+12. **Questions for the person.** Before the notes, go through these and find what the brief, `brief/notes.md`,
+    `project.yaml › audience` and `course.yaml` do not settle, and ask every one of those points; never settle one silently
+    with an assumption. Accessibility is never a question: what coursekit and the platform produce meets it.
+    - **Access:** what the learner needs to follow and practise (accounts, licences, paid plans, software, devices,
+      permissions in their organisation), and what the course does for whoever lacks it.
+    - **Audience:** what `project.yaml › audience` and `course.yaml › design` leave unsaid or too general: who exactly (the
+      general public, one organisation, some roles), their context (the policies and the tools of their organisation),
+      and how they learn, and what changes in the course with each answer. When an answer holds for every
+      course of the project, suggest the person writes it in `project.yaml › audience`.
+    - **Scope:** what is next to the title that this audience would expect (related tools, products, versions, topics)
+      and is in or out, and why.
+    - **Assessment:** only what the project leaves open (the pass mark, the attempts and the questions per objective are
+      set: never ask to change them): what the format of the tests cannot measure and how the design gets close.
+    - **The material:** what it contradicts, leaves out or may be out of date.
+    Each question with its options, what each one changes in the design and your recommendation. In the final summary of
+    the proposal, ask them to the person (after the units and hours). With no one to ask (handoff mode), decide each one
+    and write it in `proposal-notes.md` between the lines `<!-- assumptions -->` and `<!-- /assumptions -->`, one `- `
+    line per question: the question, the option you took and why. The handoff lists them at the end and in its report,
+    so the person checks them. When the person answers one later (`/design-change`), take it out of that block.
+13. **Proposal notes** in `courses/<CODE>/design/proposal-notes.md` ({{ui_language_name}}):
     structure and why, hour split and criterion, assumptions (syllabus, audience, level),
-    questions for the person, accepted validation warnings and why (leave out the ones the design asks for: an
+    the questions of step 12, accepted validation warnings and why (leave out the ones the design asks for: an
     introduction or a summary that develops no objective; `coursekit design <CODE>` does not print them). In a decision-based course, also the action map
     and the story bible (see "Decision-based courses").
 
@@ -218,7 +257,9 @@ characters:
 1. `design_matrix_get` for the current IDs and `updatedAt` (the person may have edited in
    slxd). Pass `expectedUpdatedAt` when the tool accepts it.
 2. Apply exactly what was asked; if a change forces others (hours, links, activities), make
-   them and explain them.
+   them and explain them. An objective added, removed or moved changes the ids of the others: give each its new `clave`
+   and put them back in order with `design_matrix_objetivo_reorder` (every id, in the order of their `clave`: the order the
+   Excel and the progression checks of slxd follow).
 3. Validate again, self-review, export and update `proposal-notes.md` (a dated "Changes"
    section). Update `design/misconceptions.yaml` when the objectives change, and in a decision-based course
    `design/story.md` when the change touches it.
@@ -228,12 +269,12 @@ characters:
 
 1. `design_matrix_get` → save the JSON **as it is** in `courses/<CODE>/design/matrix.json`, with your file-writing tool
    (the whole response, including `updatedAt`): never patch the previous file by hand or with a script.
-2. `design_matrix_validate` → `courses/<CODE>/design/validation.json`.
+2. `design_matrix_validate` with `locale: "{{ui_language}}"` → `courses/<CODE>/design/validation.json`.
 3. `coursekit design <CODE>`: writes `courses/<CODE>/design/<CODE>-instructional-design.xlsx` from those two files, which is
    what the person reviews (profile, competencies, objectives with where they are developed, practised and assessed,
    structure with hours and minimum words, activities with their grading, common errors, validation). It prints the
    validation without the warnings the design asks for (an introduction or a summary develops no objective).
-4. `design_matrix_export` with `locale: "{{ui_language}}"` (without it slxd writes the labels in its default language) →
+4. `design_matrix_export` with `locale: "{{ui_language}}"` (without it slxd writes the labels in the language of the matrix) →
    download the `downloadUrl` (expires in 24 h) with
    `coursekit download "<downloadUrl>" --out courses/<CODE>/design/<CODE>-slxd-matrix.xlsx` (not `curl`: a session
    without an interface cannot run it): slxd's own workbook, kept as a copy.
@@ -292,7 +333,9 @@ For each element, if there is a problem, fix it and note it in `proposal-notes.m
 - **Competencies:** verb + object + context; broad (not a disguised objective); no vague verbs
   (understand, know); one idea.
 - **Objectives:** observable, measurable verb; Bloom level coherent with the verb; one
-  behaviour; achievable in the hours given.
+  behaviour; achievable in the hours given. **The verb names what the practice and the test ask for**, objective by
+  objective, also when the validator says nothing: if they ask the learner to choose a tool, the objective selects, it does
+  not «connect» or «use»; if they ask to order steps, it does not «redact». Change the verb (and its level) or the task.
 - **Objective ↔ assessment activity:** the task asks for the behaviour of the verb (neither
   easier nor harder); the criterion measures it; the evidence is recorded. **Doing, not recognising:** picking the best
   option among several evidences *understand*. For an objective of *apply* or above the learner must do what the verb
@@ -300,9 +343,8 @@ For each element, if there is a problem, fix it and note it in `proposal-notes.m
   changes with the decision (a scored simulation), or judge a given result with the criteria of the objective. Describe the
   task that way in the activity; when the instrument cannot ask for it (an export format that only takes single choice,
   for instance), say so in the proposal notes and how close it gets.
-- **Grading:** the pass mark and the attempts of each assessment activity fit what it measures. With few questions per
-  objective, a pass mark of 50 lets a learner pass without showing one of them: justify the mark in the proposal notes,
-  or raise it, or ask for a minimum per objective in the criterion.
+- **Grading:** the pass mark, the attempts and the questions per objective are the project's (`course.yaml ›
+  design.grading`, `rules › content.questions_per_objective`); the criterion of each test uses them as they are.
 - **Objective ↔ learning activity:** the activity lets the learner practise the behaviour
   (nothing passive for apply/analyse/evaluate/create).
 - **Common errors:** real (from the material, the audience, the sector), specific to the objective, written as the

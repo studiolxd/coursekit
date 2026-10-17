@@ -133,6 +133,7 @@ class Builder:
     def build(self) -> dict:
         design = self.course.get("design") or {}
         profile = self.data.get("profile") if isinstance(self.data.get("profile"), dict) else {}
+        audience = coursemod.audience(self.course)  # the project's, changed by the course
         structure = str(design.get("structure") or "sin_modulos")
         cfg = coursemod.rules(self.course)
         passing = str(self.data.get("passing") or "all_tests")
@@ -147,10 +148,10 @@ class Builder:
                 "id": _id(self.code, "matrix"),
                 "nombre": self.course.get("title"),
                 "duracionHoras": _number(float(design.get("hours") or 0)),
-                "nivel": profile.get("level") or design.get("level") or None,
-                "publicoObjetivo": profile.get("audience") or design.get("audience") or None,
-                "conocimientosPrevios": profile.get("prerequisites") or design.get("prerequisites") or None,
-                "contexto": profile.get("context") or None,
+                "nivel": profile.get("level") or audience["level"] or None,
+                "publicoObjetivo": profile.get("audience") or audience["who"] or None,
+                "conocimientosPrevios": profile.get("prerequisites") or audience["knowledge"] or None,
+                "contexto": profile.get("context") or audience["context"] or None,
                 "tono": profile.get("tone") or design.get("tone") or None,
                 "patronEstructural": structure,
                 "palabrasPorHora": int(cfg["pages_per_hour"]) * int(cfg["words_per_page"]),
@@ -539,10 +540,38 @@ def review_excel(course: dict) -> tuple[list[Finding], Path]:
 
     folder = course["_dir"] / "design"
     graph = syncmod.load_graph(folder / "matrix.json")
-    findings = slxd_findings(folder / "validation.json")
+    findings = slxd_findings(folder / "validation.json") + key_findings(course, graph)
     target = folder / excel_name(course)
     write_excel(course, graph, findings, target)
     return findings, target
+
+
+def validation_problem(course: dict, required: bool = True) -> str | None:
+    """A design made in slxd: why its validation.json does not belong to its matrix.json (missing, when `required`, or saved
+    before the matrix last changed: `design_matrix_validate` was not run again). None when it does, and for a local design
+    (`coursekit design` writes both). slxd dates neither, so the dates of the files tell it."""
+    if is_local(course):
+        return None
+    folder = course["_dir"] / "design"
+    matrix, validation = folder / "matrix.json", folder / "validation.json"
+    if not matrix.is_file():
+        return None
+    if not validation.is_file():
+        return t("design", "validation_missing", code=course["code"]) if required else None
+    if validation.stat().st_mtime < matrix.stat().st_mtime - 1:
+        return t("design", "validation_stale", code=course["code"])
+    return None
+
+
+def key_findings(course: dict, graph: dict) -> list[Finding]:
+    """A design made in slxd: the objectives whose `clave` (what slxd's Excel shows) is not the id coursekit gives them."""
+    from coursekit import sync as syncmod  # imports this module
+
+    units, _ = syncmod.build_units(graph, course, coursemod.rules(course), coursemod.tokens(course))
+    labels = {str(o["slxd_id"]): str(o["id"]) for u in units for o in u["objectives"]}
+    return [Finding("keys.mismatch", "warning", t("design", "key_differs", key=o["clave"], id=labels[o["id"]], text=o.get("texto")),
+                    "objetivo", o["id"])
+            for o in graph.get("objetivos") or [] if o.get("clave") and o["id"] in labels and o["clave"] != labels[o["id"]]]
 
 
 def expected(finding: Finding, kinds: dict[str, str]) -> bool:
@@ -611,11 +640,24 @@ def write_excel(course: dict, graph: dict, findings: list[Finding], target: Path
 
     unit_order = {n["id"]: i for i, n in enumerate(n for top in ordered(children.get(None, []))
                                                     for n in ([top] if top["tipo"] == "unidad" else ordered(children.get(top["id"], []))))}
-    by_unit = lambda items: sorted(items, key=lambda a: (unit_order.get(a["nodeId"], 0), a.get("orden", 0)))  # noqa: E731
-    sheet = _sheet(book, head("sheet_learning"), [(head("col_unit"), 30), (head("col_title"), 40), (head("col_type"), 20),
-                                                  (head("col_objectives"), 16), (head("col_description"), 70)])
+    def unit_of(node_id: str) -> dict:
+        """The unit a node belongs to (an activity hangs from its unit or, in slxd, from one of its sections)."""
+        node = nodes[node_id]
+        while node.get("parentId") and node["tipo"] != "unidad":
+            node = nodes[node["parentId"]]
+        return node
+
+    def section_of(node_id: str) -> str:
+        node = nodes[node_id]
+        while node["tipo"] == "subapartado":
+            node = nodes[node["parentId"]]
+        return node["titulo"] if node["tipo"] == "apartado" else ""
+
+    by_unit = lambda items: sorted(items, key=lambda a: (unit_order.get(unit_of(a["nodeId"])["id"], 0), a.get("orden", 0)))  # noqa: E731
+    sheet = _sheet(book, head("sheet_learning"), [(head("col_unit"), 30), (head("col_section"), 30), (head("col_title"), 40),
+                                                  (head("col_type"), 20), (head("col_objectives"), 16), (head("col_description"), 70)])
     for a in by_unit(graph["actividadesAprendizaje"]):
-        _row(sheet, [nodes[a["nodeId"]]["titulo"], a["titulo"], kinds.get(a.get("tipo"), a.get("tipo")),
+        _row(sheet, [unit_of(a["nodeId"])["titulo"], section_of(a["nodeId"]), a["titulo"], kinds.get(a.get("tipo"), a.get("tipo")),
                      names(a.get("objetivoIds") or [], objectives), a.get("descripcion")])
 
     sheet = _sheet(book, head("sheet_assessment"), [(head("col_unit"), 30), (head("col_title"), 40), (head("col_instrument"), 18),
@@ -623,7 +665,7 @@ def write_excel(course: dict, graph: dict, findings: list[Finding], target: Path
                                                     (head("col_weight"), 8), (head("col_passing"), 10), (head("col_attempts"), 10),
                                                     (head("col_description"), 60)])
     for a in by_unit(graph["actividadesEvaluacion"]):
-        _row(sheet, [nodes[a["nodeId"]]["titulo"], a["titulo"], instruments.get(a.get("instrumento"), a.get("instrumento")),
+        _row(sheet, [unit_of(a["nodeId"])["titulo"], a["titulo"], instruments.get(a.get("instrumento"), a.get("instrumento")),
                      names(a.get("objetivoIds") or [], objectives), a.get("criterio"), a.get("peso"), a.get("notaAprobado"),
                      a.get("intentosMax"), a.get("descripcion")])
 

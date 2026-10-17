@@ -1,6 +1,7 @@
+label: {en: "Quote", es: "Cita"}
 description:
   en: A quote and who says it; a word of the quote (`stress`) is highlighted when the narration says it.
-  es: Una cita y quién la dice; una palabra de la cita (`stress`) se resalta cuando la locución la dice.
+  es: Una cita y quién la dice; una palabra de la cita (`stress`) se resalta cuando se locuta.
 built_from: [Background, Heading, Text, Underline, Enter]
 props:
   quote: {type: text, required: true, max_chars: 140, on_screen: true}

@@ -47,10 +47,16 @@ same; `coursekit status <CODE>` says which backend the course uses.
 
 ## Question bank
 
-With a question-bank format (`aiken`, `gift`, `moodle-xml`), after the packages: `coursekit delivery questions <CODE> --version
-X.Y`. It writes the bank in `courses/<CODE>/delivery/` (gift and moodle-xml: one file with a category per activity; aiken: one
-file per activity) and records it; the course is delivered when the packages and the bank of the version are recorded. If it
-refuses a question type, the unit has to be fixed (`/write-unit`): never edit the bank by hand.
+With a question-bank format (`aiken`, `gift`, `moodle-xml`, `qti`), after the packages; the course is delivered when the
+packages and the bank of the version are recorded. The bank content (`coursekit status <CODE>` gives its unit number) is never
+exported as a package.
+- Creator backend (gift, moodle-xml, qti): `create_export` of the bank content with `deliveryType: question_bank` and `questionBankFormat` (`gift`,
+  `moodle_xml` or `qti`), `get_export_status` until `COMPLETE` (show the person its `warnings`: what the format could not carry),
+  then `coursekit delivery questions <CODE> --version X.Y --url "<downloadUrl>"`, which saves it in `courses/<CODE>/delivery/`
+  and records it.
+- Html backend, or aiken: `coursekit delivery questions <CODE> --version X.Y` writes the bank itself (gift and moodle-xml: one file with a
+  category per activity; aiken: one file per activity) and records it.
+If a question type does not fit, the unit has to be fixed (`/write-unit`): never edit the bank by hand.
 
 ## At the end
 

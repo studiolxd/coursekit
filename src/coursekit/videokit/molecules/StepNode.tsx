@@ -10,6 +10,6 @@ export const StepNode: React.FC<{ n: number | string; label: string; text?: stri
   <Card padding={44} style={{ width, display: "flex", flexDirection: "column", gap: 24, alignItems: "flex-start" }}>
     <Badge size={80}>{n}</Badge>
     <Heading size={60}>{label}</Heading>
-    {text ? <Text size={40} tone="text-soft">{text}</Text> : null}
+    {text ? <Text size={40} tone="text-muted">{text}</Text> : null}
   </Card>
 );

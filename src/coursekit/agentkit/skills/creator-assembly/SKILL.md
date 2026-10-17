@@ -19,11 +19,14 @@ and reload it.
 ## 1. Skeleton (first time only)
 
 If a unit has no `content_id`, and the design was made in slxd (`course.yaml › design.tool: slxd`):
-1. `design_matrix_generate_course` with `alcance: {tipo: "curso"}` (or `{tipo: "modulo"}`). It
-   creates one content per unit and one lesson per section, with skeleton bricks. Follow
-   `design_matrix_redaccion_status` until it finishes.
+1. `design_matrix_generate_course` with `alcance: {tipo: "curso"}` (or `{tipo: "modulo"}`), `leccionActividades: false`
+   (the practice goes inside each section, written in its `content.md`) and `leccionesEvaluacion`: `true` when the tests go
+   in each unit, `"separadas"` when they go apart, `false` when they go out as a question bank and no test has a scored
+   simulation (`coursekit status <CODE>` says where they go). It creates one content per unit and one lesson per section,
+   with skeleton bricks. Follow `design_matrix_redaccion_status` until it finishes.
 2. `browse_workspace` / `get_content` to find each unit's content (folder named after the matrix)
-   and `coursekit assemble link <CODE> --unit N --content-id <id>`.
+   and `coursekit assemble link <CODE> --unit N --content-id <id>`. With `"separadas"`, the content «Evaluaciones — …» the
+   generator made after the units is the package of the tests: link it with its unit number (`coursekit status <CODE>`).
 3. The theme: `coursekit theme show --course <CODE>` gives the theme of the course (its own or the project's) in the
    `origin:` line, with its id: `set_content_theme` with that id on each content of the course. Without
    tokens from the platform there is no theme to apply: leave the default and tell the person about
@@ -34,12 +37,16 @@ With a local design (`design.tool: local`) there is no matrix in slxd to generat
 --content-id <id>`, and then step 3. Its lessons are made in section 3 below (`create_lesson`, one per lesson of the plan,
 in order).
 
-**The tests** ({{assessment_delivery}}). `coursekit status <CODE>` says where they go for this course. When they go
-apart, the package of the tests is one more unit (`coursekit status` gives its number, after the last unit): no generator
-skeleton for it, so `create_content` with the plan's `content_title`, `coursekit assemble link <CODE> --unit N --content-id
-<id>` and step 3, and its lessons are made in section 3. The generator still creates the evaluation lessons inside each unit:
-`delete_lesson` them once the person agrees (they go in the package of the tests). With a question-bank format the plan of a
-unit leaves out the tests that have no scored simulation: delete their generated lessons the same way.
+**The tests** ({{assessment_delivery}}). `coursekit status <CODE>` says where they go for this course and the number of each
+extra unit:
+- The package of the tests (when they go apart): with a design made in slxd it is the content the generator made; with a
+  local design, `create_content` with the plan's `content_title` and link it.
+- The bank content (creator backend with a question-bank format): the questions of every test, which creator exports as the
+  bank and which is never delivered as a package. `create_content` with `type: course` (creator exports the questions of its
+  evaluation lessons) and the plan's `content_title`, `coursekit assemble link <CODE> --unit N --content-id <id>`, step 3,
+  and its lessons in section 3 like any unit.
+- With a question-bank format the plan of a unit leaves out the tests that have no scored simulation: if the generator made
+  their lessons, `delete_lesson` them once the person agrees.
 
 The generator names each content after its **unit**. The plan gives the title it must have
 (`content_title`): the course title when it has a single unit, otherwise

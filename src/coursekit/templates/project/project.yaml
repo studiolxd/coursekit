@@ -10,6 +10,14 @@ ui_language: {ui_language}
 tone: {tone}
 # How learners are addressed: tu | usted (es), you (en).
 address: {address}
+# Who the courses of the project are for. Every course starts from it, and course.yaml › design (audience, level,
+# prerequisites) changes it for one course. The design agent asks for what is missing.
+audience:
+  who: ""          # the people: profile, roles, sector (e.g. office staff of a mid-sized company, no technical profile)
+  context: ""      # where they are: the organisation, its policies and tools, the accounts, licences and devices they have
+  knowledge: ""    # what they already know, and what they do not; empty: nothing is required, the courses start from zero
+  level: ""        # e.g. basic, intermediate, advanced; empty: each course by its subject, starting from basic
+  learning: ""     # how they learn: time they have, device, place, mandatory or voluntary, what moves them
 
 assembly:
   # creator | html

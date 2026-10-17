@@ -33,6 +33,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 from dataclasses import dataclass
 from importlib import resources
@@ -170,7 +171,11 @@ def catalog(course: dict) -> list[str]:
     lines = []
     for kind in ("scenes", "layers"):
         lines.append(t("video", f"catalog_{kind}"))
-        lines += _catalog_lines(pieces(course, kind))
+        found = pieces(course, kind)
+        off = sorted(name for name, piece in found.items() if piece_rules(course, name, piece["meta"].get("props") or {})["off"])
+        lines += _catalog_lines({n: p for n, p in found.items() if n not in off}, course)
+        if off:
+            lines.append(t("video", "catalog_off", names=", ".join(off)))
     kit = kit_source()
     replaced = {(kind, name): origin for kind, name, origin, _ in overrides(course)}
     for kind in OVERRIDABLE:
@@ -180,18 +185,23 @@ def catalog(course: dict) -> list[str]:
     return lines
 
 
-def _catalog_lines(found: dict[str, dict]) -> list[str]:
+def _catalog_lines(found: dict[str, dict], course: dict | None = None) -> list[str]:
     lines = []
     for name, scene in sorted(found.items()):
         meta = scene["meta"]
+        props = meta.get("props") or {}
+        if course is not None:  # what the project and the course allow of it
+            props = allowed_spec(props, piece_rules(course, name, props))
         hides = t("video", "hides", origin=origin_label(scene["hides"])) if scene["hides"] else ""
         lines.append(t("video", "catalog_scene", name=name, origin=origin_label(scene["origin"]), hides=hides,
                        description=localized(meta.get("description")) or "—"))
         if meta.get("built_from"):
             lines.append(t("video", "catalog_built", parts=", ".join(str(p) for p in meta["built_from"])))
-        for prop, spec in (meta.get("props") or {}).items():
+        for prop, spec in props.items():
             spec = spec if isinstance(spec, dict) else {}
             bits = [str(spec.get("type") or "?")]
+            bits += [t("video", "catalog_values", values=" | ".join(str(v) for v in spec["values"]))] if spec.get("values") else []
+            bits += [t("video", "catalog_default", value=spec["default"])] if "default" in spec else []
             bits += [t("video", "catalog_required")] if spec.get("required") else []
             bits += [t("video", "catalog_max", n=spec["max_chars"])] if spec.get("max_chars") else []
             bits += [t("video", "catalog_on_screen")] if spec.get("on_screen") else []
@@ -272,6 +282,7 @@ def check(course: dict, asset_id: str) -> list[Finding]:
     if not isinstance(items, list) or not items:
         return [*found, Finding("error", "NO_SCENES", "scenes", t("video", "no_scenes"))]
     seen: set[str] = set()
+    found += rule_problems(course) + text_problems(course)
     numbers = list(lang.tokens(coursemod.language(course)).get("number_words") or [])
     for n, scene in enumerate(items, 1):
         where = f"#{n}"
@@ -295,6 +306,7 @@ def check(course: dict, asset_id: str) -> list[Finding]:
         if not isinstance(props, dict):
             found.append(Finding("error", "PROPS", where, t("video", "bad_props")))
             continue
+        found += rule_findings(course, "scenes", kind, spec, props, where)
         for prop, rule in spec.items():
             rule = rule if isinstance(rule, dict) else {}
             value = props.get(prop)
@@ -333,6 +345,7 @@ def _check_layers(course: dict, scene: dict, where: str, says: str, numbers: lis
             continue
         spec = available[layer["type"]]["meta"].get("props") or {}
         props = layer.get("props") or {}
+        found += rule_findings(course, "layers", str(layer["type"]), spec, props if isinstance(props, dict) else {}, here)
         for prop, rule in spec.items():
             if isinstance(rule, dict) and rule.get("required") and props.get(prop) in (None, "", []):
                 found.append(Finding("error", "PROP_MISSING", here, t("video", "prop_missing", prop=prop)))
@@ -352,6 +365,96 @@ def style(course: dict) -> dict:
     return dict(configmod.effective("video", course["_project"], course).value)
 
 
+# ── what the project and the course allow of each piece ───────────────────────────────────────
+
+def piece_rules(course: dict, name: str, spec: dict) -> dict:
+    """What the project (config/video.yaml › scenes) and the course (course.yaml › video › scenes) allow of a scene or a layer:
+    {"off", "allow": {prop: [values]}, "defaults": {prop: value}}. `"*"` is for every piece that has the prop; the piece's own
+    rule wins over it; `<name>: false` leaves the piece out."""
+    block = style(course).get("scenes") or {}
+    out: dict = {"off": False, "allow": {}, "defaults": {}}
+    for key in ("*", name):
+        rule = block.get(key) if isinstance(block, dict) else None
+        if rule is False and key == name:
+            out["off"] = True
+        if not isinstance(rule, dict):
+            continue
+        for prop, values in (rule.get("allow") or {}).items():
+            if prop in spec:
+                out["allow"][prop] = [str(v) for v in (values if isinstance(values, list) else [values])]
+        for prop, value in (rule.get("defaults") or {}).items():
+            if prop in spec:
+                out["defaults"][prop] = value
+    return out
+
+
+def allowed_spec(spec: dict, rules: dict) -> dict:
+    """The props of a piece as the project allows them: each choice with only its allowed values, and the default it takes."""
+    out = {}
+    for prop, rule in spec.items():
+        rule = dict(rule) if isinstance(rule, dict) else {}
+        allow = rules["allow"].get(prop)
+        if allow is not None and rule.get("type") == "choice":
+            rule["values"] = [v for v in rule.get("values") or [] if str(v) in allow]
+        if prop in rules["defaults"]:
+            rule["default"] = rules["defaults"][prop]
+        out[prop] = rule
+    return out
+
+
+def with_defaults(props: dict, rules: dict) -> dict:
+    """The props of a piece with what the project fixes when the script says nothing: its default, or the one value allowed."""
+    out = dict(props)
+    for prop, allow in rules["allow"].items():
+        if out.get(prop) in (None, "") and prop not in rules["defaults"] and len(allow) == 1:
+            out[prop] = allow[0]
+    for prop, value in rules["defaults"].items():
+        if out.get(prop) in (None, ""):
+            out[prop] = value
+    return out
+
+
+def rule_findings(course: dict, kind: str, name: str, spec: dict, props: dict, where: str) -> list[Finding]:
+    """A piece the project leaves out, or a value it does not allow: an error that stops the render, a warning in the handoff
+    (which renders and lists it in its log)."""
+    level = "warning" if os.environ.get("COURSEKIT_HANDOFF") == "1" else "error"
+    rules = piece_rules(course, name, spec)
+    found = []
+    if rules["off"]:
+        found.append(Finding(level, "PIECE_OFF", where, t("video", "piece_off", kind=t("video", f"gallery_{kind}"), name=name)))
+    for prop, allow in rules["allow"].items():
+        value = with_defaults(props, rules).get(prop)
+        if value not in (None, "") and str(value) not in allow:
+            found.append(Finding(level, "NOT_ALLOWED", where, t("video", "not_allowed", prop=prop, value=value, allowed=", ".join(allow))))
+    return found
+
+
+def rule_report(course: dict) -> list[tuple[str, Finding]]:
+    """(video, finding) of every montage of the course that uses a piece the project leaves out or a value it does not allow."""
+    out = []
+    for path in sorted((course["_dir"] / "media" / "scripts").glob("*.video.yaml")):
+        asset_id = path.name.removesuffix(".video.yaml")
+        try:
+            out += [(asset_id, f) for f in check(course, asset_id) if f.code in ("PIECE_OFF", "NOT_ALLOWED")]
+        except VideoError:
+            continue
+    return out
+
+
+def rule_problems(course: dict) -> list[Finding]:
+    """A rule of config/video.yaml › scenes that leaves a prop without any value its piece has."""
+    found = []
+    for kind in ("scenes", "layers"):
+        for name, piece in pieces(course, kind).items():
+            spec = piece["meta"].get("props") or {}
+            rules = piece_rules(course, name, spec)
+            for prop, rule in allowed_spec(spec, rules).items():
+                if prop in rules["allow"] and rule.get("type") == "choice" and not rule.get("values"):
+                    found.append(Finding("warning", "RULE_EMPTY", f"config/video.yaml › scenes › {name}",
+                                         t("video", "rule_empty", prop=prop, name=name)))
+    return found
+
+
 def motion(course: dict, data: dict) -> dict:
     """The motion: the preset of `motion.character`, what the style sets one by one, and what the montage sets."""
     cfg = dict(style(course).get("motion") or {})
@@ -363,9 +466,42 @@ def motion(course: dict, data: dict) -> dict:
 def _look(course: dict) -> dict:
     """What the montage receives of the style: the background, the logo, the shapes, the weights and the fonts."""
     look = style(course)
+    found_fonts = fonts(course)
+    text, base = text_roles(course, (found_fonts or {}).get("families") or [])
     return {"background": str(look.get("background") or "shape"), "logo": _logo(course),
             "shapes": _numbers(look.get("shapes"), ("radius", "border"), ("shadow",)),
-            "weights": _weights(course, look), "fonts": fonts(course)}
+            "weights": _weights(course, look), "fonts": found_fonts, "text": text, "textBase": base}
+
+
+TEXT_KEYS = ("family", "size", "weight", "style", "transform", "tracking", "leading", "color", "numeric", "measure")
+
+
+def text_roles(course: dict, families: list[str]) -> tuple[dict, dict]:
+    """(the typography of each role of the text, as the video takes it; the reference size of each role, the package's). A family
+    that is not one of the fonts of the brand is left out (`text_problems` warns of it)."""
+    package = configmod.package_defaults("video").get("text") or {}
+    roles = style(course).get("text") or {}
+    known = {f.lower() for f in families}
+    out = {}
+    for role, values in roles.items():
+        values = {k: v for k, v in (values or {}).items() if k in TEXT_KEYS and v is not None} if isinstance(values, dict) else {}
+        if values.get("family") and str(values["family"]).lower() not in known:
+            values.pop("family")
+        out[role] = values
+    base = {role: float(v["size"]) for role, v in package.items() if isinstance(v, dict) and v.get("size")}
+    return out, base
+
+
+def text_problems(course: dict) -> list[Finding]:
+    """A role of config/video.yaml › text that asks for a family the fonts of the brand do not have."""
+    families = {f.lower() for f in (fonts(course) or {}).get("families") or []}
+    found = []
+    for role, values in (style(course).get("text") or {}).items():
+        family = (values or {}).get("family") if isinstance(values, dict) else None
+        if family and str(family).lower() not in families:
+            found.append(Finding("warning", "FONT_NOT_BRAND", f"config/video.yaml › text › {role}",
+                                 t("video", "font_not_brand", family=family, role=role, families=", ".join(sorted(families)) or "—")))
+    return found
 
 
 def _weights(course: dict, look: dict) -> dict:
@@ -562,7 +698,8 @@ def resolve(course: dict, asset_id: str) -> dict:
     for scene in data["scenes"]:
         sid = str(scene["id"])
         says = _text(scene.get("says")).strip()
-        props = dict(scene.get("props") or {})
+        spec = (pieces(course, "scenes").get(str(scene["type"])) or {"meta": {}})["meta"].get("props") or {}
+        props = with_defaults(dict(scene.get("props") or {}), piece_rules(course, str(scene["type"]), spec))
         if scene.get("type") == "screencast" and props.get("recording") and "events" not in props:
             events = (course["_dir"] / "media" / str(props["recording"])).with_suffix(".events.json")
             if events.exists():
@@ -578,7 +715,7 @@ def resolve(course: dict, asset_id: str) -> dict:
             seconds = max(seconds, float(scene["duration"]))
         frames = max(1, round(seconds * fps))
         resolved.append({"id": sid, "type": str(scene["type"]), "from": cursor, "frames": frames, "props": props, "audio": audio,
-                         "words": words, "says": says, "layers": _resolve_layers(scene, words, frames, fps)})
+                         "words": words, "says": says, "layers": _resolve_layers(scene, words, frames, fps, course)})
         cursor += frames
     return {"fps": fps, "width": int(fmt["width"]), "height": int(fmt["height"]), "frames": cursor,
             "tokens": {k: tokens[k] for k in ("color", "font", "radius", "space", "shadow") if k in tokens},
@@ -586,7 +723,15 @@ def resolve(course: dict, asset_id: str) -> dict:
             "scenes": resolved}
 
 
-def _resolve_layers(scene: dict, words: list[dict], frames: int, fps: int) -> list[dict]:
+def _layer_props(course: dict | None, layer: dict) -> dict:
+    props = dict(layer.get("props") or {})
+    if course is None:
+        return props
+    spec = (pieces(course, "layers").get(str(layer["type"])) or {"meta": {}})["meta"].get("props") or {}
+    return with_defaults(props, piece_rules(course, str(layer["type"]), spec))
+
+
+def _resolve_layers(scene: dict, words: list[dict], frames: int, fps: int, course: dict | None = None) -> list[dict]:
     """Each layer from the word it is anchored to (`at`) until `until` is said, or `hold` seconds (default 3), inside its scene.
     A layer whose word is not said is left out (`video check` warns of it)."""
     out = []
@@ -603,7 +748,7 @@ def _resolve_layers(scene: dict, words: list[dict], frames: int, fps: int) -> li
             end = hit["end"] if hit else end
         first = min(frames - 1, round(start * fps))
         out.append({"id": str(layer.get("id") or f"{scene['id']}-{n}"), "type": str(layer["type"]), "from": first,
-                    "frames": max(1, min(frames - first, round((end - start) * fps))), "props": dict(layer.get("props") or {})})
+                    "frames": max(1, min(frames - first, round((end - start) * fps))), "props": _layer_props(course, layer)})
     return out
 
 
@@ -650,10 +795,28 @@ def sync(course: dict) -> Path:
     return root
 
 
+def require_current(project) -> None:
+    """The Remotion workspace at the versions of coursekit, before rendering: otherwise stop and say to run `coursekit setup
+    --media`. In the handoff (nobody to run it) it goes on with what is installed and warns."""
+    from coursekit import setup
+
+    outdated = setup.remotion_outdated(project)
+    if not outdated:
+        return
+    message = t("video", "workspace_outdated", packages="; ".join(outdated))
+    if os.environ.get("COURSEKIT_HANDOFF") == "1":
+        print(t("commands", "warning_line", text=message), file=sys.stderr)
+        return
+    raise VideoError(message)
+
+
 def _remotion(root: Path, args: list[str]) -> None:
     exe = root / "node_modules" / ".bin" / ("remotion.cmd" if os.name == "nt" else "remotion")
     if not exe.exists():
         raise VideoError(t("video", "no_workspace"))
+    from coursekit.project import Project
+
+    require_current(Project(root.parent.parent))
     done = subprocess.run([str(exe), *args], cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace", check=False)
     if done.returncode != 0:
         tail = [line for line in (done.stderr or done.stdout).strip().splitlines() if line.strip()][-6:]
@@ -708,11 +871,14 @@ def example(piece: dict, language: str) -> dict | None:
     return dict(chosen) if isinstance(chosen, dict) else None
 
 
+SAMPLE_PHOTO = Path(__file__).parent / "videokit" / "gallery" / "sample-photo.jpg"  # a photo in the public domain (CC0)
+
+
 def _sample_image(tokens: dict) -> str:
     """An image for the examples that show a medium, drawn with the colours of the theme."""
     color = tokens.get("color") or {}
     surface, accent, line = (color.get(k) or fallback for k, fallback in (("surface", "#f2f2f2"), ("accent", "#0b5fff"),
-                                                                          ("line", "#d0d0d0")))
+                                                                          ("border", "#d0d0d0")))
     return (f'<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800">'
             f'<rect width="1280" height="800" fill="{surface}"/><rect x="80" y="80" width="1120" height="64" fill="{line}"/>'
             f'<rect x="80" y="200" width="520" height="520" fill="{accent}"/><rect x="660" y="200" width="540" height="40" fill="{line}"/>'
@@ -720,12 +886,275 @@ def _sample_image(tokens: dict) -> str:
             "</svg>")
 
 
-def gallery(course: dict, say=print) -> Path:
-    """Every scene and layer the course can use, drawn with its example in the theme and the style of the course: one short
-    video with all of them (`gallery.mp4`), a frame of each and a page to look at them (`index.html`), in
-    .cache/media/<CODE>/gallery/. What has no example is listed without a picture."""
+GALLERY_FIRST = "title"  # the cover goes first in the gallery: the first scene of most videos
+
+
+def _as_allowed(course: dict, name: str, piece: dict, language: str) -> dict:
+    """A piece as the project allows it, for the galleries: its props with only the allowed values, its example kept to them (a
+    value it does not allow becomes the first one it does), its variants that keep to them, and whether it is left out."""
+    spec = piece["meta"].get("props") or {}
+    rules = piece_rules(course, name, spec)
+    def kept(values: dict) -> dict:  # a value the project does not allow becomes the first one it does
+        values = with_defaults(values, rules)
+        for prop, allow in rules["allow"].items():
+            if values.get(prop) not in (None, "") and str(values[prop]) not in allow and allow:
+                values[prop] = allow[0]
+        return values
+
+    props = example(piece, language)
+    props = kept(props) if props is not None else None
+    variants, seen = [], [props]
+    for variant in piece["meta"].get("variants") or []:
+        if props is None or not isinstance(variant, dict) or not variant.get("name") or not isinstance(variant.get("props"), dict):
+            continue
+        drawn = kept({**props, **variant["props"]})
+        if drawn not in seen:  # a variant that, kept to the rules, is another one again is not drawn twice
+            seen.append(drawn)
+            variants.append({"name": variant["name"], "label": localized(variant.get("label")) or str(variant["name"]),
+                             "props": {k: v for k, v in drawn.items() if props.get(k) != v}})
+    return {"spec": allowed_spec(spec, rules), "example": props, "variants": variants, "off": rules["off"]}
+
+
+def _gallery_entries(course: dict, language: str) -> list[dict]:
+    """What the gallery draws, in order: the cover first, then the scenes and the layers by name; each piece with the props of its
+    example, and after it each of its variants (`variants:` of its metadata, their props over those of the example); only what the
+    project and the course allow (config/video.yaml › scenes)."""
+    out = []
+    for kind in ("scenes", "layers"):
+        found = sorted(pieces(course, kind).items(), key=lambda item: (item[0] != GALLERY_FIRST, item[0]))
+        for name, piece in found:
+            allowed = _as_allowed(course, name, piece, language)
+            if allowed["off"]:
+                continue
+            props = allowed["example"]
+            out.append({"kind": kind, "name": name, "key": name, "piece": piece, "props": props, "variant": None, "changes": {},
+                        "spec": allowed["spec"]})
+            for variant in allowed["variants"]:
+                out.append({"kind": kind, "name": name, "key": f"{name}-{variant['name']}", "piece": piece,
+                            "props": {**props, **variant["props"]}, "variant": variant["label"], "changes": variant["props"],
+                            "spec": allowed["spec"]})
+    return out
+
+
+LIVE_ENTRY = "kit/gallery/live.tsx"  # the app of the galleries, inside the workspace once the kit is synced
+
+
+def live_gallery(course: dict, say=print, code: bool = True, fresh: bool = True) -> Path:
+    """The live gallery: a page that plays every scene and layer with the player of Remotion, with a control for each prop, in
+    .cache/media/<CODE>/gallery-live/. Served by `serve_gallery`, which builds it again when something changes: `code: False`
+    writes only the data (a change of the configuration or the theme), `fresh: False` writes over the files the page is
+    reading instead of emptying the folder first."""
+    require_current(course["_project"])
+    out = course["_project"].cache_dir / "media" / course["code"] / "gallery-live"
+    if fresh:
+        shutil.rmtree(out, ignore_errors=True)
+    out.mkdir(parents=True, exist_ok=True)
+    return _gallery_app(course, out, {}, code, say)
+
+
+def _gallery_app(course: dict, out: Path, extra: dict, code: bool, say) -> Path:
+    """The interface of the galleries in a folder: the data of the pieces in the theme and the style of the course (data.js),
+    the app bundled with the design system of Studio LXD (app.js, app.css and its fonts) and its two pages: index.html, the
+    interface, and stage.html, where a piece is drawn with no CSS of Studio LXD. `extra` goes into the data (the clips of the
+    rendered gallery)."""
+    try:
+        tokens = thememod.load(course["_project"], course)
+    except thememod.ThemeError as exc:
+        raise VideoError(str(exc)) from None
+    language = coursemod.language(course)
+    fmt = {**DEFAULT_FORMAT, **(style(course).get("format") or {})}
+    root = sync(course) if code else workspace(course)
+    if not (root / "node_modules" / "esbuild").is_dir() or not (root / "node_modules" / "@remotion" / "player").is_dir():
+        raise VideoError(t("video", "no_live_tools"))
+    _write(out / "gallery-sample.svg", _sample_image(tokens))
+    shutil.copy2(SAMPLE_PHOTO, out / "gallery-sample-photo.jpg")
+    found = []
+    for kind in ("scenes", "layers"):
+        for name, piece in sorted(pieces(course, kind).items(), key=lambda item: (item[0] != GALLERY_FIRST, item[0])):
+            meta = piece["meta"]
+            allowed = _as_allowed(course, name, piece, language)
+            if allowed["off"]:
+                continue
+            props = {k: {**v, "help": localized(v.get("help"))} for k, v in allowed["spec"].items()}
+            variants = [{"name": str(v["name"]), "label": v["label"], "props": v["props"]} for v in allowed["variants"]]
+            found.append({"kind": kind, "name": name, "label": localized(meta.get("label")) or name,
+                          "origin": origin_label(piece["origin"]),
+                          "description": localized(meta.get("description")), "props": props, "example": allowed["example"],
+                          "variants": variants})
+    labels = {key: t("video", f"live_{key}") for key in LIVE_LABELS}
+    data = {"title": t("video", "gallery_title", code=course.get("_label") or course["code"]), "seconds": GALLERY_SECONDS,
+            "base": example(pieces(course, "scenes").get(GALLERY_BASE) or {"meta": {}}, language) or {"title": ""},
+            "samples": ["gallery-sample-photo.jpg", "gallery-sample.svg", *_course_images(course, out)], "labels": labels,
+            "pieces": found, "swatches": [[k, str(v)] for k, v in (tokens.get("color") or {}).items() if str(v).startswith("#")],
+            "montage": {"fps": int(fmt["fps"]), "width": int(fmt["width"]), "height": int(fmt["height"]),
+                        "tokens": {k: tokens[k] for k in ("color", "font", "radius", "space", "shadow") if k in tokens},
+                        "motion": motion(course, {}), "style": _look(course)}, **extra}
+    _write(out / "data.js", "window.__GALLERY__ = " + json.dumps(data, ensure_ascii=False) + ";\n")
+    if code or not (out / "app.js").exists():
+        say(t("video", "live_bundling"))
+        build = out / ".build"  # the bundle is written apart and moved in whole: the page never reads half of it
+        shutil.rmtree(build, ignore_errors=True)
+        options = {"entryPoints": {"app": LIVE_ENTRY}, "bundle": True, "format": "iife", "minify": True, "jsx": "automatic",
+                   "define": {"process.env.NODE_ENV": '"production"'}, "outdir": str(build), "assetNames": "assets/[name]-[hash]",
+                   "loader": {ext: "file" for ext in (".woff2", ".woff", ".ttf", ".otf", ".svg", ".png", ".jpg", ".webp")},
+                   "logLevel": "error"}
+        done = subprocess.run(["node", "-e", "require('esbuild').buildSync(JSON.parse(process.argv[1]))", json.dumps(options)],
+                              cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace", check=False)
+        if done.returncode != 0:
+            tail = [line for line in (done.stderr or done.stdout).strip().splitlines() if line.strip()][-6:]
+            raise VideoError(t("video", "render_failed", reason=" | ".join(tail) or "?"))
+        if (build / "assets").is_dir():
+            shutil.copytree(build / "assets", out / "assets", dirs_exist_ok=True)
+        for name in ("app.css", "app.js"):
+            if (build / name).exists():
+                os.replace(build / name, out / name)
+        shutil.rmtree(build, ignore_errors=True)
+    title = html_escape(data["title"])
+    head = (f'<!doctype html><html lang="{i18n.language()}"><head><meta charset="utf-8"><meta name="viewport" '
+            f'content="width=device-width, initial-scale=1"><link rel="icon" href="data:,"><title>{title}</title>')
+    scripts = '<div id="root"></div><script src="data.js"></script><script src="app.js"></script></body></html>\n'
+    # the interface, in the design system of Studio LXD (app.css); the piece, in a frame with no CSS of it
+    _write(out / "index.html", head + '<link rel="stylesheet" href="app.css"></head><body>' + scripts)
+    _write(out / "stage.html", head + '</head><body style="margin:0;overflow:hidden">' + scripts)
+    return out / "index.html"
+
+
+LIVE_LABELS = ("default", "none", "variant", "example", "no_example", "code", "scenes", "layers", "scenes_group", "layers_group",
+               "col_prop", "col_type", "col_control", "col_help", "broken", "typography", "sample_display", "sample_heading",
+               "sample_subheading", "sample_kicker", "sample_body", "sample_quote", "sample_statement", "sample_label",
+               "sample_caption", "skip", "menu", "menu_close", "navigation", "typography_intro", "style_group", "colours",
+               "colours_intro", "shapes", "shapes_intro", "id_hint", "background", "radius", "border", "shadow", "weight_normal",
+               "weight_strong", "col_value", "rendered_hint")
+
+
+def _write(path: Path, text: str) -> None:
+    """A file the page may be reading, replaced whole: never half written."""
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(text, encoding="utf-8", newline="\n")
+    os.replace(tmp, path)
+
+
+def _course_images(course: dict, out: Path, limit: int = 40) -> list[str]:
+    """The images of a course (media/files/), copied next to the live gallery, to try a piece with them."""
+    files = course["_dir"] / "media" / "files"
+    found = []
+    for path in sorted(files.glob("*")) if files.is_dir() else []:
+        if path.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp") and path.stat().st_size < 8_000_000 and len(found) < limit:
+            (out / "files").mkdir(exist_ok=True)
+            shutil.copy2(path, out / "files" / path.name)
+            found.append(f"files/{path.name}")
+    return found
+
+
+def watched(course: dict) -> dict[str, list[Path]]:
+    """What the live gallery is made from: `data`, what changes only its data (the configuration, the theme, the fonts, the
+    images of the course), and `code`, what needs the app bundled again (the scenes of the library, the project and the course)."""
+    project = course["_project"]
+    data = [project.file, project.config_dir / "video.yaml", project.config_dir / "media.yaml", project.theme_dir / "tokens.json",
+            thememod.tokens_path(project, course), project.theme_dir / "branding" / "fonts"]
+    if course["code"] != PROJECT_SCOPE:
+        data += [course["_dir"] / "course.yaml", course["_dir"] / "theme" / "branding" / "fonts", course["_dir"] / "media" / "files"]
+    return {"data": data, "code": [kit_source(), workspace(course) / "src", course["_dir"] / "video"]}
+
+
+SKIP = {"node_modules", "__pycache__", ".course"}  # never a source: dependencies, caches, the copies of the course scenes
+
+
+def stamp(paths: list[Path]) -> tuple:
+    """When each of these files (or the files inside these folders) last changed: compared second by second by the server."""
+    out = []
+    for path in paths:
+        if path.is_file():
+            files = [path]
+        else:
+            files = [p for p in path.rglob("*") if p.is_file() and not SKIP & set(p.parts)] if path.is_dir() else []
+        out += [(f.as_posix(), f.stat().st_mtime_ns, f.stat().st_size) for f in files]
+    return tuple(sorted(out))
+
+
+def serve_gallery(page: Path, port: int = 8766, open_browser: bool = True, say=print, reload=None) -> int:
+    """Serve the live gallery on 127.0.0.1 (the port asked for, else a free one) until Ctrl+C. With `reload` (what gives the
+    course again, read anew), it watches what the gallery is made from and builds it again when it changes: the page asks for
+    version.json every second and reloads itself, keeping the piece and the values it had."""
+    import functools
+    import threading
+    import time
+    import webbrowser
+    from http.server import SimpleHTTPRequestHandler
+
+    from coursekit.preview import Server
+
+    class Quiet(SimpleHTTPRequestHandler):
+        def log_message(self, *args) -> None:
+            pass
+
+        def end_headers(self) -> None:
+            self.send_header("Cache-Control", "no-store")
+            super().end_headers()
+
+    folder = page.parent
+    state = {"version": 1, "error": None}
+    _write(folder / "version.json", json.dumps(state))
+    stop = threading.Event()
+
+    def watch() -> None:
+        course = reload()
+        before = {kind: stamp(paths) for kind, paths in watched(course).items()}
+        while not stop.wait(1):
+            try:
+                course = reload()
+                now = {kind: stamp(paths) for kind, paths in watched(course).items()}
+            except Exception:  # a file half written: next second
+                continue
+            if now == before:
+                continue
+            code = now["code"] != before["code"]
+            before = now
+            try:
+                live_gallery(course, lambda m: None, code=code, fresh=False)
+                state["error"] = None
+                say(t("video", "live_updated", time=time.strftime("%H:%M:%S")))
+            except Exception as exc:  # a scene being written: the page shows it, and the next save fixes it
+                state["error"] = str(exc)
+                say(t("commands", "error_line", text=exc))
+            before = {kind: stamp(paths) for kind, paths in watched(course).items()}  # what the build itself touched
+            state["version"] += 1
+            _write(folder / "version.json", json.dumps(state))
+
+    handler = functools.partial(Quiet, directory=str(folder))
+    try:
+        server = Server(("127.0.0.1", port), handler)
+    except OSError:
+        server = Server(("127.0.0.1", 0), handler)
+    url = f"http://127.0.0.1:{server.server_address[1]}/"
+    say(t("video", "live_serving", url=url))
+    say(t("video", "live_watching") if reload else t("preview", "stop_hint"))
+    if reload:
+        threading.Thread(target=watch, daemon=True).start()
+    if open_browser:
+        threading.Timer(0.5, lambda: webbrowser.open(url)).start()
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        stop.set()
+        server.server_close()
+    return 0
+
+
+def html_escape(text: str) -> str:
     import html
 
+    return html.escape(text)
+
+
+def gallery(course: dict, say=print) -> Path:
+    """Every scene and layer the course can use, drawn with its example (and each of its variants) in the theme and the style of
+    the course and rendered: one short video with all of them (`gallery.mp4`), a clip and a frame of each, and the interface of
+    the galleries to look at them (`index.html`, the same as the live gallery's, with the clips in place of the player), in
+    .cache/media/<CODE>/gallery/. What has no example is listed without a picture."""
+    require_current(course["_project"])
     try:
         tokens = thememod.load(course["_project"], course)
     except thememod.ThemeError as exc:
@@ -735,19 +1164,18 @@ def gallery(course: dict, say=print) -> Path:
     fmt = {**DEFAULT_FORMAT, **(look.get("format") or {})}
     fps = int(fmt["fps"])
     frames = round(GALLERY_SECONDS * fps)
-    found = [("scenes", name, piece) for name, piece in sorted(pieces(course, "scenes").items())]
-    found += [("layers", name, piece) for name, piece in sorted(pieces(course, "layers").items())]
+    entries = _gallery_entries(course, language)
     base = example(pieces(course, "scenes").get(GALLERY_BASE) or {"meta": {}}, language) or {"title": ""}
     drawn, cursor = [], 0
-    for kind, name, piece in found:
-        props = example(piece, language)
+    for entry in entries:
+        props = entry["props"]
         if props is None:
             continue
-        if kind == "scenes":
-            scene = {"id": name, "type": name, "props": props, "layers": []}
+        if entry["kind"] == "scenes":
+            scene = {"id": entry["key"], "type": entry["name"], "props": props, "layers": []}
         else:
-            scene = {"id": f"layer-{name}", "type": GALLERY_BASE, "props": base,
-                     "layers": [{"id": name, "type": name, "from": 0, "frames": frames, "props": props}]}
+            scene = {"id": f"layer-{entry['key']}", "type": GALLERY_BASE, "props": base,
+                     "layers": [{"id": entry["key"], "type": entry["name"], "from": 0, "frames": frames, "props": props}]}
         drawn.append({**scene, "from": cursor, "frames": frames, "audio": None, "words": [], "says": ""})
         cursor += frames
     if not drawn:
@@ -758,12 +1186,14 @@ def gallery(course: dict, say=print) -> Path:
     out = course["_project"].cache_dir / "media" / course["code"] / "gallery"
     shutil.rmtree(out, ignore_errors=True)
     (out / "frames").mkdir(parents=True)
+    (out / "clips").mkdir()
     (out / "gallery-sample.svg").write_text(_sample_image(tokens), encoding="utf-8")
+    shutil.copy2(SAMPLE_PHOTO, out / "gallery-sample-photo.jpg")
     root = sync(course)
-    props = _props_file(course, "gallery", resolved)
+    props_file = _props_file(course, "gallery", resolved)
     say(t("video", "gallery_rendering", count=len(drawn)))
     video_file = out / "gallery.mp4"
-    _remotion(root, ["render", f"{KIT}/entry.ts", "Montage", str(video_file), f"--props={props}", f"--public-dir={out}", "--muted",
+    _remotion(root, ["render", f"{KIT}/entry.ts", "Montage", str(video_file), f"--props={props_file}", f"--public-dir={out}", "--muted",
                      "--scale=0.5", "--log=error"])
     starts = {}
     for scene in drawn:
@@ -772,45 +1202,12 @@ def gallery(course: dict, say=print) -> Path:
         at = (scene["from"] + scene["frames"] - resolved["motion"]["fade"] - 2) / fps  # all in, before it fades out
         mediatools.run(["ffmpeg", "-loglevel", "error", "-y", "-ss", f"{at:.3f}", "-i", str(video_file), "-frames:v", "1",
                         str(out / "frames" / f"{name}.png")])
-    cards = []
-    for kind, name, piece in found:
-        meta = piece["meta"]
-        origin = origin_label(piece["origin"]) + (f" · {t('video', 'gallery_hides', origin=origin_label(piece['hides']))}"
-                                                  if piece["hides"] else "")
-        props = ", ".join(f"{k}{'*' if isinstance(v, dict) and v.get('required') else ''}" for k, v in (meta.get("props") or {}).items())
-        if name in starts:
-            a, b = starts[name]
-            picture = (f'<video src="gallery.mp4#t={a:.2f},{b:.2f}" poster="frames/{html.escape(name)}.png" controls muted '
-                       f'preload="none"></video>')
-        else:
-            picture = f'<div class="none">{html.escape(t("video", "gallery_no_example"))}</div>'
-        cards.append(f'<article>{picture}<h3>{html.escape(name)} <small>{html.escape(t("video", f"gallery_{kind}"))} · '
-                     f'{html.escape(origin)}</small></h3><p>{html.escape(localized(meta.get("description")))}</p>'
-                     f'<p class="props">{html.escape(t("video", "gallery_props", props=props) if props else "")}</p></article>')
-    colours = "".join(f'<span title="{html.escape(k)}" style="background:{html.escape(str(v))}"></span>'
-                      for k, v in (tokens.get("color") or {}).items() if str(v).startswith("#"))
-    family = str((tokens.get("font") or {}).get("family") or "—")
-    look_of = resolved["style"]
-    shape, weight = look_of.get("shapes") or {}, look_of.get("weights") or {}
-    shapes = html.escape(t("video", "gallery_style", background=look_of.get("background"), radius=f"{shape.get('radius', 0):g}",
-                           border=f"{shape.get('border', 0):g}", shadow=shape.get("shadow"), normal=f"{weight.get('normal', 0):g}",
-                           strong=f"{weight.get('strong', 0):g}"))
-    fonts_line = ", ".join((resolved["style"]["fonts"] or {}).get("families") or []) or t("video", "gallery_machine_fonts")
-    title = t("video", "gallery_title", code=course.get("_label") or course["code"])
-    page = (f'<!doctype html><html lang="{i18n.language()}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, '
-            f'initial-scale=1"><title>{html.escape(title)}</title><style>'
-            "body{font-family:system-ui,sans-serif;margin:24px;background:#fafafa;color:#1a1a1a}"
-            "main{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:20px}"
-            "article{background:#fff;border:1px solid #ddd;padding:12px}"
-            "video,.none{width:100%;aspect-ratio:16/9;background:#eee;display:block}"
-            ".none{display:flex;align-items:center;justify-content:center;color:#666}h3{margin:10px 0 4px}small{color:#666;font-weight:400}"
-            ".props{color:#555;font-size:13px}"
-            ".swatches span{display:inline-block;width:28px;height:28px;margin-right:4px;border:1px solid #ccc}"
-            f'</style></head><body><h1>{html.escape(title)}</h1>'
-            f'<p class="swatches">{colours}</p><p>{html.escape(t("video", "gallery_fonts", family=family, files=fonts_line))}</p>'
-            f'<p class="props">{shapes}</p><main>{"".join(cards)}</main></body></html>\n')
-    (out / "index.html").write_text(page, encoding="utf-8", newline="\n")
-    return out / "index.html"
+        # its own clip: the card plays that piece alone, not the whole gallery
+        mediatools.run(["ffmpeg", "-loglevel", "error", "-y", "-ss", f"{scene['from'] / fps:.3f}", "-t", f"{scene['frames'] / fps:.3f}",
+                        "-i", str(video_file), "-an", "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p",
+                        str(out / "clips" / f"{name}.mp4")])
+    clips = {key: {"clip": f"clips/{key}.mp4", "poster": f"frames/{key}.png"} for key in starts}
+    return _gallery_app(course, out, {"rendered": True, "clips": clips}, True, say)
 
 
 def _captions(resolved: dict) -> tuple[str, list[dict]]:

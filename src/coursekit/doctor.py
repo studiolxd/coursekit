@@ -142,6 +142,10 @@ def collect(project: Project) -> list[Section]:
     remotion_dir = project.root / "tools" / "remotion"
     if remotion_dir.exists():
         media.add((remotion_dir / "node_modules").is_dir(), t("doctor", "remotion_deps"), "coursekit setup --media")
+        from coursekit import setup as setupmod
+
+        outdated = setupmod.remotion_outdated(project)
+        media.add(not outdated, t("doctor", "remotion_versions", packages="; ".join(outdated) or "—"), "coursekit setup --media")
     voice = os.environ.get("PIPER_VOICE", "")
     media.add(bool(voice) and Path(voice).exists(), "PIPER_VOICE", "coursekit setup --media")
     for key in ("ELEVENLABS_API_KEY", "AZURE_SPEECH_KEY", "GOOGLE_TTS_API_KEY", "GEMINI_API_KEY", "MAGNIFIC_API_KEY"):

@@ -456,6 +456,51 @@ def _produce(ctx: Context, course: dict) -> None:
             break
     if pending:
         raise _stuck(ctx, "media_pending", log, why=_why(ctx, log, summary, "media"), assets=", ".join(a["id"] for a in pending))
+    from coursekit import video as videomod
+
+    for asset_id, finding in videomod.rule_report(ctx.course()):  # rendered anyway: the person sees what to look at
+        ctx.log(t("handoff", "video_rule_line", id=asset_id, where=finding.where, text=finding.text))
+
+
+ASSUMPTIONS = re.compile(r"<!--\s*assumptions\s*-->(.*?)<!--\s*/assumptions\s*-->", re.S)
+NOTES = Path("design") / "proposal-notes.md"
+REPORT = Path("handoff-report.md")
+
+
+def design_assumptions(course: dict) -> list[str]:
+    """What the design decided with no one to ask: the `- ` lines of the assumptions block of its proposal notes."""
+    path = course["_dir"] / NOTES if course.get("_dir") else None
+    if not path or not path.exists():
+        return []
+    blocks = ASSUMPTIONS.findall(path.read_text(encoding="utf-8"))
+    return [line.strip()[2:].strip() for block in blocks for line in block.splitlines() if line.strip().startswith("- ")]
+
+
+def write_report(course: dict, stopped: str | None = None) -> Path | None:
+    """The report of a handoff (`courses/<CODE>/handoff-report.md`), when it finishes or stops (`stopped`, the reason): who
+    signed or why it stopped, and what a person has to look at now: the decisions the design took without asking, the
+    recordings and captures waiting for a person, the videos to check."""
+    head = (t("handoff", "report_stopped", status=course.get("status"), reason=stopped) if stopped is not None
+            else t("handoff", "done", code=course["code"], who=HANDOFF.name))
+    lines = [f"# {t('handoff', 'report_title', code=course['code'], title=course.get('title') or '')}", "", head, ""]
+    sections = [
+        (t("handoff", "report_assumptions", path=NOTES.as_posix()), design_assumptions(course)),
+        (t("handoff", "report_recordings"), [f"{a['id']} ({a.get('title', '')}) → media/scripts/{a['id']}.md"
+                                             for a in awaiting_recordings(course)]),
+        (t("handoff", "report_captures"), [f"{a['id']} ({mediamod.capture_waiting(a)})" for a in captures_to_review(course)]),
+        (t("handoff", "report_videos", path=videosmod.REPORT), [f"{(v.get('channel') or {}).get('name') or '—'} · {v['url']}"
+                                                               for v in unchecked_videos(course)]),
+    ]
+    pending = [(title, items) for title, items in sections if items]
+    for title, items in pending:
+        lines += [f"## {title} ({len(items)})", "", *[f"- {item}" for item in items], ""]
+    if not pending:
+        lines += [t("handoff", "report_nothing"), ""]
+    if not course.get("_dir"):  # a course that is not on disk (nothing to report into)
+        return None
+    path = course["_dir"] / REPORT
+    path.write_text("\n".join(lines), encoding="utf-8", newline="\n")
+    return path
 
 
 def unchecked_videos(course: dict) -> list[dict]:
@@ -481,6 +526,11 @@ def _videos(ctx: Context, course: dict) -> None:
 
 
 def _media(ctx: Context, course: dict) -> None:
+    from coursekit import setup as setupmod
+
+    outdated = setupmod.remotion_outdated(ctx.project)  # nobody here can install: it goes on with what there is, and says so
+    if outdated:
+        ctx.log(t("handoff", "media_outdated_line", packages="; ".join(outdated)))
     _videos(ctx, course)
     mediamod.extract(course)
     _tts_batch(ctx, course, send=False)
@@ -559,7 +609,8 @@ def proceed(ctx: Context) -> dict:
     if problem:
         raise _stuck(ctx, "client_review_required")
     # what the agents record by themselves (the history, the delivery) is signed by the handoff, not by whoever launched it
-    launch.SESSION_ENV.update(COURSEKIT_USER_NAME=HANDOFF.name, COURSEKIT_USER_EMAIL=HANDOFF.email)
+    # and a video that breaks the rules of the brand (config/video.yaml › scenes) is rendered with a warning, listed in the log
+    launch.SESSION_ENV.update(COURSEKIT_USER_NAME=HANDOFF.name, COURSEKIT_USER_EMAIL=HANDOFF.email, COURSEKIT_HANDOFF="1")
     try:
         return _run_stages(ctx)
     finally:

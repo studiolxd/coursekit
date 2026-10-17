@@ -163,6 +163,7 @@ col_message: {es: "Mensaje", en: "Message"}
 col_element: {es: "Elemento", en: "Element"}
 col_objective: {es: "Objetivo", en: "Objective"}
 col_sections: {es: "Apartados", en: "Sections"}
+col_section: {es: "Apartado", en: "Section"}
 col_learning: {es: "Actividades de aprendizaje", en: "Learning activities"}
 col_assessment: {es: "Actividades de evaluación", en: "Assessment activities"}
 col_min_words: {es: "Palabras mín.", en: "Min. words"}
@@ -207,4 +208,11 @@ instrument_rubric: {es: "Rúbrica", en: "Rubric"}
 severity_error: {es: "Error", en: "Error"}
 severity_warning: {es: "Aviso", en: "Warning"}
 severity_expected: {es: "Esperado", en: "Expected"}
+validation_missing:
+  es: "{code}: falta design/validation.json: lanza design_matrix_validate y guarda su resultado ahí (la exportación son los tres ficheros juntos)"
+  en: "{code}: design/validation.json is missing: run design_matrix_validate and save its result there (the export is the three files together)"
+validation_stale:
+  es: "{code}: design/validation.json es anterior a design/matrix.json: la matriz cambió y no se volvió a validar. Lanza design_matrix_validate, guarda su resultado en design/validation.json y vuelve a ejecutar coursekit design {code}"
+  en: "{code}: design/validation.json is older than design/matrix.json: the matrix changed and was not validated again. Run design_matrix_validate, save its result in design/validation.json and run coursekit design {code} again"
+key_differs: {es: "el objetivo «{text}» tiene la clave {key} en slxd, pero coursekit lo llama {id}: cambia su clave a {id}", en: "the objective “{text}” has the key {key} in slxd, but coursekit calls it {id}: change its key to {id}"}
 no_findings: {es: "Sin errores ni avisos", en: "No errors or warnings"}

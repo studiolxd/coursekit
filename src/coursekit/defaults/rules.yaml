@@ -75,7 +75,12 @@ decision_based:
 design:
   competencies_per_course: "2–4"
   objectives_per_unit: "2–4"
-  intro_summary_hours: "0.2–0.3"
+  unit_hours_step: 0.5          # the hours of each unit are a multiple of this (0.5: whole or half hours; 0: any). The units are
+                               # seen by people (the course sheet, the catalog, a certificate); the sections are not, and take
+                               # any split inside their unit. `coursekit sync` warns about a unit that does not fit
+  intro_share: 0.05             # the introduction takes at most this share of the hours of its unit, and the summary
+  summary_share: 0.05           # this one: they present and recap, they do not teach (a unit of 2 h: 0.1 h each). The hours
+                               # round up to the next 0.05 h; `coursekit sync` warns about one that takes more
 
 # Common errors (misconceptions): what the audience gets wrong today, and why, per objective. The design lists them in
 # courses/<CODE>/design/misconceptions.yaml, signed with the design; the content puts each one in front of the learner (a

@@ -19,6 +19,11 @@ itself. The instructions that coursekit generates for course projects live in
   product.
 - Examples and test fixtures are generic and invented (e.g. a course on strong passwords, client
   "ACME").
+- coursekit is a product of Studio LXD: its own interface (the pages it serves to people, such as the
+  video gallery) carries the brand of Studio LXD, through its design system `@studiolxd/brand` (a
+  pinned dependency of the Remotion workspace). What a project makes (its videos, its resources)
+  carries the brand of that project, never Studio LXD's. The rules above still hold for clients and
+  real projects.
 
 ## Languages
 

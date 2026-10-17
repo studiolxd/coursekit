@@ -28,20 +28,20 @@ def set_theme(root, **values):
 
 def test_the_project_fixes_the_colours_the_platform_lacks_without_touching_the_theme(course, capsys):  # noqa: F811
     root = course.parent.parent
-    set_theme(root, roles={"surface": "white", "line": "navy", "text-soft": "text"}, radius=0, shadow="none")
+    set_theme(root, roles={"surface": "white", "border": "navy", "text-muted": "text"}, radius=0, shadow="none")
     assert main(["theme", "import", str(THEME)]) == 0
     tokens = json.loads((root / "theme" / "tokens.json").read_text(encoding="utf-8"))
-    assert tokens["color"]["surface"] == "#FFFFFF" and tokens["color"]["line"] == "#1B365D"
-    assert tokens["color"]["text-soft"] == tokens["color"]["text"]
-    assert tokens["origin"]["set"] == {"surface": "white", "line": "navy", "text-soft": "text", "radius": "0", "shadow": "none"}
-    assert "surface" not in tokens["origin"]["derived"] and "highlight" in tokens["origin"]["derived"]
+    assert tokens["color"]["surface"] == "#FFFFFF" and tokens["color"]["border"] == "#1B365D"
+    assert tokens["color"]["text-muted"] == tokens["color"]["text"]
+    assert tokens["origin"]["set"] == {"surface": "white", "border": "navy", "text-muted": "text", "radius": "0", "shadow": "none"}
+    assert "surface" not in tokens["origin"]["derived"] and "surface-highlight" in tokens["origin"]["derived"]
     assert tokens["radius"] == "0px" and tokens["shadow"] == {"soft": "none"} and tokens["origin"]["defaults"] == ["space"]
     assert "--radius: 0px;" in (root / "theme" / "tokens.css").read_text(encoding="utf-8")
     capsys.readouterr()
     assert main(["theme", "roles"]) == 0
     out = capsys.readouterr().out
     assert "surface  #FFFFFF (white)  · fixed by the project (white)" in out
-    assert "highlight" in out and "derived by coursekit" in out and "seen in: the background of the cards" in out
+    assert "surface-highlight" in out and "derived by coursekit" in out and "seen in: the background of the cards" in out
     assert "Palette of the theme (for theme › roles): black #000000, white #FFFFFF" in out
     set_theme(root, roles={"surface": "grey-lightest"})
     assert main(["theme", "import", str(THEME)]) == 1
@@ -50,13 +50,13 @@ def test_the_project_fixes_the_colours_the_platform_lacks_without_touching_the_t
 
 def test_a_course_fixes_its_own_roles_over_those_of_the_project(course):  # noqa: F811
     root = course.parent.parent
-    set_theme(root, roles={"surface": "white", "line": "navy"})
+    set_theme(root, roles={"surface": "white", "border": "navy"})
     data = yaml.safe_load((course / "course.yaml").read_text(encoding="utf-8"))
-    data["theme"] = {"roles": {"line": "black"}, "radius": 4}
+    data["theme"] = {"roles": {"border": "black"}, "radius": 4}
     (course / "course.yaml").write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
     fixed = theme.settings(find_project(), load_course(find_project(), "PWD"))
-    assert fixed == {"roles": {"surface": "white", "line": "black"}, "radius": 4}
-    assert theme.settings(find_project()) == {"roles": {"surface": "white", "line": "navy"}}
+    assert fixed == {"roles": {"surface": "white", "border": "black"}, "radius": 4}
+    assert theme.settings(find_project()) == {"roles": {"surface": "white", "border": "navy"}}
 
 
 # ── coursekit brand ──────────────────────────────────────────────────────────────────────────
@@ -330,7 +330,7 @@ def test_the_borders_and_weights_of_the_brand_reach_the_simulations_and_the_vide
     assert main(["theme", "import", str(THEME)]) == 0
     css = (root / "theme" / "tokens.css").read_text(encoding="utf-8")
     assert "--border-width: 1px;" in css and "--font-weight: 300;" in css and "--font-weight-strong: 500;" in css
-    assert ".btn:hover { color: var(--color-accent-strong" in css and "border-left: 4px solid var(--color-accent-strong" in css
+    assert ".btn:hover { color: var(--color-accent-ink" in css and "border-left: 4px solid var(--color-accent-ink" in css
     assert video._weights(montage(course), {}) == {"normal": 300.0, "strong": 500.0}
     assert video._weights(montage(course), {"weights": {"strong": 600}}) == {"normal": 300.0, "strong": 600.0}
 

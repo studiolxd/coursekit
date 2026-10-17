@@ -12,6 +12,8 @@ agent_line:
 unit_line:
   es: "  · unidad {n}: {command} ({label})"
   en: "  · unit {n}: {command} ({label})"
+media_outdated_line: {es: "  aviso: el espacio de vídeo (Remotion) no tiene las versiones de coursekit ({packages}); los vídeos se hacen con las instaladas. Después: coursekit setup --media", en: "  warning: the video workspace (Remotion) is not at the versions of coursekit ({packages}); the videos are made with the installed ones. Afterwards: coursekit setup --media"}
+video_rule_line: {es: "  aviso: el vídeo {id} se salta las reglas de la marca: {where} · {text}", en: "  warning: the video {id} breaks the rules of the brand: {where} · {text}"}
 signed_line: {es: "  · {text}", en: "  · {text}"}
 warning_line: {es: "  aviso: {text}", en: "  warning: {text}"}
 not_ready_line:
@@ -116,3 +118,18 @@ tts_batch_failed: {es: "el batch de Gemini de {code} no se pudo enviar o recoger
 media_style_missing:
   es: "{code}: no se ha podido firmar la guía de estilo de los recursos: "
   en: "{code}: the style guide of the media could not be signed: "
+assumptions_to_check:
+  es: "el diseño decidió {count} cosa(s) sin poder preguntar; revísalas en {path}: {list}"
+  en: "the design decided {count} thing(s) with no one to ask; check them in {path}: {list}"
+report_written:
+  es: "informe del handoff: {path}"
+  en: "handoff report: {path}"
+report_title: {es: "{code} — {title}: informe del handoff", en: "{code} — {title}: handoff report"}
+report_assumptions: {es: "Decisiones del diseño sin confirmar ({path})", en: "Design decisions to confirm ({path})"}
+report_recordings: {es: "Grabaciones o capturas que tiene que hacer una persona", en: "Recordings or captures a person has to make"}
+report_captures: {es: "Capturas con datos personales tapados que revisar", en: "Captures with personal data covered to review"}
+report_videos: {es: "Vídeos de sitios prohibidos por comprobar ({path})", en: "Videos of forbidden sites to check ({path})"}
+report_nothing: {es: "Nada pendiente de revisar.", en: "Nothing waiting for review."}
+report_stopped:
+  es: "El handoff se ha parado en «{status}»: {reason}"
+  en: "The handoff stopped at '{status}': {reason}"

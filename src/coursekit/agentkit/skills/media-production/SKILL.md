@@ -181,7 +181,9 @@ credits.
   what its voice lasts, in the theme of the course. The order of decision for each scene:
   1. a scene that exists tells the idea well: use it (`coursekit video catalog <CODE>` lists the scenes of the library, of
      the project and of the course, their props, their limits and what each one is built from; `coursekit video gallery
-     <CODE>` draws them in the theme of the course, in a page you can look at);
+     <CODE>` draws them in the theme of the course, in a page you can look at). It lists only what the brand allows
+     (`config/video.yaml › scenes`): the values of each prop and its default; a scene it leaves out is not used, and
+     `coursekit video check` refuses a value it does not allow;
   2. none does: **create one**, composed from the atoms and molecules of the library (`Heading`, `Text`, `Enter`, `Stagger`,
      `Underline`, `Counter`, `MediaSlot`, `Ring`, `Background`, `Card`, `Badge`, `Arrow`, `TitleBlock`, `BulletList`,
      `StatBlock`, `CompareColumn`, `StepNode`, `ScreenRecording`;

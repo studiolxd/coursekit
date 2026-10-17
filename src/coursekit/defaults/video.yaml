@@ -39,6 +39,39 @@ weights:
 # be the ones of the theme. null: the fonts of the brand (media.yaml › fonts: theme/branding/fonts/fonts.css by default).
 fonts: null             # e.g. theme/branding/fonts/fonts.css
 
+# The typography of each role of the text. `size` is the reference size of the role (px of a 1920 x 1080 frame): a project that
+# changes it scales every text of that role in proportion to what each piece draws (a long title still shrinks to fit). `family`
+# is a family of the fonts of the brand (theme/branding/fonts/fonts.css; another one is warned of and left out); `color` the name
+# of a role of the theme (text, headings, text-muted, accent-ink…), never a hex: a text on the accent or on a dark photo keeps
+# its ink. `weight`, `style` (normal, italic), `transform` (none, uppercase, lowercase, capitalize), `tracking` (px between
+# letters), `leading` (the line height, e.g. 1.2), `numeric` (tabular: figures of one width, so a counter does not jump) and
+# `measure` (the longest line, in characters). null: what each piece draws. A course changes them in its course.yaml › video.
+text:
+  display:    {size: 104, family: null, weight: null, style: null, transform: null, tracking: null, leading: null, color: null}  # the title of a cover
+  heading:    {size: 88,  family: null, weight: null, style: null, transform: null, tracking: null, leading: null, color: null}  # the title of the other scenes
+  subheading: {size: 44,  family: null, weight: null, style: null, transform: null, tracking: null, leading: null, color: null}  # the line under a title
+  kicker:     {size: 36,  family: null, weight: null, style: null, transform: uppercase, tracking: 2, leading: null, color: null}  # the label over a title
+  body:       {size: 48,  family: null, weight: null, style: null, transform: null, tracking: null, leading: null, color: null, measure: null}  # points, columns, notes
+  quote:      {size: 84,  family: null, weight: null, style: null, transform: null, tracking: null, leading: null, color: null, measure: null}  # the phrase of a quote
+  statement:  {size: 92,  family: null, weight: null, style: null, transform: null, tracking: null, leading: null, color: null, measure: null}  # the phrase to keep
+  label:      {size: 40,  family: null, weight: null, style: null, transform: null, tracking: null, leading: null, color: null}  # names, roles, the titles of layers
+  stat:       {size: 220, family: null, weight: null, style: null, transform: null, tracking: null, leading: null, color: null, numeric: null}  # the figure of a stat
+  step:       {size: 40,  family: null, weight: null, style: null, transform: null, tracking: null, leading: null, color: null, numeric: null}  # the number of a step
+  caption:    {size: 36,  family: null, weight: null, style: null, transform: null, tracking: null, leading: null, color: null}  # sources, notes, the smallest
+
+# What the brand allows of the scenes and layers of the library (and of the project): coursekit offers every possibility, and
+# the project (or a course, in the `video:` section of its course.yaml) narrows them. For each piece, `allow` gives the values a
+# prop may take, `defaults` the value it takes when the script says nothing (with one value allowed, that one), and `<name>:
+# false` leaves the piece out. `"*"` is for every piece that has the prop (also the ones coursekit adds later); the piece's own
+# rule wins over it. The catalog the agent reads and both galleries show only what is allowed; `coursekit video check` refuses
+# the rest and the render does not start (in the handoff it is a warning, and its log lists it).
+scenes: {}
+# e.g.
+# scenes:
+#   "*": {allow: {align: [left]}}                       # no centred texts in this brand
+#   title: {allow: {background: [plain, accent, photo]}, defaults: {background: plain}}
+#   quote: false                                        # not used
+
 # The frame of a new video, and the air after the narration of each scene.
 format: {width: 1920, height: 1080, fps: 30}
 pad_seconds: 0.5

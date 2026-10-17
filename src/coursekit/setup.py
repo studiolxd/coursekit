@@ -243,6 +243,61 @@ def piper_voice(project: Project, say: Say) -> None:
     say(t("setup", "piper_ok", name=name))
 
 
+def sync_dependencies(template: Path, package: Path) -> list[str]:
+    """The dependencies coursekit manages (those of its template) at the versions of the template, in the package.json of a
+    project; what the project added stays. Returns the names it changed."""
+    import json
+
+    try:
+        mine, theirs = json.loads(template.read_text(encoding="utf-8")), json.loads(package.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    changed = []
+    for section in ("dependencies", "devDependencies"):
+        for name, version in (mine.get(section) or {}).items():
+            if (theirs.get(section) or {}).get(name) != version:
+                theirs.setdefault(section, {})[name] = version
+                changed.append(name)
+    if changed:
+        package.write_text(json.dumps(theirs, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+    return changed
+
+
+def remotion_template() -> Path:
+    from importlib import resources
+
+    return Path(str(resources.files("coursekit.templates.remotion"))) / "package.json"
+
+
+def remotion_outdated(project: Project) -> list[str]:
+    """The packages of the Remotion workspace of a project that are not at the version of coursekit's template: an exact version
+    must be that one; a range (^19.0.0) must keep its major version. `name installed → wanted`, empty when it is up to date or
+    the project has no workspace."""
+    import json
+    import re
+
+    folder = project.root / "tools" / "remotion"
+    if not (folder / "node_modules").exists():
+        return []
+    try:
+        wanted = json.loads(remotion_template().read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    out = []
+    for section in ("dependencies", "devDependencies"):
+        for name, version in (wanted.get(section) or {}).items():
+            try:
+                installed = json.loads((folder / "node_modules" / name / "package.json").read_text(encoding="utf-8")).get("version", "")
+            except (OSError, ValueError):
+                installed = ""
+            exact = re.fullmatch(r"\d+\.\d+\.\d+", version)
+            major = re.match(r"[\^~]?(\d+)", version)
+            fine = installed == version if exact else bool(installed and major and installed.split(".")[0] == major.group(1))
+            if not fine:
+                out.append(f"{name} {installed or '—'} → {version}")
+    return out
+
+
 def remotion(project: Project, say: Say) -> None:
     """Remotion workspace for videos: the sources in tools/remotion (from the package template) and its node_modules,
     installed once in the store and linked, so no project downloads Remotion and its browser again."""
@@ -261,6 +316,9 @@ def remotion(project: Project, say: Say) -> None:
                 (target / relative).parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(item, target / relative)
                 say(t("setup", "remotion_added", path=f"tools/remotion/{relative.as_posix()}"))
+        updated = sync_dependencies(source / "package.json", target / "package.json")
+        if updated:
+            say(t("setup", "remotion_deps_updated", names=", ".join(updated)))
     if not shutil.which("npm"):
         say(t("setup", "npm_missing"))
         return

@@ -114,4 +114,5 @@ role_media: {es: multimedia, en: media}
 role_illustration: {es: ilustración, en: illustration}
 role_assembly: {es: montaje, en: assembly}
 help_roles: {es: "vuelve a elegir la herramienta y el modelo de cada rol", en: "choose again the tool and model of each role"}
+remotion_deps_updated: {es: "dependencias del espacio de Remotion al día con coursekit: {names} (se instalan de nuevo en el almacén)", en: "dependencies of the Remotion workspace brought up to coursekit: {names} (installed again in the store)"}
 remotion_added: {es: "añadido {path} (de la plantilla de coursekit)", en: "added {path} (from the template of coursekit)"}

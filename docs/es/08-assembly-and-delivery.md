@@ -137,27 +137,27 @@ Las evaluaciones se escriben en el `assessment.md` de su unidad, y ahí las ven 
 | `placement` | Qué se monta y se entrega |
 |---|---|
 | `unit` (por defecto) | Cada unidad lleva sus evaluaciones como lecciones de evaluación, y su paquete informa de su nota. |
-| `separate` | Las unidades no llevan evaluaciones e informan del avance (`lessonProgress`), completadas o incompletas (`completed_incomplete`). Todas las evaluaciones del curso van en un paquete propio, una unidad más después de la última (`coursekit status` da su número), con el título del curso y «Evaluación» («Assessment» en inglés); informa de la nota (`quiz`). El plan de cada unidad lo dice en `score_source` (y `reporting: completed_incomplete` en una unidad sin evaluaciones), y el agente de entrega los pasa a la exportación de creator. Con el backend creator su contenido se crea con `create_content` y se registra en `course.yaml › assessment_unit`; las lecciones de evaluación que el generador del diseño creó dentro de cada unidad se borran. |
+| `separate` | Las unidades no llevan evaluaciones e informan del avance (`lessonProgress`), completadas o incompletas (`completed_incomplete`). Todas las evaluaciones del curso van en un paquete propio, una unidad más después de la última (`coursekit status` da su número), con el título del curso y «Evaluación» («Assessment» en inglés); informa de la nota (`quiz`). El plan de cada unidad lo dice en `score_source` (y `reporting: completed_incomplete` en una unidad sin evaluaciones), y el agente de entrega los pasa a la exportación de creator. Con el backend creator y un diseño hecho en slxd, lo crea el generador (`design_matrix_generate_course` con `leccionesEvaluacion: "separadas"`: un contenido «Evaluaciones — …» después de las unidades, con la calificación del curso) y el agente lo enlaza; con un diseño local se crea con `create_content`. Se registra en `course.yaml › assessment_unit`. |
 
 | `format` | Las preguntas de las evaluaciones |
 |---|---|
 | `platform` (por defecto) | Lecciones de evaluación de los paquetes, en creator o en el paquete html. |
-| `aiken`, `gift`, `moodle-xml` | Un banco de preguntas que importa el LMS, escrito por `coursekit delivery questions` en `delivery/`. Las preguntas salen de los paquetes; una actividad con una simulación puntuable deja la simulación en su paquete (el de su unidad, o el de las evaluaciones con `separate`), y una actividad que solo tiene preguntas no tiene lección. Un paquete que se queda sin evaluaciones informa del avance, completado o incompleto (`score_source: lessonProgress` y `reporting: completed_incomplete` en su plan), diga lo que diga `export`. |
+| `aiken`, `gift`, `moodle-xml`, `qti` | Un banco de preguntas que importa el LMS, registrado por `coursekit delivery questions` en `delivery/`. Con el backend creator (`gift`, `moodle-xml`, `qti`) las preguntas de todas las evaluaciones van en un contenido propio en creator, el contenido del banco (una unidad más después de las otras, que nunca se entrega como paquete, registrada en `course.yaml › bank_unit`), y creator exporta el banco (`create_export` con `deliveryType: question_bank`; `qti` es un zip IMS QTI 2.1); `delivery questions --url` lo guarda. Con html, o en `aiken`, `delivery questions` lo escribe a partir de los `assessment.md`. Las preguntas salen de los paquetes; una actividad con una simulación puntuable deja la simulación en su paquete (el de su unidad, o el de las evaluaciones con `separate`), y una actividad que solo tiene preguntas no tiene lección. Un paquete que se queda sin evaluaciones informa del avance, completado o incompleto (`score_source: lessonProgress` y `reporting: completed_incomplete` en su plan), diga lo que diga `export`. |
 
 Cada formato de banco admite unos tipos de pregunta: `verify` rechaza los demás en `assessment.md` mientras se redacta la unidad, y `delivery questions` también los rechaza.
 
-| Directiva | `aiken` | `gift` | `moodle-xml` |
-|---|---|---|---|
-| `single-choice` | ✔ | ✔ | ✔ (`multichoice`, una respuesta) |
-| `multi-select` | ✘ | ✔ (cada respuesta correcta vale 100/n %, cada incorrecta resta) | ✔ (`multichoice`, varias respuestas) |
-| `true-false` | ✘ | ✔ | ✔ |
-| `match` | ✘ | ✔ | ✔ (`matching`) |
-| `sorting-groups` | ✘ | ✔ (como emparejamiento: cada elemento con su grupo) | ✔ (`matching`) |
-| `short-answer` | ✘ | ✔ | ✔ |
-| `fill-in-the-blank` | ✘ | ✔ (un hueco por pregunta) | ✔ (`cloze`, varios huecos) |
-| `sorting`, `order-words` | ✘ | ✘ | ✘ |
+| Directiva | `aiken` | `gift` | `moodle-xml` | `qti` (creator) |
+|---|---|---|---|---|
+| `single-choice` | ✔ | ✔ | ✔ (`multichoice`, una respuesta) | ✔ |
+| `multi-select` | ✘ | ✔ (cada respuesta correcta vale 100/n %, cada incorrecta resta) | ✔ (`multichoice`, varias respuestas) | ✔ |
+| `true-false` | ✘ | ✔ | ✔ | ✔ |
+| `match` | ✘ | ✔ | ✔ (`matching`) | ✔ |
+| `sorting-groups` | ✘ | ✔ (como emparejamiento: cada elemento con su grupo) | ✔ (`matching`) | ✔ |
+| `short-answer` | ✘ | ✔ | ✔ | ✔ |
+| `fill-in-the-blank` | ✘ | ✔ (un hueco por pregunta) | ✔ (`cloze`, varios huecos) | ✔ |
+| `sorting`, `order-words` | ✘ | ✘ | `sorting` ✔ (tipo `ordering` del núcleo, Moodle 4.4 o posterior), `order-words` ✘ | `sorting` ✔, `order-words` ✘ |
 
-Qué conserva cada fichero: el texto de la pregunta, sus opciones, las respuestas correctas y la retroalimentación (de acierto, de error y general; Aiken no tiene retroalimentación), con el HTML de los textos (texto plano en Aiken). Cada pregunta se llama como su actividad y su posición, con su objetivo (`U1-E1.1-q3 · U1.2`). El id del error común que representa un distractor nunca se escribe. GIFT y Moodle XML ponen cada actividad en su propia categoría (`<CODE>/U1 E1.1 <título>`); Aiken no tiene categorías, así que es un fichero por actividad. La nota para aprobar, los intentos y los pesos no forman parte de estos formatos: se fijan en el cuestionario del LMS.
+La tabla es lo que exige coursekit; la exportación de creator puede dejar fuera algo más (las imágenes en GIFT, un tipo que un formato no puede llevar) y lo lista en los `warnings` de `get_export_status`, que el agente de entrega enseña. Qué conserva cada fichero que escribe coursekit: el texto de la pregunta, sus opciones, las respuestas correctas y la retroalimentación (de acierto, de error y general; Aiken no tiene retroalimentación), con el HTML de los textos (texto plano en Aiken). Cada pregunta se llama como su actividad y su posición, con su objetivo (`U1-E1.1-q3 · U1.2`). El id del error común que representa un distractor nunca se escribe. GIFT y Moodle XML ponen cada actividad en su propia categoría (`<CODE>/U1 E1.1 <título>`); Aiken no tiene categorías, así que es un fichero por actividad. La nota para aprobar, los intentos y los pesos no forman parte de estos formatos: se fijan en el cuestionario del LMS.
 
 ### Simulaciones en creator
 
@@ -397,7 +397,7 @@ muchos caminos tarda unos segundos: se juegan todos los caminos de todas las sim
 
 `assets/styles.css` se construye por capas, cada una sobre la anterior:
 
-1. **El layout base** del paquete: neutro, accesible, gobernado por variables CSS (`--color-background`, `--color-text`, `--color-accent`, `--color-surface`, `--color-line`, `--color-correct`, `--color-wrong`, `--font-family`, `--font-size-base`, `--radius`, `--space-*`…). Sus clases empiezan por `ck-`.
+1. **El layout base** del paquete: neutro, accesible, gobernado por variables CSS (`--color-background`, `--color-text`, `--color-accent`, `--color-surface`, `--color-border`, `--color-correct`, `--color-wrong`, `--font-family`, `--font-size-base`, `--radius`, `--space-*`…). Sus clases empiezan por `ck-`.
 2. **Los tokens** del curso: `courses/PWD/theme/tokens.css` si el curso tiene theme propio y, si no, `theme/tokens.css` del proyecto. Si no hay tokens, esta capa queda vacía y se ve el layout base tal cual.
 3. **`theme/maqueta.css`** del proyecto y después **`courses/PWD/theme/maqueta.css`**: la hoja de estilos que da otro aspecto a lo que haga falta (la «maqueta»).
 4. **Todos los `components/*.css`** del proyecto, por orden de nombre de fichero.
@@ -600,7 +600,7 @@ Qué hace `publish`:
 
 ## El catálogo de seguimiento
 
-`coursekit catalog` construye el Excel de seguimiento a partir de todos los `courses/*/course.yaml`. Es un fichero generado: no lo edites nunca (los cambios se hacen en cada `course.yaml`). Se escribe junto a los cursos, en `courses/` (`--output RUTA` para cambiarlo; git lo ignora), y, con `publish`, en la carpeta espejo. La copia de `courses/` la actualizan los mismos comandos que publican, con o sin espejo, y no lleva enlaces a carpetas. El nombre del fichero y todas las etiquetas siguen el `ui_language` del proyecto: `course-catalog.xlsx` en inglés, `catalogo-cursos.xlsx` en español. El color de la cabecera es el token `accent-strong` (o, si no, `accent`) de `theme/tokens.json`, o gris oscuro; las hojas `Cursos` y `Unidades` tienen la cabecera inmovilizada y filtros. `coursekit catalog` por sí solo deja vacía la columna **Carpeta**: los enlaces los escribe `publish`.
+`coursekit catalog` construye el Excel de seguimiento a partir de todos los `courses/*/course.yaml`. Es un fichero generado: no lo edites nunca (los cambios se hacen en cada `course.yaml`). Se escribe junto a los cursos, en `courses/` (`--output RUTA` para cambiarlo; git lo ignora), y, con `publish`, en la carpeta espejo. La copia de `courses/` la actualizan los mismos comandos que publican, con o sin espejo, y no lleva enlaces a carpetas. El nombre del fichero y todas las etiquetas siguen el `ui_language` del proyecto: `course-catalog.xlsx` en inglés, `catalogo-cursos.xlsx` en español. El color de la cabecera es el token `accent-ink` (o, si no, `accent`) de `theme/tokens.json`, o gris oscuro; las hojas `Cursos` y `Unidades` tienen la cabecera inmovilizada y filtros. `coursekit catalog` por sí solo deja vacía la columna **Carpeta**: los enlaces los escribe `publish`.
 
 Hojas, en el idioma del catálogo (español / inglés): `Cursos` / `Courses`, `Unidades` / `Units` e `Información` / `About`.
 

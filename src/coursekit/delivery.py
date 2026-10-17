@@ -127,7 +127,7 @@ def _pending(course: dict, deliveries: list[dict], version: str) -> list[str]:
     """What the version still lacks: the packages (by unit number) and the question bank when the tests are exported as one."""
     done = [d for d in deliveries if d.get("version") == version]
     units = {d.get("unit") for d in done if d.get("kind", "package") == "package"}
-    pending = [str(u["n"]) for u in coursemod.package_units(course) if u["n"] not in units]
+    pending = [str(u["n"]) for u in coursemod.package_units(course) if u.get("kind") != "bank" and u["n"] not in units]
     if coursemod.assessment_delivery(course)[1] != "platform" and not any(d.get("kind") == "questions" for d in done):
         pending.append(t("delivery", "pending_questions"))
     return pending
@@ -147,13 +147,48 @@ def _close(course: dict, ry, data: dict, version: str, name: str, warning: str |
     return t("delivery", "recorded_done", name=name) + note
 
 
-def add_questions(course: dict, version: str) -> str:
-    """Writes the question bank of the course (`delivery › assessment › format`) in delivery/ and records it."""
+BANK_EXTENSIONS = {"gift": "txt", "moodle-xml": "xml", "qti": "zip"}  # what creator's question-bank export serves
+
+
+def download_bank(course: dict, version: str, fmt: str, url: str) -> Path:
+    """The bank creator exported (`create_export` question_bank of the bank content), saved in delivery/."""
+    if not url.startswith("https://"):
+        raise DeliveryError(t("delivery", "download_not_https"))
+    path = course["_dir"] / "delivery" / f"{course['code']}-questions-v{version}.{BANK_EXTENSIONS[fmt]}"
+    path.parent.mkdir(exist_ok=True)
+    partial = path.with_name(path.name + ".part")
+    try:
+        request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+        with urllib.request.urlopen(request, timeout=300) as response, partial.open("wb") as out:
+            while chunk := response.read(1 << 20):
+                out.write(chunk)
+    except urllib.error.HTTPError as exc:
+        partial.unlink(missing_ok=True)
+        raise DeliveryError(t("delivery", "download_failed", status=exc.code, reason=exc.reason)) from None
+    except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        partial.unlink(missing_ok=True)
+        raise DeliveryError(t("delivery", "download_failed", status="-", reason=getattr(exc, "reason", exc))) from None
+    if fmt == "qti" and check_package(partial) == t("delivery", "not_a_zip"):
+        partial.unlink(missing_ok=True)
+        raise DeliveryError(f"{path.name}: {t('delivery', 'not_a_zip')}")
+    partial.replace(path)
+    return path
+
+
+def add_questions(course: dict, version: str, url: str | None = None) -> str:
+    """The question bank of the course (`delivery › assessment › format`) in delivery/, recorded: with the creator backend the one
+    creator exported from the bank content (its `downloadUrl`); with html, or in aiken, the one coursekit writes from the
+    assessment.md."""
     from coursekit import questionbank
 
     warning = check_ready(course)
     fmt = coursemod.assessment_delivery(course)[1]
-    files = questionbank.export(course, version, fmt)
+    if coursemod.bank_unit(course):  # creator exports it from the bank content
+        if not url:
+            raise DeliveryError(t("delivery", "bank_needs_url"))
+        files = [download_bank(course, version, fmt, url)]
+    else:
+        files = questionbank.export(course, version, fmt)
     course_path = course["_dir"] / "course.yaml"
     ry, data = edit_yaml(course_path)
     if data.get("deliveries") is None:

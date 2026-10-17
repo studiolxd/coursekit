@@ -1,3 +1,4 @@
+label: {en: "Screen recording", es: "Grabación de pantalla"}
 description:
   en: A real screen recording with zooms that follow what the narration names (never a guessed coordinate when the recording has its events).
   es: Una grabación de pantalla real con zooms que siguen lo que nombra la locución (nunca una coordenada a ojo cuando la grabación tiene sus eventos).

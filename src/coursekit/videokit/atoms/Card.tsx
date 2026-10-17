@@ -10,7 +10,7 @@ export const Card: React.FC<{ children: React.ReactNode; tone?: string; padding?
   const color = useColor();
   return (
     <div style={{ background: color(tone, "background"), borderRadius: shapes.radius(20), padding,
-      boxShadow: shapes.shadow("0 18px 48px rgba(0,0,0,0.10)"), border: `${shapes.border(2)}px solid ${color("line", "surface")}`,
+      boxShadow: shapes.shadow("0 18px 48px rgba(0,0,0,0.10)"), border: `${shapes.border(2)}px solid ${color("border", "surface")}`,
       ...style }}>{children}</div>
   );
 };

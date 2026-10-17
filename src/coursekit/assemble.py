@@ -653,7 +653,7 @@ def brick_hash(brick: dict) -> str:
 def content_title(course: dict, unit: dict) -> str:
     """Title of the unit's creator content: the course title when there is a single unit; for the package of the tests when they
     go apart, the course title and its own."""
-    if unit.get("kind") == "assessment":
+    if unit.get("kind") in ("assessment", "bank"):
         return f"{course['title']}. {unit['title']}"
     if len(course.get("units") or []) == 1:
         return course["title"]
@@ -764,6 +764,9 @@ def build_plan(course: dict, unit: dict, assets: dict[str, dict] | None = None,
     if unit.get("kind") == "assessment":  # the package of the tests when they go apart: those of every unit, in order
         for source in course.get("units") or []:
             lessons += assessment_lessons(course, source, ctx, fmt)
+    elif unit.get("kind") == "bank":  # the questions of every test, for creator to export as the bank
+        for source in course.get("units") or []:
+            lessons += assessment_lessons(course, source, ctx, fmt, questions=True)
     else:
         sections = {s["n"]: s for s in unit.get("sections") or []}
         for m, lines in split((folder / "content.md").read_text(encoding="utf-8"), syntax.section):
@@ -794,16 +797,17 @@ def build_plan(course: dict, unit: dict, assets: dict[str, dict] | None = None,
             ctx["warnings"].append(t("assemble", "lesson_without_content", key=lesson["key"]))
     plan = {"course": course["code"], "unit": unit["n"], "content_id": unit.get("content_id"),
             "content_title": content_title(course, unit), "lessons": lessons}
-    if placement == "separate" or fmt != "platform":  # a package without tests reports the learner's progress, not a score
+    if unit.get("kind") != "bank" and (placement == "separate" or fmt != "platform"):  # a package without tests reports progress
         plan["score_source"] = "quiz" if any(lesson["type"] == "evaluation" for lesson in lessons) else "lessonProgress"
         if plan["score_source"] == "lessonProgress":  # and its status is completed or incomplete: there is nothing to pass
             plan["reporting"] = "completed_incomplete"
     return plan, ctx["errors"], ctx["warnings"]
 
 
-def assessment_lessons(course: dict, unit: dict, ctx: dict, fmt: str = "platform") -> list[dict]:
+def assessment_lessons(course: dict, unit: dict, ctx: dict, fmt: str = "platform", questions: bool = False) -> list[dict]:
     """The evaluation lessons of the assessment activities of a unit (its assessment.md). With a question-bank format the questions
-    leave the package (`coursekit delivery questions`): a lesson keeps only its scored simulations, and one without any is left out."""
+    leave the package (`coursekit delivery questions`): a lesson keeps only its scored simulations, and one without any is left out.
+    With `questions`, the other way round: only the question bank of each activity (the content creator exports as the bank)."""
     syntax: Syntax = ctx["syntax"]
     assessment = coursemod.unit_dir(course["_dir"], unit["n"]) / "assessment.md"
     if not assessment.exists():
@@ -814,11 +818,13 @@ def assessment_lessons(course: dict, unit: dict, ctx: dict, fmt: str = "platform
         # the learner sees the instructions, the simulations wherever the activity has them, and the question bank
         played = [line for name, part in parts.items() if name not in (syntax.t["assessment_instructions"], syntax.t["assessment_bank"])
                   for line in simulation_blocks(part, ctx)]
-        bank = parts.get(syntax.t["assessment_bank"], []) if fmt == "platform" else []
-        body = parts.get(syntax.t["assessment_instructions"], []) + [""] + played + [""] + bank
+        bank = parts.get(syntax.t["assessment_bank"], []) if fmt == "platform" or questions else []
+        body = bank if questions else parts.get(syntax.t["assessment_instructions"], []) + [""] + played + [""] + bank
         key = f"U{unit['n']}-E{m.group(1)}"
         bricks = parse_blocks(body, ctx, key)
-        if fmt != "platform" and not any(b["type"] == "SIMULATION" for b in walk(bricks)):
+        if questions and not bricks:
+            continue
+        if fmt != "platform" and not questions and not any(b["type"] == "SIMULATION" for b in walk(bricks)):
             continue
         lessons.append({"key": key, "type": "evaluation", "title": m.group(2), "kind": "assessment",
                         "quiz": quiz_settings(course, unit, m.group(1), m.group(2)), "bricks": bricks})
@@ -1012,10 +1018,11 @@ def link(course: dict, unit: dict, content_id: str | None = None, preview: str |
     """Record the creator content of a unit and, once it exists, its preview and client-review links."""
     path = course["_dir"] / "course.yaml"
     ry, data = edit_yaml(path)
-    if unit.get("kind") == "assessment" and not isinstance(data.get("assessment_unit"), dict):
-        data["assessment_unit"] = {}
-    for u in [data["assessment_unit"]] if unit.get("kind") == "assessment" else data["units"]:
-        if unit.get("kind") == "assessment" or u["n"] == unit["n"]:
+    extra = {"assessment": "assessment_unit", "bank": "bank_unit"}.get(unit.get("kind") or "")
+    if extra and not isinstance(data.get(extra), dict):
+        data[extra] = {}
+    for u in [data[extra]] if extra else data["units"]:
+        if extra or u["n"] == unit["n"]:
             if content_id:
                 u["content_id"] = content_id
             if preview or review:

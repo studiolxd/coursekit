@@ -16,10 +16,10 @@ export default function LowerThird({ props, frames }: LayerProps<LowerThirdProps
   return (
     <AbsoluteFill style={{ justifyContent: "flex-end", padding: "0 0 110px 120px" }}>
       <div style={{ opacity: k, transform: `translateX(${(1 - k) * -60}px)`, display: "flex", alignItems: "stretch", gap: 0 }}>
-        <div style={{ width: 12, background: color("accent-strong") }} />
+        <div style={{ width: 12, background: color("accent-ink") }} />
         <div style={{ background: color("background"), padding: "22px 36px", boxShadow: shapes.shadow("0 12px 32px rgba(0,0,0,0.12)") }}>
-          <Text size={40} weight={800} tone="headings">{props.title}</Text>
-          {props.subtitle ? <Text size={28} tone="text-soft">{props.subtitle}</Text> : null}
+          <Text size={40} weight={800} tone="headings" role="label">{props.title}</Text>
+          {props.subtitle ? <Text size={28} tone="text-muted" role="caption">{props.subtitle}</Text> : null}
         </div>
       </div>
     </AbsoluteFill>

@@ -15,6 +15,7 @@ Existing content is never overwritten; mismatching headings are reported.
 from __future__ import annotations
 
 import json
+import math
 import re
 from dataclasses import dataclass, field
 from importlib import resources
@@ -131,8 +132,16 @@ def build_units(graph: dict, course: dict, cfg: dict, tokens: dict) -> tuple[lis
                 "slxd_id": node["id"],
             })
 
-        def unit_activities(key: str, unit_id: str = unit["id"]) -> list[dict]:
-            return [a for a in ordered(graph.get(key, [])) if a.get("nodeId") == unit_id]
+        # the activities hang from the unit or (slxd lets a learning activity hang from a section) from one of its sections:
+        # the section is recorded, so the writer puts the practice there
+        where = {unit["id"]: None}
+        for sn, node in enumerate(section_nodes, 1):
+            where[node["id"]] = sn
+            for sub in children.get(node["id"], []):
+                where[sub["id"]] = sn
+
+        def unit_activities(key: str, where: dict = where) -> list[dict]:
+            return [a for a in ordered(graph.get(key, [])) if a.get("nodeId") in where]
 
         for act in unit_activities("actividadesAprendizaje") + unit_activities("actividadesEvaluacion"):
             for o in act.get("objetivoIds") or []:
@@ -144,6 +153,16 @@ def build_units(graph: dict, course: dict, cfg: dict, tokens: dict) -> tuple[lis
             unit_hours = section_hours
         elif abs(unit_hours - section_hours) > 0.01:
             problems.append(t("sync", "unit_hours_mismatch", unit=unit_word, n=un, declared=unit_hours, sections=section_hours))
+        step = float((cfg.get("design") or {}).get("unit_hours_step") or 0)  # people see the hours of a unit: whole or half
+        if step and abs(round(float(unit_hours or 0) / step) * step - float(unit_hours or 0)) > 0.001:
+            problems.append(t("sync", "unit_hours_step", unit=unit_word, n=un, hours=number(unit_hours or 0), step=f"{step:g}"))
+        imported = course["design"].get("origin") == "import"  # a migrated course keeps the sections of its packages
+        for section in sections if not imported else []:  # the introduction and the summary present and recap: a small share
+            share = float((cfg.get("design") or {}).get(f"{section['kind']}_share") or 0) if section["kind"] in ("intro", "summary") else 0
+            limit = math.ceil(round(share * float(unit_hours or 0) / 0.05, 6)) * 0.05
+            if share and section["hours"] > limit + 0.001:
+                problems.append(t("sync", "framing_too_long", unit=unit_word, n=un, title=section["title"], hours=section["hours"],
+                                  share=f"{share * 100:g}", limit=number(limit)))
 
         units.append({
             "n": un,
@@ -162,7 +181,8 @@ def build_units(graph: dict, course: dict, cfg: dict, tokens: dict) -> tuple[lis
             "activities": {
                 "learning": [
                     {"title": a["titulo"], "type": a.get("tipo"), "description": a.get("descripcion"),
-                     "objectives": [labels[o] for o in a.get("objetivoIds") or [] if o in labels]}
+                     "objectives": [labels[o] for o in a.get("objetivoIds") or [] if o in labels],
+                     **({"section": where[a["nodeId"]]} if where.get(a["nodeId"]) else {})}
                     for a in unit_activities("actividadesAprendizaje")
                 ],
                 "assessment": [

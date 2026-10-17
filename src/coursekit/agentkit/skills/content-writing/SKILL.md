@@ -58,7 +58,7 @@ Mandatory format: `.coursekit/docs/content-format.md`. Write in {{language_name}
     `use` for the kind of content (equivalent alternatives → tabs; sequence → timeline;
     equivalent items one by one → carousel; secondary detail → accordion; parts of a diagram →
     labelled-graphic…). Integrate the learning activities of its objectives with question
-    directives.
+    directives (a learning activity with `section` in `activities.learning` goes in that section).
   - `activities`: the unit's learning activities (`activities.learning`) with question
     directives, each with `{{t_question_key}}` and feedback that points back to the section.
   - `summary`: key ideas, glossary (`:::accordion` or `:::flashcards`), a closing `:::reflection` (at least

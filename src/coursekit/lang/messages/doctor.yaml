@@ -12,6 +12,7 @@ research_native:
   es: "sin RESEARCH_PROVIDER: los agentes usan su propia búsqueda web (opcional: exa, perplexity, brave o tavily con su clave)"
   en: "no RESEARCH_PROVIDER: the agents use their own web search (optional: exa, perplexity, brave or tavily with its key)"
 store: {es: "almacén de coursekit {path} ({size})", en: "coursekit store {path} ({size})"}
+remotion_versions: {es: "versiones del espacio de Remotion (las de coursekit; distintas: {packages})", en: "versions of the Remotion workspace (those of coursekit; different: {packages})"}
 remotion_deps: {es: "dependencias de Remotion (tools/remotion/node_modules)", en: "Remotion dependencies (tools/remotion/node_modules)"}
 html_builder: {es: "constructor del backend html (@studiolxd/scorm y esbuild)", en: "html backend builder (@studiolxd/scorm and esbuild)"}
 html_browser: {es: "navegador para coursekit assemble check (Chrome o Edge)", en: "browser for coursekit assemble check (Chrome or Edge)"}

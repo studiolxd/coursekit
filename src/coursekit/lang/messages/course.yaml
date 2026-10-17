@@ -18,4 +18,5 @@ matrix_changed:
   en: "design/matrix.json changed after the approval: the design must be approved again"
 bad_update_mode: {es: "rules › update › mode: «{value}» no vale (válidos: {valid})", en: "rules › update › mode: “{value}” is not valid (valid: {valid})"}
 bad_assessment: {es: "delivery › assessment › {key}: «{value}» no vale (válidos: {valid})", en: "delivery › assessment › {key}: “{value}” is not valid (valid: {valid})"}
+qti_needs_creator: {es: "delivery › assessment › format: qti lo exporta creator: solo vale con el backend creator (con html: aiken, gift o moodle-xml)", en: "delivery › assessment › format: qti is exported by creator: it only works with the creator backend (with html: aiken, gift or moodle-xml)"}
 bad_inclusive: {es: "rules › inclusive_language: «{value}» no vale (válidos: {valid})", en: "rules › inclusive_language: “{value}” is not valid (valid: {valid})"}

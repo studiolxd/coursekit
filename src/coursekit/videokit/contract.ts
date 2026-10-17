@@ -3,7 +3,9 @@
 // Everything else a scene needs comes from hooks: `useTheme()` and `useColor()` (the theme of the course), `useAt("word")`
 // (when the narration says something), `useSceneTime()` (its words and its frames), and Remotion's `useCurrentFrame()`.
 // Rules: everything moves with the frame (no CSS animations, no timers); only the tokens of the theme for colours and
-// fonts; media by their path inside the media folder of the course (`MediaSlot`); nothing from the network.
+// fonts; every text through `Heading` or `Text` with its role (`display`, `heading`, `kicker`, `body`, `quote`, `statement`,
+// `label`, `stat`, `step`, `caption`), so the typography of the project reaches it; media by their path inside the media
+// folder of the course (`MediaSlot`); nothing from the network.
 
 export type SceneProps<P = Record<string, unknown>> = {
   /** The props of the scene in the montage. */

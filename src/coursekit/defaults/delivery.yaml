@@ -12,11 +12,14 @@ assessment:
                                    # more unit to assemble and deliver, "Assessment"); the units then report their progress and
                                    # that package the score
   format: platform                 # platform: the tests are lessons of the packages (creator or html)
-                                   # aiken | gift | moodle-xml: the questions of the tests leave the packages as a question bank to
-                                   # import in the LMS (`coursekit delivery questions`); the scored simulations stay in a package.
-                                   # Each format takes some question types only (aiken: single-choice; gift and moodle-xml:
-                                   # single-choice, multi-select, true-false, match, sorting-groups, short-answer,
-                                   # fill-in-the-blank), and `coursekit verify` refuses the others in assessment.md
+                                   # aiken | gift | moodle-xml | qti: the questions of the tests leave the packages as a question
+                                   # bank to import in the LMS; the scored simulations stay in a package. With the creator backend
+                                   # the questions go in a content of their own and creator exports the bank (gift, moodle-xml,
+                                   # qti); with html `coursekit delivery questions` writes it (aiken, gift, moodle-xml). Each format
+                                   # takes some question types only (aiken: single-choice; gift and moodle-xml: single-choice,
+                                   # multi-select, true-false, match, sorting-groups, short-answer, fill-in-the-blank; qti: those
+                                   # and sorting; moodle-xml also sorting, as the ordering type of Moodle 4.4 or later), and
+                                   # `coursekit verify` refuses the others in assessment.md
 # Review of the course by the client before delivering (`coursekit client`). With required: true,
 # `deliver` is refused until the client approves (or the review is skipped with a reason). A course can
 # override it in its course.yaml.

@@ -11,7 +11,7 @@ const TitleCard: React.FC<{ title: string; subtitle: string }> = ({ title, subti
     <AbsoluteFill style={{ background: color.background, fontFamily: font, justifyContent: "center", padding: 120 }}>
       <div style={{ opacity, borderLeft: `12px solid ${color.accent}`, paddingLeft: 48 }}>
         <h1 style={{ fontSize: 96, fontWeight: 900, color: color.text, margin: 0 }}>{title}</h1>
-        <p style={{ fontSize: 44, color: color["text-soft"], marginTop: 24 }}>{subtitle}</p>
+        <p style={{ fontSize: 44, color: color["text-muted"], marginTop: 24 }}>{subtitle}</p>
       </div>
     </AbsoluteFill>
   );

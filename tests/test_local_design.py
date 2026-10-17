@@ -198,3 +198,54 @@ def test_modules_and_subsections(project):
     assert not builder.findings, builder.findings
     assert [n["tipo"] for n in graph["nodos"]] == ["modulo", "unidad", "apartado", "apartado", "subapartado", "subapartado", "apartado"]
     assert graph["nodos"][0]["horas"] == 1 and graph["nodos"][3]["horas"] == 0.6  # taken from their parts
+
+
+def test_a_learning_activity_may_hang_from_a_section_of_its_unit(project):
+    from coursekit import sync as syncmod
+
+    assert main(["new", "Contraseñas seguras", "1", "--code", "pwd101"]) == 0
+    matrix = json.loads((Path(__file__).parent / "fixtures" / "matrix.json").read_text(encoding="utf-8"))
+    matrix["actividadesAprendizaje"] = [
+        {"id": "aa-1", "nodeId": "s-2", "titulo": "Arregla la contraseña", "tipo": "practica_plantilla", "orden": 0, "objetivoIds": []},
+        {"id": "aa-2", "nodeId": "u-1", "titulo": "Repaso", "tipo": "autoevaluable", "orden": 1, "objetivoIds": []}]
+    design = project / "courses" / "PWD101" / "design"
+    (design / "matrix.json").write_text(json.dumps(matrix), encoding="utf-8")
+    (design / "validation.json").write_text('{"hallazgos": []}', encoding="utf-8")
+    course = coursemod.load(find_project(project), "PWD101")
+    learning = syncmod.sync(course, check_only=True).units[0]["activities"]["learning"]
+    assert [(a["title"], a.get("section")) for a in learning] == [("Arregla la contraseña", 2), ("Repaso", None)]
+    assert main(["design", "PWD101"]) == 0
+    rows = list(load_workbook(design / "PWD101-instructional-design.xlsx")["Learning activities"].iter_rows(values_only=True))[1:]
+    assert [(r[0], r[1], r[2]) for r in rows] == [("Contraseñas que protegen", "Cómo es una contraseña robusta", "Arregla la contraseña"),
+                                                   ("Contraseñas que protegen", None, "Repaso")]  # an empty cell
+
+
+def test_the_key_of_an_objective_in_slxd_must_be_the_id_coursekit_gives(project, capsys):
+    assert main(["new", "Contraseñas seguras", "1", "--code", "pwd101"]) == 0
+    matrix = json.loads((Path(__file__).parent / "fixtures" / "matrix.json").read_text(encoding="utf-8"))
+    matrix["objetivos"][0]["clave"] = "U1.1"
+    matrix["objetivos"][1]["clave"] = "RA2"
+    (project / "courses" / "PWD101" / "design" / "matrix.json").write_text(json.dumps(matrix), encoding="utf-8")
+    (project / "courses" / "PWD101" / "design" / "validation.json").write_text('{"hallazgos": []}', encoding="utf-8")
+    capsys.readouterr()
+    assert main(["design", "PWD101", "--check"]) == 0
+    out = capsys.readouterr().out
+    assert out.count("has the key") == 1 and "has the key RA2 in slxd, but coursekit calls it U1.2" in out
+
+
+def test_a_validation_older_than_the_matrix_is_refused(project, capsys):
+    import os
+
+    assert main(["new", "Contraseñas seguras", "1", "--code", "pwd101"]) == 0
+    design = project / "courses" / "PWD101" / "design"
+    (design / "matrix.json").write_text((Path(__file__).parent / "fixtures" / "matrix.json").read_text(encoding="utf-8"),
+                                        encoding="utf-8")
+    assert main(["design", "PWD101"]) == 1  # never validated
+    assert "validation.json is missing" in capsys.readouterr().err
+    (design / "validation.json").write_text('{"hallazgos": []}', encoding="utf-8")
+    later = (design / "validation.json").stat().st_mtime + 60
+    os.utime(design / "matrix.json", (later, later))  # the matrix changed after it was validated
+    assert main(["design", "PWD101"]) == 1
+    assert "older than design/matrix.json" in capsys.readouterr().err
+    assert main(["approve", "design", "PWD101", "--yes", "--no-commit"]) == 1
+    assert "older than design/matrix.json" in capsys.readouterr().err

@@ -5,7 +5,7 @@ import { useEnter } from "./Enter";
 // A ring that marks a point (fractions of its parent) from frame `at`.
 
 export const Ring: React.FC<{ fx: number; fy: number; at?: number; size?: number; tone?: string }> = (
-  { fx, fy, at = 0, size = 72, tone = "accent-strong" }) => {
+  { fx, fy, at = 0, size = 72, tone = "accent-ink" }) => {
   const k = useEnter(at);
   const color = useColor();
   return (

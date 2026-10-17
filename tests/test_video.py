@@ -1,6 +1,7 @@
 """`coursekit video`: a video as data, a montage of scenes of the library, the project or the course."""
 
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -291,10 +292,37 @@ def test_every_piece_of_the_library_has_an_example_in_each_language_with_its_req
     assert video.example(video.pieces(data)["title"], "es")["title"] == "Las contraseñas largas protegen más"
 
 
+def fake_app(monkeypatch, root):
+    """The tools of the interface of the galleries without installing them: esbuild writes an empty bundle."""
+    modules = root / "tools" / "remotion" / "node_modules"
+    for folder in ("esbuild", "@remotion/player"):
+        (modules / folder).mkdir(parents=True, exist_ok=True)
+    calls = []
+    real = subprocess.run
+
+    def run(cmd, **kw):
+        if not (isinstance(cmd, list) and cmd[:2] == ["node", "-e"]):
+            return real(cmd, **kw)
+        calls.append(cmd)
+        out = Path(json.loads(cmd[-1])["outdir"])
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "app.js").write_text("app", encoding="utf-8")
+        (out / "app.css").write_text("css", encoding="utf-8")
+        return subprocess.CompletedProcess(cmd, 0, "", "")
+
+    monkeypatch.setattr(video.subprocess, "run", run)
+    monkeypatch.setattr(video, "require_current", lambda project: None)
+    return calls
+
+
+def gallery_data(page):
+    return json.loads(page.with_name("data.js").read_text(encoding="utf-8").split("=", 1)[1].rstrip().rstrip(";"))
+
+
 def test_the_gallery_draws_every_piece_with_the_theme_and_the_style_of_the_course(course, capsys, monkeypatch):  # noqa: F811
     prepare_asset(course, capsys)
     root = course.parent.parent
-    (root / "tools" / "remotion" / "node_modules").mkdir(parents=True)
+    fake_app(monkeypatch, root)
     scene_folder(course / "video" / "scenes", "timeline", "a timeline of this course")  # no example: listed, not drawn
     write_style(root, shapes={"radius": 0, "shadow": "none"})
     rendered, stills = [], []
@@ -313,34 +341,116 @@ def test_the_gallery_draws_every_piece_with_the_theme_and_the_style_of_the_cours
     page = video.gallery(montage(course), lambda m: None)
     props = json.loads(Path(next(a for a in rendered[0] if a.startswith("--props=")).split("=", 1)[1]).read_text(encoding="utf-8"))
     names = [s["layers"][0]["id"] if s["layers"] else s["id"] for s in props["scenes"]]
-    assert names == ["compare", "diagram", "list", "outro", "quote", "split", "stat", "title", "callout", "highlight", "lower-third"]
+    covers = ["title", "title-centred", "title-surface", "title-accent", "title-photo-side", "title-photo-panel", "title-photo-over"]
+    assert names == [*covers, "compare", "diagram", "list", "outro", "quote", "split", "stat", "statement",
+                     "statement-accent", "callout", "highlight", "lower-third"]
+    assert props["scenes"][3]["props"]["background"] == "accent" and props["scenes"][3]["type"] == "title"  # a variant
     layer = props["scenes"][-1]
     assert layer["type"] == "title" and layer["layers"][0]["props"]["subtitle"] == "Responsable de seguridad, ACME"
     assert props["style"]["shapes"] == {"radius": 0, "shadow": "none"} and props["tokens"]["color"]["background"]
-    assert "--scale=0.5" in rendered[0] and len(stills) == len(names)
-    assert (page.parent / "gallery-sample.svg").exists() and (page.parent / "frames" / "title.png").exists()
-    text = page.read_text(encoding="utf-8")
-    assert 'src="gallery.mp4#t=0.00,3.50"' in text and "timeline" in text and "no example" in text and "lower-third" in text
-    assert "scene · library" in text and "Two sides compared" in text and "Props: title, left*, right* (* required)" in text
-    assert "Background: " in text and "weights: normal" in text and '<html lang="en">' in text
-    monkeypatch.setenv("COURSEKIT_LANG", "es")  # the page speaks the language of the person, all of it
-    text = video.gallery(montage(course), lambda m: None).read_text(encoding="utf-8")
-    assert '<html lang="es">' in text and "escena · biblioteca" in text and "capa · biblioteca" in text
-    assert "Dos lados comparados" in text and "(* obligatoria)" in text and "Fondo: " in text and "sin ejemplo" in text
-    for english in ("scene ·", "layer ·", "library", "Two sides", "required", "Background", "&amp;#x27;"):
-        assert english not in text
+    assert "--scale=0.5" in rendered[0] and len(stills) == 2 * len(names)  # a frame and a clip of each
+    data = gallery_data(page)  # the interface of the galleries, with the clips in place of the player
+    assert data["rendered"] and data["clips"]["title-photo-over"] == {"clip": "clips/title-photo-over.mp4",
+                                                                      "poster": "frames/title-photo-over.png"}
+    pieces = {p["name"]: p for p in data["pieces"]}
+    assert pieces["title"]["label"] == "Cover" and pieces["timeline"]["example"] is None and "timeline" not in data["clips"]
+    assert {v["label"] for v in pieces["title"]["variants"]} >= {"Accent", "Photo with a panel"}
+    assert '<link rel="stylesheet" href="app.css">' in page.read_text(encoding="utf-8") and '<html lang="en">' in page.read_text()
+    assert "app.css" not in page.with_name("stage.html").read_text(encoding="utf-8")  # the pieces, with no CSS of Studio LXD
+    monkeypatch.setenv("COURSEKIT_LANG", "es")  # the interface speaks the language of the person
+    page = video.gallery(montage(course), lambda m: None)
+    data = gallery_data(page)
+    assert '<html lang="es">' in page.read_text(encoding="utf-8") and data["labels"]["typography"] == "Tipografía"
+    assert {p["name"]: p["label"] for p in data["pieces"]}["title"] == "Portada"
+
+
+def test_the_project_narrows_what_the_library_offers(course, capsys, monkeypatch):  # noqa: F811
+    prepare_asset(course, capsys)
+    root = course.parent.parent
+    write_style(root, scenes={"*": {"allow": {"align": ["left"]}}, "title": {"defaults": {"background": "accent"}}, "quote": False})
+    data = montage(course)
+    text = "\n".join(video.catalog(data))  # what the agent reads: only what is allowed, and what is left out
+    assert "values left" in text and "values left | center" not in text and "default accent" in text
+    assert "left out in this project or course (not used): quote" in text and "  quote ·" not in text
+    assert [f for f in video.check(data, "U1-S2-M1") if f.code in ("PIECE_OFF", "NOT_ALLOWED")] == []
+    broken = {"version": 1, "scenes": [
+        {"id": "opening", "type": "title", "props": {"title": "Contraseñas largas", "align": "center"}, "duration": 3, "shows": "x"},
+        {"id": "said", "type": "quote", "props": {"quote": "Larga y única", "author": "Ana"}, "duration": 3, "shows": "x"}]}
+    found = {f.code: f for f in video.check(montage(course, broken), "U1-S2-M1")}
+    assert found["NOT_ALLOWED"].level == "error" and "allowed values: left" in found["NOT_ALLOWED"].text
+    assert found["PIECE_OFF"].level == "error"
+    monkeypatch.setenv("COURSEKIT_HANDOFF", "1")  # the handoff renders it, warns, and lists it in its log
+    assert {f.level for f in video.check(montage(course, broken), "U1-S2-M1") if f.code in ("PIECE_OFF", "NOT_ALLOWED")} == {"warning"}
+    assert {code for _, f in video.rule_report(montage(course, broken)) for code in [f.code]} == {"PIECE_OFF", "NOT_ALLOWED"}
+    rules = video.piece_rules(data, "title", video.pieces(data)["title"]["meta"]["props"])
+    assert video.with_defaults({"title": "x"}, rules) == {"title": "x", "align": "left", "background": "accent"}
+    entries = {e["key"] for e in video._gallery_entries(data, "es")}  # the galleries: no centred variants, no quote
+    assert "title-centred" not in entries and "title-photo-side" in entries and "quote" not in entries
+    write_style(root, scenes={"title": {"allow": {"align": ["middle"]}}})
+    assert any(f.code == "RULE_EMPTY" for f in video.rule_problems(montage(course)))
+
+
+def test_the_live_gallery_carries_every_piece_with_its_props_and_bundles_the_player(course, capsys, monkeypatch):  # noqa: F811
+    prepare_asset(course, capsys)
+    root = course.parent.parent
+    calls = fake_app(monkeypatch, root)
+    page = video.live_gallery(montage(course), lambda m: None)
+    data = gallery_data(page)
+    assert [p["name"] for p in data["pieces"]][:2] == ["title", "compare"] and data["montage"]["tokens"]["color"]
+    assert not data.get("rendered")
+    title = data["pieces"][0]
+    assert title["props"]["layout"]["when"] == {"background": "photo"} and {v["name"] for v in title["variants"]} >= {"accent"}
+    assert json.loads(calls[0][-1])["entryPoints"] == {"app": video.LIVE_ENTRY} and page.with_name("app.js").exists()
+    assert 'src="app.js"' in page.read_text(encoding="utf-8") and page.with_name("gallery-sample-photo.jpg").exists()
+    (root / "tools" / "remotion" / "node_modules" / "esbuild").rmdir()
+    with pytest.raises(video.VideoError, match="setup --media"):
+        video.live_gallery(montage(course), lambda m: None)
+
+
+def test_each_role_of_the_text_takes_the_typography_of_the_project(course, capsys):  # noqa: F811
+    prepare_asset(course, capsys)
+    root = course.parent.parent
+    data = montage(course)
+    text, base = video.text_roles(data, [])
+    assert text["kicker"] == {"size": 36, "transform": "uppercase", "tracking": 2} and base["display"] == 104.0  # today's look
+    write_style(root, text={"display": {"size": 80, "color": "accent-ink", "family": "Missing Sans"}})
+    text, _ = video.text_roles(montage(course), ["Brand Sans"])
+    assert text["display"] == {"size": 80, "color": "accent-ink"}  # a family that is not of the brand is left out
+    assert text["kicker"]["transform"] == "uppercase"  # the rest of the roles keep the package's
+    warned = [f for f in video.text_problems(montage(course)) if f.code == "FONT_NOT_BRAND"]
+    assert warned and "Missing Sans" in warned[0].text and "display" in warned[0].where
+
+
+def test_the_live_gallery_knows_what_it_is_made_of(course, capsys):  # noqa: F811
+    """What the server watches: a change of the configuration only rewrites the data; one of a scene bundles the app again."""
+    prepare_asset(course, capsys)
+    root = course.parent.parent
+    data = montage(course)
+    parts = video.watched(data)
+    assert root / "config" / "video.yaml" in parts["data"] and course / "course.yaml" in parts["data"]
+    assert video.kit_source() in parts["code"] and course / "video" in parts["code"]
+    before = video.stamp(parts["data"])
+    write_style(root, background="plain")
+    assert video.stamp(parts["data"]) != before
+    copies = root / "tools" / "remotion" / "src" / ".course" / "x"  # the copies coursekit writes are not a change
+    copies.mkdir(parents=True)
+    code = video.stamp(parts["code"])
+    (copies / "index.tsx").write_text("x", encoding="utf-8")
+    assert video.stamp(parts["code"]) == code
+    assert root / "course.yaml" not in video.watched(video.project_scope(find_project()))["data"]
 
 
 def test_without_a_code_the_gallery_is_the_one_of_the_project(course, capsys, monkeypatch):  # noqa: F811
     prepare_asset(course, capsys)
     root = course.parent.parent
-    (root / "tools" / "remotion" / "node_modules").mkdir(parents=True)
+    fake_app(monkeypatch, root)
     scene_folder(course / "video" / "scenes", "timeline", "a timeline of this course")  # of the course: not in the project's
     monkeypatch.setattr(video, "_remotion", lambda workspace, args: Path(args[3]).write_bytes(b"mp4"))
     monkeypatch.setattr(video.mediatools, "run", lambda cmd, **kw: Path(cmd[-1]).write_bytes(b"png"))
     assert main(["video", "gallery"]) == 0
     page = root / ".cache" / "media" / "project" / "gallery" / "index.html"
-    assert "media/project/gallery/index.html" in capsys.readouterr().out and "timeline" not in page.read_text(encoding="utf-8")
+    assert "media/project/gallery/index.html" in capsys.readouterr().out
+    assert "timeline" not in {p["name"] for p in gallery_data(page)["pieces"]}
     assert main(["video", "catalog"]) == 0 and "timeline" not in capsys.readouterr().out
     assert main(["video", "check"]) == 2 and "needs the code of the course" in capsys.readouterr().err
     guide = root / "theme" / "branding" / "media-style.md"  # the signature of the guide points to that gallery first

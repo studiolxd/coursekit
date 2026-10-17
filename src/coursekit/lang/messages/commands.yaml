@@ -406,6 +406,9 @@ help_media_fix: {es: "check: lleva a su sonoridad los audios y vídeos que no la
 help_media_frames: {es: "sheet: cuántos fotogramas tiene la hoja de contactos (por defecto media › checks › sheet_frames)", en: "sheet: how many frames the contact sheet has (default media › checks › sheet_frames)"}
 help_media_batch: {es: "narrate: añade las escenas a la cola del batch de Gemini en lugar de locutarlas", en: "narrate: put the scenes in the Gemini batch queue instead of voicing them"}
 help_video: {es: "vídeos como datos (montaje de escenas con el tema del curso): crear, comprobar, voz, vista previa, render y catálogo", en: "videos as data (a montage of scenes in the theme of the course): create, check, voice, preview, render and catalog"}
+help_video_serve: {es: "gallery: la galería en vivo en el navegador, con un control por prop (servidor local hasta Ctrl+C)", en: "gallery: the live gallery in the browser, with a control for each prop (a local server until Ctrl+C)"}
+help_video_port: {es: "puerto de la galería en vivo (por defecto 8766; si está ocupado, otro libre)", en: "port of the live gallery (default 8766; if it is taken, a free one)"}
+help_video_no_open: {es: "no abrir el navegador", en: "do not open the browser"}
 help_video_code: {es: "código del curso; sin él, gallery y catalog muestran los del proyecto (su theme, su config/video.yaml y sus escenas)", en: "code of the course; without it, gallery and catalog show those of the project (its theme, its config/video.yaml and its scenes)"}
 help_video_batch: {es: "voice: añade las escenas a la cola del batch de Gemini en lugar de locutarlas", en: "voice: put the scenes in the Gemini batch queue instead of voicing them"}
 help_research: {es: "fuentes oficiales para un curso con la API de búsqueda del .env (RESEARCH_PROVIDER): solo propone direcciones", en: "official sources for a course with the search API of the .env (RESEARCH_PROVIDER): it only proposes addresses"}

@@ -16,7 +16,7 @@ export default function Callout({ props }: LayerProps<CalloutProps>) {
     <AbsoluteFill style={{ justifyContent: v === "top" ? "flex-start" : "flex-end", alignItems: h === "left" ? "flex-start" : "flex-end",
       padding: 90 }}>
       <Enter scale from="none">
-        <Card padding={32} style={{ maxWidth: 720, display: "flex", gap: 22, alignItems: "center", borderLeft: `10px solid ${color("accent-strong")}` }}>
+        <Card padding={32} style={{ maxWidth: 720, display: "flex", gap: 22, alignItems: "center", borderLeft: `10px solid ${color("accent-ink")}` }}>
           <Text size={44} weight={700}>{props.text}</Text>
         </Card>
       </Enter>

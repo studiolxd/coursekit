@@ -15,7 +15,7 @@ export default function Outro({ props }: SceneProps<OutroProps>) {
       <Background variant="accent" />
       <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", textAlign: "center", padding: "0 200px", gap: 40 }}>
         <Enter scale><Heading size={88} tone="on-accent">{props.title}</Heading></Enter>
-        {props.next ? <Enter at={16}><Text size={40} tone="on-accent">{props.next}</Text></Enter> : null}
+        {props.next ? <Enter at={16}><Text size={40} tone="on-accent" role="subheading">{props.next}</Text></Enter> : null}
       </AbsoluteFill>
     </AbsoluteFill>
   );

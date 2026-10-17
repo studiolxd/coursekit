@@ -137,27 +137,27 @@ The tests are written in the `assessment.md` of their unit, and the writing, the
 | `placement` | What is assembled and delivered |
 |---|---|
 | `unit` (default) | Each unit carries its tests as evaluation lessons, and its package reports their score. |
-| `separate` | The units carry no tests and report the learner's progress (`lessonProgress`), completed or incomplete (`completed_incomplete`). All the tests of the course go in one package of their own, one more unit after the last one (`coursekit status` gives its number), titled with the course title and «Assessment» («Evaluación» in Spanish); it reports the score (`quiz`). The plan of each unit says which in `score_source` (and `reporting: completed_incomplete` in a unit without tests), and the delivery agent passes them to the creator export. With the creator backend its content is created with `create_content` and recorded in `course.yaml › assessment_unit`; the evaluation lessons that the design generator made inside each unit are deleted. |
+| `separate` | The units carry no tests and report the learner's progress (`lessonProgress`), completed or incomplete (`completed_incomplete`). All the tests of the course go in one package of their own, one more unit after the last one (`coursekit status` gives its number), titled with the course title and «Assessment» («Evaluación» in Spanish); it reports the score (`quiz`). The plan of each unit says which in `score_source` (and `reporting: completed_incomplete` in a unit without tests), and the delivery agent passes them to the creator export. With the creator backend and a design made in slxd, the generator makes it (`design_matrix_generate_course` with `leccionesEvaluacion: "separadas"`: a content «Evaluaciones — …» after the units, with the grading of the course) and the agent links it; with a local design it is created with `create_content`. It is recorded in `course.yaml › assessment_unit`. |
 
 | `format` | The questions of the tests |
 |---|---|
 | `platform` (default) | Evaluation lessons of the packages, in creator or in the html package. |
-| `aiken`, `gift`, `moodle-xml` | A question bank the LMS imports, written by `coursekit delivery questions` in `delivery/`. The questions leave the packages; an activity with a scored simulation keeps the simulation in its package (its unit's, or the package of the tests with `separate`), and an activity with only questions has no lesson. A package left without tests reports the learner's progress, completed or incomplete (`score_source: lessonProgress` and `reporting: completed_incomplete` in its plan), whatever `export` says. |
+| `aiken`, `gift`, `moodle-xml`, `qti` | A question bank the LMS imports, recorded by `coursekit delivery questions` in `delivery/`. With the creator backend (`gift`, `moodle-xml`, `qti`) the questions of every test go in a content of their own in creator, the bank content (one more unit after the others, never delivered as a package, recorded in `course.yaml › bank_unit`), and creator exports the bank (`create_export` with `deliveryType: question_bank`; `qti` is an IMS QTI 2.1 zip); `delivery questions --url` saves it. With html, or in `aiken`, `delivery questions` writes it from the `assessment.md`. The questions leave the packages; an activity with a scored simulation keeps the simulation in its package (its unit's, or the package of the tests with `separate`), and an activity with only questions has no lesson. A package left without tests reports the learner's progress, completed or incomplete (`score_source: lessonProgress` and `reporting: completed_incomplete` in its plan), whatever `export` says. |
 
 Each bank format takes some question types: `verify` refuses the others in `assessment.md` while the unit is written, and `delivery questions` refuses them too.
 
-| Directive | `aiken` | `gift` | `moodle-xml` |
-|---|---|---|---|
-| `single-choice` | ✔ | ✔ | ✔ (`multichoice`, one answer) |
-| `multi-select` | ✘ | ✔ (each right answer 100/n %, each wrong one negative) | ✔ (`multichoice`, several answers) |
-| `true-false` | ✘ | ✔ | ✔ |
-| `match` | ✘ | ✔ | ✔ (`matching`) |
-| `sorting-groups` | ✘ | ✔ (as matching: each item to its group) | ✔ (`matching`) |
-| `short-answer` | ✘ | ✔ | ✔ |
-| `fill-in-the-blank` | ✘ | ✔ (one blank per question) | ✔ (`cloze`, several blanks) |
-| `sorting`, `order-words` | ✘ | ✘ | ✘ |
+| Directive | `aiken` | `gift` | `moodle-xml` | `qti` (creator) |
+|---|---|---|---|---|
+| `single-choice` | ✔ | ✔ | ✔ (`multichoice`, one answer) | ✔ |
+| `multi-select` | ✘ | ✔ (each right answer 100/n %, each wrong one negative) | ✔ (`multichoice`, several answers) | ✔ |
+| `true-false` | ✘ | ✔ | ✔ | ✔ |
+| `match` | ✘ | ✔ | ✔ (`matching`) | ✔ |
+| `sorting-groups` | ✘ | ✔ (as matching: each item to its group) | ✔ (`matching`) | ✔ |
+| `short-answer` | ✘ | ✔ | ✔ | ✔ |
+| `fill-in-the-blank` | ✘ | ✔ (one blank per question) | ✔ (`cloze`, several blanks) | ✔ |
+| `sorting`, `order-words` | ✘ | ✘ | `sorting` ✔ (core `ordering` type, Moodle 4.4 or later), `order-words` ✘ | `sorting` ✔, `order-words` ✘ |
 
-What each file keeps: the text of the question, its options, the right answers and the feedback (right, wrong and general; Aiken has no feedback), with the HTML of the texts (plain text in Aiken). Each question is named after its activity and position, with its objective (`U1-E1.1-q3 · U1.2`). The id of the common error a distractor represents is never written. GIFT and Moodle XML put each activity in its own category (`<CODE>/U1 E1.1 <title>`); Aiken has none, so it is one file per activity. Pass marks, attempts and weights are not part of these formats: they are set on the quiz of the LMS.
+The table is what coursekit asks for; creator's export may leave out more (images in GIFT, a type a format cannot carry) and lists it in the `warnings` of `get_export_status`, which the delivery agent shows. What each file coursekit writes keeps: the text of the question, its options, the right answers and the feedback (right, wrong and general; Aiken has no feedback), with the HTML of the texts (plain text in Aiken). Each question is named after its activity and position, with its objective (`U1-E1.1-q3 · U1.2`). The id of the common error a distractor represents is never written. GIFT and Moodle XML put each activity in its own category (`<CODE>/U1 E1.1 <title>`); Aiken has none, so it is one file per activity. Pass marks, attempts and weights are not part of these formats: they are set on the quiz of the LMS.
 
 ### Simulations in creator
 
@@ -395,7 +395,7 @@ warning. A unit with many paths takes some seconds: every path of every simulati
 
 `assets/styles.css` is built in layers, each one over the previous:
 
-1. **The base layout** of the package: neutral, accessible, driven by CSS variables (`--color-background`, `--color-text`, `--color-accent`, `--color-surface`, `--color-line`, `--color-correct`, `--color-wrong`, `--font-family`, `--font-size-base`, `--radius`, `--space-*`…). Its classes start with `ck-`.
+1. **The base layout** of the package: neutral, accessible, driven by CSS variables (`--color-background`, `--color-text`, `--color-accent`, `--color-surface`, `--color-border`, `--color-correct`, `--color-wrong`, `--font-family`, `--font-size-base`, `--radius`, `--space-*`…). Its classes start with `ck-`.
 2. **The tokens** of the course: `courses/PWD/theme/tokens.css` if the course has its own theme, else `theme/tokens.css` of the project. If there are no tokens, this layer is empty and the base layout shows as it is.
 3. **`theme/maqueta.css`** of the project, then **`courses/PWD/theme/maqueta.css`**: the stylesheet that restyles anything (the "maqueta").
 4. **Every `components/*.css`** of the project, in file-name order.
@@ -598,7 +598,7 @@ What `publish` does:
 
 ## The tracking catalog
 
-`coursekit catalog` builds the tracking Excel from every `courses/*/course.yaml`. It is generated: never edit it (changes go in each `course.yaml`). It is written next to the courses, in `courses/` (`--output PATH` to change it; git ignores it), and, by `publish`, to the mirror folder. The copy in `courses/` is refreshed by the same commands that publish, with or without a mirror, and has no folder links. The file name and every label follow the project's `ui_language`: `course-catalog.xlsx` in English, `catalogo-cursos.xlsx` in Spanish. The header colour is the `accent-strong` (else `accent`) token of `theme/tokens.json`, or dark grey; the `Courses` and `Units` sheets have a frozen header and filters. `coursekit catalog` alone leaves the **Folder** column empty: the links are written by `publish`.
+`coursekit catalog` builds the tracking Excel from every `courses/*/course.yaml`. It is generated: never edit it (changes go in each `course.yaml`). It is written next to the courses, in `courses/` (`--output PATH` to change it; git ignores it), and, by `publish`, to the mirror folder. The copy in `courses/` is refreshed by the same commands that publish, with or without a mirror, and has no folder links. The file name and every label follow the project's `ui_language`: `course-catalog.xlsx` in English, `catalogo-cursos.xlsx` in Spanish. The header colour is the `accent-ink` (else `accent`) token of `theme/tokens.json`, or dark grey; the `Courses` and `Units` sheets have a frozen header and filters. `coursekit catalog` alone leaves the **Folder** column empty: the links are written by `publish`.
 
 Sheets, in the language of the catalog (English / Spanish): `Courses` / `Cursos`, `Units` / `Unidades` and `About` / `Información`.
 

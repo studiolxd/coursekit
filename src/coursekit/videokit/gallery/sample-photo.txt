@@ -1,0 +1,5 @@
+sample-photo.jpg: the photo the galleries of `coursekit video gallery` draw the pieces that take a photo with.
+"Desktop with laptop and calculator (Unsplash)", Wikimedia Commons:
+https://commons.wikimedia.org/wiki/File:Desktop_with_laptop_and_calculator_(Unsplash).jpg
+Licence: CC0 1.0 (public domain dedication), https://creativecommons.org/publicdomain/zero/1.0/
+Scaled to 1600 px wide, without its metadata.

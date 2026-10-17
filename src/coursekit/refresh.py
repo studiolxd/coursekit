@@ -67,14 +67,29 @@ def ensure(root: Path) -> None:
         project = Project(root)
         envfile.load(project.env_file)
         agents = agentsmod.generate(project)
+        media = _media_workspace(project)
         write_stamp(root)
     except Exception as exc:  # noqa: BLE001 — a refresh problem must not block the work; `coursekit agents` shows it in full
         print(t("refresh", "failed", error=exc), file=sys.stderr)
         return
     if before is None:  # the project had never been refreshed on this machine: say nothing unless something changed
-        if not (report.created or report.updated or agents.written):
+        if not (report.created or report.updated or agents.written or media):
             return
     print(t("refresh", "done", version=__version__, files=len(report.created) + len(report.updated), agents=len(agents.written)),
           file=sys.stderr)
     for path in report.kept_edited:
         print(t("refresh", "kept", path=path), file=sys.stderr)
+    if media:
+        print(t("refresh", "media_outdated", packages="; ".join(media)), file=sys.stderr)
+
+
+def _media_workspace(project: Project) -> list[str]:
+    """The versions of the Remotion workspace follow coursekit: its package.json is brought up to the template (it downloads
+    nothing), and what is installed but not at those versions is returned, for a person to run `coursekit setup --media`."""
+    from coursekit import setup
+
+    package = project.root / "tools" / "remotion" / "package.json"
+    if not package.exists():
+        return []
+    setup.sync_dependencies(setup.remotion_template(), package)
+    return setup.remotion_outdated(project)

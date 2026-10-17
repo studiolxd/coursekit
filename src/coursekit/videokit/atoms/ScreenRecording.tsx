@@ -97,7 +97,7 @@ export const ScreenRecording: React.FC<{ src: string; events?: ScreenEvent[]; fo
           style={{ width: "100%", height: "100%" }} />
         {ring && s > 1.05 ? (
           <div style={{ position: "absolute", left: `${fx * 100}%`, top: `${fy * 100}%`, width: 64, height: 64, marginLeft: -32,
-            marginTop: -32, borderRadius: "50%", border: `4px solid ${color("accent-strong")}`, opacity: Math.min(1, (s - 1) / (scale - 1)) }} />
+            marginTop: -32, borderRadius: "50%", border: `4px solid ${color("accent-ink")}`, opacity: Math.min(1, (s - 1) / (scale - 1)) }} />
         ) : null}
       </AbsoluteFill>
     </AbsoluteFill>

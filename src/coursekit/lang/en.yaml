@@ -16,6 +16,7 @@ question_objective_key: "objective:"
 thousands_separator: ","
 assessment_instructions: Instructions for the learner
 assessment_bank: Question bank
+question_bank_title: Question bank    # the creator content of the questions when they go out as a bank (creator backend)
 assessment_unit_title: Assessment    # the package of the tests when they go apart (delivery › assessment › placement: separate)
 download: Download
 learner: You                          # the learner when they speak in a dialogue (no portrait)

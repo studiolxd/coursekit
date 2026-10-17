@@ -38,6 +38,13 @@ rendered: {es: "vídeo en {path} ({seconds} s, {scenes} escenas), con subtítulo
 hides: {es: " (tapa la de: {origin})", en: " (hides the one of: {origin})"}
 catalog_scene: {es: "{name} [{origin}]{hides}: {description}", en: "{name} [{origin}]{hides}: {description}"}
 catalog_built: {es: "    hecha con: {parts}", en: "    built from: {parts}"}
+catalog_values: {es: "valores {values}", en: "values {values}"}
+catalog_default: {es: "por defecto {value}", en: "default {value}"}
+catalog_off: {es: "  desactivadas en este proyecto o curso (no se usan): {names}", en: "  left out in this project or course (not used): {names}"}
+font_not_brand: {es: "la fuente {family} del papel {role} no está entre las de la marca ({families}): se usa la del theme; añádela a theme/branding/fonts/ o elige otra", en: "the font {family} of the role {role} is not one of the fonts of the brand ({families}): the theme's is used; add it to theme/branding/fonts/ or choose another"}
+piece_off: {es: "la {kind} {name} está desactivada en este proyecto o curso (config/video.yaml › scenes): usa otra", en: "the {kind} {name} is left out in this project or course (config/video.yaml › scenes): use another"}
+not_allowed: {es: "{prop}: {value} no está permitido en este proyecto o curso (config/video.yaml › scenes); valores permitidos: {allowed}", en: "{prop}: {value} is not allowed in this project or course (config/video.yaml › scenes); allowed values: {allowed}"}
+rule_empty: {es: "la regla deja {prop} de {name} sin ningún valor que la pieza tenga", en: "the rule leaves {prop} of {name} without any value the piece has"}
 catalog_required: {es: "obligatoria", en: "required"}
 catalog_max: {es: "máx. {n}", en: "max {n}"}
 catalog_on_screen: {es: "en pantalla", en: "on screen"}
@@ -58,16 +65,60 @@ font_file_missing: {es: "{path} apunta a {file}, que no está en el proyecto", e
 fonts_empty: {es: "{path} no declara ninguna fuente (@font-face con font-family)", en: "{path} declares no font (@font-face with font-family)"}
 gallery_empty: {es: "ninguna escena ni capa de {code} tiene ejemplo (example: en su scene.yaml o layer.yaml)", en: "no scene or layer of {code} has an example (example: in its scene.yaml or layer.yaml)"}
 gallery_rendering: {es: "pintando {count} piezas con el tema y el estilo del curso…", en: "drawing {count} pieces with the theme and the style of the course…"}
-gallery_hides: {es: "tapa la de: {origin}", en: "hides the one of: {origin}"}
-gallery_no_example: {es: "sin ejemplo: añade example: a su fichero de metadatos para verla aquí", en: "no example: add example: to its metadata file to see it here"}
 gallery_title: {es: "Galería de vídeo de {code}", en: "Video gallery of {code}"}
-gallery_fonts: {es: "Fuente: {family} · ficheros dentro del vídeo: {files}", en: "Font: {family} · files inside the video: {files}"}
-gallery_machine_fonts: {es: "ninguno (las de la máquina)", en: "none (the machine's)"}
 gallery_done: {es: "galería en {path} (ábrela en el navegador)", en: "gallery in {path} (open it in the browser)"}
 origin_library: {es: "biblioteca", en: "library"}
 origin_project: {es: "proyecto", en: "project"}
 origin_course: {es: "curso", en: "course"}
 gallery_scenes: {es: "escena", en: "scene"}
 gallery_layers: {es: "capa", en: "layer"}
-gallery_props: {es: "Props: {props} (* obligatoria)", en: "Props: {props} (* required)"}
-gallery_style: {es: "Fondo: {background} · formas: radio {radius}, borde {border}, sombra {shadow} · pesos: normal {normal}, destacado {strong}", en: "Background: {background} · shapes: radius {radius}, border {border}, shadow {shadow} · weights: normal {normal}, strong {strong}"}
+workspace_outdated: {es: "el espacio de vídeo (Remotion) no tiene las versiones de coursekit: {packages}; ejecuta coursekit setup --media", en: "the video workspace (Remotion) is not at the versions of coursekit: {packages}; run coursekit setup --media"}
+no_live_tools: {es: "faltan el reproductor de Remotion o esbuild en el espacio de Remotion: coursekit setup --media", en: "the player of Remotion or esbuild is missing in the Remotion workspace: coursekit setup --media"}
+live_bundling: {es: "preparando la interfaz de la galería…", en: "preparing the interface of the gallery…"}
+live_serving: {es: "galería en vivo en {url}", en: "live gallery at {url}"}
+live_watching: {es: "los cambios del proyecto (config/video.yaml, el theme, las escenas) se ven solos; Ctrl+C para parar", en: "the changes of the project (config/video.yaml, the theme, the scenes) show by themselves; Ctrl+C to stop"}
+live_updated: {es: "galería actualizada ({time})", en: "gallery updated ({time})"}
+live_broken: {es: "La galería no se pudo actualizar; sigue la versión anterior hasta que se corrija:", en: "The gallery could not be updated; the previous version stays until it is fixed:"}
+live_skip: {es: "Saltar al contenido", en: "Skip to the content"}
+live_menu: {es: "Abrir el menú", en: "Open the menu"}
+live_menu_close: {es: "Cerrar el menú", en: "Close the menu"}
+live_navigation: {es: "Piezas de la galería", en: "Pieces of the gallery"}
+live_typography_intro: {es: "Cada papel del texto de los vídeos, con la fuente, el tamaño, el peso y el color que fija el proyecto (config/video.yaml › text), a la mitad de su tamaño.", en: "Each role of the text of the videos, with the font, size, weight and colour the project fixes (config/video.yaml › text), at half its size."}
+live_col_value: {es: "Valor en la galería", en: "Value in the gallery"}
+live_rendered_hint: {es: "Estas son las piezas ya renderizadas, con su ejemplo y sus variantes. Para probar otros valores: coursekit video gallery --serve", en: "These are the pieces rendered, with their example and their variants. To try other values: coursekit video gallery --serve"}
+live_id_hint: {es: "lo que se escribe en el guion del vídeo: type: …", en: "what the script of the video writes: type: …"}
+live_style_group: {es: "Estilo", en: "Style"}
+live_colours: {es: "Colores", en: "Colours"}
+live_colours_intro: {es: "Los colores del theme del proyecto (theme/tokens.json), cada rol con su valor: con ellos se pintan las piezas.", en: "The colours of the theme of the project (theme/tokens.json), each role with its value: the pieces are painted with them."}
+live_shapes: {es: "Formas", en: "Shapes"}
+live_shapes_intro: {es: "El fondo de las escenas, las formas de los paneles y los pesos del texto que fija el proyecto (config/video.yaml), en valores y dibujados.", en: "The background of the scenes, the shapes of the panels and the weights of the text the project fixes (config/video.yaml), in values and drawn."}
+live_background: {es: "Fondo de las escenas", en: "Background of the scenes"}
+live_radius: {es: "Radio de las esquinas (px)", en: "Radius of the corners (px)"}
+live_border: {es: "Borde de los paneles (px)", en: "Border of the panels (px)"}
+live_shadow: {es: "Sombra", en: "Shadow"}
+live_weight_normal: {es: "Peso normal", en: "Normal weight"}
+live_weight_strong: {es: "Peso destacado", en: "Strong weight"}
+live_typography: {es: "Tipografía", en: "Typography"}
+live_sample_display: {es: "La portada de un curso", en: "The cover of a course"}
+live_sample_heading: {es: "El título de una escena", en: "The title of a scene"}
+live_sample_subheading: {es: "La línea que acompaña a un título", en: "The line that goes with a title"}
+live_sample_kicker: {es: "Unidad 1", en: "Unit 1"}
+live_sample_body: {es: "El texto de los puntos y de las columnas, que se lee de un vistazo.", en: "The text of the points and the columns, read at a glance."}
+live_sample_quote: {es: "Una cita de alguien que sabe de esto", en: "A quote of someone who knows"}
+live_sample_statement: {es: "Una frase que retener", en: "A phrase to keep"}
+live_sample_label: {es: "Ana Ruiz, responsable de formación", en: "Ana Ruiz, training lead"}
+live_sample_caption: {es: "Fuente: un informe de 2026", en: "Source: a report of 2026"}
+live_default: {es: "(por defecto)", en: "(default)"}
+live_none: {es: "(ninguna)", en: "(none)"}
+live_variant: {es: "Variante:", en: "Variant:"}
+live_example: {es: "el ejemplo", en: "the example"}
+live_no_example: {es: "Sin ejemplo: añade example: a su fichero de metadatos para verla aquí.", en: "No example: add example: to its metadata file to see it here."}
+live_code: {es: "En el guion del vídeo (media/scripts/<id>.video.yaml):", en: "In the script of the video (media/scripts/<id>.video.yaml):"}
+live_scenes: {es: "escena", en: "scene"}
+live_layers: {es: "capa", en: "layer"}
+live_scenes_group: {es: "Escenas", en: "Scenes"}
+live_layers_group: {es: "Capas", en: "Layers"}
+live_col_prop: {es: "Prop", en: "Prop"}
+live_col_type: {es: "Tipo", en: "Type"}
+live_col_control: {es: "Valor", en: "Value"}
+live_col_help: {es: "Para qué", en: "What for"}

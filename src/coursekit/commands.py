@@ -108,6 +108,22 @@ def _pause_for_material(project: Project, folder: Path) -> None:
     initmod.ask(t("commands", "handoff_pause_wait"), "")
 
 
+def _handoff_report(project, code: str, stopped: str | None, course: dict | None = None) -> None:
+    """The decisions the design took with no one to ask, printed, and the report of the handoff; also when it stopped (once the
+    course exists), so the person sees them before carrying on."""
+    try:
+        course = course or coursemod.load(project, code)
+    except coursemod.CourseNotFound:
+        return
+    assumptions = handoffmod.design_assumptions(course)
+    if assumptions:
+        print(t("handoff", "assumptions_to_check", count=len(assumptions), path=handoffmod.NOTES.as_posix(),
+                list="; ".join(assumptions)))
+    report = handoffmod.write_report(course, stopped)
+    if report:
+        print(t("handoff", "report_written", path=report.relative_to(project.root).as_posix()))
+
+
 def cmd_handoff(args: argparse.Namespace) -> int:
     project = _project()
     rounds = args.rounds or handoffmod.rounds_setting(project)
@@ -119,6 +135,7 @@ def cmd_handoff(args: argparse.Namespace) -> int:
         return 2
     code = handoffmod.course_code(args.target, args.code) if starting else args.target.upper()
     pause = None if args.no_pause or not sys.stdin.isatty() else lambda folder: _pause_for_material(project, folder)
+    other = starting and (project.course_dir(code) / "course.yaml").exists()  # a course this run did not start: refused, untouched
     try:
         if starting:
             course = handoffmod.start(project, args.target, args.hours, args.code, not args.no_intro, not args.no_summary, args.notes,
@@ -130,6 +147,8 @@ def cmd_handoff(args: argparse.Namespace) -> int:
             course = (handoffmod.reopen if args.new_version else handoffmod.resume)(project, args.target, rounds, log, mirror)
     except handoffmod.HandoffError as exc:
         print(t("handoff", "stopped", code=code, reason=exc), file=sys.stderr)
+        if not other:
+            _handoff_report(project, code, str(exc))
         return 1
     print(t("handoff", "done", code=course["code"], who=handoffmod.HANDOFF.name))
     recordings = handoffmod.awaiting_recordings(course)
@@ -144,6 +163,7 @@ def cmd_handoff(args: argparse.Namespace) -> int:
     if waiting:
         names = "; ".join(f"{(v.get('channel') or {}).get('name') or '—'} · {v['url']}" for v in waiting)
         print(t("handoff", "videos_to_check", count=len(waiting), path=videosmod.REPORT, list=names))
+    _handoff_report(project, code, None, course)
     print(status.detail(course))
     return 0
 
@@ -324,6 +344,10 @@ def cmd_video(args: argparse.Namespace) -> int:
         if args.action == "catalog":
             print("\n".join(videomod.catalog(course)))
             return 0
+        if args.action == "gallery" and args.serve:  # the live gallery, in the browser, until Ctrl+C
+            code = args.code
+            reload = (lambda: coursemod.load(project, code)) if code else (lambda: videomod.project_scope(project))
+            return videomod.serve_gallery(videomod.live_gallery(course), args.port, not args.no_open, reload=reload)
         if args.action == "gallery":
             print(t("video", "gallery_done", path=videomod.gallery(course).relative_to(root).as_posix()))
             return 0
@@ -390,8 +414,13 @@ def cmd_design(args: argparse.Namespace) -> int:
     course = coursemod.load(_project(), args.code)
     local = localdesign.is_local(course)
     if not local:  # designed in slxd: the review Excel, from the matrix.json and validation.json the design agent saved
-        kinds = localdesign.keys(course, load_graph(course["_dir"] / "design" / "matrix.json"))[2]
-        findings = localdesign.slxd_findings(course["_dir"] / "design" / "validation.json")
+        graph = load_graph(course["_dir"] / "design" / "matrix.json")
+        stale = localdesign.validation_problem(course)
+        if stale:  # the findings would be those of another version of the design
+            print(t("commands", "error_line", text=stale), file=sys.stderr)
+            return 1
+        kinds = localdesign.keys(course, graph)[2]
+        findings = localdesign.slxd_findings(course["_dir"] / "design" / "validation.json") + localdesign.key_findings(course, graph)
         findings = [f for f in findings if not localdesign.expected(f, kinds)]
         files = [] if args.check else [localdesign.review_excel(course)[1]]
     elif args.check:
@@ -1155,7 +1184,7 @@ def cmd_delivery(args: argparse.Namespace) -> int:
         if not args.version:
             print(t("commands", "delivery_needs_version", action=args.action), file=sys.stderr)
             return 2
-        print(deliverymod.add_questions(course, args.version))
+        print(deliverymod.add_questions(course, args.version, args.url))
         _mirror(course["_project"], course["code"])
         return 0
     if args.unit is None or not args.version:
@@ -1483,6 +1512,9 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("code", nargs="?", help=t("commands", "help_video_code"))
     p.add_argument("id", nargs="?")
     p.add_argument("--batch", action="store_true", help=t("commands", "help_video_batch"))
+    p.add_argument("--serve", action="store_true", help=t("commands", "help_video_serve"))
+    p.add_argument("--port", type=int, default=8766, help=t("commands", "help_video_port"))
+    p.add_argument("--no-open", action="store_true", help=t("commands", "help_video_no_open"))
     p.set_defaults(func=cmd_video)
 
     p = sub.add_parser("capture", help=t("commands", "help_capture"))

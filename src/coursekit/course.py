@@ -88,6 +88,27 @@ def language(course: dict) -> str:
     return str(course.get("language") or fallback).split("-")[0]
 
 
+AUDIENCE_KEYS = ("who", "context", "knowledge", "level", "learning")
+
+
+def audience(course: dict) -> dict[str, str]:
+    """Who the course is for: `project.yaml › audience`, changed by the course (`course.yaml › design`: `audience` as text, the
+    `who`, or as a mapping of the same keys; `level`; `prerequisites`, the `knowledge`)."""
+    project = course.get("_project")
+    own = config.project_data(project).get("audience") if project else None
+    found = {k: str((own or {}).get(k) or "").strip() for k in AUDIENCE_KEYS} if isinstance(own, dict) else dict.fromkeys(AUDIENCE_KEYS, "")
+    design = course.get("design") or {}
+    given = design.get("audience")
+    if isinstance(given, dict):
+        found.update({k: str(v).strip() for k, v in given.items() if k in AUDIENCE_KEYS and str(v or "").strip()})
+    elif str(given or "").strip():
+        found["who"] = str(given).strip()
+    for key, name in (("level", "level"), ("prerequisites", "knowledge")):
+        if str(design.get(key) or "").strip():
+            found[name] = str(design[key]).strip()
+    return found
+
+
 def ai_review_required(course: dict) -> bool:
     """rules › review › ai: `required` (default) or `skip`; any other value is a mistake worth reporting."""
     value = str(((config.effective("rules", course.get("_project"), course).value.get("review") or {}).get("ai")) or "required")
@@ -123,8 +144,17 @@ ASSESSMENT_PLACEMENTS = ("unit", "separate")
 BANK_QUESTIONS = {  # the question directives each question-bank format can take
     "aiken": ("single-choice",),
     "gift": ("single-choice", "multi-select", "true-false", "match", "sorting-groups", "short-answer", "fill-in-the-blank"),
-    "moodle-xml": ("single-choice", "multi-select", "true-false", "match", "sorting-groups", "short-answer", "fill-in-the-blank"),
+    "moodle-xml": ("single-choice", "multi-select", "true-false", "match", "sorting-groups", "short-answer", "fill-in-the-blank",
+                   "sorting"),  # sorting as the core «ordering» type of Moodle 4.4 or later
+    "qti": ("single-choice", "multi-select", "true-false", "match", "sorting-groups", "short-answer", "fill-in-the-blank",
+            "sorting"),  # exported by creator only (create_export question_bank)
 }
+CREATOR_BANK = {"gift": "gift", "moodle-xml": "moodle_xml", "qti": "qti"}  # format → questionBankFormat of create_export
+
+
+def bank_questions(fmt: str, backend_name: str = "") -> tuple[str, ...]:
+    """The question directives a question-bank format takes (the same whether coursekit writes the bank or creator exports it)."""
+    return BANK_QUESTIONS[fmt]
 ASSESSMENT_FORMATS = ("platform", *BANK_QUESTIONS)
 
 
@@ -137,6 +167,8 @@ def assessment_delivery(course: dict) -> tuple[str, str]:
         raise RuleError(t("course", "bad_assessment", key="placement", value=placement, valid=", ".join(ASSESSMENT_PLACEMENTS)))
     if fmt not in ASSESSMENT_FORMATS:
         raise RuleError(t("course", "bad_assessment", key="format", value=fmt, valid=", ".join(ASSESSMENT_FORMATS)))
+    if fmt == "qti" and backend(course) != "creator":
+        raise RuleError(t("course", "qti_needs_creator"))
     return placement, fmt
 
 
@@ -160,6 +192,25 @@ def assessment_unit(course: dict) -> dict | None:
             "status": "approved" if all(u.get("status") == "approved" for u in units) else "pending"}
 
 
+def bank_unit(course: dict) -> dict | None:
+    """With the creator backend and a question-bank format creator exports (gift, moodle-xml, qti; aiken is written by coursekit),
+    the questions of the tests go in a creator content of their own,
+    which is not delivered as a package: creator exports it as the bank (`create_export` question_bank). One more unit to
+    assemble, after the units and the package of the tests; what is recorded of it lives in `course.yaml › bank_unit`."""
+    fmt = assessment_delivery(course)[1]
+    units = course.get("units") or []
+    if fmt not in CREATOR_BANK or backend(course) != "creator" or not any((u.get("activities") or {}).get("assessment") for u in units):
+        return None
+    tests = assessment_unit(course)
+    own = course.get("bank_unit") or {}
+    return {"n": (tests or {"n": max(u["n"] for u in units)})["n"] + 1, "kind": "bank", "title": tokens(course)["question_bank_title"],
+            "hours": 0, "sections": [], "objectives": [o for u in units for o in u.get("objectives") or []],
+            "activities": {"learning": [], "assessment": [dict(a, unit=u["n"]) for u in units
+                                                          for a in (u.get("activities") or {}).get("assessment") or []]},
+            "sources": [u["n"] for u in units], "content_id": own.get("content_id"), "links": own.get("links") or {},
+            "status": "approved" if all(u.get("status") == "approved" for u in units) else "pending"}
+
+
 def tests_with_simulations(course: dict) -> bool:
     """Some assessment.md of the course has a simulation (what stays in a package with a question-bank format)."""
     names = tuple(rules(course)["content"].get("simulation_directives") or ())
@@ -172,8 +223,7 @@ def tests_with_simulations(course: dict) -> bool:
 
 def package_units(course: dict) -> list[dict]:
     """The units that become a package (assembly and delivery): the units of the design and, when the tests go apart, theirs."""
-    extra = assessment_unit(course)
-    return list(course.get("units") or []) + ([extra] if extra else [])
+    return list(course.get("units") or []) + [u for u in (assessment_unit(course), bank_unit(course)) if u]
 
 
 def package_unit(course: dict, n: int | None) -> dict | None:

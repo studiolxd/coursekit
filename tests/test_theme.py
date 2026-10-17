@@ -33,14 +33,14 @@ def test_roles_palette_references_and_fonts_are_resolved():
     assert colors["accent"] == "#0A58CA" and colors["link"] == "#0A58CA"  # a role pointing at another role
     assert colors["on-accent"] == "#FFFFFF"
     assert colors["correct"] == "#14733A" and colors["wrong"] == "#B3261E"
-    assert colors["on-correct"] == "#000000"  # the text roles inherit the text colour
+    assert colors["on-correct"] == "#FFFFFF"  # with no text of its own, the text or background that reads better on it
     assert tokens["font"]["headings"].startswith("'ACME Sans'")
     assert tokens["font"]["family"] == theme.SYSTEM_FONT
     assert tokens["font"]["size-base"] == "17px" and tokens["font"]["line-height"] == "1.5"
     origin = tokens["origin"]
     assert origin["source"] == "creator" and origin["theme_id"] == "11111111-2222-4333-8444-555555555555"
     assert origin["name"] == "ACME training" and origin["version"] == 3
-    assert {"text-soft", "surface", "highlight", "line", "accent-strong"} == set(origin["derived"])
+    assert {"text-muted", "surface", "surface-highlight", "border", "accent-ink", "correct-ink", "wrong-ink"} == set(origin["derived"])
 
 
 def test_a_light_accent_is_darkened_to_be_read_as_text():
@@ -48,14 +48,14 @@ def test_a_light_accent_is_darkened_to_be_read_as_text():
     data["theme"]["config"]["colors"]["semantic"]["accent"] = {"custom": "#BAABFF"}
     tokens = theme.from_creator(data)
     assert tokens["color"]["accent"] == "#BAABFF"
-    strong = tokens["color"]["accent-strong"]
+    strong = tokens["color"]["accent-ink"]
     assert strong != "#BAABFF" and theme.contrast(strong, tokens["color"]["background"]) >= 4.5
-    assert any("accent-strong" in line for ok, line in theme.check(tokens) if ok)
+    assert any("accent-ink" in line for ok, line in theme.check(tokens) if ok)
 
 
 def test_the_soft_colours_stay_readable_and_the_whole_theme_passes_the_check():
     tokens = theme.from_creator(creator())
-    assert theme.contrast(tokens["color"]["text-soft"], tokens["color"]["background"]) >= 4.5
+    assert theme.contrast(tokens["color"]["text-muted"], tokens["color"]["background"]) >= 4.5
     assert all(ok for ok, _ in theme.check(tokens))
 
 

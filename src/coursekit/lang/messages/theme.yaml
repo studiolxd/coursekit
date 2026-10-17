@@ -12,8 +12,10 @@ use_accent: {es: elementos de acento y texto grande, en: accent elements and lar
 use_accent_text: {es: "texto en el color de acento (botones secundarios, fechas)", en: "text in the accent colour (secondary buttons, dates)"}
 use_card_text: {es: texto sobre tarjetas, en: text on cards}
 use_highlight_text: {es: texto sobre resaltados, en: text on highlights}
-use_correct: {es: respuesta correcta, en: correct feedback}
-use_wrong: {es: respuesta incorrecta, en: wrong feedback}
+use_correct: {es: "lo correcto como tinta sobre el fondo (bordes, marcas, texto)", en: "what is right as ink on the background (borders, marks, text)"}
+use_wrong: {es: "lo incorrecto como tinta sobre el fondo (bordes, marcas, texto)", en: "what is wrong as ink on the background (borders, marks, text)"}
+use_on_correct: {es: texto sobre el relleno de correcto, en: text on the fill of what is right}
+use_on_wrong: {es: texto sobre el relleno de incorrecto, en: text on the fill of what is wrong}
 bad_tokens: {es: "{path} no es un JSON de tokens válido", en: "{path} is not a valid tokens JSON"}
 not_a_theme:
   es: "el fichero no parece un resultado de get_theme (falta theme.config.colors)"
@@ -45,12 +47,14 @@ role_use_headings: {es: "los títulos de las escenas de un vídeo y el nombre de
 role_use_accent: {es: "el color que destaca: el subrayado de una palabra, las marcas de una lista, los números de los pasos, las flechas, el fondo de la escena de cierre y los botones de una simulación", en: "the colour that stands out: the underline of a word, the marks of a list, the numbers of the steps, the arrows, the background of the closing scene and the buttons of a simulation"}
 role_use_on-accent: {es: "el texto sobre el color de acento: la escena de cierre de un vídeo, los números de los pasos, los botones de una simulación", en: "the text on the accent colour: the closing scene of a video, the numbers of the steps, the buttons of a simulation"}
 role_use_link: {es: "los enlaces del texto", en: "the links of the text"}
-role_use_correct: {es: "lo correcto: la columna buena de una comparación, la respuesta acertada de una simulación", en: "what is right: the good column of a comparison, the right answer of a simulation"}
-role_use_on-correct: {es: "el texto sobre el color de correcto", en: "the text on the colour of what is right"}
-role_use_wrong: {es: "lo incorrecto: la columna mala de una comparación, la respuesta fallida de una simulación", en: "what is wrong: the bad column of a comparison, the wrong answer of a simulation"}
-role_use_on-wrong: {es: "el texto sobre el color de incorrecto", en: "the text on the colour of what is wrong"}
-role_use_text-soft: {es: "el texto secundario: la fuente bajo una cifra, el cargo bajo un nombre, la explicación pequeña de un paso, el autor de una cita", en: "the secondary text: the source under a figure, the role under a name, the small explanation of a step, the author of a quote"}
+role_use_correct: {es: "el relleno de lo correcto: el fondo de un aviso de respuesta acertada (en la plataforma)", en: "the fill of what is right: the background of a notice of a right answer (in the platform)"}
+role_use_on-correct: {es: "el texto sobre el relleno de correcto", en: "the text on the fill of what is right"}
+role_use_correct-ink: {es: "lo correcto como tinta sobre el fondo: la marca ✔ de la columna buena de una comparación, el borde de la respuesta acertada, el final bueno de una simulación", en: "what is right as ink on the background: the ✔ of the good column of a comparison, the border of the right answer, the good ending of a simulation"}
+role_use_wrong: {es: "el relleno de lo incorrecto: el fondo de un aviso de respuesta fallida (en la plataforma)", en: "the fill of what is wrong: the background of a notice of a wrong answer (in the platform)"}
+role_use_on-wrong: {es: "el texto sobre el relleno de incorrecto", en: "the text on the fill of what is wrong"}
+role_use_wrong-ink: {es: "lo incorrecto como tinta sobre el fondo: la marca ✘ de la columna mala de una comparación, el borde de la respuesta fallida, el final malo de una simulación", en: "what is wrong as ink on the background: the ✘ of the bad column of a comparison, the border of the wrong answer, the bad ending of a simulation"}
+role_use_text-muted: {es: "el texto secundario: la fuente bajo una cifra, el cargo bajo un nombre, la explicación pequeña de un paso, el autor de una cita", en: "the secondary text: the source under a figure, the role under a name, the small explanation of a step, the author of a quote"}
 role_use_surface: {es: "el fondo de las tarjetas (las columnas de una comparación, los pasos de un diagrama) y la banda de fondo de una escena", en: "the background of the cards (the columns of a comparison, the steps of a diagram) and the background band of a scene"}
-role_use_highlight: {es: "el fondo de una nota destacada en una simulación", en: "the background of a highlighted note in a simulation"}
-role_use_line: {es: "el borde de las tarjetas de un vídeo y de una simulación, las líneas que separan bloques", en: "the border of the cards of a video and of a simulation, the lines that separate blocks"}
-role_use_accent-strong: {es: "el acento como texto o línea fina sobre el fondo: el contorno del foco en una simulación (quien navega con teclado lo ve al pasar por un botón)", en: "the accent as text or a thin line on the background: the focus outline in a simulation (who browses with the keyboard sees it on a button)"}
+role_use_surface-highlight: {es: "el fondo de una nota destacada en una simulación", en: "the background of a highlighted note in a simulation"}
+role_use_border: {es: "el borde de las tarjetas de un vídeo y de una simulación, las líneas que separan bloques", en: "the border of the cards of a video and of a simulation, the lines that separate blocks"}
+role_use_accent-ink: {es: "el acento como texto o línea fina sobre el fondo: el contorno del foco en una simulación (quien navega con teclado lo ve al pasar por un botón)", en: "the accent as text or a thin line on the background: the focus outline in a simulation (who browses with the keyboard sees it on a button)"}

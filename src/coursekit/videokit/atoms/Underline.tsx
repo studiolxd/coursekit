@@ -15,7 +15,7 @@ export const Underline: React.FC<{ at?: number; tone?: string; thickness?: numbe
   return (
     <span style={{ position: "relative", display: "inline-block" }}>
       <span style={{ position: "absolute", left: 0, bottom: highlight ? "8%" : -thickness, height: highlight ? "40%" : thickness,
-        width: `${k * 100}%`, background: color(tone ?? (highlight ? "accent" : "accent-strong")), opacity: highlight ? 0.35 : 1, borderRadius: shapes.corner(thickness) }} />
+        width: `${k * 100}%`, background: color(tone ?? (highlight ? "accent" : "accent-ink")), opacity: highlight ? 0.35 : 1, borderRadius: shapes.corner(thickness) }} />
       <span style={{ position: "relative" }}>{children}</span>
     </span>
   );

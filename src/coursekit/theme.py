@@ -26,14 +26,16 @@ from coursekit.util import edit_yaml, save_yaml
 # (foreground, background, minimum ratio, key of the use in the messages catalog)
 PAIRS = [
     ("text", "background", 4.5, "use_body_text"),
-    ("text-soft", "background", 4.5, "use_secondary_text"),
+    ("text-muted", "background", 4.5, "use_secondary_text"),
     ("on-accent", "accent", 4.5, "use_button_text"),
     ("accent", "background", 3.0, "use_accent"),
-    ("accent-strong", "background", 4.5, "use_accent_text"),
+    ("accent-ink", "background", 4.5, "use_accent_text"),
     ("text", "surface", 4.5, "use_card_text"),
-    ("text", "highlight", 4.5, "use_highlight_text"),
-    ("correct", "background", 4.5, "use_correct"),
-    ("wrong", "background", 4.5, "use_wrong"),
+    ("text", "surface-highlight", 4.5, "use_highlight_text"),
+    ("on-correct", "correct", 4.5, "use_on_correct"),
+    ("correct-ink", "background", 4.5, "use_correct"),
+    ("on-wrong", "wrong", 4.5, "use_on_wrong"),
+    ("wrong-ink", "background", 4.5, "use_wrong"),
 ]
 
 
@@ -127,15 +129,15 @@ def css(tokens: dict) -> str:
         ".btn { font: var(--font-weight-strong, 700) 1rem var(--font-family); color: var(--color-on-accent);",
         "  background: var(--color-accent); border: var(--border-width, 2px) solid var(--color-accent); border-radius: var(--radius);",
         "  padding: var(--space-sm) var(--space-md); cursor: pointer; }",
-        "/* the accent is a fill; as text on the background it is accent-strong, the accent that reads there */",
-        ".btn:hover { color: var(--color-accent-strong, var(--color-accent)); background: var(--color-background); }",
+        "/* the accent is a fill; as text on the background it is accent-ink, the accent that reads there */",
+        ".btn:hover { color: var(--color-accent-ink, var(--color-accent)); background: var(--color-background); }",
         ".btn:focus-visible, [tabindex]:focus-visible {",
-        "  outline: 3px solid var(--color-accent-strong, var(--color-accent)); outline-offset: 2px; }",
-        ".card { background: var(--color-background); border: var(--border-width, 1px) solid var(--color-line);",
+        "  outline: 3px solid var(--color-accent-ink, var(--color-accent)); outline-offset: 2px; }",
+        ".card { background: var(--color-background); border: var(--border-width, 1px) solid var(--color-border);",
         "  border-radius: var(--radius);",
         "  box-shadow: var(--shadow-soft); padding: var(--space-md); }",
-        ".is-correct { color: var(--color-correct); } .is-wrong { color: var(--color-wrong); }",
-        ".note { background: var(--color-highlight); border-left: 4px solid var(--color-accent-strong, var(--color-accent));",
+        ".is-correct { color: var(--color-correct-ink); } .is-wrong { color: var(--color-wrong-ink); }",
+        ".note { background: var(--color-surface-highlight); border-left: 4px solid var(--color-accent-ink, var(--color-accent));",
         "  padding: var(--space-md); }",
         "",
     ]
@@ -204,6 +206,15 @@ def check(tokens: dict) -> list[tuple[bool, str]]:
 
 SYSTEM_FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
 MONO_FONT = "ui-monospace, 'SF Mono', Consolas, monospace"
+def ink(fill: str, text: str, background: str) -> str:
+    """A colour of fill used as ink on the background: itself when it reads there (4.5:1), else darkened towards the text until it
+    does."""
+    k = 0.0
+    while k < 1 and contrast(mix(fill, text, k), background) < 4.5:
+        k += 0.05
+    return mix(fill, text, min(k, 1.0))
+
+
 DEFAULT_ROLES = {"background": "#FFFFFF", "headings": "#000000", "text": "#000000", "correct": "#1DA34E", "wrong": "#EF4444"}
 DEFAULT_RADIUS = "8px"
 DEFAULT_SPACE = {"xs": "4px", "sm": "8px", "md": "16px", "lg": "24px", "xl": "32px"}
@@ -281,24 +292,25 @@ def from_creator(response: dict) -> dict:
         "on-accent": role("accentText", text),
         "link": role("link", text),
         "correct": role("correct", DEFAULT_ROLES["correct"]),
-        "on-correct": role("correctText", text),
         "wrong": role("wrong", DEFAULT_ROLES["wrong"]),
-        "on-wrong": role("wrongText", text),
     }
     # The platform has no such roles: soft variants of its colours, kept readable on the background.
     soft = 0.35
     while soft > 0 and contrast(mix(text, background, soft), background) < 4.5:
         soft -= 0.05
-    # the accent as text (secondary buttons, dates, focus): darkened towards the text until it reads on the background
-    strong = 0.0
-    while strong < 1 and contrast(mix(accent, text, strong), background) < 4.5:
-        strong += 0.05
+    # the text on a fill of state: the theme's, else the text or the background, whichever reads better on it
+    for state in ("correct", "wrong"):
+        fill = chosen[state] or DEFAULT_ROLES[state]
+        chosen[f"on-{state}"] = role(f"{state}Text", max((text, background), key=lambda c: contrast(c, fill)))
     derived = {
-        "text-soft": mix(text, background, max(soft, 0)),
+        "text-muted": mix(text, background, max(soft, 0)),
         "surface": mix(background, text, 0.04),
-        "highlight": mix(background, accent, 0.12),
-        "line": mix(background, text, 0.2),
-        "accent-strong": mix(accent, text, min(strong, 1.0)),
+        "surface-highlight": mix(background, accent, 0.12),
+        "border": mix(background, text, 0.2),
+        # a fill as ink (a thin line, a mark, a word on the background): darkened towards the text until it reads there
+        "accent-ink": ink(accent, text, background),
+        "correct-ink": ink(chosen["correct"] or DEFAULT_ROLES["correct"], text, background),
+        "wrong-ink": ink(chosen["wrong"] or DEFAULT_ROLES["wrong"], text, background),
     }
     fonts = cfg.get("fonts") or {}
     assignments = fonts.get("assignments") or {}
@@ -411,8 +423,8 @@ def from_css(base: str, overrides: str, source: str, digest: str) -> dict:
 
 # The colour roles of the tokens, in the order `coursekit theme roles` shows them. Each one has its uses in the messages
 # (`role_use_<role>` of lang/messages/theme.yaml): where it is seen in the media, so a person can tell which colour fits.
-ROLES = ("background", "text", "headings", "accent", "on-accent", "link", "correct", "on-correct", "wrong", "on-wrong",
-         "text-soft", "surface", "highlight", "line", "accent-strong")
+ROLES = ("background", "text", "headings", "text-muted", "link", "surface", "surface-highlight", "border", "accent", "on-accent",
+         "accent-ink", "correct", "on-correct", "correct-ink", "wrong", "on-wrong", "wrong-ink")
 ADJUSTABLE = ("roles", "radius", "shadow", "border", "weights")
 
 
@@ -458,7 +470,7 @@ def adjust(tokens: dict, fixed: dict) -> dict:
         chosen["shadow"] = str(fixed["shadow"])
     if fixed.get("border") is not None:
         tokens["border"] = f"{float(fixed['border']):g}px"
-        chosen["border"] = str(fixed["border"])
+        chosen["border-width"] = str(fixed["border"])  # not "border": that is the colour role of the borders
     for key, token in (("normal", "weight"), ("strong", "weight-strong")):
         if (fixed.get("weights") or {}).get(key) is not None:
             tokens.setdefault("font", {})[token] = str(fixed["weights"][key])

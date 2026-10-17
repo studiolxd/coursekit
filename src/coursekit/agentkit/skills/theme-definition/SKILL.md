@@ -94,7 +94,12 @@ colours, `origin.derived`), and the radius and the shadow are its defaults. The 
 5. The style of the videos: propose in `config/video.yaml` what the brand says of shapes and weights (`shapes`: radius,
    shadow, border; `weights`: the normal and the strong weight), of the background of the scenes (`background`: `plain`,
    `band` or `shape`, soft shapes of the accent, a tint a brand without tints does not admit) and of the motion (`motion`:
-   its character and its timings, from the durations and curves of the brand); the fonts reach the videos by themselves from
+   its character and its timings, from the durations and curves of the brand), and what the brand does not allow of the scenes
+   (`scenes`: `"*": {allow: {align: [left]}}` for a brand without centred texts, `allow` and `defaults` for one scene, `<name>:
+   false` for a scene it does not use; `coursekit video catalog` lists the props and their values), and the typography of each
+   role of the text (`text`: `display`, `heading`, `kicker`, `body`, `quote`, `statement`, `stat`, `step`… with the family of
+   one of the fonts of the brand, the size, the weight, the case, the tracking and the colour of a role of the theme, from the
+   type scale of the brand); the fonts reach the videos by themselves from
    `theme/branding/fonts/fonts.css`. A logo in the videos only if the brand or the person asks for it.
 6. Write `theme/branding/media-style.md` (a course with its own brand: `courses/<CODE>/theme/branding/media-style.md`), in the
    language of the courses, with these sections and only what the brand material says, each rule followed by its source

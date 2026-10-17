@@ -1,10 +1,11 @@
+label: {en: "List", es: "Lista"}
 description:
   en: A numbered list (steps, rules, keys); each item enters when the narration says it (`say`).
-  es: Una lista numerada (pasos, reglas, claves); cada elemento entra cuando la locución lo dice (`say`).
+  es: Una lista numerada (pasos, reglas, claves); cada elemento entra cuando se locuta (`say`).
 built_from: [Background, Heading, Badge, Text, Enter]
 props:
   title: {type: text, required: true, max_chars: 60, on_screen: true}
-  items: {type: list, required: true, max_items: 5, items: {text: {type: text, max_chars: 60, on_screen: true}, say: {type: text, help: {en: "the words of the narration that say it", es: "las palabras de la locución que lo dicen"}}}}
+  items: {type: list, required: true, max_items: 5, items: {text: {type: text, max_chars: 60, on_screen: true}, say: {type: text, help: {en: "the words of the narration that say it", es: "las palabras con que se locuta"}}}}
 # What the gallery draws it with (`coursekit video gallery`), in each language of the courses.
 example:
   en: {title: "Three habits", items: [{text: "Use a password manager"}, {text: "Turn on two-step verification"}, {text: "Never share a code"}]}

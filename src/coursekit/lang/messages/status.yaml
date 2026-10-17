@@ -65,3 +65,4 @@ assessment_line: {es: "  Evaluaciones: {placement} · formato {format}{package}"
 assessment_unit: {es: "en cada unidad", en: "in each unit"}
 assessment_separate: {es: "aparte", en: "apart"}
 assessment_package: {es: " · paquete de evaluación: unidad {n}", en: " · package of the tests: unit {n}"}
+assessment_bank: {es: " · contenido del banco en creator: unidad {n}", en: " · bank content in creator: unit {n}"}

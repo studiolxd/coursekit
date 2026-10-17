@@ -88,6 +88,9 @@ def approve_design(course: dict, confirm: Confirm, do_commit: bool = True, who: 
         raise ApprovalError(problem)
     if not matrix.exists():
         raise ApprovalError(t("approve", "matrix_missing"))
+    stale = localdesign.validation_problem(course, required=False)  # its errors are what the signature trusts: they must be this version's
+    if stale:
+        raise ApprovalError(stale)
     validation_path = design / "validation.json"
     if validation_path.exists():
         findings = json.loads(validation_path.read_text(encoding="utf-8"))

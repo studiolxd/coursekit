@@ -205,10 +205,14 @@ A scene has an `id`, a `type`, its `props`, what it `says` (or a `duration` when
 | Tokens | the theme of the course (its own, else the project's) and the tokens of motion | colours, fonts, radius; how long things take to enter |
 | Atoms | the smallest pieces, moved by the frame | `Heading`, `Text`, `Enter`, `Stagger`, `Underline`, `Counter`, `MediaSlot`, `Ring`, `Background`, `Card`, `Badge`, `Arrow`, `ScreenRecording`; `useAt("word")` and `useSayTimes([...])`: when the narration says it |
 | Molecules | small combinations | `TitleBlock`, `BulletList`, `StatBlock`, `CompareColumn`, `StepNode` |
-| Scenes | whole compositions | `title`, `split`, `stat`, `compare`, `list`, `quote`, `diagram` (a process that builds itself), `outro`, `screencast` |
+| Scenes | whole compositions | `title` (the cover: plain, surface, accent or a photo beside the text, under a panel or under the text, placed across and up and down), `statement` (a phrase to keep, a word underlined when it is said), `split`, `stat`, `compare`, `list`, `quote`, `diagram` (a process that builds itself), `outro`, `screencast` |
 | Layers | over a scene, from a word of its narration | `lower-third` (a name and a role), `callout` (a short note at a corner), `highlight` (a ring on a point) |
 
-The tokens reach the video as data, so a course with another theme gives another video with no change. The accent is a fill (the close, the circle of a number); what is drawn thin on the background with it (an underline, an arrow, the mark of a list, a word) takes `accent-strong`, the accent that reads on the background: the same colour when the accent already reads, a darker one, or the one the project fixes, when the accent is only a fill. A brand with its own rules (square corners, no shadows, two weights, its font files) sets them in `config/video.yaml` (`shapes`, `weights`, `fonts`; see [Configuration](04-configuration.md#video-the-style-of-the-videos-made-as-a-montage)), and every piece of the library follows them. A scene is a folder with `index.tsx` (its component) and `scene.yaml` (a layer, `layer.yaml`) (what it is, what it is built from, and its props: type, required, maximum characters, on screen, label; its `description` and the `help` of each prop may be one text or one per language, `en:` and `es:`, and they are shown in the language of the person); `coursekit video catalog` lists them all, so the pieces and how they are put together can be seen. `coursekit video gallery` draws them: each piece with the props of its `example:` (in its `scene.yaml` or `layer.yaml`, one block per language of the courses, `en:` and `es:`), in the theme and the style of the course, in a page of `.cache/media/<CODE>/gallery/`. Without a code, `coursekit video gallery` draws the project's (its theme, its `config/video.yaml`, its scenes and the library's), in `.cache/media/project/gallery/`: the one to look at before signing the style guide of the project. A scene of the project or of a course is drawn too when it brings its `example:`.
+The tokens reach the video as data, so a course with another theme gives another video with no change. The accent is a fill (the close, the circle of a number); what is drawn thin on the background with it (an underline, an arrow, the mark of a list, a word) takes `accent-ink`, the accent that reads on the background: the same colour when the accent already reads, a darker one, or the one the project fixes, when the accent is only a fill. A brand with its own rules (square corners, no shadows, two weights, its font files) sets them in `config/video.yaml` (`shapes`, `weights`, `fonts`; see [Configuration](04-configuration.md#video-the-style-of-the-videos-made-as-a-montage)), and every piece of the library follows them. A scene is a folder with `index.tsx` (its component) and `scene.yaml` (a layer, `layer.yaml`) (what it is, what it is built from, and its props: type, required, maximum characters, on screen, label; its name to show (`label`), its `description` and the `help` of each prop may be one text or one per language, `en:` and `es:`, and they are shown in the language of the person, as the `label` of each of its `variants:`; the id of the piece, what the script writes, never changes); `coursekit video catalog` lists them all, so the pieces and how they are put together can be seen. `coursekit video gallery` draws them: each piece with the props of its `example:` (in its `scene.yaml` or `layer.yaml`, one block per language of the courses, `en:` and `es:`), in the theme and the style of the course, rendered, in `.cache/media/<CODE>/gallery/`: a clip of each piece and each variant, in the same interface as the live gallery (it opens from the disk). Without a code, `coursekit video gallery` draws the project's (its theme, its `config/video.yaml`, its scenes and the library's), in `.cache/media/project/gallery/`: the one to look at before signing the style guide of the project. A scene of the project or of a course is drawn too when it brings its `example:`, and `variants:` (each a `name` and the `props` it changes over the example) draws it again in other ways. The cover goes first, and each piece shows its props as a table: name, type, the values it takes, whether it is required and what it is for; a prop that only counts with another value says so (`when:` in its metadata, e.g. `when: {background: photo}`). `coursekit video gallery --serve` opens the same pieces live in the browser, as a component library does (the page is coursekit's and wears the design system of Studio LXD; each piece is drawn apart, in a frame that only has the theme and the style of the project): a control for each prop, its variants in a select, and the props to copy into the script; a prop with `when:` is hidden while that value is not chosen. A change of the project (its `config/video.yaml`, the theme, a scene) shows by itself while it is open. What the browser plays is very close to the render, but the rendered gallery is the proof. The pieces that take a photo are drawn with a photo in the public domain that coursekit brings (CC0); the live gallery of a course also offers the images of its `media/files/`.
+
+**The typography of the videos.** Every text of a piece has a role (`display`, `heading`, `kicker`, `body`, `quote`, `statement`, `stat`, `step`…), and `config/video.yaml › text` gives each role its family (one of the fonts of the brand), size, weight, style, case, tracking, leading and colour (a role of the theme). The pieces of the library, of the project and of a course follow it without being touched; the Typography page of the live gallery shows the scale at a glance. See [`video`](04-configuration.md#video-the-style-of-the-videos-made-as-a-montage).
+
+**What the brand allows.** The library offers every possibility; the project narrows them in `config/video.yaml › scenes` (and a course in `course.yaml › video › scenes`): the values each prop may take (`allow`), the one it takes when the script says nothing (`defaults`), and the pieces left out (`<name>: false`); `"*"` is for every piece with that prop. A brand without centred texts, for example, writes `scenes: {"*": {allow: {align: [left]}}}`. The catalog and the galleries show only that, and `coursekit video check` refuses the rest (a warning in the handoff, listed in its log). `/define-theme` proposes these rules from the brand. See [`video`](04-configuration.md#video-the-style-of-the-videos-made-as-a-montage).
 
 **Where the scenes are, and which one wins.** A scene of the course hides one of the project with the same name, and one of the project hides one of the library:
 
@@ -446,12 +450,13 @@ With the html backend there is no platform theme and steps 2, 3 and 5 do not app
 {
   "origin": {"source": "creator", "theme_id": "11111111-2222-4333-8444-555555555555", "name": "ACME training",
              "version": 3, "imported_at": "2026-10-09T10:14:30+02:00",
-             "derived": ["accent-strong", "highlight", "line", "surface", "text-soft"],
+             "derived": ["accent-ink", "border", "correct-ink", "surface", "surface-highlight", "text-muted", "wrong-ink"],
              "defaults": ["radius", "space", "shadow"], "notes": []},
   "color": {"background": "#FFFFFF", "text": "#000000", "headings": "#1B365D", "accent": "#0A58CA",
             "on-accent": "#FFFFFF", "link": "#0A58CA", "correct": "#14733A", "on-correct": "#000000",
-            "wrong": "#B3261E", "on-wrong": "#000000", "text-soft": "#595959", "surface": "#F5F5F5",
-            "highlight": "#E2EBF9", "line": "#CCCCCC", "accent-strong": "#0A58CA"},
+            "wrong": "#B3261E", "on-wrong": "#000000", "text-muted": "#595959", "surface": "#F5F5F5",
+            "surface-highlight": "#E2EBF9", "border": "#CCCCCC", "accent-ink": "#0A58CA", "correct-ink": "#14733A",
+            "wrong-ink": "#B3261E"},
   "font": {"family": "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
            "headings": "'ACME Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
            "ui": "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
@@ -489,7 +494,7 @@ A project has one theme, in `theme/`, which every course inherits. A course that
 | Tokens | Origin |
 |---|---|
 | `background`, `text`, `headings`, `accent`, `on-accent` (the `accentText` role), `link`, `correct`, `on-correct`, `wrong`, `on-wrong` | The semantic colour roles of the platform theme, with palette references resolved. A text role the theme does not set inherits the text colour. |
-| `text-soft`, `surface`, `highlight`, `line`, `accent-strong` | Derived by coursekit from the colours above (mixes of text, background and accent); the soft text is kept at least 4.5:1 on the background. `accent-strong` equals `accent`. Listed in `origin.derived`; a role the project fixes (`theme.roles`) takes its colour instead and goes to `origin.set`. |
+| `text-muted`, `surface`, `surface-highlight`, `border`, `accent-ink`, `correct-ink`, `wrong-ink` | Derived by coursekit from the colours above (mixes of text, background and accent); the muted text is kept at least 4.5:1 on the background. `accent-ink`, `correct-ink` and `wrong-ink` are the accent and the colours of state as ink (a line, a mark, a word on the background): the colour itself when it reads there, darkened towards the text until it does. Listed in `origin.derived`; a role the project fixes (`theme.roles`) takes its colour instead and goes to `origin.set`. |
 | `palette.<id>` | The named colours of the platform theme (`emerald`, `cayenne`, `prussian`…), imported with their ids, to draw with: portraits, illustrations. They are not roles and they do not change the fingerprint of the tokens. In `tokens.css` they are `--palette-<id>`. |
 | `font.family`, `font.headings`, `font.ui` | The font assignments of the theme: the system font stack, an uploaded font by its name (followed by the system stack as fallback), or a font included in the platform by its id, with a note because the name may not match its CSS family. |
 | `font.size-base`, `font.line-height` | The base font size and line height of the theme. |
@@ -499,7 +504,7 @@ With the html backend the tokens come from the CSS variables of the base layout 
 
 | CSS variable | Token |
 |---|---|
-| `--color-<name>` | `color.<name>`: `background`, `text`, `text-soft`, `headings`, `accent`, `accent-strong`, `on-accent`, `link`, `surface`, `highlight`, `line`, `correct`, `wrong` (the base layout declares them all; add others if you need them). A value that is not a plain colour (a gradient, `color-mix()`) is kept as written and left out of the contrast check, with a note. |
+| `--color-<name>` | `color.<name>`: `background`, `text`, `text-muted`, `headings`, `accent`, `accent-ink`, `on-accent`, `link`, `surface`, `surface-highlight`, `border`, `correct`, `wrong`, `correct-ink`, `wrong-ink` (the base layout declares them all; add others if you need them). A value that is not a plain colour (a gradient, `color-mix()`) is kept as written and left out of the contrast check, with a note. |
 | `--font-family`, `--font-family-headings`, `--font-family-ui` | `font.family`, `font.headings`, `font.ui` |
 | `--font-size-base`, `--line-height` | `font.size-base`, `font.line-height` |
 | `--radius` | `radius` |
@@ -543,17 +548,17 @@ A brand kit (`.zip`) or the package of a design system (`.tgz`) left in `sources
 
 ### Colours of the brand for the roles
 
-Some colour roles of the tokens do not exist in the platform and coursekit derives them (`text-soft`, `surface`, `highlight`, `line`, `accent-strong`, mixed from the text, the background and the accent), and the radius and the shadow are package defaults. A brand usually has its own colour for those uses. The project fixes them in `project.yaml › theme` (a course with its own tokens, in `course.yaml › theme`), without touching the platform theme:
+Some colour roles of the tokens do not exist in the platform and coursekit derives them (`text-muted`, `surface`, `surface-highlight`, `border`, `accent-ink`, `correct-ink`, `wrong-ink`, mixed from the text, the background and the accent), and the radius and the shadow are package defaults. A brand usually has its own colour for those uses. The project fixes them in `project.yaml › theme` (a course with its own tokens, in `course.yaml › theme`), without touching the platform theme:
 
 ```yaml
 theme:
   source: tenant_default
-  roles: {surface: grey-lightest, line: grey-light, text-soft: grey-darkest, accent-strong: text}
+  roles: {surface: grey-lightest, border: grey-light, text-muted: grey-darkest, accent-ink: text}
   radius: 0
   shadow: none
 ```
 
-`border` and `weights` (`{normal: 300, strong: 500}`) fix the width of the borders and the two weights of the text the same way. Any role can be fixed, also one the platform gives when the brand says otherwise (the text on a fill of state, for example); the course in the platform keeps the platform's. A role takes the name of a colour of the palette of the theme (`coursekit theme roles` lists it), another role, or a hex when the brand defines it and the palette lacks it. `coursekit theme import` applies them instead of deriving, records them in `origin.set` and, if a name is not in the palette, stops with the list. `coursekit theme roles` shows each role, its value, where it comes from and where it is seen in the media (the background of the cards of a comparison, the source under a figure…), which is how a person chooses, and what the agent of `/define-theme` quotes when it proposes a colour. The radius and the shadow of the theme also reach the videos.
+`border` (px; the colour of the borders is the role `border` of `roles`) and `weights` (`{normal: 300, strong: 500}`) fix the width of the borders and the two weights of the text the same way. Any role can be fixed, also one the platform gives when the brand says otherwise (the text on a fill of state, for example); the course in the platform keeps the platform's. A role takes the name of a colour of the palette of the theme (`coursekit theme roles` lists it), another role, or a hex when the brand defines it and the palette lacks it. `coursekit theme import` applies them instead of deriving, records them in `origin.set` and, if a name is not in the palette, stops with the list. `coursekit theme roles` shows each role, its value, where it comes from and where it is seen in the media (the background of the cards of a comparison, the source under a figure…), which is how a person chooses, and what the agent of `/define-theme` quotes when it proposes a colour. The radius and the shadow of the theme also reach the videos.
 
 ### Illustration sources
 
@@ -590,13 +595,15 @@ A course already `delivered` is not carried on by the handoff: redo the media an
 | Pair (text on background) | Use | Minimum ratio |
 |---|---|---|
 | `text` on `background` | Body text | 4.5 |
-| `text-soft` on `background` | Secondary text | 4.5 |
+| `text-muted` on `background` | Secondary text | 4.5 |
 | `on-accent` on `accent` | Button text on the accent | 4.5 |
 | `accent` on `background` | Accent elements and large text | 3.0 |
 | `text` on `surface` | Text on cards | 4.5 |
-| `text` on `highlight` | Text on highlights | 4.5 |
-| `correct` on `background` | Correct feedback | 4.5 |
-| `wrong` on `background` | Wrong feedback | 4.5 |
+| `text` on `surface-highlight` | Text on highlights | 4.5 |
+| `on-correct` on `correct` | Text on the fill of what is right | 4.5 |
+| `correct-ink` on `background` | What is right as ink (borders, marks, text) | 4.5 |
+| `on-wrong` on `wrong` | Text on the fill of what is wrong | 4.5 |
+| `wrong-ink` on `background` | What is wrong as ink (borders, marks, text) | 4.5 |
 
 ```text
   ok   text on background (body text): 21.00:1, needs 4.5:1
@@ -605,7 +612,7 @@ A course already `delivered` is not carried on by the handoff: redo the media an
 
 The import prints the same lines. A failing pair does not stop it: fix the colour in the platform theme (or in the CSS variable of the stylesheet) and import again.
 
-The accent colour of the project tokens (`accent-strong`, else `accent`) also paints the header of the catalog Excel ([08-assembly-and-delivery.md](08-assembly-and-delivery.md)).
+The accent colour of the project tokens (`accent-ink`, else `accent`) also paints the header of the catalog Excel ([08-assembly-and-delivery.md](08-assembly-and-delivery.md)).
 
 ## Remotion workspace
 

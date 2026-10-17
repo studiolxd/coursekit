@@ -22,9 +22,13 @@ Nota de trabajo de la funcionalidad en curso. Se borra cuando esté validada y p
 - Ficheros: gift y moodle-xml, uno por curso con una categoría por actividad; aiken, uno por actividad (no tiene categorías).
   `coursekit delivery questions CODE --version X.Y` los escribe en `delivery/` y los registra en `deliveries` (`kind: questions`).
   El curso pasa a `delivered` cuando están todos los paquetes y, si hay banco, el banco de esa versión.
+- Con el backend creator y gift, moodle-xml o qti, las preguntas van a un contenido propio en creator (la «unidad del banco»,
+  `course.bank_unit()`, en `course.yaml › bank_unit`), que no se entrega como paquete: creator lo exporta (`create_export`
+  question_bank) y `coursekit delivery questions --url` lo guarda. Aiken lo escribe siempre coursekit; qti solo con creator.
+- slxd genera con `leccionActividades: false` y `leccionesEvaluacion: true | "separadas" | false`; con `"separadas"` el contenido
+  «Evaluaciones — …» es el paquete de las evaluaciones.
 
 ## Pendiente de validar
 
-- Montaje real en creator con `separate` (un contenido de evaluación creado con `create_content`, y borrar las lecciones de evaluación
-  que `design_matrix_generate_course` crea en cada unidad).
-- Importación real de los tres formatos en un Moodle.
+- Montaje real en creator con `separate` (el contenido que crea `leccionesEvaluacion: "separadas"`) y con el contenido del banco.
+- Importación real de los formatos en un LMS (Moodle para gift y moodle-xml, otro para qti).

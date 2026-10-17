@@ -17,3 +17,4 @@ download_not_https:
 download_failed:
   es: "no se pudo descargar el paquete ({status}: {reason}); la dirección de descarga caduca, pide otra exportación y vuelve a intentarlo"
   en: "the package could not be downloaded ({status}: {reason}); the download address expires, ask for another export and try again"
+bank_needs_url: {es: "con el backend creator el banco lo exporta creator: create_export del contenido del banco con deliveryType question_bank, y luego --url con su downloadUrl", en: "with the creator backend the bank is exported by creator: create_export of the bank content with deliveryType question_bank, then --url with its downloadUrl"}

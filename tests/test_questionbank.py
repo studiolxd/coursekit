@@ -67,11 +67,14 @@ pregunta: Ordena los pasos.
 """
 
 
-def set_assessment(course_dir, placement: str = "unit", fmt: str = "platform", bank: str = BANK) -> None:
+def set_assessment(course_dir, placement: str = "unit", fmt: str = "platform", bank: str = BANK, backend: str = "html") -> None:
+    """The tests of the sample course, where they go and in which format; with a bank format and the html backend coursekit writes
+    the bank (with creator, creator exports it)."""
     (course_dir / "content" / "unit-01" / "assessment.md").write_text(bank, encoding="utf-8")
     path = course_dir / "course.yaml"
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
     data["delivery"] = {"assessment": {"placement": placement, "format": fmt}}
+    data["assembly"] = {"backend": backend}
     path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
 
 
@@ -81,7 +84,7 @@ def plan(course_dir, n: int) -> dict:
 
 
 def test_separate_tests_go_in_a_package_of_their_own(course):  # noqa: F811
-    set_assessment(course, placement="separate")
+    set_assessment(course, placement="separate", backend="creator")
     unit = plan(course, 1)
     assert [lesson["type"] for lesson in unit["lessons"]] == ["content"] * 3  # the tests left the unit
     assert unit["score_source"] == "lessonProgress" and unit["reporting"] == "completed_incomplete"  # nothing to pass in it
@@ -95,10 +98,44 @@ def test_separate_tests_go_in_a_package_of_their_own(course):  # noqa: F811
 
 
 def test_with_a_bank_format_the_questions_leave_the_packages(course):  # noqa: F811
-    set_assessment(course, fmt="gift")
+    set_assessment(course, fmt="gift", backend="creator")
     lessons = plan(course, 1)["lessons"]
     assert [lesson["type"] for lesson in lessons] == ["content"] * 3
-    assert main(["assemble", "plan", "PWD", "--unit", "2"]) == 1  # no package of tests: nothing stays in one
+    bank = plan(course, 2)  # creator: the questions go in a content of their own, which creator exports as the bank
+    assert bank["content_title"] == "Contraseñas seguras. Banco de preguntas" and "score_source" not in bank
+    types = [b["type"] for b in bank["lessons"][0]["bricks"]]
+    assert bank["lessons"][0]["key"] == "U1-E1.1" and types[0] == "SINGLE_CHOICE" and "TEXT" not in types  # no instructions
+    assert main(["assemble", "link", "PWD", "--unit", "2", "--content-id", "c-bank"]) == 0
+    data = yaml.safe_load((course / "course.yaml").read_text(encoding="utf-8"))
+    assert data["bank_unit"]["content_id"] == "c-bank"
+    set_assessment(course, fmt="gift")  # html: no bank content, coursekit writes the bank
+    assert main(["assemble", "plan", "PWD", "--unit", "2"]) == 1
+
+
+def test_with_creator_the_bank_is_the_one_creator_exports(course, capsys, monkeypatch):  # noqa: F811
+    from coursekit import delivery
+
+    set_assessment(course, fmt="qti", backend="creator")
+    assert main(["delivery", "questions", "PWD", "--version", "1.0"]) == 1
+    assert "exported by creator" in capsys.readouterr().err
+
+    def fetch(request, timeout):
+        import io
+        import zipfile
+
+        data = io.BytesIO()
+        with zipfile.ZipFile(data, "w") as zf:
+            zf.writestr("imsmanifest.xml", "<manifest/>")
+        return io.BytesIO(data.getvalue())
+
+    monkeypatch.setattr(delivery.urllib.request, "urlopen", fetch)
+    assert main(["delivery", "questions", "PWD", "--version", "1.0", "--url", "https://example.com/bank"]) == 0
+    assert (course / "delivery" / "PWD-questions-v1.0.zip").exists()
+    entry = yaml.safe_load((course / "course.yaml").read_text(encoding="utf-8"))["deliveries"][-1]
+    assert entry["kind"] == "questions" and entry["format"] == "qti"
+    set_assessment(course, fmt="qti")
+    assert main(["delivery", "questions", "PWD", "--version", "1.0"]) == 1  # qti only with creator
+    assert "only works with the creator backend" in capsys.readouterr().err
 
 
 def test_gift_refuses_a_question_it_cannot_take(course, capsys):  # noqa: F811
@@ -157,3 +194,13 @@ def test_verify_refuses_the_question_types_the_bank_cannot_take(course):  # noqa
     errors = verify.verify_unit(loaded, loaded["units"][0]).errors
     assert any("“sorting” question does not fit in the gift bank" in e for e in errors)
     assert any("a single blank" in e for e in errors)
+
+
+def test_moodle_xml_writes_a_sorting_question_as_ordering(course):  # noqa: F811
+    set_assessment(course, fmt="moodle-xml")
+    assert main(["delivery", "questions", "PWD", "--version", "1.0"]) == 0
+    root = ET.parse(course / "delivery" / "PWD-questions-v1.0.xml").getroot()
+    ordering = root[-1]
+    assert ordering.get("type") == "ordering" and ordering.find("selecttype").text == "ALL"
+    assert [(a.get("fraction"), a.find("text").text) for a in ordering.findall("answer")] == [("1.0000000", "<p>Uno</p>"),
+                                                                                              ("2.0000000", "<p>Dos</p>")]

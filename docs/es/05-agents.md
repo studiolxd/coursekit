@@ -270,6 +270,7 @@ Tokens disponibles:
 | Token | Valor |
 |---|---|
 | `{{project_name}}`, `{{client}}`, `{{tone}}` | `name`, `client` y `tone` de `project.yaml` |
+| `{{project_audience}}` | `audience` de `project.yaml`, cada clave con su valor o `(not set)` |
 | `{{language_name}}`, `{{ui_language_name}}` | Nombre del idioma del contenido y del idioma de la interfaz |
 | `{{address_rule}}` | La regla para tratar a los alumnos, a partir de `address` |
 | `{{backend}}`, `{{mcp_name}}` | `assembly.backend` y `platform.slxd.mcp_name` |
@@ -278,7 +279,7 @@ Tokens disponibles:
 | `{{w_true}}`, `{{w_false}}`, `{{w_starts}}`, `{{w_contains}}` | Palabras que toman algunas claves en el idioma del contenido (`verdadero`/`falso` en `true-false`; `empieza`/`contiene` en `pasapalabra`) |
 | `{{pages_per_hour}}`, `{{words_per_page}}`, `{{words_per_hour}}`, `{{word_margin_pct}}` | Reglas de palabras de `rules` |
 | `{{questions_per_objective}}`, `{{placeholders_per_hour}}`, `{{min_placeholder_types}}`, `{{placeholder_types}}`, `{{interactive_per_hour}}`, `{{min_interactive_per_content_section}}`, `{{allowed_symbols}}` | Reglas de contenido de `rules`. `{{placeholder_types}}` enumera cada tipo permitido como la palabra que se escribe en el contenido seguida de su id entre paréntesis |
-| `{{competencies_per_course}}`, `{{objectives_per_unit}}`, `{{intro_summary_hours}}` | Orientaciones de diseño de `rules` |
+| `{{competencies_per_course}}`, `{{objectives_per_unit}}`, `{{unit_hours_step}}`, `{{intro_share}}`, `{{summary_share}}` | Orientaciones de diseño de `rules` |
 | `{{model}}` | Solo en ficheros de `agents/`: el modelo del rol cuando ese rol usa opencode; en otro caso se descarta la línea |
 
 Siguiente: [Contenido](06-content.md)
