@@ -796,6 +796,8 @@ def build_plan(course: dict, unit: dict, assets: dict[str, dict] | None = None,
             "content_title": content_title(course, unit), "lessons": lessons}
     if placement == "separate" or fmt != "platform":  # a package without tests reports the learner's progress, not a score
         plan["score_source"] = "quiz" if any(lesson["type"] == "evaluation" for lesson in lessons) else "lessonProgress"
+        if plan["score_source"] == "lessonProgress":  # and its status is completed or incomplete: there is nothing to pass
+            plan["reporting"] = "completed_incomplete"
     return plan, ctx["errors"], ctx["warnings"]
 
 

@@ -264,6 +264,43 @@ def test_a_package_of_the_design_system_gives_its_fonts_icons_logos_and_tokens_n
     assert "3 iconos de la marca en `icons/`" in (base / "index.md").read_text(encoding="utf-8")  # the language of the courses
 
 
+def test_the_npm_page_of_the_package_of_the_design_system_gives_its_icons(course, monkeypatch):  # noqa: F811
+    import io
+    import tarfile
+
+    base = course.parent.parent / "theme" / "branding"
+    brand.prepare(base, "en")
+    (base / "links.md").write_text("# Material\n\n- https://www.npmjs.com/package/@acme/brand — the design system\n"
+                                   "- https://www.npmjs.com/package/@acme/private\n", encoding="utf-8")
+    package = io.BytesIO()
+    with tarfile.open(fileobj=package, mode="w:gz") as tf:
+        for name, body in {"package/dist/assets/icons/glyphs/search.svg": b"<svg/>", "package/dist/index.js": b"x"}.items():
+            info = tarfile.TarInfo(name)
+            info.size = len(body)
+            tf.addfile(info, io.BytesIO(body))
+    calls = []
+
+    def fake_fetch(url):
+        calls.append(url)
+        if "private" in url:
+            raise OSError("404")
+        if url.endswith(".tgz"):
+            return package.getvalue()
+        return json.dumps({"dist-tags": {"latest": "2.0.0"},
+                           "versions": {"2.0.0": {"dist": {"tarball": "https://registry.example/brand-2.0.0.tgz"}}}}).encode()
+
+    monkeypatch.setattr(brand, "npm_fetch", fake_fetch)
+    done = brand.build(find_project())
+    assert calls[0] == "https://registry.npmjs.org/@acme%2Fbrand"
+    assert [p.name for p in (base / "icons").iterdir()] == ["search.svg"] and (base / "packages" / "acme-brand-2.0.0.tgz").exists()
+    index = (base / "index.md").read_text(encoding="utf-8")
+    assert "`packages/acme-brand-2.0.0.tgz`" in index and "@acme/private" in index and done["failed"] == 1
+    assert not (base / "text" / "web").exists() or not any("npmjs" in p.name for p in (base / "text" / "web").iterdir())
+    calls.clear()
+    brand.build(find_project())
+    assert not any(url.endswith(".tgz") for url in calls)  # the same version is not downloaded again
+
+
 def test_the_borders_and_weights_of_the_brand_reach_the_simulations_and_the_videos(course, capsys, monkeypatch):  # noqa: F811
     from coursekit import video
     from tests.test_video import montage

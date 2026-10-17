@@ -20,6 +20,9 @@ mcp_not_allowed:
 connector_not_connected:
   es: "el conector «{server}» de platform.slxd.connector está en estado {status}, no conectado: inicia sesión en él desde tu herramienta de IA (/mcp) y vuelve a lanzarlo"
   en: "the connector \"{server}\" in platform.slxd.connector is {status}, not connected: log in to it from your AI tool (/mcp) and run it again"
+media_connector_not_connected:
+  es: "el conector «{server}» de media › connectors está en estado {status}, no conectado, y una sesión sin interfaz no puede iniciar sesión: inicia sesión en él una vez desde tu herramienta de IA en esta carpeta (/mcp) y vuelve a lanzarlo"
+  en: "the connector \"{server}\" in media › connectors is {status}, not connected, and a session without an interface cannot sign in: log in to it once from your AI tool in this folder (/mcp) and run it again"
 mcp_needs_auth:
   es: "el servidor MCP «{server}» no está autorizado (estado: {status}) y una sesión sin interfaz no puede iniciar sesión. Autorízalo una vez: abre tu herramienta de IA en esta carpeta y usa /mcp; o, si ya tienes creator conectado en tu cuenta, pon el nombre de ese conector en project.yaml › platform.slxd.connector"
   en: "the MCP server \"{server}\" is not authorized (status: {status}) and a session without an interface cannot sign in. Authorize it once: open your AI tool in this folder and use /mcp; or, if creator is already connected in your account, set the name of that connector in project.yaml › platform.slxd.connector"

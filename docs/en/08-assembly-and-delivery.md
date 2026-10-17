@@ -137,12 +137,12 @@ The tests are written in the `assessment.md` of their unit, and the writing, the
 | `placement` | What is assembled and delivered |
 |---|---|
 | `unit` (default) | Each unit carries its tests as evaluation lessons, and its package reports their score. |
-| `separate` | The units carry no tests and report the learner's progress (`lessonProgress`). All the tests of the course go in one package of their own, one more unit after the last one (`coursekit status` gives its number), titled with the course title and «Assessment» («Evaluación» in Spanish); it reports the score (`quiz`). The plan of each unit says which in `score_source`, and the delivery agent passes it to the creator export. With the creator backend its content is created with `create_content` and recorded in `course.yaml › assessment_unit`; the evaluation lessons that the design generator made inside each unit are deleted. |
+| `separate` | The units carry no tests and report the learner's progress (`lessonProgress`), completed or incomplete (`completed_incomplete`). All the tests of the course go in one package of their own, one more unit after the last one (`coursekit status` gives its number), titled with the course title and «Assessment» («Evaluación» in Spanish); it reports the score (`quiz`). The plan of each unit says which in `score_source` (and `reporting: completed_incomplete` in a unit without tests), and the delivery agent passes them to the creator export. With the creator backend its content is created with `create_content` and recorded in `course.yaml › assessment_unit`; the evaluation lessons that the design generator made inside each unit are deleted. |
 
 | `format` | The questions of the tests |
 |---|---|
 | `platform` (default) | Evaluation lessons of the packages, in creator or in the html package. |
-| `aiken`, `gift`, `moodle-xml` | A question bank the LMS imports, written by `coursekit delivery questions` in `delivery/`. The questions leave the packages; an activity with a scored simulation keeps the simulation in its package (its unit's, or the package of the tests with `separate`), and an activity with only questions has no lesson. |
+| `aiken`, `gift`, `moodle-xml` | A question bank the LMS imports, written by `coursekit delivery questions` in `delivery/`. The questions leave the packages; an activity with a scored simulation keeps the simulation in its package (its unit's, or the package of the tests with `separate`), and an activity with only questions has no lesson. A package left without tests reports the learner's progress, completed or incomplete (`score_source: lessonProgress` and `reporting: completed_incomplete` in its plan), whatever `export` says. |
 
 Each bank format takes some question types: `verify` refuses the others in `assessment.md` while the unit is written, and `delivery questions` refuses them too.
 

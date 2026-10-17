@@ -137,12 +137,12 @@ Las evaluaciones se escriben en el `assessment.md` de su unidad, y ahí las ven 
 | `placement` | Qué se monta y se entrega |
 |---|---|
 | `unit` (por defecto) | Cada unidad lleva sus evaluaciones como lecciones de evaluación, y su paquete informa de su nota. |
-| `separate` | Las unidades no llevan evaluaciones e informan del avance (`lessonProgress`). Todas las evaluaciones del curso van en un paquete propio, una unidad más después de la última (`coursekit status` da su número), con el título del curso y «Evaluación» («Assessment» en inglés); informa de la nota (`quiz`). El plan de cada unidad lo dice en `score_source`, y el agente de entrega lo pasa a la exportación de creator. Con el backend creator su contenido se crea con `create_content` y se registra en `course.yaml › assessment_unit`; las lecciones de evaluación que el generador del diseño creó dentro de cada unidad se borran. |
+| `separate` | Las unidades no llevan evaluaciones e informan del avance (`lessonProgress`), completadas o incompletas (`completed_incomplete`). Todas las evaluaciones del curso van en un paquete propio, una unidad más después de la última (`coursekit status` da su número), con el título del curso y «Evaluación» («Assessment» en inglés); informa de la nota (`quiz`). El plan de cada unidad lo dice en `score_source` (y `reporting: completed_incomplete` en una unidad sin evaluaciones), y el agente de entrega los pasa a la exportación de creator. Con el backend creator su contenido se crea con `create_content` y se registra en `course.yaml › assessment_unit`; las lecciones de evaluación que el generador del diseño creó dentro de cada unidad se borran. |
 
 | `format` | Las preguntas de las evaluaciones |
 |---|---|
 | `platform` (por defecto) | Lecciones de evaluación de los paquetes, en creator o en el paquete html. |
-| `aiken`, `gift`, `moodle-xml` | Un banco de preguntas que importa el LMS, escrito por `coursekit delivery questions` en `delivery/`. Las preguntas salen de los paquetes; una actividad con una simulación puntuable deja la simulación en su paquete (el de su unidad, o el de las evaluaciones con `separate`), y una actividad que solo tiene preguntas no tiene lección. |
+| `aiken`, `gift`, `moodle-xml` | Un banco de preguntas que importa el LMS, escrito por `coursekit delivery questions` en `delivery/`. Las preguntas salen de los paquetes; una actividad con una simulación puntuable deja la simulación en su paquete (el de su unidad, o el de las evaluaciones con `separate`), y una actividad que solo tiene preguntas no tiene lección. Un paquete que se queda sin evaluaciones informa del avance, completado o incompleto (`score_source: lessonProgress` y `reporting: completed_incomplete` en su plan), diga lo que diga `export`. |
 
 Cada formato de banco admite unos tipos de pregunta: `verify` rechaza los demás en `assessment.md` mientras se redacta la unidad, y `delivery questions` también los rechaza.
 

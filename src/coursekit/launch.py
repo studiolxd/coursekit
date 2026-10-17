@@ -221,10 +221,23 @@ def permission_blocker(project: Project, log: Path, role: str) -> str | None:
     return t("launch", "programs_blocked_media" if role in ("media", "illustration") else "programs_blocked", programs=", ".join(programs))
 
 
+def project_servers(project: Project) -> list[str]:
+    """The names of the MCP servers of the project (`.mcp.json`), as Claude Code lists them."""
+    try:
+        data = json.loads((project.root / ".mcp.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    servers = data.get("mcpServers") if isinstance(data, dict) else None
+    return list(servers) if isinstance(servers, dict) else []
+
+
 def media_connectors(project: Project) -> list[str]:
-    """The keys of the claude.ai connectors the media agents may use without an interface (`media › connectors`)."""
-    names = configmod.effective("media", project).value.get("connectors") or []
-    return [agentsmod.server_key(n if str(n).lower().startswith("claude.ai") else f"claude.ai {n}") for n in names if str(n).strip()]
+    """The keys of the connectors the media agents may use without an interface (`media › connectors`): a name of a server of
+    the project (`.mcp.json`) is that server; any other is a connector of the account in claude.ai."""
+    names = [str(n).strip() for n in configmod.effective("media", project).value.get("connectors") or [] if str(n).strip()]
+    own = {name.lower(): name for name in project_servers(project)}
+    return [agentsmod.server_key(own[n.lower()] if n.lower() in own
+                                 else n if n.lower().startswith("claude.ai") else f"claude.ai {n}") for n in names]
 
 
 def headless_args(agent: Agent, text: str, last_message: Path, mcp_name: str, connector: str | None = None,
@@ -296,6 +309,9 @@ def mcp_blocker(project: Project, log: Path) -> str | None:
             return t("launch", "mcp_not_allowed", server=name, connector=name.removeprefix("claude.ai ").strip())
     if connector and connector in by_key and by_key[connector][1] != "connected":
         return t("launch", "connector_not_connected", server=by_key[connector][0], status=by_key[connector][1])
+    for key in media_connectors(project):
+        if key in by_key and by_key[key][1] != "connected":
+            return t("launch", "media_connector_not_connected", server=by_key[key][0], status=by_key[key][1])
     own = by_key.get(agentsmod.server_key(mine))
     if own and own[1] != "connected" and not (connector and by_key.get(connector, ("", ""))[1] == "connected"):
         return t("launch", "mcp_needs_auth", server=own[0], status=own[1])

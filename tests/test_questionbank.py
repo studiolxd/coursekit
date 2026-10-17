@@ -84,10 +84,10 @@ def test_separate_tests_go_in_a_package_of_their_own(course):  # noqa: F811
     set_assessment(course, placement="separate")
     unit = plan(course, 1)
     assert [lesson["type"] for lesson in unit["lessons"]] == ["content"] * 3  # the tests left the unit
-    assert unit["score_source"] == "lessonProgress"
+    assert unit["score_source"] == "lessonProgress" and unit["reporting"] == "completed_incomplete"  # nothing to pass in it
     tests = plan(course, 2)
     assert [lesson["key"] for lesson in tests["lessons"]] == ["U1-E1.1"]
-    assert tests["content_title"] == "Contraseñas seguras. Evaluación" and tests["score_source"] == "quiz"
+    assert tests["content_title"] == "Contraseñas seguras. Evaluación" and tests["score_source"] == "quiz" and "reporting" not in tests
     assert tests["lessons"][0]["quiz"] == {"passingGrade": 50, "maxAttempts": 2, "courseWeight": 1}
     assert main(["assemble", "link", "PWD", "--unit", "2", "--content-id", "c-tests"]) == 0
     data = yaml.safe_load((course / "course.yaml").read_text(encoding="utf-8"))

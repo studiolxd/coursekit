@@ -63,6 +63,32 @@ def test_with_the_connector_set_it_must_be_connected(project, tmp_path):  # noqa
     assert launch.mcp_blocker(find_project(project), ok) is None  # the connector is the way in: the project server does not matter
 
 
+def media_connectors(root, names):
+    (root / "config").mkdir(exist_ok=True)
+    (root / "config" / "media.yaml").write_text(f"connectors: [{', '.join(names)}]\n", encoding="utf-8")
+
+
+def test_a_media_connector_may_be_a_server_of_the_project(project):  # noqa: F811
+    mcp = project / ".mcp.json"
+    data_ = json.loads(mcp.read_text(encoding="utf-8")) if mcp.exists() else {}
+    data_.setdefault("mcpServers", {})["magnific"] = {"type": "http", "url": "https://mcp.example.com"}
+    mcp.write_text(json.dumps(data_), encoding="utf-8")
+    media_connectors(project, ["Magnific", "ElevenLabs"])
+    assert launch.media_connectors(find_project(project)) == ["magnific", "claude_ai_ElevenLabs"]
+    agent = launch.Agent("media", "claude", "")
+    args = launch.headless_args(agent, "x", project / "last.txt", "slxd-creator", connectors=["magnific"])
+    assert "mcp__magnific" in args[args.index("--allowedTools") + 1:args.index("--disallowedTools")]
+
+
+def test_a_media_connector_that_is_not_connected_is_named(project, tmp_path):  # noqa: F811
+    media_connectors(project, ["ElevenLabs"])
+    log = write_log(tmp_path / "f.log", {"slxd-creator": "connected", "claude.ai ElevenLabs": "needs-auth"})
+    message = launch.mcp_blocker(find_project(project), log)
+    assert "claude.ai ElevenLabs" in message and "media › connectors" in message and "/mcp" in message
+    ok = write_log(tmp_path / "g.log", {"slxd-creator": "connected", "claude.ai ElevenLabs": "connected"})
+    assert launch.mcp_blocker(find_project(project), ok) is None
+
+
 def test_a_log_that_says_nothing_has_no_blocker(project, tmp_path):  # noqa: F811
     assert launch.mcp_blocker(find_project(project), write_log(tmp_path / "e.log", {"slxd-creator": "connected"})) is None
     assert launch.mcp_blocker(find_project(project), tmp_path / "missing.log") is None

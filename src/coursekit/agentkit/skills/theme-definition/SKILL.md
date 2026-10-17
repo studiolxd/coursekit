@@ -17,13 +17,16 @@ come from. One theme per project, which every course inherits; a course can have
    platform theme, say which and ask whether to redo them; do not change them unprompted.
 2. The brand material: run `coursekit brand` (the project's) or `coursekit brand <CODE>` (a course with a brand of its own).
    It converts what the person left in `theme/branding/` (`sources/`: brand book, token files, fonts, logos; `links.md`: a
-   Storybook or brand website read whole, and websites whose style is observed in a browser; `notes.md`: their indications)
+   Storybook or brand website read whole, the npm page of the package of the design system, and websites whose style is
+   observed in a browser; `notes.md`: their indications)
    and writes `theme/branding/index.md`. Read the index, then `notes.md`, then the material: every page of brand and
    foundations whole (colours, typography, iconography, data graphics, motion, shape, logo), the index of the components
    whole, and whole the components that resources draw like (cards, charts, icons, alerts, tags, buttons); search the rest
    with `coursekit brief --find`. What was observed on a website is a clue, never a rule: when it contradicts the brand
    material, the brand wins. Also `brief/index.md` and `brief/notes.md`. If the index lists fonts without files, ask the
-   person for them (with their licence) instead of using others.
+   person for them (with their licence) instead of using others. If the brand says its icons, fonts or logos are published in
+   a package (npm) and the index has none, ask the person to add the page of that package on npm to `links.md` and run
+   `coursekit brand` again.
 3. The choice made when the project was created is `project.yaml › theme › source` (creator backend): `tenant_default` (the
    default theme of the organization) or `branding` (a theme made from `theme/branding/`). Follow it; ask only when you can ask.
 
@@ -73,7 +76,7 @@ colours, `origin.derived`), and the radius and the shadow are its defaults. The 
 1. `coursekit theme roles` (or `--course <CODE>`): each colour role, its value, where it comes from and **where it is seen**;
    the palette of the theme with its names. For each role derived by coursekit, and for the radius and the shadow, look for
    the colour or the value the brand gives for that use.
-2. Propose, never decide alone, what differs. Each proposal or question says, in the language of the person, the role, its
+2. Propose, never decide alone, what differs. Each proposal or question says, in {{ui_language_name}}, the role, its
    value now, where it is seen (the text of `coursekit theme roles`, as it is), the colour of the brand you propose with
    its name in the palette, and the place of the brand material you read it from (file and section). One example:
    «`surface` es `#F5F6F7`, calculado por coursekit. Se ve en el fondo de las tarjetas de una comparación en un vídeo y en

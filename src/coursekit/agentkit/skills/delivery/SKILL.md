@@ -32,8 +32,9 @@ same; `coursekit status <CODE>` says which backend the course uses.
 
 1. `create_snapshot` of the content named `v<version>` (keep its id).
 2. `create_export` with `contentId` and the values of `delivery › export` (`deliveryType`,
-   `standard`, `reporting`, `scoreSource`); when the plan of the unit (`assembly/unit-NN.plan.json`) has `score_source`, that one
-   replaces `scoreSource` (a unit without tests reports the progress, the package of the tests the score). Keep `jobId` and
+   `standard`, `reporting`, `scoreSource`); when the plan of the unit (`assembly/unit-NN.plan.json`) has `score_source` and
+   `reporting`, they replace `scoreSource` and `reporting` (a unit without tests reports its progress and is completed or
+   incomplete; the package of the tests reports the score). Keep `jobId` and
    `downloadUrl`.
 3. `get_export_status` until `COMPLETE` (wait between calls; if `FAILED`, stop and show
    `errorMessage`).

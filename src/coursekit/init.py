@@ -95,12 +95,15 @@ class Answers:
     mirror_dir: str = ""  # local path, personal: goes to .env, not to project.yaml
 
     def values(self) -> dict[str, str]:
+        from coursekit.agents import LANGUAGE_NAMES
+
         address = self.address or ADDRESS[self.content_language][0]
         return {
             "name": self.name,
             "client": self.client,
             "content_language": self.content_language,
             "ui_language": self.ui_language,
+            "ui_language_name": LANGUAGE_NAMES.get(self.ui_language, self.ui_language),
             "tone": self.tone,
             "address": address,
             "backend": self.backend,

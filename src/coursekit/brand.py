@@ -83,6 +83,8 @@ GENERATED = "/* Written by coursekit brand from the fonts of the brand folder. L
 ICON_FOLDERS = {"icons", "iconos", "icon", "glyphs", "glifos"}
 TOKEN_FILES = {"tokens", "design-tokens", "variables", "theme", "colors", "colours"}  # what a package keeps its tokens in
 ARCHIVES = (".tgz", ".tar.gz", ".zip")
+NPM_URL = re.compile(r"^https?://(?:www\.)?npmjs\.com/package/((?:@[^/?#]+/)?[^/?#]+)(?:/v/([^/?#]+))?", re.I)
+NPM_REGISTRY = "https://registry.npmjs.org"
 GOOGLE_SUBSETS = ("latin", "latin-ext")
 MAX_TEXT = 200_000  # characters of a token file copied into the text
 
@@ -347,7 +349,13 @@ def build(project: Project, course: dict | None = None, refresh: bool = False, l
     for archive in found.get("archive", []):  # a brand kit or the package of a design system: only what the media use
         for kind, files in _unpack(archive, base).items():
             found.setdefault(kind, []).extend(files)
-    icons = [_copy(src, base / "icons") for src in found.get("icon", [])]
+    content, style, illustration_links = parse_links(base / "links.md")
+    packages = [_package(url, comment, base, state.setdefault("packages", {}), refresh) for url, comment in content if NPM_URL.match(url)]
+    content = [(url, comment) for url, comment in content if not NPM_URL.match(url)]
+    for package in packages:  # a package of npm named in links.md: as if its .tgz were in sources/
+        if package.get("file"):
+            for kind, files in _unpack(base / package["file"], base).items():
+                found.setdefault(kind, []).extend(files)
     documents = [_document(src, src.relative_to(base / "sources").as_posix(), base, state.setdefault("files", {}))
                  for src in found.get("document", [])]
     for src in found.get("tokens", []):
@@ -356,8 +364,8 @@ def build(project: Project, course: dict | None = None, refresh: bool = False, l
         target = base / "text" / "tokens" / f"{src.name}.md"
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(f"---\nsource: {src.relative_to(base).as_posix()}\n---\n\n```{src.suffix[1:]}\n{text}\n```\n", encoding="utf-8")
+    icons = [_copy(src, base / "icons") for src in found.get("icon", [])]
     logos = [_copy(src, base / "logo") for src in found.get("logo", []) if src.suffix.lower() in IMAGES]
-    content, style, illustration_links = parse_links(base / "links.md")
     webs, failed = brief.download_links(base, state, refresh, log, links=content)
     google: list[str] = []
     for info in (state.get("web") or {}).values():
@@ -373,7 +381,7 @@ def build(project: Project, course: dict | None = None, refresh: bool = False, l
         google += row.get("google") or []
         failed += 1 if row.get("error") else 0
     sources = _illustration_sources(base, illustration_links, refresh)
-    failed += sum(1 for s in sources if s.get("error"))
+    failed += sum(1 for s in sources if s.get("error")) + sum(1 for p in packages if p.get("error"))
     rules = _font_rules(base, found, sorted(set(google)))
     sheet = base / FONTS_SHEET
     notes = []
@@ -386,10 +394,47 @@ def build(project: Project, course: dict | None = None, refresh: bool = False, l
     missing = sorted({f for row in observed for f in row.get("families") or [] if f.lower() not in have})
     state_path.parent.mkdir(parents=True, exist_ok=True)
     state_path.write_text(json.dumps(state, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    write_index(base, lang, documents, webs, observed, rules, missing, logos, found, notes, icons, sources)
+    write_index(base, lang, documents, webs, observed, rules, missing, logos, found, notes, icons, sources, packages)
     return {"folder": base, "documents": len(documents), "webs": len(webs), "observed": len(observed),
             "fonts": sorted({r["family"] for r in rules}), "missing_fonts": missing, "logos": len(logos), "icons": len(icons),
             "failed": failed}
+
+
+def npm_fetch(url: str) -> bytes:
+    """What the registry of npm serves (the tests stand in for it)."""
+    import urllib.request
+
+    req = urllib.request.Request(url, headers={"User-Agent": "coursekit", "Accept": "application/json, application/octet-stream"})
+    with urllib.request.urlopen(req, timeout=120) as resp:
+        return resp.read()
+
+
+def _package(url: str, note: str, base: Path, state: dict, refresh: bool) -> dict:
+    """A package of npm named in links.md (https://www.npmjs.com/package/<name>, or …/v/<version> for one version): its .tgz
+    from the registry into packages/, downloaded again only when the version changes. A private package is not reached."""
+    import urllib.error
+    import urllib.parse
+
+    name, pinned = NPM_URL.match(url).groups()
+    row = {"url": url, "note": note, "name": name, "version": pinned, "file": None, "error": None}
+    try:
+        meta = json.loads(npm_fetch(f"{NPM_REGISTRY}/{urllib.parse.quote(name, safe='@')}"))
+        version = pinned or (meta.get("dist-tags") or {}).get("latest")
+        tarball = (((meta.get("versions") or {}).get(version) or {}).get("dist") or {}).get("tarball")
+        if not tarball:
+            row["error"] = i18n.t("brand", "package_no_version", name=name, version=version or "latest")
+            return row
+        target = base / "packages" / f"{name.lstrip('@').replace('/', '-')}-{version}.tgz"
+        if refresh or not target.exists() or state.get(url) != version:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            for old in target.parent.glob(f"{name.lstrip('@').replace('/', '-')}-*.tgz"):
+                old.unlink()
+            target.write_bytes(npm_fetch(tarball))
+        state[url] = version
+        row.update(version=version, file=target.relative_to(base).as_posix())
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError) as exc:
+        row["error"] = i18n.t("brand", "package_failed", name=name, reason=getattr(exc, "reason", exc))
+    return row
 
 
 def _unpack(archive: Path, base: Path) -> dict[str, list[Path]]:
@@ -440,7 +485,7 @@ def _cell(text: object) -> str:
 
 def write_index(base: Path, lang: str, documents: list[dict], webs: list[dict], observed: list[dict], rules: list[dict],
                 missing: list[str], logos: list[Path], found: dict[str, list[Path]], notes: list[str],
-                icons: list[Path] | None = None, sources: list[dict] | None = None) -> None:
+                icons: list[Path] | None = None, sources: list[dict] | None = None, packages: list[dict] | None = None) -> None:
     from coursekit import brief
 
     def say(key: str, **values) -> str:
@@ -459,6 +504,11 @@ def write_index(base: Path, lang: str, documents: list[dict], webs: list[dict], 
         out += [say("section_webs"), "", say("header_webs"), "|---|---|---|---:|---|"]
         out += [f"| {w['url']} | {_cell(w['note'])} | " + (f"`{w['folder']}/README.md`" if w["folder"] else "—") + f" | {w['pages']} | "
                 f"{_cell('; '.join(brief.render(n, lang) for n in w['notes']))} |" for w in webs]
+        out.append("")
+    if packages:
+        out += [say("section_packages"), "", say("packages_intro"), "", say("header_packages"), "|---|---|---|---|"]
+        out += [f"| {p['url']} | {_cell(p['note'])} | {_cell(p['version'] or '—')} | "
+                + _cell(p["error"] or (f"`{p['file']}`" if p["file"] else "")) + " |" for p in packages]
         out.append("")
     if observed:
         out += [say("section_observed"), "", say("observed_intro"), "", say("header_observed"), "|---|---|---|---|"]

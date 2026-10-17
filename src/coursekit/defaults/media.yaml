@@ -38,9 +38,11 @@ stock:
 # project). auto: theme/branding/fonts/fonts.css of the course, else of the project, when it exists; null: the machine's.
 fonts: auto
 
-# Connectors of Claude Code (claude.ai) that the media and illustration agents may use in the sessions without an interface
-# (`--headless`, the handoff), by their name as Claude Code lists them, e.g. [Magnific, ElevenLabs]: the options with
-# `needs: {mcp: …}` (images_generate, creative_generate_speech…) come from them. With an interface the person approves them.
+# Connectors that the media and illustration agents may use in the sessions without an interface (`--headless`, the handoff,
+# Claude Code only), by their name as Claude Code lists them, e.g. [magnific, ElevenLabs]: a server of the project (.mcp.json)
+# by its name there, any other name a connector of the account in claude.ai. Log in to each once with /mcp in a session with an
+# interface. The options with `needs: {mcp: …}` (images_generate, creative_generate_speech…) come from them. With an interface
+# the person approves them.
 connectors: []
 
 # Voice-over for video and audio. A course uses ONE provider for all its narration:

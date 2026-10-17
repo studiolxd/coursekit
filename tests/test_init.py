@@ -25,7 +25,9 @@ def test_creates_a_project(tmp_path, capsys):
         assert (root / path).exists(), path
     for folder in ("courses", "brief/sources", "config", "theme"):
         assert (root / folder).is_dir(), folder
-    assert "ACME" in (root / "AGENTS.md").read_text(encoding="utf-8")
+    agents_md = (root / "AGENTS.md").read_text(encoding="utf-8")
+    assert "ACME" in agents_md
+    assert "Talk to the person in Spanish (Spain)" in agents_md  # the agents ask and report in the language of the interface
     state = json.loads((root / ".coursekit" / "generated.json").read_text(encoding="utf-8"))
     assert set(state["files"]) == set(init.MANAGED.values())
     assert "skills, commands and agent settings" in capsys.readouterr().out

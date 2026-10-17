@@ -6,7 +6,8 @@ links_template:
     # Material de marca
 
     <!-- Una URL por línea (sola o como elemento de lista), con una nota opcional detrás de " — ". Se lee su contenido:
-    un Storybook entero (páginas y componentes), una web de marca o una documentación, en Markdown en text/web/. -->
+    un Storybook entero (páginas y componentes), una web de marca o una documentación, en Markdown en text/web/. El paquete
+    npm del sistema de diseño (https://www.npmjs.com/package/<nombre>) se descarga y se toman sus fuentes, iconos y logos. -->
 
     # Webs de las que inferir el estilo
 
@@ -22,7 +23,8 @@ links_template:
     # Brand material
 
     <!-- One URL per line (alone or as a list item), with an optional note after " — ". Its content is read: a whole
-    Storybook (pages and components), a brand website or a documentation, as Markdown in text/web/. -->
+    Storybook (pages and components), a brand website or a documentation, as Markdown in text/web/. The npm package of the
+    design system (https://www.npmjs.com/package/<name>) is downloaded and its fonts, icons and logos are taken. -->
 
     # Websites to infer the style from
 
@@ -59,6 +61,11 @@ section_documents: {es: "## Documentos", en: "## Documents"}
 header_documents: {es: "| Fichero | Texto | Palabras | Avisos |", en: "| File | Text | Words | Warnings |"}
 section_webs: {es: "## Webs y Storybooks", en: "## Websites and Storybooks"}
 header_webs: {es: "| URL | Nota | Índice | Páginas | Avisos |", en: "| URL | Note | Index | Pages | Warnings |"}
+section_packages: {es: "## Paquetes de npm", en: "## npm packages"}
+packages_intro: {es: "Los paquetes del sistema de diseño de `links.md`, descargados del registro de npm: se toman sus fuentes, iconos, logos y ficheros de tokens, como de un paquete dejado en `sources/`; nunca su código.", en: "The packages of the design system in `links.md`, downloaded from the npm registry: their fonts, icons, logos and token files are taken, as from a package left in `sources/`; never their code."}
+header_packages: {es: "| URL | Nota | Versión | Fichero |", en: "| URL | Note | Version | File |"}
+package_failed: {es: "no se pudo descargar el paquete {name} del registro de npm ({reason}); si es privado, déjalo en sources/ como .tgz", en: "the package {name} could not be downloaded from the npm registry ({reason}); if it is private, leave it in sources/ as a .tgz"}
+package_no_version: {es: "el registro de npm no tiene la versión {version} del paquete {name}", en: "the npm registry has no version {version} of the package {name}"}
 section_observed: {es: "## Estilo observado en webs", en: "## Style observed on websites"}
 observed_intro: {es: "Pistas, no reglas de marca: si contradicen el material de marca, gana la marca.", en: "Clues, not rules of the brand: when they contradict the brand material, the brand wins."}
 header_observed: {es: "| URL | Nota | Lo observado | Error |", en: "| URL | Note | What was observed | Error |"}
