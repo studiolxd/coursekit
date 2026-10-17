@@ -249,7 +249,7 @@ Estos son los mensajes de `coursekit voice`, `tts`, `subtitles` y `media`; el fl
 
 | Mensaje | Significado y solución |
 |---|---|
-| ``hay varios proveedores de voz disponibles (<lista>): elige uno para el curso con `coursekit voice set <CODE> <provider> [--voice …]``` | `tts` encontró varios proveedores configurados y el curso no tiene ninguno elegido. Ejecuta el comando que indica |
+| ``hay varios proveedores de voz disponibles (<lista>): elige uno para el proyecto con `coursekit voice set <provider> [--voice …]` …`` | `tts` encontró varios proveedores configurados y ni el curso ni el proyecto tienen uno elegido. Fija el del proyecto (lo heredan todos los cursos) o el del curso, con el comando que indica |
 | `este curso usa <etiqueta> pero no está configurado aquí (<CLAVES> en .env)` | La voz del curso está fijada (`course.yaml › media.voice`) pero este equipo no tiene sus claves. Ponlas en `.env` (`coursekit setup --media` las pide), o elige otro proveedor con `coursekit voice set` |
 | `no hay ningún proveedor de voz configurado (claves de ElevenLabs, Azure o Google, o Piper, en .env)` | No hay ningún proveedor disponible. Define una clave en `.env`, o instala la voz de borrador con `coursekit setup --media` |
 | `hacen falta ELEVENLABS_API_KEY y una voz (ELEVENLABS_VOICE_ID o --voice)` | ElevenLabs no tiene voz por defecto: define `ELEVENLABS_VOICE_ID` o pasa `--voice`, o fíjala para el curso con `coursekit voice set CODE elevenlabs --voice ID` |
@@ -261,7 +261,7 @@ Estos son los mensajes de `coursekit voice`, `tts`, `subtitles` y `media`; el fl
 | `<host> respondió <estado> <motivo>: revisa la clave, la región y la voz configuradas` | El servicio de voz rechazó la petición. `401` o `403`: clave incorrecta o (Azure) una región que no es la del recurso (`AZURE_SPEECH_REGION`); `404`: la voz no existe (`ELEVENLABS_VOICE_ID`, `AZURE_SPEECH_VOICE`, `GOOGLE_TTS_VOICE`, `GEMINI_TTS_VOICE` o `--voice`; con Gemini también el modelo, `media.yaml › gemini.model`); `429`: cuota o créditos agotados. Si falla, no se escribe nada |
 | `no se pudo conectar con <host>: <motivo>` | Sin red, o un proxy que inspecciona TLS: mira [Proxy corporativo y certificados](#proxy-corporativo-y-certificados) |
 | `no existe el fichero <ruta>` | La ruta de `--in`, `--audio` o `--text` es incorrecta (son relativas a donde ejecutas el comando) |
-| `coursekit: voice set necesita CODE y PROVIDER` | `coursekit voice set PWD azure`; con `voice list` el curso es opcional |
+| `coursekit: voice set necesita PROVIDER (…)` | `coursekit voice set gemini` (el proyecto) o `coursekit voice set PWD azure` (un curso); `--character`, solo con un curso |
 | ``no se encuentra el recurso <ID> (ejecuta antes `coursekit media extract`)`` | El manifiesto no tiene ese id: ejecuta `coursekit media extract CODE` y revisa el id (son posicionales) |
 | `el estado debe ser uno de ['pending', 'scripted', 'produced', 'uploaded']` | `media set --status` acepta uno de esos cuatro; `orphaned` lo pone `extract` |
 | `--download-title y --download-asset-path necesitan --download FILE` | Añade `--download FICHERO` al mismo comando |

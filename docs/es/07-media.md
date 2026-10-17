@@ -269,6 +269,7 @@ Un curso usa **una** voz para toda su locución, así que un curso nunca mezcla 
 La voz por defecto depende del idioma del curso (`es` o `en`). En `media plan` y `media providers` las opciones de voz se llaman `elevenlabs-api`, `azure-api`, `google-api`, `gemini-api` y `piper` (los proveedores de arriba), además de `elevenlabs-mcp`, el agente usando directamente el conector de ElevenLabs (sin `coursekit tts`); esta siempre aparece, porque solo el agente puede saber si tiene el conector. Las opciones de subtítulos son `elevenlabs-timestamps` y `stable-ts`.
 
 ```bash
+coursekit voice set gemini                 # la voz del proyecto: la heredan los cursos que no tienen la suya
 coursekit voice list PWD                   # proveedores, disponibilidad y la voz del curso
 coursekit voice set PWD azure              # fija el proveedor (y su voz por defecto)
 coursekit voice set PWD piper --speaker 1  # un locutor de una voz de Piper con varios locutores
@@ -277,7 +278,7 @@ coursekit voice set PWD elevenlabs --voice <id-de-voz>
 
 **Voces de los personajes.** Los personajes de los diálogos y de las simulaciones pueden tener voz propia, del mismo proveedor: `coursekit voice set PWD azure --voice es-ES-AlvaroNeural --character Daniel` la guarda en `course.yaml › media.voices`, y `coursekit tts --course PWD --character Daniel …` la usa. Con Piper, un personaje sin voz propia toma por turnos un locutor de la voz, en el orden del reparto de la biblia narrativa: suficiente para borradores.
 
-`voice set` necesita el código del curso y el proveedor. Si el proveedor no está configurado en este equipo, avisa (puede que otras personas del equipo lo tengan) pero lo guarda igualmente. Con varios proveedores disponibles y ninguno elegido, `tts` se detiene y te pide ejecutar `voice set`; sin ninguno disponible, indica qué claves definir.
+`voice set <provider>`, sin curso, fija la voz del proyecto (`project.yaml › media.voice`), y la usan todos los cursos sin voz propia; `voice set <CODE> <provider>` da a un curso la suya, y `voice unset <CODE>` se la quita para que vuelva a heredar la del proyecto. Un cambio de la voz del proyecto llega a todos los cursos que la heredan, también a la locución pendiente de un curso a medias. Si el proveedor no está configurado en este equipo, avisa (puede que otras personas del equipo lo tengan) pero lo guarda igualmente. Con varios proveedores disponibles y ninguno elegido, `tts` se detiene y te pide ejecutar `voice set`; sin ninguno disponible, indica qué claves definir.
 
 ### La voz de Gemini
 
@@ -298,7 +299,7 @@ media:
 | `tier` | `flex` | `flex`: la mitad del precio, la misma petición, y la respuesta en minutos en lugar de segundos (hasta 15); cuando Google no tiene capacidad responde 429 o 503 y coursekit lo vuelve a intentar unas cuantas veces. `standard`: el precio completo y la respuesta más rápida |
 | `flex_fallback` | `true` | Cuando `flex` sigue sin capacidad tras los intentos, la petición va por el nivel estándar. `false`: falla en su lugar (código de salida 1), y no se paga nada a precio completo |
 
-`coursekit voice set PWD gemini` escribe en el curso el modelo vigente (`course.yaml › media.voice.model`): el curso conserva el modelo con el que empezó aunque cambie el valor por defecto, así que su locución nunca cambia de voz a mitad. Para pasar un curso a otro modelo, cambia esa clave y vuelve a producir su locución. Las voces son las de Gemini (`Aoede`, `Kore`, `Charon`, `Puck`…), sin idioma: el idioma es el del curso. La Gemini API marca todo el audio que genera con una marca de agua SynthID inaudible. En su nivel gratuito, Google puede usar lo que se envía para mejorar sus productos: para el contenido de un cliente, usa una clave con facturación.
+`coursekit voice set PWD gemini` escribe en el curso el modelo vigente (`course.yaml › media.voice.model`; `voice set gemini`, en la voz del proyecto): el curso conserva el modelo con el que empezó aunque cambie el valor por defecto, así que su locución nunca cambia de voz a mitad. Para pasar un curso a otro modelo, cambia esa clave y vuelve a producir su locución. Las voces son las de Gemini (`Aoede`, `Kore`, `Charon`, `Puck`…), sin idioma: el idioma es el del curso. La Gemini API marca todo el audio que genera con una marca de agua SynthID inaudible. En su nivel gratuito, Google puede usar lo que se envía para mejorar sus productos: para el contenido de un cliente, usa una clave con facturación.
 
 ### El batch de la voz de Gemini
 

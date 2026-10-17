@@ -249,7 +249,7 @@ These are the messages of `coursekit voice`, `tts`, `subtitles` and `media`; the
 
 | Message | Meaning and fix |
 |---|---|
-| ``several voice providers are available (<list>): choose one for the course with `coursekit voice set <CODE> <provider> [--voice …]``` | `tts` found several configured providers and the course has none chosen. Run the command it shows |
+| ``several voice providers are available (<list>): choose one for the project with `coursekit voice set <provider> [--voice …]` …`` | `tts` found several configured providers and neither the course nor the project has one chosen. Fix the project's (every course inherits it) or the course's, with the command it shows |
 | `this course uses <label> but it is not configured here (<KEYS> in .env)` | The course voice is set (`course.yaml › media.voice`) but this machine lacks its keys. Put them in `.env` (`coursekit setup --media` asks for them), or choose another provider with `coursekit voice set` |
 | `no voice provider configured (ElevenLabs, Azure or Google keys, or Piper, in .env)` | No provider is available. Set a key in `.env`, or install the draft voice with `coursekit setup --media` |
 | `ELEVENLABS_API_KEY and a voice (ELEVENLABS_VOICE_ID or --voice) are needed` | ElevenLabs has no default voice: set `ELEVENLABS_VOICE_ID` or pass `--voice`, or fix it for the course with `coursekit voice set CODE elevenlabs --voice ID` |
@@ -261,7 +261,7 @@ These are the messages of `coursekit voice`, `tts`, `subtitles` and `media`; the
 | `<host> answered <status> <reason>: check the key, the region and the voice configured` | The voice service rejected the request. `401` or `403`: wrong key, or (Azure) a region that is not the one of the resource (`AZURE_SPEECH_REGION`); `404`: the voice does not exist (`ELEVENLABS_VOICE_ID`, `AZURE_SPEECH_VOICE`, `GOOGLE_TTS_VOICE`, `GEMINI_TTS_VOICE` or `--voice`; with Gemini also the model, `media.yaml › gemini.model`); `429`: quota or credits used up. Nothing is written when it fails |
 | `could not reach <host>: <reason>` | No network, or a proxy that inspects TLS: see [Corporate proxy and certificates](#corporate-proxy-and-certificates) |
 | `the file <path> does not exist` | The path of `--in`, `--audio` or `--text` is wrong (they are relative to where you run the command) |
-| `coursekit: voice set needs CODE and PROVIDER` | `coursekit voice set PWD azure`; with only `voice list` the course is optional |
+| `coursekit: voice set needs PROVIDER (…)` | `coursekit voice set gemini` (the project) or `coursekit voice set PWD azure` (a course); `--character` only with a course |
 | ``asset <ID> not found (run `coursekit media extract` first)`` | The manifest has no such id: run `coursekit media extract CODE`, and check the id (they are positional) |
 | `status must be one of ['pending', 'scripted', 'produced', 'uploaded']` | `media set --status` takes one of those four; `orphaned` is set by `extract` |
 | `--download-title and --download-asset-path need --download FILE` | Add `--download FILE` to the same command |

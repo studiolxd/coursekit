@@ -475,7 +475,7 @@ Campos que escriben los comandos, que puedes leer pero no deberías editar:
 
 Los enlaces son por unidad porque cada unidad es un contenido propio en creator. No existe un bloque `links` a nivel de curso.
 
-Una cosa que conviene saber sobre `media:` en `course.yaml`: su clave `voice` es donde `coursekit voice set` guarda la voz elegida para el curso. Mira [Multimedia](07-media.md).
+Una cosa que conviene saber sobre `media:` en `course.yaml`: su clave `voice` es donde `coursekit voice set` guarda la voz elegida para el curso. La misma clave en `project.yaml › media` es la voz del proyecto (`coursekit voice set <provider>`), que heredan los cursos que no tienen la suya; ninguna de las dos es la lista de proveedores de `media.yaml › voice`. Mira [Multimedia](07-media.md).
 
 ## Tokens del tema y carpetas de caché
 

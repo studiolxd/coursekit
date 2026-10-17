@@ -1,8 +1,9 @@
 """Voice-over providers: which are available here, and which one each course uses.
 
-Every course uses ONE provider for all its narration (course.yaml › media.voice), so a course never
-mixes voices. When several providers are available and the course has none chosen yet, the
-person picks one with `coursekit voice set`. The characters of the dialogues and the simulations
+Every course uses ONE provider for all its narration, so a course never mixes voices: its own
+(course.yaml › media.voice), else the one of the project (project.yaml › media.voice), which every
+course without its own inherits. When several providers are available and neither is chosen, the
+person picks one with `coursekit voice set` (`voice set <provider>` for the project). The characters of the dialogues and the simulations
 may have their own voice of that provider (course.yaml › media.voices, `voice set --character`).
 """
 
@@ -55,8 +56,21 @@ def available() -> list[str]:
     return [p for p in PROVIDERS if is_available(p)]
 
 
-def course_voice(course: dict) -> dict:
+def project_voice(project) -> dict:
+    """The voice of the project (project.yaml › media.voice), which every course without its own inherits."""
+    from coursekit import config
+
+    media = config.project_data(project).get("media") if project is not None else None
+    return dict((media or {}).get("voice") or {}) if isinstance(media, dict) else {}
+
+
+def own_voice(course: dict) -> dict:
     return (course.get("media") or {}).get("voice") or {}
+
+
+def course_voice(course: dict) -> dict:
+    """The voice of a course: its own, else the one of the project."""
+    return own_voice(course) or project_voice(course.get("_project"))
 
 
 def default_voice(provider: str, language: str) -> str | None:
@@ -129,16 +143,21 @@ def resolve(course: dict | None, engine: str | None = None) -> tuple[str, str | 
     return provider, voice, None if speaker is None else str(speaker)
 
 
-def listing(course: dict | None) -> list[str]:
+def listing(course: dict | None, project=None) -> list[str]:
     found = available()
     status = {True: t("voices", "status_available"), False: t("voices", "status_missing")}
     width = max(len(w) for w in status.values())
     lines = [f"{status[p in found]:<{width}}  {p:<11} {s['label']:<18} {t('voices', s['note_key'])}" for p, s in PROVIDERS.items()]
+    if project is not None and not course:
+        chosen = project_voice(project)
+        lines.append(t("voices", "project_uses", provider=chosen.get("provider"), voice=chosen.get("voice") or
+                       t("voices", "default_voice_listing")) if chosen else t("voices", "project_none"))
     if course:
         chosen = course_voice(course)
         if chosen:
+            inherited = "" if own_voice(course) else t("voices", "inherited")
             shown = {"code": course["code"], "provider": chosen.get("provider"),
-                     "voice": chosen.get("voice") or t("voices", "default_voice_listing")}
+                     "voice": (chosen.get("voice") or t("voices", "default_voice_listing")) + inherited}
             if chosen.get("speaker") is not None:
                 lines.append(t("voices", "course_uses_speaker", speaker=chosen["speaker"], **shown))
             else:
@@ -177,7 +196,7 @@ def set_voice(course: dict, provider: str, voice: str | None, speaker: str | Non
         old = (data["media"].get("voice") or {}) if not character else {}
         entry["model"] = (old.get("model") if old.get("provider") == "gemini" else None) or gemini_settings(course)["model"]
     if character:
-        course_provider = (data["media"].get("voice") or {}).get("provider")
+        course_provider = (data["media"].get("voice") or {}).get("provider") or project_voice(course.get("_project")).get("provider")
         if course_provider and course_provider != provider:
             raise VoiceError(t("voices", "character_other_provider", name=character, provider=provider, course=course_provider))
         if not voice and speaker is None:
@@ -198,3 +217,43 @@ def set_voice(course: dict, provider: str, voice: str | None, speaker: str | Non
     if speaker is not None:
         return t("voices", "voice_set_speaker", speaker=speaker, **shown), warning
     return t("voices", "voice_set", **shown), warning
+
+
+def set_project_voice(project, provider: str, voice: str | None, speaker: str | None) -> tuple[str, str | None]:
+    """Fix the voice of the project (project.yaml › media.voice), which every course without its own inherits."""
+    from coursekit import config
+
+    if provider not in PROVIDERS:
+        raise VoiceError(t("voices", "unknown_provider_short", provider=provider, providers=", ".join(PROVIDERS)))
+    warning = None if is_available(provider) else t("voices", "not_configured_warning", provider=provider)
+    ry, data = edit_yaml(project.file)
+    if not isinstance(data.get("media"), dict):
+        data["media"] = {}
+    language = str(data.get("content_language") or "es").split("-")[0]
+    spec = PROVIDERS[provider]
+    entry = {"provider": provider, "voice": voice or os.environ.get(spec["voice_env"], "").strip() or default_voice(provider, language)}
+    if speaker is not None:
+        entry["speaker"] = int(speaker)
+    if provider == "gemini":  # the courses keep the model the project starts with: a new default does not change it
+        old = data["media"].get("voice") or {}
+        entry["model"] = (old.get("model") if old.get("provider") == "gemini" else None) \
+            or (config.effective("media", project).get("gemini") or {}).get("model")
+    data["media"]["voice"] = entry
+    save_yaml(ry, data, project.file)
+    return t("voices", "project_voice_set", provider=provider, voice=entry["voice"] or t("voices", "default_voice_set")), warning
+
+
+def unset_voice(course: dict | None, project=None) -> str:
+    """Take away the voice fixed in a course (it inherits the project's again), or the voice of the project."""
+    path = course["_dir"] / "course.yaml" if course else project.file
+    ry, data = edit_yaml(path)
+    media = data.get("media")
+    if not isinstance(media, dict) or not media.get("voice"):
+        return t("voices", "nothing_to_unset", code=course["code"]) if course else t("voices", "project_nothing_to_unset")
+    del media["voice"]
+    save_yaml(ry, data, path)
+    if not course:
+        return t("voices", "project_voice_unset")
+    inherited = project_voice(course["_project"])
+    return t("voices", "voice_unset", code=course["code"], provider=inherited.get("provider") or "-",
+             voice=inherited.get("voice") or "-") if inherited else t("voices", "voice_unset_none", code=course["code"])

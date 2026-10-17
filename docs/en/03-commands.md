@@ -925,24 +925,26 @@ coursekit video export PWD U1-S2-M1
 
 ### `coursekit voice`
 
-Shows the voice-over providers available on this machine, or fixes the single voice of a course. A course never mixes voices. Who: both.
+Shows the voice-over providers available on this machine, or fixes the voice of the project, which every course without its own inherits, or the single voice of a course. A course never mixes voices. Who: both.
 
 ```
-coursekit voice [--voice VOICE] [--speaker SPEAKER] [--character CHARACTER] {list,set} [code] [{elevenlabs,azure,google,piper}]
+coursekit voice [--voice VOICE] [--speaker SPEAKER] [--character CHARACTER] {list,set,unset} [code] [{elevenlabs,azure,google,gemini,piper}]
 ```
 
 | Argument | Values / default | Meaning |
 |---|---|---|
-| `action` | `list`, `set` | Show or fix. |
-| `code` | course code or folder | Required by `set`; optional for `list` (adds the course's voice). |
-| `provider` | `elevenlabs`, `azure`, `google`, `piper` | Required by `set`. |
+| `action` | `list`, `set`, `unset` | Show, fix, or take away the voice fixed. |
+| `code` | course code or folder | The course. Without it, `set` and `unset` work on the voice of the project (`project.yaml › media.voice`) and `list` shows it. |
+| `provider` | `elevenlabs`, `azure`, `google`, `gemini`, `piper` | Required by `set`. |
 | `--voice VOICE` | provider voice id; default: the provider's voice variable in `.env`, then the language default | Voice to use. |
 | `--speaker SPEAKER` | integer | Speaker of multi-speaker Piper voices. |
 | `--character CHARACTER` | name (`set`) | Fix the voice of this character instead of the course voice: it must be of the provider of the course (exit code 1 otherwise) and needs `--voice` (or `--speaker` with Piper). Stored in `course.yaml › media.voices`. |
 
-`list` prints one line per provider (`available` or `missing`, with a note) and, with a course, which voice it uses or what to do next. `set` writes `course.yaml › media.voice` (`provider`, `voice`, `speaker`), or with `--character` the voice of that character in `media.voices`, and warns, without failing, when the provider is not configured on this machine. Exit code 2 when `set` lacks the course or the provider.
+`list` prints one line per provider (`available` or `missing`, with a note) and, with a course, which voice it uses or what to do next. `set` writes `course.yaml › media.voice` (`provider`, `voice`, `speaker`), or with `--character` the voice of that character in `media.voices`, and warns, without failing, when the provider is not configured on this machine. Without a course, `set` writes `project.yaml › media.voice`: every course without a voice of its own uses it, and a course keeps its own until `unset` takes it away (`coursekit voice unset PWD`), after which it inherits the project's. `--character` needs a course. Exit code 2 when `set` lacks the provider, or has `--character` without a course.
 
 ```
+coursekit voice set gemini                        # the voice of the project
+coursekit voice unset PWD                         # the course inherits it
 coursekit voice set PWD azure --voice es-ES-ElviraNeural
 ```
 

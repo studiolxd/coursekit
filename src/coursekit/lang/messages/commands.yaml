@@ -98,7 +98,8 @@ action_needs_course: {es: "coursekit: esta acción necesita un código de curso"
 media_manifest: {es: "manifest: {total} recursos ({detail})", en: "manifest: {total} assets ({detail})"}
 media_nothing: {es: "nada que producir", en: "nothing to produce"}
 media_set_needs_id: {es: "coursekit: set necesita el id de un recurso", en: "coursekit: set needs an asset id"}
-voice_set_needs: {es: "coursekit: voice set necesita CODE y PROVIDER", en: "coursekit: voice set needs CODE and PROVIDER"}
+voice_set_needs: {es: "coursekit: voice set necesita PROVIDER (con CODE, la voz de ese curso; sin él, la del proyecto; --character, solo con CODE)", en: "coursekit: voice set needs PROVIDER (with CODE, the voice of that course; without it, the project's; --character only with CODE)"}
+help_voice_code: {es: "código del curso; sin él, la voz del proyecto, que heredan los cursos que no fijan la suya", en: "code of the course; without it, the voice of the project, which every course without its own inherits"}
 voice_warning: {es: "aviso: {warning}", en: "warning: {warning}"}
 subtitles_wrote: {es: "escrito {path}", en: "wrote {path}"}
 delivery_add_needs_file: {es: "coursekit: delivery add necesita --file", en: "coursekit: delivery add needs --file"}
@@ -246,7 +247,7 @@ help_assemble_content: {es: "applied: registra el título del contenido como ren
 help_directives: {es: "compara el registro de directivas con el catálogo de creator", en: "compare the directive registry with the creator catalog"}
 help_directives_file: {es: "JSON guardado de list_brick_types", en: "JSON saved from list_brick_types"}
 help_media: {es: "manifiesto multimedia de un curso y cómo producir cada recurso", en: "media manifest of a course and how to produce each asset"}
-help_voice: {es: "proveedores de voz disponibles aquí, y la voz única de un curso", en: "voice providers available here, and the one voice of a course"}
+help_voice: {es: "proveedores de voz disponibles aquí, la voz del proyecto y la voz única de un curso", en: "voice providers available here, the voice of the project and the one voice of a course"}
 help_tts: {es: "locución de un guion con la voz del curso", en: "voice-over of a script with the course voice"}
 help_tts_course: {es: "usa la voz de este curso (course.yaml › media.voice)", en: "use the voice of this course (course.yaml › media.voice)"}
 help_tts_speaker: {es: "locutor de las voces Piper multilocutor", en: "speaker of multi-speaker Piper voices"}

@@ -108,10 +108,11 @@ If you doubt whether a resource shows a real interface, it does: classify it `in
 
 ## Course voice
 
-The whole course uses **one voice**. `coursekit voice list <CODE>` shows the configured
-providers and the chosen voice. If there are several and the course has none, **ask the person
-which one** (you can generate a sample sentence with each using `--engine`) and set it with
-`coursekit voice set <CODE> <provider> [--voice …] [--speaker …]`. Then every voice-over is made
+The whole course uses **one voice**: its own, or the one of the project, which every course without its own inherits.
+`coursekit voice list <CODE>` shows the configured providers and the voice in force (and whether it is the project's). If
+there are several and neither the course nor the project has one, **ask the person which one** (you can generate a sample
+sentence with each using `--engine`) and whether it is for the whole project (`coursekit voice set <provider> [--voice …]`)
+or for this course alone (`coursekit voice set <CODE> <provider> [--voice …] [--speaker …]`). Then every voice-over is made
 with `coursekit tts --course <CODE> …`. The characters (dialogues, simulations) may have their own voice of the same
 provider: propose one per character that fits the story bible (`personality`, `speech`), ask the person, set it with
 `coursekit voice set <CODE> <provider> --voice … --character <Name>` and make their lines with `tts --character <Name>`.

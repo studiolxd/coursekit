@@ -90,6 +90,31 @@ def test_voice_choice(course, monkeypatch, capsys):  # noqa: F811
     assert "PWD uses: azure · es-ES-ElviraNeural" in capsys.readouterr().out
 
 
+def test_every_course_without_a_voice_of_its_own_inherits_the_voice_of_the_project(course, monkeypatch, capsys):  # noqa: F811
+    for key in ("ELEVENLABS_API_KEY", "AZURE_SPEECH_KEY", "AZURE_SPEECH_REGION", "GOOGLE_TTS_API_KEY", "GEMINI_API_KEY", "PIPER_VOICE",
+                "GEMINI_TTS_VOICE"):
+        monkeypatch.delenv(key, raising=False)
+    monkeypatch.setenv("GOOGLE_TTS_API_KEY", "g")
+    monkeypatch.setenv("GEMINI_API_KEY", "k")
+    from coursekit import config
+    from coursekit import course as coursemod
+    from coursekit.project import find_project
+
+    assert main(["voice", "set", "gemini"]) == 0  # the provider in the place of the code: the voice of the project
+    assert "project: voice gemini · Aoede" in capsys.readouterr().out
+    project = find_project()
+    assert yaml.safe_load(project.file.read_text(encoding="utf-8"))["media"]["voice"]["model"]
+    assert isinstance(config.effective("media", project).get("voice"), list)  # still the providers, not the voice of the project
+    c = coursemod.load(project, "PWD")
+    assert voices.resolve(c) == ("gemini", "Aoede", None)
+    assert main(["voice", "list", "PWD"]) == 0 and "PWD uses: gemini · Aoede (the project's)" in capsys.readouterr().out
+    assert main(["voice", "set", "PWD", "google"]) == 0  # a course with its own keeps it
+    assert voices.resolve(coursemod.load(project, "PWD"))[0] == "google"
+    assert main(["voice", "unset", "PWD"]) == 0 and "it uses the project's, gemini · Aoede" in capsys.readouterr().out
+    assert voices.resolve(coursemod.load(project, "PWD"))[0] == "gemini"
+    assert main(["voice", "set", "gemini", "--character", "Daniel", "--voice", "Kore"]) == 2  # a character needs its course
+
+
 def test_tts_and_subtitles_with_fake_tools(course, monkeypatch, tmp_path):  # noqa: F811
     calls = []
     monkeypatch.setenv("PIPER_VOICE", "/voices/v.onnx")

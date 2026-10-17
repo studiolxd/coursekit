@@ -475,7 +475,7 @@ Fields written by commands, which you can read but should not edit:
 
 The links are per unit because each unit is its own content in creator. There is no course-level `links` block.
 
-One thing to know about `media:` in `course.yaml`: its `voice` key is where `coursekit voice set` stores the voice chosen for the course. See [Media](07-media.md).
+One thing to know about `media:` in `course.yaml`: its `voice` key is where `coursekit voice set` stores the voice chosen for the course. The same key in `project.yaml › media` is the voice of the project (`coursekit voice set <provider>`), which every course without its own inherits; neither is the list of providers of `media.yaml › voice`. See [Media](07-media.md).
 
 ## Theme tokens and cache folders
 

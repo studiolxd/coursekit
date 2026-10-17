@@ -1051,14 +1051,22 @@ def cmd_download(args: argparse.Namespace) -> int:
 
 def cmd_voice(args: argparse.Namespace) -> int:
     project = _project()
+    if args.code in voices.PROVIDERS and args.provider is None:  # `voice set gemini`: the voice of the project
+        args.code, args.provider = None, args.code
     course = coursemod.load(project, args.code) if args.code else None
     if args.action == "list":
-        print("\n".join(voices.listing(course)))
+        print("\n".join(voices.listing(course, project)))
         return 0
-    if not (course and args.provider):
+    if args.action == "unset":
+        print(voices.unset_voice(course, project))
+        return 0
+    if not args.provider or (course is None and args.character):
         print(t("commands", "voice_set_needs"), file=sys.stderr)
         return 2
-    message, warning = voices.set_voice(course, args.provider, args.voice, args.speaker, args.character)
+    if course is None:
+        message, warning = voices.set_project_voice(project, args.provider, args.voice, args.speaker)
+    else:
+        message, warning = voices.set_voice(course, args.provider, args.voice, args.speaker, args.character)
     if warning:
         print(t("commands", "voice_warning", warning=warning), file=sys.stderr)
     print(message)
@@ -1497,8 +1505,8 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.set_defaults(func=cmd_download)
 
     p = sub.add_parser("voice", help=t("commands", "help_voice"))
-    p.add_argument("action", choices=("list", "set"))
-    p.add_argument("code", nargs="?")
+    p.add_argument("action", choices=("list", "set", "unset"))
+    p.add_argument("code", nargs="?", help=t("commands", "help_voice_code"))
     p.add_argument("provider", nargs="?", choices=tuple(voices.PROVIDERS))
     p.add_argument("--voice")
     p.add_argument("--speaker")

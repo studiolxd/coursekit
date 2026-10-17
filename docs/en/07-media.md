@@ -269,6 +269,7 @@ A course uses **one** voice for all its narration, so a course never mixes voice
 The default voice depends on the course language (`es` or `en`). In `media plan` and `media providers` the voice options are named `elevenlabs-api`, `azure-api`, `google-api`, `gemini-api` and `piper` (the providers above), plus `elevenlabs-mcp`, the agent using the ElevenLabs connector directly (without `coursekit tts`); that one is always listed, because only the agent can tell whether it has the connector. The subtitle options are `elevenlabs-timestamps` and `stable-ts`.
 
 ```bash
+coursekit voice set gemini                 # the voice of the project: every course without its own inherits it
 coursekit voice list PWD                   # providers, availability and the voice of the course
 coursekit voice set PWD azure              # fixes the provider (and its default voice)
 coursekit voice set PWD piper --speaker 1  # a speaker of a multi-speaker Piper voice
@@ -277,7 +278,7 @@ coursekit voice set PWD elevenlabs --voice <voice-id>
 
 **Voices of the characters.** The characters of the dialogues and the simulations can have their own voice, of the same provider: `coursekit voice set PWD azure --voice es-ES-AlvaroNeural --character Daniel` stores it in `course.yaml › media.voices`, and `coursekit tts --course PWD --character Daniel …` uses it. With Piper, a character without a voice of its own takes a speaker of the voice in turns, in the order of the cast of the story bible: enough for drafts.
 
-`voice set` needs both the course code and the provider. If the provider is not configured on this machine it warns (other people on the team may have it) but still saves it. With several providers available and none chosen, `tts` stops and asks you to run `voice set`; with none available it says which keys to set.
+`voice set <provider>`, without a course, fixes the voice of the project (`project.yaml › media.voice`), and every course without a voice of its own uses it; `voice set <CODE> <provider>` gives one course its own, and `voice unset <CODE>` takes it away so the course inherits the project's again. A change of the voice of the project reaches every course that inherits it, also the narration still to produce of a course half done. If the provider is not configured on this machine it warns (other people on the team may have it) but still saves it. With several providers available and none chosen, `tts` stops and asks you to run `voice set`; with none available it says which keys to set.
 
 ### The Gemini voice
 
@@ -298,7 +299,7 @@ media:
 | `tier` | `flex` | `flex`: half the price, the same request, and the answer in minutes instead of seconds (up to 15); when Google has no capacity it answers 429 or 503 and coursekit tries again a few times. `standard`: the full price and the quickest answer |
 | `flex_fallback` | `true` | When `flex` still has no capacity after the attempts, the request goes in the standard tier. `false`: it fails instead (exit code 1), and nothing is paid at the full price |
 
-`coursekit voice set PWD gemini` writes the model in force in the course (`course.yaml › media.voice.model`): the course keeps the model it started with when the default changes, so its narration never changes voice halfway. To move a course to another model, change that key and produce its narration again. The voices are the Gemini ones (`Aoede`, `Kore`, `Charon`, `Puck`…), without a language: the language is the course's. The Gemini API marks all the audio it generates with an inaudible SynthID watermark. On its free tier, Google may use what is sent to improve its products: for the content of a client, use a key with billing.
+`coursekit voice set PWD gemini` writes the model in force in the course (`course.yaml › media.voice.model`; `voice set gemini`, in the project's voice): the course keeps the model it started with when the default changes, so its narration never changes voice halfway. To move a course to another model, change that key and produce its narration again. The voices are the Gemini ones (`Aoede`, `Kore`, `Charon`, `Puck`…), without a language: the language is the course's. The Gemini API marks all the audio it generates with an inaudible SynthID watermark. On its free tier, Google may use what is sent to improve its products: for the content of a client, use a key with billing.
 
 ### The batch of the Gemini voice
 

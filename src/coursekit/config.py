@@ -123,8 +123,8 @@ def effective(name: str, project: Project | None = None, course: dict | None = N
         if config_file.exists():
             result.merge(_read_yaml(config_file), "config")
         section = project_data(project).get(name)
-        if isinstance(section, dict):
-            result.merge(section, "project")
+        if isinstance(section, dict):  # project.yaml › media › voice is the voice of the project, not the list of providers
+            result.merge({k: v for k, v in section.items() if k not in COURSE_STATE.get(name, ())}, "project")
     if course is not None and isinstance(course.get(name), dict):
         result.merge({k: v for k, v in course[name].items() if k not in COURSE_STATE.get(name, ())}, "course")
     return result

@@ -16,8 +16,8 @@ none_configured:
   es: "no hay ningún proveedor de voz configurado (claves de ElevenLabs, Azure o Google, o Piper, en .env)"
   en: "no voice provider configured (ElevenLabs, Azure or Google keys, or Piper, in .env)"
 several_available:
-  es: "hay varios proveedores de voz disponibles ({found}): elige uno para el curso con `coursekit voice set {code} <provider> [--voice …]`"
-  en: "several voice providers are available ({found}): choose one for the course with `coursekit voice set {code} <provider> [--voice …]`"
+  es: "hay varios proveedores de voz disponibles ({found}): elige uno para el proyecto con `coursekit voice set <provider> [--voice …]` (lo heredan todos los cursos), o solo para este curso con `coursekit voice set {code} <provider>`"
+  en: "several voice providers are available ({found}): choose one for the project with `coursekit voice set <provider> [--voice …]` (every course inherits it), or for this course alone with `coursekit voice set {code} <provider>`"
 unknown_provider_short:
   es: "proveedor desconocido '{provider}' ({providers})"
   en: "unknown provider '{provider}' ({providers})"
@@ -27,14 +27,23 @@ not_configured_warning:
 status_available: {es: disponible, en: available}
 status_missing: {es: falta, en: missing}
 default_voice_listing: {es: "(voz por defecto)", en: "(default voice)"}
+inherited: {es: " (la del proyecto)", en: " (the project's)"}
+project_uses: {es: "\nEl proyecto usa: {provider} · {voice} (la heredan los cursos que no fijan la suya)", en: "\nThe project uses: {provider} · {voice} (every course without its own inherits it)"}
+project_none: {es: "\nEl proyecto no tiene voz elegida: coursekit voice set <provider> la fija para todos los cursos que no tienen la suya", en: "\nThe project has no voice chosen: coursekit voice set <provider> fixes it for every course without its own"}
+project_voice_set: {es: "proyecto: voz {provider} · {voice}; la heredan los cursos que no fijan la suya", en: "project: voice {provider} · {voice}; every course without its own inherits it"}
+project_voice_unset: {es: "proyecto: sin voz; cada curso usa la suya", en: "project: no voice; each course uses its own"}
+project_nothing_to_unset: {es: "el proyecto no tiene voz fijada", en: "the project has no voice fixed"}
+nothing_to_unset: {es: "{code} no tiene voz propia: ya usa la del proyecto", en: "{code} has no voice of its own: it already uses the project's"}
+voice_unset: {es: "{code}: sin voz propia; usa la del proyecto, {provider} · {voice}", en: "{code}: no voice of its own; it uses the project's, {provider} · {voice}"}
+voice_unset_none: {es: "{code}: sin voz propia; el proyecto tampoco tiene (coursekit voice set <provider>)", en: "{code}: no voice of its own; the project has none either (coursekit voice set <provider>)"}
 default_voice_set: {es: "(por defecto)", en: "(default)"}
 course_uses: {es: "\n{code} usa: {provider} · {voice}", en: "\n{code} uses: {provider} · {voice}"}
 course_uses_speaker:
   es: "\n{code} usa: {provider} · {voice} · locutor {speaker}"
   en: "\n{code} uses: {provider} · {voice} · speaker {speaker}"
 course_several:
-  es: "\n{code}: sin voz elegida y con varios proveedores disponibles → coursekit voice set {code} <provider>"
-  en: "\n{code}: no voice chosen and several providers available → coursekit voice set {code} <provider>"
+  es: "\n{code}: sin voz elegida, ni propia ni del proyecto, y con varios proveedores disponibles → coursekit voice set <provider> (el proyecto) o coursekit voice set {code} <provider>"
+  en: "\n{code}: no voice chosen, of its own or of the project, and several providers available → coursekit voice set <provider> (the project) or coursekit voice set {code} <provider>"
 course_default: {es: "\n{code}: sin voz elegida; se usaría {provider}", en: "\n{code}: no voice chosen; {provider} would be used"}
 course_nothing: {es: "\n{code}: sin voz elegida; no se usaría nada", en: "\n{code}: no voice chosen; nothing would be used"}
 voice_set: {es: "{code}: voz {provider} · {voice}", en: "{code}: voice {provider} · {voice}"}
