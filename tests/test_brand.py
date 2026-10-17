@@ -182,7 +182,10 @@ def test_an_svg_is_drawn_with_the_fonts_of_the_brand_inside(tmp_path, monkeypatc
     pages = []
 
     def run(cmd, **kw):
-        pages.append(Path(cmd[-1].removeprefix("file://")).read_text(encoding="utf-8"))
+        from urllib.parse import urlparse
+        from urllib.request import url2pathname
+
+        pages.append(Path(url2pathname(urlparse(cmd[-1]).path)).read_text(encoding="utf-8"))  # the page, from its file:// address
         Path(next(a for a in cmd if a.startswith("--screenshot=")).split("=", 1)[1]).write_bytes(b"png")
 
     monkeypatch.setattr(mediatools, "browser", lambda: "chrome")
