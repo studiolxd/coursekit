@@ -225,6 +225,26 @@ def test_no_visual_resource_is_produced_until_a_person_signs_the_style_guide(cou
     assert main(produce) == 0
 
 
+def test_the_guide_of_the_project_is_signed_once_for_every_course_that_uses_it(course, capsys):  # noqa: F811
+    root = course.parent.parent
+    guide = root / "theme" / "branding" / "media-style.md"
+    guide.parent.mkdir(parents=True, exist_ok=True)
+    guide.write_text("# Style\n\nOnly the colours of the brand.\n", encoding="utf-8")
+    assert mediastyle.waiting(load_course(find_project(), "PWD"))
+    assert main(["approve", "media-style", "--yes", "--no-commit"]) == 0
+    assert "style guide theme/branding/media-style.md approved by Ana" in capsys.readouterr().out
+    assert yaml.safe_load((root / "project.yaml").read_text(encoding="utf-8"))["approvals"][0]["gate"] == "media_style"
+    assert not mediastyle.waiting(load_course(find_project(), "PWD"))  # the course uses the guide of the project: signed
+    guide.write_text("# Style\n\nOnly the colours of the brand, and no shadows.\n", encoding="utf-8")
+    assert mediastyle.waiting(load_course(find_project(), "PWD"))  # it changed: signed again
+    assert main(["approve", "media-style", "--yes", "--no-commit"]) == 0
+    own = course / "theme" / "branding" / "media-style.md"  # a guide of its own is not covered by the signature of the project
+    own.parent.mkdir(parents=True)
+    own.write_text("# The style of this course\n", encoding="utf-8")
+    assert mediastyle.waiting(load_course(find_project(), "PWD"))
+    assert main(["approve", "design", "--yes"]) == 2 and "needs the code of the course" in capsys.readouterr().err
+
+
 def test_the_signature_of_the_guide_can_be_turned_off(course, capsys):  # noqa: F811
     from tests.test_exelearning import edit_course
 

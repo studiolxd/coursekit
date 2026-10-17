@@ -37,9 +37,10 @@ review:
   scripts: required            # required: a person approves the brief of a screen recording and the montage of a video (its steps
                                # and the narration the learner will hear) with `coursekit approve script CODE --asset ID` before it is
                                # captured or voiced, and again if it changes; none: they are made without (the handoff signs them)
-  media_style: required        # required: a person signs the style guide of the media (theme/branding/media-style.md, or the
-                               # course's) with `coursekit approve media-style CODE` before any visual resource is produced, and
-                               # again if it changes; the handoff signs it itself. none: the guide is used without a signature
+  media_style: required        # required: a person signs the style guide of the media before any visual resource is produced,
+                               # and again if it changes: the project's (theme/branding/media-style.md) once for every course with
+                               # `coursekit approve media-style`, a course's own with `coursekit approve media-style CODE`; the
+                               # handoff signs it itself. none: the guide is used without a signature
 
 # `coursekit handoff`: the whole production of a course by itself, signing as "Coursekit Handoff" (no person reviews it).
 handoff:

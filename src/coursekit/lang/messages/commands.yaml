@@ -40,6 +40,7 @@ approve_no_terminal:
   en: "coursekit: no interactive terminal. Sign in your own terminal, or from the agent chat with\n  `! coursekit approve … --yes` (the `!` runs it as you, not as the agent)"
 approve_needs_asset: {es: "coursekit: la aprobación de un guion necesita --asset ID", en: "coursekit: the approval of a script needs --asset ID"}
 approve_needs_unit: {es: "coursekit: las aprobaciones de contenido necesitan --unit N", en: "coursekit: content approvals need --unit N"}
+approve_needs_code: {es: "coursekit: esta aprobación necesita el código del curso; solo media-style se firma sin él (la guía del proyecto)", en: "coursekit: this approval needs the code of the course; only media-style is signed without one (the guide of the project)"}
 
 # brief
 brief_summary:
@@ -194,6 +195,7 @@ reviewed_needs_by: {es: "coursekit: --note y --report necesitan --by", en: "cour
 help_approve: {es: "firma el diseño o una unidad (solo personas, nunca un agente)", en: "sign off the design or a unit (people only, never an agent)"}
 help_approve_asset: {es: "id del recurso (aprobación de su guion)", en: "id of the resource (script gate)"}
 help_approve_unit: {es: "número de unidad (aprobación de contenido)", en: "unit number (content gate)"}
+help_approve_code: {es: "código del curso; sin él, media-style firma la guía del proyecto para todos los cursos que la usan", en: "code of the course; without it, media-style signs the guide of the project for every course that uses it"}
 help_approve_yes:
   es: "confirma sin preguntar (para `!` en el chat de un agente)"
   en: "confirm without a prompt (for `!` in an agent chat)"

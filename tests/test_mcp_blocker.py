@@ -68,7 +68,7 @@ def media_connectors(root, names):
     (root / "config" / "media.yaml").write_text(f"connectors: [{', '.join(names)}]\n", encoding="utf-8")
 
 
-def test_a_media_connector_may_be_a_server_of_the_project(project):  # noqa: F811
+def test_a_media_connector_may_be_a_server_of_the_project(project, agent_tool):  # noqa: F811
     mcp = project / ".mcp.json"
     data_ = json.loads(mcp.read_text(encoding="utf-8")) if mcp.exists() else {}
     data_.setdefault("mcpServers", {})["magnific"] = {"type": "http", "url": "https://mcp.example.com"}

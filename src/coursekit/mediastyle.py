@@ -1,6 +1,8 @@
 """The style guide of the media (`theme/branding/media-style.md`, or the course's own, which wins): how the resources of the
-courses must look, written from the brand. A person signs it (`coursekit approve media-style CODE`) before any visual resource
-is produced, and again when it changes (rules › review › media_style); in handoff mode coursekit signs it."""
+courses must look, written from the brand. A person signs it before any visual resource is produced, and again when it changes
+(rules › review › media_style): the project's guide once for every course that uses it (`coursekit approve media-style`, recorded
+in project.yaml), a course's own guide in that course (`coursekit approve media-style CODE`, which also signs the project's guide
+for that course alone); in handoff mode coursekit signs it."""
 
 from __future__ import annotations
 
@@ -10,6 +12,25 @@ from coursekit import course as coursemod
 from coursekit.util import sha256_file
 
 NAME = "media-style.md"
+
+
+def project_path(project) -> Path | None:
+    """The guide of the project (theme/branding/media-style.md), None when there is none."""
+    found = project.theme_dir / "branding" / NAME
+    return found if found.is_file() else None
+
+
+def _last(approvals: list | None, found: Path) -> dict | None:
+    signed = [a for a in approvals or [] if a.get("gate") == "media_style"]
+    return signed[-1] if signed and signed[-1].get("sha256") == sha256_file(found) else None
+
+
+def project_approval(project) -> dict | None:
+    """The last signature of the guide of the project, while it has not changed since."""
+    from coursekit import config
+
+    found = project_path(project)
+    return _last(config.project_data(project).get("approvals"), found) if found else None
 
 
 def path(course: dict) -> Path | None:
@@ -27,15 +48,15 @@ def required(course: dict) -> bool:
 
 
 def approval(course: dict) -> dict | None:
-    """The last signature of the guide in force, while it has not changed since."""
+    """The last signature of the guide in force, while it has not changed since: the course's, or, when the guide in force is
+    the project's, the signature of the project."""
     found = path(course)
     if found is None:
         return None
-    signed = [a for a in course.get("approvals") or [] if a.get("gate") == "media_style"]
-    if not signed:
-        return None
-    last = signed[-1]
-    return last if last.get("sha256") == sha256_file(found) else None
+    own = _last(course.get("approvals"), found)
+    if own or found != project_path(course["_project"]):
+        return own
+    return project_approval(course["_project"])
 
 
 def waiting(course: dict) -> bool:

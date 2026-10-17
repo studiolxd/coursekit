@@ -114,8 +114,9 @@ colours, `origin.derived`), and the radius and the shadow are its defaults. The 
    - what never appears.
    A rule you infer and the brand does not state is not written as a rule: it goes as a question. The person's
    `notes.md` weighs more than the rest.
-7. Tell the person to read the guide and sign it for each course (`coursekit approve media-style <CODE>`): no visual
-   resource is produced until it is signed, and it is signed again when it changes. You never sign it.
+7. Tell the person to read the guide and sign it: the guide of the project once for every course that uses it
+   (`coursekit approve media-style`), the own guide of a course with its code (`coursekit approve media-style <CODE>`). No
+   visual resource is produced until it is signed, and it is signed again when it changes. You never sign it.
 
 In a session with no one to ask (`--headless`, the handoff): apply only what has one clear answer in the brand (a colour of
 the palette named for that same use, a rule stated in so many words), leave everything else as it is, write the guide, and

@@ -435,7 +435,7 @@ Qué hace `/define-theme [CODE]` (rol de diseño, skill `theme-definition`):
 3. Lo adapta con los colores y las fuentes de la marca (`update_theme`) y te cuenta los avisos de la plataforma.
 4. Guarda el resultado de `get_theme` en `.cache/theme/get_theme.json` y ejecuta `coursekit theme import .cache/theme/get_theme.json`. Eso escribe `theme/tokens.json` y `theme/tokens.css` con un `origin`: id del theme, nombre, versión y fecha. Imprime las notas y el contraste de cada par de colores; si algún par no llega al mínimo, el color se corrige en la plataforma y se vuelve a importar, nunca se edita en los tokens.
 5. Compara los tokens con la marca ([Colores de la marca para los roles](07-media.md#colores-de-la-marca-para-los-roles)): para cada color que calcula coursekit, y para el radio y la sombra, te propone el de la marca, diciendo dónde se verá y dónde lo dice la marca, y te pregunta; lo que aceptas va a `project.yaml › theme` y los tokens se vuelven a importar. Propone también las formas y los pesos de los vídeos (`config/video.yaml`).
-6. Escribe la guía de estilo de los recursos, `theme/branding/media-style.md`, a partir de la marca, cada regla con su fuente; tú la lees y la firmas para cada curso, `coursekit approve media-style PWD` ([La guía de estilo de los recursos](07-media.md#la-guía-de-estilo-de-los-recursos)).
+6. Escribe la guía de estilo de los recursos, `theme/branding/media-style.md`, a partir de la marca, cada regla con su fuente; tú la lees y la firmas una vez para todo el proyecto, `coursekit approve media-style` ([La guía de estilo de los recursos](07-media.md#la-guía-de-estilo-de-los-recursos)).
 7. Te resume el resultado. **El theme lo validas tú, como validas el diseño.**
 
 Dónde están los tokens:

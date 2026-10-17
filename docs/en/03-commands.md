@@ -631,13 +631,13 @@ coursekit reviewed PWD 1 --by "Ana Pérez" --note "Reviewed with the client's tr
 Signs off the instructional design or one unit, in the name of the person who runs it. People only: the generated agent configurations deny it, and the slash commands only prepare the sign-off. Who: people.
 
 ```
-coursekit approve [--unit UNIT] [--asset ASSET] [--yes] [--no-commit] [--force] {design,content,style,media-style,script} code
+coursekit approve [--unit UNIT] [--asset ASSET] [--yes] [--no-commit] [--force] {design,content,style,media-style,script} [code]
 ```
 
 | Argument | Values / default | Meaning |
 |---|---|---|
 | `gate` | `design`, `content`, `style`, `media-style` or `script` | What to sign: the instructional design, the content of one unit, the style sheet of the images of the simulations, the style guide of the media, or the script of a resource. |
-| `code` | course code or folder | Course. |
+| `code` | course code or folder | Course. Required except with `media-style`, which without it signs the guide of the project (exit code 2 for another gate). |
 | `--unit UNIT` | unit number | Unit to sign (required with `content`; without it the command exits with code 2). |
 | `--asset ASSET` | resource id | The resource whose script is signed (required with `script`; exit code 2 without it). |
 | `--yes` | flag | Confirm without a prompt. Needed when there is no terminal; from an agent chat, type it with the `!` prefix so it runs as you. |
@@ -650,7 +650,7 @@ Without `--yes` it needs an interactive terminal (otherwise exit code 1) and ask
 
 `style`: needs the samples of the style sheet in `courses/<CODE>/media/style/` (PNG, JPG, WebP or SVG) and a valid `media › visual`. Records the style signed (the configured one, or `visual.fallback` when there is no image generator) and the SHA-256 of every sample, and commits the course folder as `Style approval <CODE>`. Until it is signed, `coursekit media set … --status produced` (or `uploaded`) refuses the images of the simulations unless `--force` is given; it is signed again when the style changes. See [Images of the simulations](07-media.md#images-of-the-simulations).
 
-`media-style`: the style guide of the media in force for the course (`theme/branding/media-style.md`, or the course's own, which wins): you have read it. Records its path and SHA-256 and commits the course folder as `Media style approval <CODE>`. While `rules › review › media_style` is `required` (the default) and there is a guide, `coursekit media set … --status produced` (or `uploaded`) refuses a visual resource (an image or a type of `uses_theme`) until it is signed, or after it changed, unless `--force` is given; `coursekit media plan` warns. A session of the handoff signs it by itself. See [The style guide of the media](07-media.md#the-style-guide-of-the-media).
+`media-style`: the style guide of the media: you have read it. Without a code, the guide of the project (`theme/branding/media-style.md`) for every course that uses it: it records its path and SHA-256 in `project.yaml › approvals` and commits `project.yaml` as `Media style approval (project)`. With a code, the guide in force for that course (its own, which wins, or the project's for that course alone): it records them in the course and commits the course folder as `Media style approval <CODE>`. A course with its own guide is signed with its code. While `rules › review › media_style` is `required` (the default) and there is a guide, `coursekit media set … --status produced` (or `uploaded`) refuses a visual resource (an image or a type of `uses_theme`) until it is signed, or after it changed, unless `--force` is given; `coursekit media plan` warns. A session of the handoff signs it by itself. See [The style guide of the media](07-media.md#the-style-guide-of-the-media).
 
 `content`: needs the design approved and unchanged, the unit passing `verify` without errors, unit status `reviewed` (or `approved`) and the AI review report, unless a person recorded their own review (`coursekit reviewed --by`) or the project skips the AI review (`rules › review › ai: skip`, where a `verified` unit is enough). It is refused when the content changed after the AI review: the baseline is the fingerprint of each section and activity stored by `coursekit reviewed`, and the message names the parts that changed (review them again with `coursekit review`, or sign anyway with `--force`). Records the SHA-256 of `content.md` and `assessment.md`, moves the unit to `approved`, and commits `course.yaml`, the unit folder and the review report as `Content approval <CODE> U<N>`.
 

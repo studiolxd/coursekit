@@ -631,13 +631,13 @@ coursekit reviewed PWD 1 --by "Ana Pérez" --note "Revisada con la formadora del
 Firma el diseño instruccional o una unidad, en nombre de la persona que lo ejecuta. Solo personas: las configuraciones de agente generadas lo deniegan y los comandos de barra solo preparan la firma. Quién: personas.
 
 ```
-coursekit approve [--unit UNIT] [--asset ASSET] [--yes] [--no-commit] [--force] {design,content,style,media-style,script} code
+coursekit approve [--unit UNIT] [--asset ASSET] [--yes] [--no-commit] [--force] {design,content,style,media-style,script} [code]
 ```
 
 | Argumento | Valores / por defecto | Significado |
 |---|---|---|
 | `gate` | `design`, `content`, `style`, `media-style` o `script` | Qué firmar: el diseño instruccional, el contenido de una unidad, la lámina de estilo de las imágenes de las simulaciones, la guía de estilo de los recursos o el guion de un recurso. |
-| `code` | código o carpeta del curso | Curso. |
+| `code` | código o carpeta del curso | Curso. Obligatorio salvo con `media-style`, que sin él firma la guía del proyecto (código de salida 2 con otra aprobación). |
 | `--unit UNIT` | número de unidad | Unidad que firmar (obligatorio con `content`; sin él el comando termina con código 2). |
 | `--asset ASSET` | id del recurso | El recurso cuyo guion se firma (obligatorio con `script`; código de salida 2 sin él). |
 | `--yes` | indicador | Confirma sin preguntar. Hace falta cuando no hay terminal; desde el chat de un agente, escríbelo con el prefijo `!` para que se ejecute como tú. |
@@ -650,7 +650,7 @@ Sin `--yes` necesita una terminal interactiva (si no, código de salida 1) y pre
 
 `style`: necesita las muestras de la lámina de estilo en `courses/<CODE>/media/style/` (PNG, JPG, WebP o SVG) y un `media › visual` válido. Registra el estilo firmado (el configurado, o `visual.fallback` cuando no hay generador de imágenes) y el SHA-256 de cada muestra, y hace commit de la carpeta del curso como `Style approval <CODE>`. Mientras no está firmada, `coursekit media set … --status produced` (o `uploaded`) rechaza las imágenes de las simulaciones salvo con `--force`; se vuelve a firmar cuando cambia el estilo. Ver [Imágenes de las simulaciones](07-media.md#imágenes-de-las-simulaciones).
 
-`media-style`: la guía de estilo de los recursos en vigor para el curso (`theme/branding/media-style.md`, o la propia del curso, que gana): la has leído. Anota su ruta y su SHA-256 y hace commit de la carpeta del curso como `Media style approval <CODE>`. Mientras `rules › review › media_style` sea `required` (por defecto) y haya guía, `coursekit media set … --status produced` (o `uploaded`) rechaza un recurso visual (una imagen o un tipo de `uses_theme`) hasta que esté firmada, o después de que haya cambiado, salvo con `--force`; `coursekit media plan` lo avisa. Una sesión del handoff la firma sola. Ver [La guía de estilo de los recursos](07-media.md#la-guía-de-estilo-de-los-recursos).
+`media-style`: la guía de estilo de los recursos: la has leído. Sin código, la guía del proyecto (`theme/branding/media-style.md`) para todos los cursos que la usan: anota su ruta y su SHA-256 en `project.yaml › approvals` y hace commit de `project.yaml` como `Media style approval (project)`. Con código, la guía en vigor para ese curso (la propia, que gana, o la del proyecto solo para ese curso): lo anota en el curso y hace commit de la carpeta del curso como `Media style approval <CODE>`. Un curso con guía propia se firma con su código. Mientras `rules › review › media_style` sea `required` (por defecto) y haya guía, `coursekit media set … --status produced` (o `uploaded`) rechaza un recurso visual (una imagen o un tipo de `uses_theme`) hasta que esté firmada, o después de que haya cambiado, salvo con `--force`; `coursekit media plan` lo avisa. Una sesión del handoff la firma sola. Ver [La guía de estilo de los recursos](07-media.md#la-guía-de-estilo-de-los-recursos).
 
 `content`: necesita el diseño aprobado y sin cambios, la unidad pasando `verify` sin errores, el estado de la unidad en `reviewed` (o `approved`) y el informe de la revisión con IA, salvo que una persona haya registrado su propia revisión (`coursekit reviewed --by`) o el proyecto omita la revisión con IA (`rules › review › ai: skip`, donde basta una unidad `verified`). Se rechaza si el contenido cambió después de la revisión con IA: la referencia es la huella de cada apartado y actividad que guardó `coursekit reviewed`, y el mensaje nombra las partes que cambiaron (revísalas de nuevo con `coursekit review`, o firma igualmente con `--force`). Registra el SHA-256 de `content.md` y `assessment.md`, mueve la unidad a `approved` y hace commit de `course.yaml`, la carpeta de la unidad y el informe de revisión como `Content approval <CODE> U<N>`.
 

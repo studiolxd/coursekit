@@ -435,7 +435,7 @@ What `/define-theme [CODE]` does (design role, skill `theme-definition`):
 3. Adapts it with the brand colours and fonts (`update_theme`) and reports the platform's warnings.
 4. Saves the result of `get_theme` to `.cache/theme/get_theme.json` and runs `coursekit theme import .cache/theme/get_theme.json`. That writes `theme/tokens.json` and `theme/tokens.css` with an `origin`: theme id, name, version and date. It prints the notes and the contrast of each colour pair; if a pair is below the minimum the colour is fixed in the platform and imported again, never edited in the tokens.
 5. Compares the tokens with the brand ([Colours of the brand for the roles](07-media.md#colours-of-the-brand-for-the-roles)): for each colour coursekit derives, and for the radius and the shadow, it proposes the one of the brand, saying where it will be seen and where the brand says it, and asks you; what you accept goes in `project.yaml › theme` and the tokens are imported again. It also proposes the shapes and weights of the videos (`config/video.yaml`).
-6. Writes the style guide of the media, `theme/branding/media-style.md`, from the brand, each rule with its source; you read it and sign it for each course, `coursekit approve media-style PWD` ([The style guide of the media](07-media.md#the-style-guide-of-the-media)).
+6. Writes the style guide of the media, `theme/branding/media-style.md`, from the brand, each rule with its source; you read it and sign it once for the whole project, `coursekit approve media-style` ([The style guide of the media](07-media.md#the-style-guide-of-the-media)).
 7. Summarises the result for you. **You validate the theme as you validate the design.**
 
 Where the tokens live:

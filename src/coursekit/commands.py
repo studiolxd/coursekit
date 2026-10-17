@@ -538,9 +538,15 @@ def cmd_approve(args: argparse.Namespace) -> int:
     if not args.yes and not sys.stdin.isatty():
         print(t("commands", "approve_no_terminal"), file=sys.stderr)
         return 1
+    confirm = _confirm(args.yes)
+    if args.code is None:
+        if args.gate != "media-style":
+            print(t("commands", "approve_needs_code"), file=sys.stderr)
+            return 2
+        print(approve.approve_project_media_style(_project(), confirm, do_commit=not args.no_commit))
+        return 0
     course = coursemod.load(_project(), args.code)
     statesmod.ensure_active(course)
-    confirm = _confirm(args.yes)
     if args.gate == "design":
         print(approve.approve_design(course, confirm, do_commit=not args.no_commit))
     elif args.gate == "style":
@@ -1382,7 +1388,7 @@ def register(sub: argparse._SubParsersAction) -> None:
 
     p = sub.add_parser("approve", help=t("commands", "help_approve"))
     p.add_argument("gate", choices=("design", "content", "style", "media-style", "script"))
-    p.add_argument("code")
+    p.add_argument("code", nargs="?", help=t("commands", "help_approve_code"))
     p.add_argument("--unit", type=int, help=t("commands", "help_approve_unit"))
     p.add_argument("--asset", help=t("commands", "help_approve_asset"))
     p.add_argument("--yes", action="store_true", help=t("commands", "help_approve_yes"))
