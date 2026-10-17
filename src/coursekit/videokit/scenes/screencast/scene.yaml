@@ -1,8 +1,10 @@
-description: A real screen recording with zooms that follow what the narration names (never a guessed coordinate when the recording has its events).
+description:
+  en: A real screen recording with zooms that follow what the narration names (never a guessed coordinate when the recording has its events).
+  es: Una grabación de pantalla real con zooms que siguen lo que nombra la locución (nunca una coordenada a ojo cuando la grabación tiene sus eventos).
 built_from: [ScreenRecording]
 props:
-  recording: {type: media, required: true, help: "recordings/<id>.mp4 (its events, recordings/<id>.events.json, are added by coursekit)"}
-  focus: {type: list, items: {word: {type: text, help: "the words of the narration it zooms on"}, event: {type: text, help: "the label or note of an event of the recording"}, fx: {type: number}, fy: {type: number}, scale: {type: number}, hold: {type: number}}}
-  start: {type: number, help: "second of the recording the scene starts from"}
-  scale: {type: number, help: "how close the zoom goes (default 1.8)"}
-  ring: {type: boolean, help: "a ring on the point of each focus (default true)"}
+  recording: {type: media, required: true, help: {en: "recordings/<id>.mp4 (its events, recordings/<id>.events.json, are added by coursekit)", es: "recordings/<id>.mp4 (sus eventos, recordings/<id>.events.json, los añade coursekit)"}}
+  focus: {type: list, items: {word: {type: text, help: {en: "the words of the narration it zooms on", es: "las palabras de la locución en las que hace zoom"}}, event: {type: text, help: {en: "the label or note of an event of the recording", es: "la etiqueta o la nota de un evento de la grabación"}}, fx: {type: number}, fy: {type: number}, scale: {type: number}, hold: {type: number}}}
+  start: {type: number, help: {en: "second of the recording the scene starts from", es: "segundo de la grabación desde el que empieza la escena"}}
+  scale: {type: number, help: {en: "how close the zoom goes (default 1.8)", es: "cuánto se acerca el zoom (por defecto 1.8)"}}
+  ring: {type: boolean, help: {en: "a ring on the point of each focus (default true)", es: "un anillo en el punto de cada foco (por defecto true)"}}

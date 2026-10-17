@@ -54,6 +54,14 @@ def test_the_catalog_shows_the_library_and_how_it_is_built(course):  # noqa: F81
     assert "built from: Background, TitleBlock" in text and "title: text, required, max 60, on screen" in text
     assert "atoms: Arrow, Background, Badge, Card, Counter" in text and "molecules: BulletList, CompareColumn, StatBlock" in text
     assert text.index("Scenes:") < text.index("Layers (over a scene")
+    assert "Two sides compared" in text and "— a figure is never shown without its source" in text
+
+
+def test_the_catalog_speaks_the_language_of_the_person(course, monkeypatch):  # noqa: F811
+    monkeypatch.setenv("COURSEKIT_LANG", "es")
+    text = "\n".join(video.catalog(montage(course)))
+    assert "compare [biblioteca]: Dos lados comparados" in text and "— una cifra nunca se muestra sin su fuente" in text
+    assert "[library]" not in text and "Two sides" not in text
 
 
 def test_a_scene_of_the_course_hides_one_of_the_project_which_hides_one_of_the_library(course):  # noqa: F811
@@ -313,6 +321,14 @@ def test_the_gallery_draws_every_piece_with_the_theme_and_the_style_of_the_cours
     assert (page.parent / "gallery-sample.svg").exists() and (page.parent / "frames" / "title.png").exists()
     text = page.read_text(encoding="utf-8")
     assert 'src="gallery.mp4#t=0.00,3.50"' in text and "timeline" in text and "no example" in text and "lower-third" in text
+    assert "scene · library" in text and "Two sides compared" in text and "Props: title, left*, right* (* required)" in text
+    assert "Background: " in text and "weights: normal" in text and '<html lang="en">' in text
+    monkeypatch.setenv("COURSEKIT_LANG", "es")  # the page speaks the language of the person, all of it
+    text = video.gallery(montage(course), lambda m: None).read_text(encoding="utf-8")
+    assert '<html lang="es">' in text and "escena · biblioteca" in text and "capa · biblioteca" in text
+    assert "Dos lados comparados" in text and "(* obligatoria)" in text and "Fondo: " in text and "sin ejemplo" in text
+    for english in ("scene ·", "layer ·", "library", "Two sides", "required", "Background", "&amp;#x27;"):
+        assert english not in text
 
 
 def test_an_atom_of_the_project_or_of_a_course_takes_the_place_of_the_library(course):  # noqa: F811

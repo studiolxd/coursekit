@@ -1,4 +1,6 @@
-description: A ring on a point of the scene (fractions of the screen), while the narration talks about it.
+description:
+  en: A ring on a point of the scene (fractions of the screen), while the narration talks about it.
+  es: Un anillo sobre un punto de la escena (en fracciones de la pantalla), mientras la locución habla de él.
 built_from: [Ring]
 props:
   fx: {type: number, required: true}

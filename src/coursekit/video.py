@@ -42,7 +42,7 @@ import yaml
 
 from coursekit import config as configmod
 from coursekit import course as coursemod
-from coursekit import lang, mediaaccess, mediacheck, mediatools
+from coursekit import i18n, lang, mediaaccess, mediacheck, mediatools
 from coursekit import media as mediamod
 from coursekit import theme as thememod
 from coursekit.i18n import t
@@ -108,6 +108,18 @@ def _meta(folder: Path, kind: str = "scenes") -> dict:
     return data if isinstance(data, dict) else {}
 
 
+def localized(value: object, language: str | None = None) -> str:
+    """A text of the metadata of a piece (its `description`, the `help` of a prop): one string, or one per language (`en:`,
+    `es:`); the language of the person, else English."""
+    if isinstance(value, dict):
+        value = value.get(language or i18n.language()) or value.get("en") or next(iter(value.values()), "")
+    return str(value or "")
+
+
+def origin_label(origin: str) -> str:
+    return t("video", f"origin_{origin}")
+
+
 def pieces(course: dict, kind: str = "scenes") -> dict[str, dict]:
     """The scenes (or the layers) a montage of this course can use: name → {origin, folder, meta, hides}; the course wins
     over the project, and the project over the library."""
@@ -151,7 +163,7 @@ def catalog(course: dict) -> list[str]:
     kit = kit_source()
     replaced = {(kind, name): origin for kind, name, origin, _ in overrides(course)}
     for kind in OVERRIDABLE:
-        names = [p.stem + (f" [{replaced[(kind, p.stem)]}]" if (kind, p.stem) in replaced else "")
+        names = [p.stem + (f" [{origin_label(replaced[(kind, p.stem)])}]" if (kind, p.stem) in replaced else "")
                  for p in sorted((kit / kind).glob("*.tsx"))]
         lines.append(t("video", f"catalog_{kind}", names=", ".join(names)))
     return lines
@@ -161,9 +173,9 @@ def _catalog_lines(found: dict[str, dict]) -> list[str]:
     lines = []
     for name, scene in sorted(found.items()):
         meta = scene["meta"]
-        hides = t("video", "hides", origin=scene["hides"]) if scene["hides"] else ""
-        lines.append(t("video", "catalog_scene", name=name, origin=scene["origin"], hides=hides,
-                       description=meta.get("description") or "—"))
+        hides = t("video", "hides", origin=origin_label(scene["hides"])) if scene["hides"] else ""
+        lines.append(t("video", "catalog_scene", name=name, origin=origin_label(scene["origin"]), hides=hides,
+                       description=localized(meta.get("description")) or "—"))
         if meta.get("built_from"):
             lines.append(t("video", "catalog_built", parts=", ".join(str(p) for p in meta["built_from"])))
         for prop, spec in (meta.get("props") or {}).items():
@@ -172,7 +184,7 @@ def _catalog_lines(found: dict[str, dict]) -> list[str]:
             bits += [t("video", "catalog_required")] if spec.get("required") else []
             bits += [t("video", "catalog_max", n=spec["max_chars"])] if spec.get("max_chars") else []
             bits += [t("video", "catalog_on_screen")] if spec.get("on_screen") else []
-            lines.append(f"      {prop}: {', '.join(bits)}" + (f" — {spec['help']}" if spec.get("help") else ""))
+            lines.append(f"      {prop}: {', '.join(bits)}" + (f" — {localized(spec['help'])}" if spec.get("help") else ""))
     return lines
 
 
@@ -752,7 +764,8 @@ def gallery(course: dict, say=print) -> Path:
     cards = []
     for kind, name, piece in found:
         meta = piece["meta"]
-        origin = piece["origin"] + (f" · {t('video', 'gallery_hides', origin=piece['hides'])}" if piece["hides"] else "")
+        origin = origin_label(piece["origin"]) + (f" · {t('video', 'gallery_hides', origin=origin_label(piece['hides']))}"
+                                                  if piece["hides"] else "")
         props = ", ".join(f"{k}{'*' if isinstance(v, dict) and v.get('required') else ''}" for k, v in (meta.get("props") or {}).items())
         if name in starts:
             a, b = starts[name]
@@ -760,14 +773,19 @@ def gallery(course: dict, say=print) -> Path:
                        f'preload="none"></video>')
         else:
             picture = f'<div class="none">{html.escape(t("video", "gallery_no_example"))}</div>'
-        cards.append(f'<article>{picture}<h3>{html.escape(name)} <small>{html.escape(kind[:-1])} · {html.escape(origin)}</small></h3>'
-                     f'<p>{html.escape(str(meta.get("description") or ""))}</p><p class="props">{html.escape(props)}</p></article>')
+        cards.append(f'<article>{picture}<h3>{html.escape(name)} <small>{html.escape(t("video", f"gallery_{kind}"))} · '
+                     f'{html.escape(origin)}</small></h3><p>{html.escape(localized(meta.get("description")))}</p>'
+                     f'<p class="props">{html.escape(t("video", "gallery_props", props=props) if props else "")}</p></article>')
     colours = "".join(f'<span title="{html.escape(k)}" style="background:{html.escape(str(v))}"></span>'
                       for k, v in (tokens.get("color") or {}).items() if str(v).startswith("#"))
-    family = html.escape(str((tokens.get("font") or {}).get("family") or "—"))
-    shapes = html.escape(json.dumps({k: resolved["style"][k] for k in ("background", "shapes", "weights")}, ensure_ascii=False))
-    fonts_line = html.escape(", ".join((resolved["style"]["fonts"] or {}).get("families") or []) or t("video", "gallery_machine_fonts"))
-    page = (f'<!doctype html><html lang="{language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, '
+    family = str((tokens.get("font") or {}).get("family") or "—")
+    look_of = resolved["style"]
+    shape, weight = look_of.get("shapes") or {}, look_of.get("weights") or {}
+    shapes = html.escape(t("video", "gallery_style", background=look_of.get("background"), radius=f"{shape.get('radius', 0):g}",
+                           border=f"{shape.get('border', 0):g}", shadow=shape.get("shadow"), normal=f"{weight.get('normal', 0):g}",
+                           strong=f"{weight.get('strong', 0):g}"))
+    fonts_line = ", ".join((resolved["style"]["fonts"] or {}).get("families") or []) or t("video", "gallery_machine_fonts")
+    page = (f'<!doctype html><html lang="{i18n.language()}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, '
             f'initial-scale=1"><title>{html.escape(t("video", "gallery_title", code=course["code"]))}</title><style>'
             "body{font-family:system-ui,sans-serif;margin:24px;background:#fafafa;color:#1a1a1a}"
             "main{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:20px}"

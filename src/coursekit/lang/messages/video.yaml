@@ -34,7 +34,7 @@ finding: {es: "{where} [{code}] {text}", en: "{where} [{code}] {text}"}
 check_ok: {es: "{id}: el montaje está bien", en: "{id}: the montage is fine"}
 preview: {es: "vista previa (un fotograma por escena) en {path}", en: "preview (a frame per scene) in {path}"}
 rendered: {es: "vídeo en {path} ({seconds} s, {scenes} escenas), con subtítulos, palabras y transcripción accesible", en: "video in {path} ({seconds} s, {scenes} scenes), with captions, words and accessible transcript"}
-hides: {es: " (tapa la de {origin})", en: " (hides the one of {origin})"}
+hides: {es: " (tapa la de: {origin})", en: " (hides the one of: {origin})"}
 catalog_scene: {es: "{name} [{origin}]{hides}: {description}", en: "{name} [{origin}]{hides}: {description}"}
 catalog_built: {es: "    hecha con: {parts}", en: "    built from: {parts}"}
 catalog_required: {es: "obligatoria", en: "required"}
@@ -57,9 +57,16 @@ font_file_missing: {es: "{path} apunta a {file}, que no está en el proyecto", e
 fonts_empty: {es: "{path} no declara ninguna fuente (@font-face con font-family)", en: "{path} declares no font (@font-face with font-family)"}
 gallery_empty: {es: "ninguna escena ni capa de {code} tiene ejemplo (example: en su scene.yaml o layer.yaml)", en: "no scene or layer of {code} has an example (example: in its scene.yaml or layer.yaml)"}
 gallery_rendering: {es: "pintando {count} piezas con el tema y el estilo del curso…", en: "drawing {count} pieces with the theme and the style of the course…"}
-gallery_hides: {es: "tapa la de {origin}", en: "hides the {origin} one"}
+gallery_hides: {es: "tapa la de: {origin}", en: "hides the one of: {origin}"}
 gallery_no_example: {es: "sin ejemplo: añade example: a su fichero de metadatos para verla aquí", en: "no example: add example: to its metadata file to see it here"}
 gallery_title: {es: "Galería de vídeo de {code}", en: "Video gallery of {code}"}
 gallery_fonts: {es: "Fuente: {family} · ficheros dentro del vídeo: {files}", en: "Font: {family} · files inside the video: {files}"}
 gallery_machine_fonts: {es: "ninguno (las de la máquina)", en: "none (the machine's)"}
 gallery_done: {es: "galería en {path} (ábrela en el navegador)", en: "gallery in {path} (open it in the browser)"}
+origin_library: {es: "biblioteca", en: "library"}
+origin_project: {es: "proyecto", en: "project"}
+origin_course: {es: "curso", en: "course"}
+gallery_scenes: {es: "escena", en: "scene"}
+gallery_layers: {es: "capa", en: "layer"}
+gallery_props: {es: "Props: {props} (* obligatoria)", en: "Props: {props} (* required)"}
+gallery_style: {es: "Fondo: {background} · formas: radio {radius}, borde {border}, sombra {shadow} · pesos: normal {normal}, destacado {strong}", en: "Background: {background} · shapes: radius {radius}, border {border}, shadow {shadow} · weights: normal {normal}, strong {strong}"}

@@ -1,8 +1,10 @@
-description: A short note over the scene, at a corner (a warning, a tip, a key word).
+description:
+  en: A short note over the scene, at a corner (a warning, a tip, a key word).
+  es: Una nota corta sobre la escena, en una esquina (un aviso, un consejo, una palabra clave).
 built_from: [Card, Text, Enter]
 props:
   text: {type: text, required: true, max_chars: 60, on_screen: true}
-  corner: {type: choice, values: [top-left, top-right, bottom-left, bottom-right], help: "default top-right"}
+  corner: {type: choice, values: [top-left, top-right, bottom-left, bottom-right], help: {en: "default top-right", es: "por defecto top-right"}}
 # What the gallery draws it with (`coursekit video gallery`), in each language of the courses.
 example:
   en: {text: "Twelve characters or more"}

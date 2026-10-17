@@ -1,9 +1,11 @@
-description: Two sides compared (before and after, wrong and right, one option and another); each column enters when the narration names it.
+description:
+  en: Two sides compared (before and after, wrong and right, one option and another); each column enters when the narration names it.
+  es: Dos lados comparados (antes y después, mal y bien, una opción y otra); cada columna entra cuando la locución la nombra.
 built_from: [Background, Heading, CompareColumn (Card, Heading, Stagger, Text), Enter]
 props:
   title: {type: text, max_chars: 60, on_screen: true}
-  left: {type: object, required: true, fields: {title: {type: text, max_chars: 28, on_screen: true}, items: {type: list, max_items: 4, items_max_chars: 48, on_screen: true}, say: {type: text, help: "the words that name it"}, mood: {type: choice, values: [good, bad, neutral], help: "default bad"}}}
-  right: {type: object, required: true, fields: {title: {type: text, max_chars: 28, on_screen: true}, items: {type: list, max_items: 4, items_max_chars: 48, on_screen: true}, say: {type: text}, mood: {type: choice, values: [good, bad, neutral], help: "default good"}}}
+  left: {type: object, required: true, fields: {title: {type: text, max_chars: 28, on_screen: true}, items: {type: list, max_items: 4, items_max_chars: 48, on_screen: true}, say: {type: text, help: {en: "the words that name it", es: "las palabras que lo nombran"}}, mood: {type: choice, values: [good, bad, neutral], help: {en: "default bad", es: "por defecto bad"}}}}
+  right: {type: object, required: true, fields: {title: {type: text, max_chars: 28, on_screen: true}, items: {type: list, max_items: 4, items_max_chars: 48, on_screen: true}, say: {type: text}, mood: {type: choice, values: [good, bad, neutral], help: {en: "default good", es: "por defecto good"}}}}
 # What the gallery draws it with (`coursekit video gallery`), in each language of the courses.
 example:
   en: {title: "Short or long?", left: {title: "Short", items: ["Easy to guess", "Cracked in minutes"], mood: bad},

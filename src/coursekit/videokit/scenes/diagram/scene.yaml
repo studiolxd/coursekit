@@ -1,8 +1,10 @@
-description: A process that builds itself, step by step; each step enters when the narration names it (`say`), with the arrow that leads to it.
+description:
+  en: A process that builds itself, step by step; each step enters when the narration names it (`say`), with the arrow that leads to it.
+  es: Un proceso que se construye paso a paso; cada paso entra cuando la locución lo nombra (`say`), con la flecha que lleva a él.
 built_from: [Background, Heading, StepNode (Card, Badge, Heading, Text), Arrow, Enter]
 props:
   title: {type: text, max_chars: 60, on_screen: true}
-  steps: {type: list, required: true, max_items: 5, items: {label: {type: text, max_chars: 22, on_screen: true}, text: {type: text, max_chars: 60, on_screen: true}, say: {type: text, help: "the words of the narration that name it"}}}
+  steps: {type: list, required: true, max_items: 5, items: {label: {type: text, max_chars: 22, on_screen: true}, text: {type: text, max_chars: 60, on_screen: true}, say: {type: text, help: {en: "the words of the narration that name it", es: "las palabras de la locución que lo nombran"}}}}
 # What the gallery draws it with (`coursekit video gallery`), in each language of the courses.
 example:
   en: {title: "How a manager helps", steps: [{label: "Create", text: "It makes a long password"}, {label: "Keep", text: "It stores it encrypted"}, {label: "Fill in", text: "It types it for you"}]}

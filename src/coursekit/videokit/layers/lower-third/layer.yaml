@@ -1,4 +1,6 @@
-description: A name and a role (or a source, a place) in the lower third of the screen.
+description:
+  en: A name and a role (or a source, a place) in the lower third of the screen.
+  es: Un nombre y un cargo (o una fuente, un lugar) en el tercio inferior de la pantalla.
 built_from: [Text]
 props:
   title: {type: text, required: true, max_chars: 40, on_screen: true, label: true}

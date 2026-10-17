@@ -1,9 +1,11 @@
-description: The opening of a video or of a part of it, a kicker over a title; the title is underlined when the narration says `stress`.
+description:
+  en: The opening of a video or of a part of it, a kicker over a title; the title is underlined when the narration says `stress`.
+  es: La apertura de un vídeo o de una parte, un antetítulo sobre un título; el título se subraya cuando la locución dice `stress`.
 built_from: [Background, TitleBlock (Text, Heading, Enter, Underline)]
 props:
-  kicker: {type: text, max_chars: 40, on_screen: true, label: true, help: "a label over the title: it need not be said"}
+  kicker: {type: text, max_chars: 40, on_screen: true, label: true, help: {en: "a label over the title: it need not be said", es: "una etiqueta sobre el título: no hace falta decirla"}}
   title: {type: text, required: true, max_chars: 60, on_screen: true}
-  stress: {type: text, help: "a word of the title the narration stresses: it is underlined when it is said"}
+  stress: {type: text, help: {en: "a word of the title the narration stresses: it is underlined when it is said", es: "una palabra del título que la locución destaca: se subraya cuando se dice"}}
 # What the gallery draws it with (`coursekit video gallery`), in each language of the courses.
 example:
   en: {kicker: "Unit 1", title: "Long passwords protect more", stress: "Long"}
