@@ -368,11 +368,16 @@ def directive_brick(name: str, body: list[str], ctx: dict) -> dict:
                 continue
             full = (storymod.canonical(course, name) if course and course.get("_dir") else None) or name
             portrait = ctx["assets"].get(character_asset_id(full))
-            if portrait and portrait.get("asset_path") and portrait.get("status") == "uploaded":
-                people.append({"name": name, "imagePath": portrait["asset_path"], "imageAlt": portrait.get("alt") or name})
+            path = content_path(portrait, ctx) if portrait and portrait.get("status") == "uploaded" else None
+            if path:
+                people.append({"name": name, "imagePath": path, "imageAlt": portrait.get("alt") or name})
             else:
                 people.append({"name": name})
-                ctx["warnings"].append(t("assemble", "character_not_produced", name=name))
+                if portrait and portrait.get("status") == "uploaded":
+                    ctx["warnings"].append(t("assemble", "character_other_content", name=name, asset=portrait["id"],
+                                             unit=portrait.get("unit"), n=ctx.get("unit"), code=ctx["course"]["code"]))
+                else:
+                    ctx["warnings"].append(t("assemble", "character_not_produced", name=name))
         data = {"characters": people, "items": items}
     elif brick_type == "CAROUSEL_QUOTES":
         items = []
@@ -461,6 +466,20 @@ def directive_brick(name: str, body: list[str], ctx: dict) -> dict:
 
 
 # ── Section parsing ──────────────────────────────────────────────────────────
+
+def content_path(asset: dict, ctx: dict) -> str | None:
+    """The path of an uploaded asset in the content of the unit being assembled. Creator takes an image only from the content
+    that shows it: a portrait shown by the dialogues of several units has its `asset_path` in the content of its unit and a copy
+    in each other one (`uploads`, by content id); in another unit without its copy there is none (html: always `asset_path`)."""
+    uploads = asset.get("uploads") or {}
+    if ctx.get("content_id") and uploads.get(str(ctx["content_id"])):
+        return uploads[str(ctx["content_id"])]
+    course = ctx.get("course")
+    creator = bool(course and course.get("_project") and coursemod.backend(course) == "creator")
+    if creator and ctx.get("unit") is not None and asset.get("unit") not in (None, ctx["unit"]):
+        return None
+    return asset.get("asset_path")
+
 
 def download_bricks(asset: dict | None, download_label: str) -> list[dict]:
     """An ATTACHMENT after the media brick for each uploaded download of the asset (e.g. a PDF)."""
@@ -758,6 +777,7 @@ def build_plan(course: dict, unit: dict, assets: dict[str, dict] | None = None,
     asks for them as they are (to build their packages)."""
     folder = coursemod.unit_dir(course["_dir"], unit["n"])
     ctx = context(course, assets)
+    ctx.update(unit=unit["n"], content_id=unit.get("content_id"))  # the content the media must be uploaded to (creator)
     syntax = ctx["syntax"]
     placement, fmt = coursemod.assessment_delivery(course)
     lessons = []

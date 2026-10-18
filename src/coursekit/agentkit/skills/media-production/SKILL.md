@@ -297,6 +297,9 @@ Assets are **not approved one by one**: they are validated in the assembled cour
    `coursekit media upload <CODE> --file <file> --url "<uploadUrl>" --content-type <MIME>` (the same MIME type the upload was
    requested with); do not use `curl`, a session without an interface cannot run it. Keep the `path` / `embedFolderPrefix`:
    `coursekit media set <CODE> <id> --status uploaded --asset-path <path>`.
+   **A portrait the dialogues of several units show** (`dialogue_units` in the manifest): creator shows an image only in
+   the content it was uploaded to, so upload it to the content of each of those units and record each other one with
+   `coursekit media set <CODE> <id> --unit N --asset-path <path>`. `coursekit media plan` lists the units still missing it.
    An SVG (animated, or any one you cannot export to PNG) goes up as an EMBED package:
    `coursekit media embed <CODE> <id>` wraps it in `media/src/<id>/index.html` with creator's manifest
    `slxd-embed.json` next to it; upload **both files** with `request_embed_upload` (`folderId` = the asset id,

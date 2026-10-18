@@ -34,6 +34,8 @@ Reglas de `extract`: un recurso nuevo se añade como `pending`; uno existente co
 
 `media set` acepta `--status`, `--recipe` (la opción usada), `--file`, `--asset-path` (ruta en la plataforma), `--alt`, `--transcript`, `--subtitles-path` y `--made-with`, y `--force` (consulta [El control de los recursos](#el-control-de-los-recursos)). Para un fichero descargable de acompañamiento (por ejemplo un PDF) usa `--download FICHERO`, junto con `--download-title` y `--download-asset-path`. Si las especificaciones de un recurso producido mencionan una descarga (`pdf`, `descargable`, `descarga`, `docx`, `xlsx`, `pptx`…) y no hay ninguna registrada, `media plan` avisa. Con el backend creator avisa también cuando el recurso está `uploaded` y una descarga registrada aún no tiene `--download-asset-path` (súbela con `request_asset_upload`, de tipo `attachment`).
 
+Con el backend creator, una imagen solo la muestra el contenido al que se subió. El retrato de un personaje es un único recurso en todo el curso, y pueden mostrarlo los diálogos de varias unidades (`dialogue_units` en el manifiesto): súbelo al contenido de cada una de esas unidades y registra cada ruta con `--unit N --asset-path <ruta>` (sin `--unit`, la ruta es la del contenido de la unidad del recurso). `media plan` avisa de las unidades cuyo contenido aún no lo tiene, y el montaje de una de esas unidades deja el diálogo sin ese retrato (la inicial) y lo dice, en lugar de apuntar al contenido de otra unidad.
+
 Varios agentes pueden producir recursos del mismo curso a la vez: todo comando que escribe el manifiesto (`extract`, `set`, `redo`, `stock`, `narrate`, `transcript`, `tts-batch collect`, las capturas) lo bloquea desde que lo lee hasta que lo ha escrito (el fichero `media/.manifest.lock`, que el `.gitignore` del proyecto deja fuera) y lo escribe entero de una vez, así que ningún agente pierde lo que escribió otro y nadie lo lee a medio escribir. Los que tardan (locutar, descargar) lo vuelven a leer al final y solo lo bloquean para escribir. Un comando que espera más de dos minutos al bloqueo se detiene con un mensaje: espera a que termine el otro y vuelve a ejecutarlo. `media render` tiene el mismo cuidado con el navegador: cada intento tiene un perfil propio y un tiempo límite, el PNG se recorta a su tamaño exacto y un intento fallido o incompleto se repite, hasta tres.
 
 ### Campos de una entrada
@@ -48,7 +50,9 @@ Los ficheros de la multimedia de un curso están en `courses/PWD/media/`: `manif
 | `note` | Por qué `extract` devolvió el recurso a `pending` |
 | `recipe`, `made_with` | La opción usada y la herramienta o el modelo que produjo el recurso (`--recipe`, `--made-with`) |
 | `file`, `alt`, `transcript`, `subtitles_path` | El fichero producido y su texto alternativo, transcripción y subtítulos (`--file`, `--alt`, `--transcript`, `--subtitles-path`) |
-| `asset_path` | La ruta del recurso en la plataforma una vez subido (`--asset-path`) |
+| `asset_path` | La ruta del recurso en la plataforma una vez subido (`--asset-path`), en el contenido de su unidad |
+| `uploads` | Creator: las rutas de las copias subidas al contenido de otras unidades (`--unit N --asset-path`), por id de contenido |
+| `dialogue_units` | Un retrato: las unidades cuyos diálogos lo muestran |
 | `downloads` | Los ficheros descargables: `file`, `title`, `asset_path` y `size` de cada uno |
 | `theme` | La huella de los tokens del tema con los que se hizo el recurso ([El control de los recursos](#el-control-de-los-recursos)) |
 | `depicts` | Qué muestra el recurso: `interface` (una aplicación real) o `concept` (`--depicts`; [La interfaz de una aplicación real no se inventa](#la-interfaz-de-una-aplicación-real-no-se-inventa)) |

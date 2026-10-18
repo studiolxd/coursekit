@@ -1072,7 +1072,8 @@ def cmd_media(args: argparse.Namespace) -> int:
         return 2
     statesmod.ensure_active(course)
     values = {k: getattr(args, k) for k in ("status", "recipe", "asset_path", "file", "alt", "transcript", "subtitles_path",
-                                            "made_with", "download", "download_title", "download_asset_path", "force", "depicts")}
+                                            "made_with", "download", "download_title", "download_asset_path", "force", "depicts",
+                                            "unit")}
     print(mediamod.set_asset(course, args.id, **values))
     _mirror(course["_project"], course["code"])
     return 0
@@ -1501,6 +1502,7 @@ def register(sub: argparse._SubParsersAction) -> None:
                 "download", "download-title", "download-asset-path"):
         p.add_argument(f"--{key}")
     p.add_argument("--depicts", choices=("interface", "concept"), help=t("commands", "help_media_depicts"))
+    p.add_argument("--unit", type=int, help=t("commands", "help_media_unit"))
     p.add_argument("--force", action="store_true", help=t("commands", "help_media_force"))
     p.add_argument("--all", action="store_true", help=t("commands", "help_media_all"))
     p.add_argument("--clean", action="store_true", help=t("commands", "help_media_clean"))

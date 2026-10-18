@@ -65,6 +65,9 @@ linked_review: {es: "enlace de revisión {value}", en: "review link {value}"}
 character_not_produced:
   es: "dialog: el retrato de '{name}' aún no está subido (coursekit media extract y /produce-media)"
   en: "dialog: the portrait of '{name}' is not uploaded yet (coursekit media extract and /produce-media)"
+character_other_content:
+  es: "dialog: el retrato de '{name}' ({asset}) está subido al contenido de la unidad {unit}, no al de esta (creator solo toma una imagen de su propio contenido): súbelo aquí con request_asset_upload, regístralo con coursekit media set {code} {asset} --unit {n} --asset-path <ruta> y monta de nuevo"
+  en: "dialog: the portrait of '{name}' ({asset}) is uploaded to the content of unit {unit}, not to this one (creator takes an image only from its own content): upload it here with request_asset_upload, record it with coursekit media set {code} {asset} --unit {n} --asset-path <path> and assemble again"
 keep_ids_nothing_recorded:
   es: "la lección {key} no tiene ids registrados: pasa la lista con --brick-ids o --brick-ids-file"
   en: "lesson {key} has no recorded ids: give the list with --brick-ids or --brick-ids-file"

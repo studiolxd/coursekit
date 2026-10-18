@@ -11,6 +11,18 @@ available_mcp_only:
 missing_download_specs:
   es: "sus especificaciones piden un fichero descargable (PDF…): coursekit media set … --download media/files/<file>"
   en: "its specs ask for a downloadable file (PDF…): coursekit media set … --download media/files/<file>"
+missing_unit_upload:
+  es: "{asset}: lo muestran diálogos de las unidades {units} y no está subido a su contenido (creator solo toma una imagen de su propio contenido): súbelo a cada uno con request_asset_upload y regístralo con coursekit media set {code} {asset} --unit N --asset-path <ruta>"
+  en: "{asset}: the dialogues of units {units} show it and it is not uploaded to their content (creator takes an image only from its own content): upload it to each one with request_asset_upload and record it with coursekit media set {code} {asset} --unit N --asset-path <path>"
+unit_needs_asset_path:
+  es: "--unit va con --asset-path: la ruta del recurso en el contenido de esa unidad"
+  en: "--unit goes with --asset-path: the path of the asset in the content of that unit"
+unit_not_found:
+  es: "el curso no tiene la unidad {n}"
+  en: "the course has no unit {n}"
+unit_without_content:
+  es: "la unidad {n} aún no tiene contenido en creator: /assemble lo crea; sube el recurso después"
+  en: "unit {n} has no content in creator yet: /assemble creates it; upload the asset afterwards"
 missing_download_upload:
   es: "un fichero descargable aún no está subido: request_asset_upload kind attachment, y después --download-asset-path"
   en: "a downloadable file is not uploaded yet: request_asset_upload kind attachment, then --download-asset-path"

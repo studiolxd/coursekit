@@ -816,7 +816,7 @@ Gestiona el manifiesto multimedia de un curso (`media/manifest.yaml`) e indica c
 coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [--file FILE]
                 [--alt ALT] [--transcript TRANSCRIPT] [--subtitles-path SUBTITLES_PATH]
                 [--made-with MADE_WITH] [--download DOWNLOAD] [--download-title DOWNLOAD_TITLE]
-                [--download-asset-path DOWNLOAD_ASSET_PATH] [--depicts {interface,concept}] [--force]
+                [--download-asset-path DOWNLOAD_ASSET_PATH] [--depicts {interface,concept}] [--unit UNIT] [--force]
                 [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all] [--clean] [--find FIND] [--take TAKE] [--color COLOR] [--size SIZE] [--fix] [--frames FRAMES] [--batch]
                 {extract,plan,providers,set,upload,redo,embed,fit,render,narrate,optimize,adopt,check,sheet,transcript,stock} [code] [id] [more ...]
 ```
@@ -830,6 +830,7 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
 | `--recipe RECIPE` | id de opción, por ejemplo `agent-svg` | Opción de producción utilizada. |
 | `--file FILE` | ruta dentro de `media/` del curso | Fichero local producido. Con el backend html es lo que lleva el paquete: un fichero o, en simulaciones y demos, la carpeta del paquete o su `index.html`. `fit` y `render`: el fichero con el que trabajar en lugar del del recurso (uno aún no registrado, una muestra de la lámina de estilo), desde la carpeta del curso, su `media/` o el proyecto. |
 | `--asset-path ASSET_PATH` | texto | Ruta del recurso una vez subido a la plataforma. |
+| `--unit UNIT` | número de unidad | `set`, con `--asset-path`: la ruta del recurso en el contenido de esa unidad, para un retrato que muestran los diálogos de varias unidades (creator solo toma una imagen del contenido que la muestra). Sin ella, o con la unidad del recurso, `--asset-path` es la ruta en el contenido de su unidad. La unidad necesita su contenido en creator (`content_id`, después de `/assemble`). |
 | `--alt ALT` | texto | Texto alternativo. |
 | `--transcript TRANSCRIPT` | texto o ruta | Transcripción del audio o vídeo. |
 | `--subtitles-path SUBTITLES_PATH` | texto | Fichero de subtítulos. Con el backend html, un `.vtt` local (por ejemplo `media/files/u1-s2-m1.vtt`). |

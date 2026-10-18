@@ -262,6 +262,59 @@ def test_every_character_of_a_dialogue_gets_a_portrait_that_reaches_the_dialogue
     assert "imagePath" not in people["Luis"]
 
 
+def test_a_portrait_shown_in_several_units_is_uploaded_to_the_content_of_each_one(course, capsys):  # noqa: F811
+    import copy
+    import re
+
+    from coursekit import course as coursemod
+
+    path = course / "course.yaml"
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    second = copy.deepcopy(data["units"][0])
+    second["n"] = 2
+    data["units"][0]["content_id"] = "c-1"
+    data["units"].append(second)
+    path.write_text(yaml.safe_dump(data, allow_unicode=True), encoding="utf-8")
+    dialog = "\n:::dialog\n**Ana:** Hello Luis.\n**Luis:** Hi Ana.\n:::\n"
+    for n in (1, 2):
+        content = coursemod.unit_dir(course, n) / "content.md"
+        content.parent.mkdir(parents=True, exist_ok=True)
+        text = (coursemod.unit_dir(course, 1) / "content.md").read_text(encoding="utf-8").replace(dialog, "")
+        heading = re.search(r"^## [^\n]+\n", text, re.M)
+        content.write_text(text[:heading.end()] + dialog + text[heading.end():], encoding="utf-8")
+    assert main(["media", "extract", "PWD"]) == 0
+    manifest = yaml.safe_load((course / "media" / "manifest.yaml").read_text(encoding="utf-8"))
+    ana = next(a for a in manifest["assets"] if a["id"] == "CHAR-ANA")
+    assert ana["unit"] == 1 and ana["dialogue_units"] == [1, 2]
+    assert main(["media", "set", "PWD", "CHAR-ANA", "--status", "uploaded", "--asset-path", "c1/ana.png", "--depicts", "concept",
+                 "--force"]) == 0
+
+    def portrait_in(n: int) -> str | None:
+        assert main(["assemble", "plan", "PWD", "--unit", str(n)]) == 0
+        plan = json.loads((course / "assembly" / f"unit-0{n}.plan.json").read_text(encoding="utf-8"))
+        brick = next(b for lesson in plan["lessons"] for b in lesson["bricks"] if b["type"] == "DIALOG")
+        return next(c for c in brick["data"]["characters"] if c["name"] == "Ana").get("imagePath")
+
+    capsys.readouterr()
+    assert portrait_in(1) == "c1/ana.png"
+    assert portrait_in(2) is None  # the path of the content of unit 1, which creator would refuse in unit 2
+    assert "uploaded to the content of unit 1" in capsys.readouterr().out
+    assert main(["media", "plan", "PWD"]) == 0
+    assert "CHAR-ANA: the dialogues of units 2 show it" in capsys.readouterr().out
+    assert main(["media", "set", "PWD", "CHAR-ANA", "--unit", "2"]) == 1  # --unit goes with --asset-path
+    assert main(["media", "set", "PWD", "CHAR-ANA", "--unit", "2", "--asset-path", "c2/ana.png"]) == 1  # no content yet
+    data["units"][1]["content_id"] = "c-2"
+    path.write_text(yaml.safe_dump(data, allow_unicode=True), encoding="utf-8")
+    assert main(["media", "set", "PWD", "CHAR-ANA", "--unit", "2", "--asset-path", "c2/ana.png"]) == 0
+    assert portrait_in(1) == "c1/ana.png" and portrait_in(2) == "c2/ana.png"
+    capsys.readouterr()
+    assert main(["media", "plan", "PWD"]) == 0
+    assert "CHAR-ANA: the dialogues" not in capsys.readouterr().out
+    assert main(["media", "redo", "PWD", "CHAR-ANA"]) == 0  # made again: every copy goes up again
+    manifest = yaml.safe_load((course / "media" / "manifest.yaml").read_text(encoding="utf-8"))
+    assert "uploads" not in next(a for a in manifest["assets"] if a["id"] == "CHAR-ANA")
+
+
 def test_updated_bricks_keep_their_ids_when_the_lesson_is_recorded_again(course, capsys):  # noqa: F811
     assert main(["assemble", "plan", "PWD", "--unit", "1"]) == 0
     plan = json.loads((course / "assembly" / "unit-01.plan.json").read_text(encoding="utf-8"))

@@ -816,7 +816,7 @@ Manages the media manifest of a course (`media/manifest.yaml`) and tells how to 
 coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [--file FILE]
                 [--alt ALT] [--transcript TRANSCRIPT] [--subtitles-path SUBTITLES_PATH]
                 [--made-with MADE_WITH] [--download DOWNLOAD] [--download-title DOWNLOAD_TITLE]
-                [--download-asset-path DOWNLOAD_ASSET_PATH] [--depicts {interface,concept}] [--force]
+                [--download-asset-path DOWNLOAD_ASSET_PATH] [--depicts {interface,concept}] [--unit UNIT] [--force]
                 [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all] [--clean] [--find FIND] [--take TAKE] [--color COLOR] [--size SIZE] [--fix] [--frames FRAMES] [--batch]
                 {extract,plan,providers,set,upload,redo,embed,fit,render,narrate,optimize,adopt,check,sheet,transcript,stock} [code] [id] [more ...]
 ```
@@ -830,6 +830,7 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
 | `--recipe RECIPE` | option id, for example `agent-svg` | Production option used. |
 | `--file FILE` | path inside the course `media/` | Local file produced. With the html backend it is what the package carries: a file, or, for simulations and demos, the folder of the package or its `index.html`. `fit` and `render`: the file to work on instead of the one of the asset (one not recorded yet, a sample of the style sheet), from the course folder, its `media/` or the project. |
 | `--asset-path ASSET_PATH` | text | Path of the asset once uploaded to the platform. |
+| `--unit UNIT` | unit number | `set`, with `--asset-path`: the path of the asset in the content of that unit, for a portrait the dialogues of several units show (creator takes an image only from the content that shows it). Without it, or with the unit of the asset, `--asset-path` is the path in the content of its unit. The unit needs its content in creator (`content_id`, after `/assemble`). |
 | `--alt ALT` | text | Alternative text. |
 | `--transcript TRANSCRIPT` | text or path | Transcript of audio or video. |
 | `--subtitles-path SUBTITLES_PATH` | text | Captions file. With the html backend, a local `.vtt` (for example `media/files/u1-s2-m1.vtt`). |

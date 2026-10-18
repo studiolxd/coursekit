@@ -157,7 +157,9 @@ DIALOG_LINE = re.compile(r"^\*\*(.+?):\*\*")
 
 def scan_characters(course: dict) -> list[dict]:
     """A portrait asset (an image) for every character of the dialogues, so that the agent gives each one a face instead of leaving
-    an initial. The id is the same wherever the character speaks; the first dialogue gives the unit and the section."""
+    an initial. The id is the same wherever the character speaks; the first dialogue gives the unit and the section, and
+    `dialogue_units` lists every unit whose dialogues show it (creator takes an image only from its own content: each of those
+    contents needs its copy, see `missing_uploads`)."""
     tk = coursemod.tokens(course)
     section_re = re.compile(rf"^## {re.escape(tk['section'])} (\d+)\s*[—-]")
     found: dict[str, dict] = {}
@@ -179,10 +181,13 @@ def scan_characters(course: dict) -> list[dict]:
                 if storymod.is_learner(course, name) or storymod.is_anonymous(course, name):
                     continue
                 name = storymod.canonical(course, name) or name
+                units = found[character_asset_id(name)]["dialogue_units"] if character_asset_id(name) in found else []
+                if unit["n"] not in units:
+                    units.append(unit["n"])
                 found.setdefault(character_asset_id(name), {
                     "id": character_asset_id(name), "unit": unit["n"], "section": section, "type": "image", "character": name,
                     "title": t("media", "character_title", name=name), "description": t("media", "character_description", name=name),
-                    "specs": t("media", "character_specs"), **({"avatar": storymod.avatar(course, name)}
+                    "specs": t("media", "character_specs"), "dialogue_units": units, **({"avatar": storymod.avatar(course, name)}
                                                               if storymod.avatar(course, name) else {})})
     return list(found.values())
 
@@ -304,7 +309,12 @@ def _extract(course: dict, data: dict) -> dict[str, int]:
     of_simulations = {a["id"] for a in simulations}
     # a character who speaks in a dialogue and appears in a simulation has one portrait: the one of the simulation, transparent
     # and larger, which also serves as the avatar of the dialogue
-    found = scan(course) + [a for a in scan_characters(course) if a["id"] not in of_simulations] + simulations
+    characters = scan_characters(course)
+    for asset in simulations:  # the dialogues that take the portrait of a simulation show it too
+        speaks = next((c["dialogue_units"] for c in characters if c["id"] == asset["id"]), None)
+        if speaks:
+            asset["dialogue_units"] = speaks
+    found = scan(course) + [a for a in characters if a["id"] not in of_simulations] + simulations
     merged = []
     for asset in found:
         old = existing.pop(asset["id"], None)
@@ -312,6 +322,8 @@ def _extract(course: dict, data: dict) -> dict[str, int]:
             changed = any(old.get(k) != asset.get(k) for k in ("type", "title", "description", "specs", "kind", "narration"))
             for k, v in asset.items():
                 old[k] = v
+            if "dialogue_units" not in asset:
+                old.pop("dialogue_units", None)
             if changed and old.get("status") not in (None, "pending"):
                 old["status"] = "pending"
                 old["note"] = "The placeholder changed in the content: produce it again"
@@ -364,6 +376,24 @@ def missing_downloads(asset: dict) -> list[str]:
     return []
 
 
+def missing_uploads(course: dict, asset: dict) -> list[int]:
+    """The units whose dialogues show an uploaded portrait that is not uploaded to their content yet (creator takes an image
+    only from the content that shows it: `asset_path` is the one of the content of the asset's unit, `uploads` the others)."""
+    if asset.get("status") != "uploaded" or coursemod.backend(course) != "creator":
+        return []
+    uploads = asset.get("uploads") or {}
+    missing = []
+    for n in asset.get("dialogue_units") or []:
+        if n == asset.get("unit"):
+            if not asset.get("asset_path"):
+                missing.append(n)
+            continue
+        unit = coursemod.package_unit(course, n)
+        if not (unit and unit.get("content_id") and uploads.get(str(unit["content_id"]))):
+            missing.append(n)
+    return missing
+
+
 def style_approval(course: dict) -> dict | None:
     """The last sign-off of the style sheet of the course (`coursekit approve style`), while the style has not changed since."""
     approvals = [a for a in course.get("approvals") or [] if a.get("gate") == "style"]
@@ -382,6 +412,9 @@ def plan(course: dict) -> tuple[list[str], list[str]]:
     root = course["_project"].root if course.get("_project") else None
     _, _, data = load_manifest(course["_dir"])
     warnings = [f"{a['id']}: {p}" for a in data["assets"] for p in missing_downloads(a)]
+    if course.get("_project"):
+        warnings += [t("media", "missing_unit_upload", asset=a["id"], units=", ".join(str(n) for n in units), code=course["code"])
+                     for a in data["assets"] if (units := missing_uploads(course, a))]
     uses_theme = [a for a in data["assets"] if a["type"] in (cfg.get("uses_theme") or [])]
     if uses_theme and course.get("_project"):
         found = thememod.status(course["_project"], course)
@@ -686,6 +719,7 @@ def _redo(course: dict, data: dict, ids: list[str] | None, everything: bool, cle
             asset["status"] = "scripted"
             asset.pop("theme", None)
             asset["asset_path"] = None
+            asset.pop("uploads", None)
             if clean:
                 for key in STALE:
                     asset[key] = None
@@ -744,6 +778,19 @@ def _set_asset(course: dict, data: dict, asset_id: str, **values) -> str:
             raise MediaError(t("media", "interface_generated", asset=asset_id, recipe=recipe or "-", allowed=", ".join(real)))
     if values.get("depicts"):
         asset["depicts"] = values["depicts"]
+    unit_n = values.get("unit")
+    if unit_n is not None and values.get("asset_path") is None:
+        raise MediaError(t("media", "unit_needs_asset_path"))
+    if unit_n is not None and unit_n != asset.get("unit"):
+        # the copy uploaded to the content of another unit (a portrait its dialogues show): creator takes an image only from
+        # the content that shows it
+        unit = coursemod.package_unit(course, unit_n)
+        if unit is None:
+            raise MediaError(t("media", "unit_not_found", n=unit_n))
+        if not unit.get("content_id"):
+            raise MediaError(t("media", "unit_without_content", n=unit_n))
+        asset["uploads"] = {**(asset.get("uploads") or {}), str(unit["content_id"]): values["asset_path"]}
+        values = {**values, "asset_path": None}
     for key in ("status", "recipe", "asset_path", "file", "alt", "transcript", "subtitles_path", "made_with"):
         if values.get(key) is not None:
             asset[key] = values[key]

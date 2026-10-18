@@ -34,6 +34,8 @@ A media placeholder is written in `content.md` (format in [06-content.md](06-con
 
 `media set` takes `--status`, `--recipe` (option used), `--file`, `--asset-path` (path in the platform), `--alt`, `--transcript`, `--subtitles-path` and `--made-with`, and `--force` (see [The media guard](#the-media-guard)). For a downloadable companion file (for example a PDF) use `--download FILE`, plus `--download-title` and `--download-asset-path`. When the specifications of a produced asset mention a download (`pdf`, `download`, `docx`, `xlsx`, `pptx`…) and none is registered, `media plan` warns. With the creator backend it also warns when the asset is `uploaded` and a registered download has no `--download-asset-path` yet (upload it with `request_asset_upload`, kind `attachment`).
 
+With the creator backend an image is shown only by the content it was uploaded to. A character's portrait is one asset in the whole course, and the dialogues of several units may show it (`dialogue_units` in the manifest): upload it to the content of each of those units and record each path with `--unit N --asset-path <path>` (without `--unit`, the path is the one of the content of the asset's unit). `media plan` warns of the units whose content still lacks it, and the assembly of such a unit leaves the dialogue without that portrait (the initial) and says so, instead of pointing to the content of another unit.
+
 Several agents can produce media of the same course at once: every command that writes the manifest (`extract`, `set`, `redo`, `stock`, `narrate`, `transcript`, `tts-batch collect`, the captures) locks it from the moment it reads it until it has written it (the file `media/.manifest.lock`, which the `.gitignore` of the project leaves out) and writes it whole in one step, so no agent loses what another wrote and nobody reads it half written. The ones that take long (voicing, downloading) read it again at the end and only lock it to write. A command that waits more than two minutes for the lock stops with a message: wait for the other one to finish and run it again. `media render` is just as careful with the browser: each attempt has a profile of its own and a time limit, the PNG is cropped to its exact size, and a failed or incomplete attempt is repeated, up to three.
 
 ### Fields of an entry
@@ -48,7 +50,9 @@ The files of the media of a course are in `courses/PWD/media/`: `manifest.yaml`,
 | `note` | Why `extract` sent the asset back to `pending` |
 | `recipe`, `made_with` | The option used and the tool or model that produced the asset (`--recipe`, `--made-with`) |
 | `file`, `alt`, `transcript`, `subtitles_path` | The produced file and its alternative text, transcript and captions (`--file`, `--alt`, `--transcript`, `--subtitles-path`) |
-| `asset_path` | The path of the asset in the platform once uploaded (`--asset-path`) |
+| `asset_path` | The path of the asset in the platform once uploaded (`--asset-path`), in the content of its unit |
+| `uploads` | Creator: the paths of the copies uploaded to the content of other units (`--unit N --asset-path`), by content id |
+| `dialogue_units` | A portrait: the units whose dialogues show it |
 | `downloads` | The downloadable files: `file`, `title`, `asset_path` and `size` of each one |
 | `theme` | The fingerprint of the theme tokens the asset was made with ([The media guard](#the-media-guard)) |
 | `depicts` | What the asset shows: `interface` (a real application) or `concept` (`--depicts`; [The interface of a real application is never invented](#the-interface-of-a-real-application-is-never-invented)) |
