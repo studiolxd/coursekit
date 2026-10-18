@@ -193,6 +193,8 @@ def context(project: Project) -> dict[str, str]:
         "intro_share": f"{float(design.get('intro_share', 0.05)) * 100:g} %",
         "summary_share": f"{float(design.get('summary_share', 0.05)) * 100:g} %",
         **decision_tokens(rules.get("decision_based") or {}),
+        "expository_cycle": " → ".join(str(part) for part in (rules.get("expository") or {}).get("cycle") or []) or "none",
+        "chunk_max_words": str(int((rules.get("content") or {}).get("chunk_max_words") or 0)),
         "misconceptions_per_objective": str(int((rules.get("misconceptions") or {}).get("per_objective") or 0)),
         **readability_tokens(rules.get("readability") or {}),
         "reflections_per_unit": str(int((rules.get("content") or {}).get("reflections_per_unit") or 0)),

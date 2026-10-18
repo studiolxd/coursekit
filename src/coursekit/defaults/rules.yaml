@@ -53,6 +53,20 @@ handoff:
                                # (bin, media); add the rest here, e.g. [blender, gs]. `bash`, `sh` and `node` let the agent run any
                                # command: add them only if you accept that
 
+# The parts of a content section of an expository course (`approach: expository`), in order: the first principles of
+# instruction, with the learning of adults (the learner sees what a section is for in their work and starts from what they
+# already know or do). A project or a course keeps only the parts it wants (an empty list: no cycle). The introduction of
+# the unit does the activation and its summary the integration when they are in the cycle; a content section does them only
+# when it brings something of its own.
+expository:
+  cycle: [problem, activation, demonstration, application, integration]
+                               # problem        a task or a situation of the work of the audience, and why it matters to them
+                               # activation     what the learner already knows or does, or what the previous unit taught
+                               # demonstration  the principle shown on a worked example, step by step, with its reasoning
+                               # application    the learner does it, with feedback and less help each time: the learning
+                               #                activities of the objectives of the section
+                               # integration    how they will use it in their own work
+
 # Decision-based courses (course.yaml › design.approach: decision-based). The learner does not start by reading: every content
 # section opens with a simulation where they decide, get it wrong or right and see the consequences, and only then reads,
 # practises and is assessed. The course keeps every other directive and resource around the simulations.
@@ -148,6 +162,9 @@ content:
                                        # situation: the test has to be a new one. `verify` warns (0: not checked)
   reflections_per_unit: 1              # :::reflection in the summary section (or the last one): the learner looks back at what
                                        # they did and how they will apply it (warning only; 0: not checked)
+  chunk_max_words: 250                 # cognitive load: the most words of prose the learner reads in a row, without a heading, a
+                                       # directive, a medium, a highlight (`>`), a list or a table (a blank line does not break
+                                       # it). `verify` warns, except in an imported course (0: not checked)
   placeholder_types: [image, video, animated_gif, infographic, diagram, simulation, terminal_demo, audio]
   # Directives and their creator bricks: config/directives.yaml
   allowed_symbols: "★✔✘·—‹›"

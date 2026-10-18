@@ -137,6 +137,8 @@ or the upload of what depended on it. `coursekit tts-batch list <CODE>` shows wh
 Write the script in `media/scripts/<id>.md` (voice-over word by word, scenes or terminal steps,
 estimated duration; any screen of a real application comes from a real run or a real recording, with its version, never from the
 documentation: see 1.1) and mark the asset `scripted` (`coursekit media set <CODE> <id> --status scripted`).
+**Voice and screen do not repeat each other** (cognitive load): the voice explains, the screen shows (a diagram, a few key
+words, the step on the real interface); never a paragraph on screen that the voice reads aloud. Each scene, one idea.
 For videos and voice-overs, **show the script to the person before producing** if it spends
 credits.
 

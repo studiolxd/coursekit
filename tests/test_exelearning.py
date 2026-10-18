@@ -327,3 +327,16 @@ def test_verify_fails_when_an_imported_unit_grows_far_beyond_its_package(course,
     capsys.readouterr()
     assert main(["verify", "PWD", "--unit", "1"]) == 0
     assert "less than half" in capsys.readouterr().out  # and a unit that loses text is warned
+
+
+def test_the_long_runs_of_an_imported_course_are_the_clients_text(course, capsys):  # noqa: F811
+    content = course / "content" / "unit-01" / "content.md"
+    text = content.read_text(encoding="utf-8")
+    heading = text.index("\n", text.index("## ")) + 1
+    content.write_text(text[:heading] + "\n" + "Una frase corta del cliente. " * 60 + "\n" + text[heading:], encoding="utf-8")
+    capsys.readouterr()
+    main(["verify", "PWD", "--unit", "1"])
+    assert "a run of prose of" in capsys.readouterr().out
+    edit_course(course, lambda d: d["design"].update(origin="import"))
+    main(["verify", "PWD", "--unit", "1"])
+    assert "a run of prose" not in capsys.readouterr().out  # the review proposes how to split it

@@ -61,8 +61,28 @@ final summary under "Design out of date" so that a person decides.
   itself is what the objective teaches.
 - **Minimum words** are floors, never targets. Aim about {{word_margin_pct}} % above. Placeholder
   text, objective tags and comments **do not count**.
+- **The cycle of an expository section** (`design.approach: expository`): {{expository_cycle}} (`rules › expository.cycle`;
+  a course may set its own, see `coursekit config rules --course <CODE>`; `none`: no fixed order). Each part in its place,
+  only those of the cycle in force:
+  - *problem*: the section opens with a task or a situation of the work of the audience and what is at stake, not with a
+    definition. The rest of the section answers it.
+  - *activation*: what the learner already knows or does (a habit, a tool they use, the previous unit), to build on it; it
+    often brings out a common error of `misconceptions.yaml` before it is corrected. The introduction does it for the whole
+    unit: in a content section, only when it brings something of its own (it builds on an earlier section, or on an
+    experience the introduction did not name). Never an empty formula ("Surely you have sometimes…").
+  - *demonstration*: the principle explained and shown on a worked example, step by step, with the reason of each step in
+    sight. Most of the prose, the directives and the media of the section go here. For objectives of *remember* or
+    *understand*, examples and non-examples; for *apply* and above, the whole procedure solved.
+  - *application*: the learning activities of the section's objectives, with less help each time: first one to complete
+    (a step missing, a template half filled), then the whole problem, each with its feedback.
+  - *integration*: how they will use it in their own work, in one or two sentences or a short question. The summary does it
+    for the whole unit: in a content section, only when what it teaches has a use of its own outside the course. Never the
+    same closing line in every section.
 - By section `kind`:
-  - `intro`: present the unit, its professional use, the objectives and how to study it.
+  - `intro`: present the unit from the problem of the work it solves (in an expository course with *problem* in the cycle;
+    else its professional use), the objectives and how to study it. With *activation* in the cycle, two or three sentences that connect with what
+    the learner already does or with the previous unit. It does not grow for that: the activation takes the place of the
+    general presentation, within the hours of the section.
   - `content`: develop **its** objectives (`sections[].objectives`) and close with one
     `*[{{t_objective}} UN.M — Verb]*` tag per objective covered, one per line. Include distinct
     interactive directives in proportion to its hours (verify tells you how many). **Only the
@@ -78,7 +98,9 @@ final summary under "Design out of date" so that a person decides.
   - `summary`: key ideas, glossary (`:::accordion` or `:::flashcards`), a closing `:::reflection` (at least
     {{reflections_per_unit}}: two or three open questions for the learner to look back on what they did or decided in the
     unit, what they would do differently and how they will apply it in their own work; never a quiz in disguise) and the
-    link with the next unit.
+    link with the next unit. In an expository course with *integration* in the cycle, the reflection is the integration
+    of the unit: its questions put the learner in their own work (the next time they face the problem of the
+    introduction), and one sentence says what to do first. It takes no more words: the integration is the reflection.
 - Media placeholders where an asset really adds something, with all their fields and
   accessibility; verify gives the minimum per unit (by hours) and of types. **A resource that shows the screen of a real
   application (a tutorial, a capture, a menu) comes from real material**: in "how it is made" say that it is a recording or
@@ -110,11 +132,38 @@ final summary under "Design out of date" so that a person decides.
   never sees it), and the feedback says why it is wrong; in a simulation, a decision that represents one says so with
   `error: reuse` and its `feedback` or the debriefing explains it. `coursekit verify` fails when an error of the unit
   appears nowhere or an id is not in the file, and warns of distractors and decisions that lose points without one.
+- **Spaced practice:** when the unit builds on an earlier one, some learning activity brings back an objective of an
+  earlier unit together with the new one (`coursekit outline <CODE>` shows what they taught). The assessment measures
+  only the objectives of its unit.
 - **Readable for the audience** ({{readability_audience}}): one idea per sentence, sentences of up to
   {{long_sentence_words}} words as a rule, the everyday word before the technical one (define the technical term the
   first time). `coursekit verify` warns when a section's readability index falls below {{readability_min_index}} or too
   many sentences are long.
 - **No emojis.** Only `{{allowed_symbols}}`.
+
+## Cognitive load
+
+The learner's working memory is small: the text spends it on understanding, not on finding their way.
+
+- **Segments:** at most {{chunk_max_words}} words of prose in a row without a heading, a directive, a medium, a highlight,
+  a list or a table (a blank line does not break it; `coursekit verify` warns). Split by ideas: a `###` heading that names
+  the next idea, a directive that orders the content (steps → timeline, alternatives → tabs). Never a list or a highlight
+  put there only to break the text.
+- **One idea per paragraph**, and the paragraph starts with it.
+- **Signals:** headings say the idea, not the topic ("A long password resists more than a complex one", not "Length").
+  The key term in bold the first time it is defined. Before a procedure or an explanation with parts, one sentence says how
+  many and which.
+- **The concrete first:** the case or the example, then the principle that explains it.
+- **One term for each thing:** the same name in the whole unit (no synonyms for style), the one of the glossary and of the
+  interface.
+- **Steps:** a procedure is a numbered list, one action per step; a long one is grouped in phases with their title.
+- **Terms before the procedure:** the terms a procedure uses are defined before it, not halfway through.
+- **Nothing decorative:** no anecdote or medium that does not explain; the text that explains a medium goes next to it.
+- **Video and audio:** the voice does not read the text that is on screen; the screen shows what the voice explains.
+- **From the example to the problem:** for objectives of *apply* and above, a worked example, then a practice to complete,
+  then the whole problem (the *demonstration* and *application* of the cycle).
+- **The audience decides how much help:** with a `specialist` readability audience ({{readability_audience}} in this
+  project), less scaffolding and shorter examples; what helps a beginner slows down an expert.
 
 ## Migrated courses (`design.origin: import`)
 
@@ -131,6 +180,9 @@ The course is the client's: its text comes from the packages converted in `brief
   the course language) and what the notes ask (below). What is missing for the design (an objective's practice, assessment
   questions) you write new, in the same voice, and say in your final summary which parts are new; those new parts are the
   activities of the design and the questions of the assessment, **not** more explanation of the subject.
+- **The cycle and the segments are not for the client's text:** do not reorder or split it to follow them (`coursekit
+  verify` does not warn of long runs in this kind of course). What you write new (the learning activities, the questions)
+  goes from help to the whole problem as in any course.
 - **Interactives keep their kind.** Copy the directives of the brief (`:::accordion`, `:::tabs`, `:::carousel`,
   `:::flashcards`, `:::match`, `:::labelled-graphic`, questions…); give every question the objective of its section and
   check the carousel slides that the conversion titled with a number.

@@ -104,6 +104,9 @@ hard_to_read:
 long_sentences:
   es: "{label}: {count} de {total} frases pasan de {words} palabras (público {audience}); la primera: «{example}»"
   en: "{label}: {count} of {total} sentences go over {words} words ({audience} audience); the first: «{example}»"
+long_stretch:
+  es: "{label}: un tramo de prosa de {words} palabras sin un encabezado, una directiva, un medio, un destacado, una lista ni una tabla (máximo {limit}); divídelo por ideas: «{start}»"
+  en: "{label}: a run of prose of {words} words with no heading, directive, medium, highlight, list or table (at most {limit}); split it by ideas: «{start}»"
 no_reflection:
   es: "{label}: la unidad no cierra con una reflexión (:::reflection, al menos {n}): qué hizo el alumno, qué cambiaría y cómo lo aplicará"
   en: "{label}: the unit does not close with a reflection (:::reflection, at least {n}): what the learner did, what they would change and how they will apply it"

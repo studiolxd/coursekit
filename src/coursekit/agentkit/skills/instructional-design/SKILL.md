@@ -73,7 +73,10 @@ sections the course needs, and justify it.
    - if `intro_section` is `true`, the **first** is "{{t_intro_title}}", with `rol: introduccion`;
    - if `summary_section` is `true`, the **last** is "{{t_summary_title}}", with `rol: resumen` (neither develops an
      objective: with the `rol` slxd does not report them as orphan content);
-   - in between, the content sections the subject needs (one or several per objective).
+   - in between, the content sections the subject needs (one or several per objective). In an expository course, each one
+     answers a problem of the work of the audience (the cycle of its sections: {{expository_cycle}}; the course may set its
+     own, `coursekit config rules --course <CODE>`): its title may name the task, and the proposal notes say that problem in
+     one line, so the person sees it when signing.
    - Subsections only if they add real structure.
 5. **Links** (`design_matrix_node_link_objetivo`): each content section with the objectives it
    develops. Every objective is covered by at least one section.
@@ -144,7 +147,8 @@ sections the course needs, and justify it.
     line per question: the question, the option you took and why. The handoff lists them at the end and in its report,
     so the person checks them. When the person answers one later (`/design-change`), take it out of that block.
 13. **Proposal notes** in `courses/<CODE>/design/proposal-notes.md` ({{ui_language_name}}):
-    structure and why, hour split and criterion, assumptions (syllabus, audience, level),
+    structure and why, the problem of each content section (expository course), hour split and criterion, assumptions
+    (syllabus, audience, level),
     the questions of step 12, accepted validation warnings and why (leave out the ones the design asks for: an
     introduction or a summary that develops no objective; `coursekit design <CODE>` does not print them). In a decision-based course, also the action map
     and the story bible (see "Decision-based courses").
@@ -351,6 +355,8 @@ For each element, if there is a problem, fix it and note it in `proposal-notes.m
   design.grading`, `rules › content.questions_per_objective`); the criterion of each test uses them as they are.
 - **Objective ↔ learning activity:** the activity lets the learner practise the behaviour
   (nothing passive for apply/analyse/evaluate/create).
+- **Sections:** in an expository course, each content section has a real problem of the audience (not a topic), written
+  in the proposal notes; a section without one is a disguised chapter of a manual.
 - **Common errors:** real (from the material, the audience, the sector), specific to the objective, written as the
   learner would think them, and each one different; at least {{misconceptions_per_objective}} per objective.
 

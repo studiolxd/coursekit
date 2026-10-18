@@ -72,6 +72,46 @@ def prose(lines: list[str]) -> list[str]:
     return [re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", re.sub(r"[*_`]", "", block)) for block in blocks]
 
 
+def stretches(lines: list[str]) -> list[str]:
+    """The runs of prose the learner reads without a break, one string each: paragraphs one after another (a blank line does
+    not break them) until a heading, a directive, a medium or a highlight (`>`), a list, a table, an image or code."""
+    text = COMMENT_RE.sub(lambda m: "\n" * m.group(0).count("\n"), "\n".join(lines))
+    runs: list[str] = []
+    current: list[str] = []
+    depth = 0  # inside a directive: its body is not running prose (an adaptive block breaks the run too)
+    fenced = False
+
+    def flush() -> None:
+        if current:
+            runs.append(" ".join(current))
+            current.clear()
+
+    for raw in text.splitlines():
+        line = raw.strip()
+        if FENCE_RE.match(line):
+            fenced = not fenced
+            flush()
+            continue
+        if fenced:
+            continue
+        if DIRECTIVE_OPEN_RE.match(line):
+            depth += 1
+            flush()
+            continue
+        if DIRECTIVE_CLOSE_RE.match(line) and depth:
+            depth -= 1
+            flush()
+            continue
+        if not line:
+            continue
+        if depth or line.startswith(("#", ">", "|", "*[", "![", ":::")) or re.match(r"^(?:[-*+]|\d+[.)])\s+", line):
+            flush()
+            continue
+        current.append(line)
+    flush()
+    return [re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", re.sub(r"[*_`]", "", run)) for run in runs]
+
+
 def sentences(blocks: list[str]) -> list[str]:
     out = []
     for block in blocks:

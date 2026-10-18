@@ -399,12 +399,41 @@ Si el nombre de una directiva no está en el registro, `verify` falla y sugiere 
 | branching-scenario | `dialog` (ramas complejas: recurso `Simulación interactiva`) |
 | simulated-terminal | recurso `Demo interactiva en terminal` |
 
+## Cursos expositivos
+
+En un curso expositivo (`design.approach: expository`) cada apartado de contenido sigue el ciclo de `rules › expository ›
+cycle`, basado en los primeros principios de instrucción y en cómo aprenden los adultos (quieren ver para qué les sirve algo
+en su trabajo y parten de lo que ya saben o hacen):
+
+| Parte | Qué es |
+|---|---|
+| `problem` | el apartado se abre con una tarea o una situación del trabajo del público y lo que está en juego, no con una definición |
+| `activation` | lo que el alumno ya sabe o hace, o lo que enseñó la unidad anterior, para construir sobre ello |
+| `demonstration` | el principio explicado y mostrado en un ejemplo resuelto, paso a paso, con el porqué de cada paso |
+| `application` | las actividades de aprendizaje del apartado, con menos ayuda cada vez: primero una para completar, después el problema entero |
+| `integration` | cómo lo usará el alumno en su propio trabajo |
+
+Un proyecto (`config/rules.yaml`) o un curso (`course.yaml › rules`) deja solo las partes que quiere; una lista vacía deja los
+apartados sin un orden fijo. La **introducción** de la unidad la presenta desde el problema que resuelve y, con `activation`,
+conecta con lo que el alumno ya hace; el **resumen** hace la `integration` en su `:::reflection`. Ninguno tiene más palabras
+por ello. Un apartado de contenido repite la activación o la integración solo cuando aporta algo propio, para que no acaben
+todos los apartados con la misma frase.
+
+La redacción sigue también reglas de **carga cognitiva**: tramos de prosa de `content.chunk_max_words` palabras como mucho,
+divididos por ideas (un encabezado que nombra la idea, una directiva que ordena el contenido; nunca una lista puesta solo para
+cortar), una idea por párrafo, encabezados que dicen la idea, el término clave en negrita cuando se define, el mismo término
+para lo mismo, los términos antes del procedimiento que los usa, los procedimientos en pasos numerados, nada decorativo, el
+texto que explica un medio junto a él, y en un vídeo la voz no lee lo que hay en pantalla. Algunas actividades de aprendizaje
+recuperan un objetivo de una unidad anterior (práctica espaciada). `coursekit verify` solo comprueba los tramos de prosa; la
+revisión comprueba el resto con su criterio de pedagogía. En un curso importado el ciclo y los tramos no se aplican al texto
+del cliente: la revisión solo propone cómo mejorarlo.
+
 ## Cursos basados en decisiones
 
 Un curso tiene un **enfoque** (`course.yaml › design.approach`, elegido con `coursekit new --approach`; por defecto,
 `rules › defaults.approach`):
 
-- `expository`: cada apartado explica y después practica y evalúa. Es lo que describe todo lo anterior de esta página.
+- `expository`: cada apartado explica y después practica y evalúa, con el ciclo de [Cursos expositivos](#cursos-expositivos). Es lo que describe todo lo anterior de esta página.
 - `decision-based`: el alumno no empieza leyendo. Cada apartado de contenido abre con una **simulación** en la que decide,
   se equivoca o acierta y ve las consecuencias; la explicación llega después y parte de lo que acaba de vivir. El curso
   conserva alrededor de las simulaciones todas las directivas y recursos de un curso expositivo.
@@ -714,6 +743,7 @@ Las cifras son los valores por defecto del paquete (`src/coursekit/defaults/rule
 | Situaciones nuevas en el test | Ninguna pregunta del banco comparte `bank_practice_overlap` o más de sus palabras con una pregunta de práctica de `content.md` | 0,5 | aviso |
 | Consecuencia de un error | En una simulación, una decisión con `error` no lleva directa a un final `good` ni va donde una decisión correcta de su escena sin puntos, cambios de estado ni retroalimentación | — | aviso |
 | Reflexión | El apartado de resumen (o el último, si no lo hay) tiene al menos `reflections_per_unit` `:::reflection` | 1 | aviso |
+| Tramos de prosa | Por apartado, cada tramo de prosa de más de `content.chunk_max_words` palabras sin un encabezado, una directiva, un medio, un destacado, una lista ni una tabla; no en un curso importado | 250 palabras | aviso |
 | Legibilidad | Por apartado, la proporción de frases de más de `readability.long_sentence_words` palabras y el índice de legibilidad del idioma (Szigriszt-Pazos en español, Flesch en inglés), según el público `readability.audience`; un apartado con menos de `readability.min_sentences` frases de prosa no se mide | público general: 30 palabras, como mucho un 20 % largas, índice 55 | aviso |
 | Lenguaje inclusivo | `rules › inclusive_language`: con `neutral`, las palabras de `lang/<código>.yaml › inclusive` que nombran a las personas en masculino genérico (un aviso por palabra, con sus líneas y la alternativa neutra) y las formas con barra o arroba; con `split`, las barras. Quedan fuera el código, los comentarios y las direcciones | `neutral` | aviso |
 | Preguntas de un banco | Con `delivery › assessment › format` `aiken`, `gift`, `moodle-xml` o `qti`, cada directiva de pregunta de `assessment.md` es de un tipo que el formato admite (aiken: `single-choice`; gift y moodle-xml: además `multi-select`, `true-false`, `match`, `sorting-groups`, `short-answer`, `fill-in-the-blank`; moodle-xml y qti: también `sorting`), y en gift un `fill-in-the-blank` tiene un solo hueco. Mira [Dónde van las evaluaciones](08-assembly-and-delivery.md#dónde-van-las-evaluaciones) | `platform`: no se comprueba | error |

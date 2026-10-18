@@ -440,6 +440,18 @@ def check_readability(course: dict, label: str, lines: list[str], report: Report
                       audience=name, example=readmod.start(m.long[0])))
 
 
+def check_stretches(course: dict, label: str, lines: list[str], report: Report) -> None:
+    """A warning for each run of prose longer than `content.chunk_max_words` without a heading, a directive, a medium, a
+    highlight, a list or a table (cognitive load: the learner reads in segments)."""
+    limit = int(coursemod.rules(course)["content"].get("chunk_max_words") or 0)
+    if not limit:
+        return
+    for run in readmod.stretches(lines):
+        count = len(readmod.words(run))
+        if count > limit:
+            report.warn(t("verify", "long_stretch", label=label, words=count, limit=limit, start=readmod.start(run)))
+
+
 CHOICE_BRICKS = ("SINGLE_CHOICE", "MULTI_SELECT", "TRIVIAL")
 
 
@@ -635,6 +647,8 @@ def verify_unit(course: dict, unit: dict) -> Report:
         if sec.title.strip() != spec["title"].strip():
             report.warn(t("verify", "title_differs", label=label, title=sec.title, design=spec["title"]))
         check_readability(course, label, sec.lines, report)
+        if not imported:  # the text of an imported course is the client's: the review proposes how to split it
+            check_stretches(course, label, sec.lines, report)
         needed_reflections = int(rules.get("reflections_per_unit") or 0)
         if spec["n"] == closing and sec.directives.count("reflection") < needed_reflections:
             report.warn(t("verify", "no_reflection", label=label, n=needed_reflections))

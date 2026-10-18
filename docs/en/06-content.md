@@ -399,12 +399,41 @@ If a directive name is not in the registry, `verify` fails and suggests the equi
 | branching-scenario | `dialog` (complex branches: `Interactive simulation` placeholder) |
 | simulated-terminal | `Interactive terminal demo` placeholder |
 
+## Expository courses
+
+In an expository course (`design.approach: expository`) every content section follows the cycle of `rules › expository ›
+cycle`, built on the first principles of instruction and on how adults learn (they want to see what something is for in
+their work, and they start from what they already know or do):
+
+| Part | What it is |
+|---|---|
+| `problem` | the section opens with a task or a situation of the work of the audience and what is at stake, not with a definition |
+| `activation` | what the learner already knows or does, or what the previous unit taught, to build on it |
+| `demonstration` | the principle explained and shown on a worked example, step by step, with the reason of each step |
+| `application` | the learning activities of the section, with less help each time: first one to complete, then the whole problem |
+| `integration` | how the learner will use it in their own work |
+
+A project (`config/rules.yaml`) or a course (`course.yaml › rules`) keeps only the parts it wants; an empty list leaves the
+sections with no fixed order. The **introduction** of the unit presents it from the problem it solves and, with
+`activation`, connects with what the learner already does; the **summary** does the `integration` in its `:::reflection`.
+Neither takes more words for it. A content section repeats the activation or the integration only when it brings something
+of its own, so that every section does not end with the same line.
+
+The writing also follows rules of **cognitive load**: runs of prose of at most `content.chunk_max_words` words, split by ideas
+(a heading that names the idea, a directive that orders the content; never a list put there only to break the text), one
+idea per paragraph, headings that say the idea, the key term in bold when it is defined, the same term for the same thing,
+the terms before the procedure that uses them, procedures as numbered steps, nothing decorative, the text that explains a
+medium next to it, and in a video the voice does not read what is on screen. Some learning activities bring back an
+objective of an earlier unit (spaced practice). `coursekit verify` checks only the runs of prose; the review checks the
+rest with its criterion of pedagogy. In an imported course the cycle and the runs are not applied to the client's text: the
+review only proposes how to improve it.
+
 ## Decision-based courses
 
 A course has an **approach** (`course.yaml › design.approach`, chosen with `coursekit new --approach`; the default is
 `rules › defaults.approach`):
 
-- `expository`: each section explains, then practises and assesses. Everything above in this page describes it.
+- `expository`: each section explains, then practises and assesses, following the cycle of [Expository courses](#expository-courses). Everything above in this page describes it.
 - `decision-based`: the learner does not start by reading. Every content section opens with a **simulation** where they
   decide, get it wrong or right and see the consequences; the explanation comes afterwards and builds on what they lived
   through. The course keeps every directive and resource of an expository course around the simulations.
@@ -708,6 +737,7 @@ The numbers are the package defaults (`src/coursekit/defaults/rules.yaml`). A pr
 | New situations in the test | No question of the bank shares `bank_practice_overlap` or more of its words with a practice question of `content.md` | 0.5 | warning |
 | Consequence of an error | In a simulation, a decision with `error` does not lead straight to a `good` ending, nor go where a right decision of its scene goes with no points, changes of state or feedback | — | warning |
 | Reflection | The summary section (the last one without it) has at least `reflections_per_unit` `:::reflection` | 1 | warning |
+| Runs of prose | Per section, each run of prose longer than `content.chunk_max_words` without a heading, a directive, a medium, a highlight, a list or a table; not in an imported course | 250 words | warning |
 | Readability | Per section, the share of sentences longer than `readability.long_sentence_words` and the readability index of the language (Szigriszt-Pazos in Spanish, Flesch in English), by the audience `readability.audience`; a section with fewer than `readability.min_sentences` sentences of prose is not measured | general audience: 30 words, at most 20 % long, index 55 | warning |
 | Inclusive language | `rules › inclusive_language`: with `neutral`, the words of `lang/<code>.yaml › inclusive` that name people in the generic masculine (one warning per word, with its lines and the neutral alternative) and the forms with a slash or an @; with `split`, the slashes. Code, comments and addresses are left out | `neutral` | warning |
 | Questions of a bank | With `delivery › assessment › format` `aiken`, `gift`, `moodle-xml` or `qti`, every question directive of `assessment.md` is a type the format takes (aiken: `single-choice`; gift and moodle-xml: also `multi-select`, `true-false`, `match`, `sorting-groups`, `short-answer`, `fill-in-the-blank`; moodle-xml and qti: also `sorting`), and in gift a `fill-in-the-blank` has a single blank. See [Where the tests go](08-assembly-and-delivery.md#where-the-tests-go) | `platform`: not checked | error |

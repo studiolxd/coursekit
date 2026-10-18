@@ -25,6 +25,14 @@ def test_only_running_prose_is_measured():
                                            "Rama del si.", "Rama neutra.", "Cierre."]
 
 
+def test_a_run_of_prose_lasts_until_something_breaks_it():
+    lines = ["Uno dos tres.", "", "Cuatro cinco.", "### Idea", "Seis siete.", "- lista", "Ocho.", "> destacado", "Nueve.",
+             ":::tabs", "Dentro no cuenta.", ":::", "Diez.", "| a |", "Once.", "<!-- nota -->", "Doce.", "```", "x = 1", "```",
+             "Trece.", "*[Objetivo U1.1 — Aplicar]*"]
+    assert r.stretches(lines) == ["Uno dos tres. Cuatro cinco.", "Seis siete.", "Ocho.", "Nueve.", "Diez.", "Once. Doce.",
+                                  "Trece."]
+
+
 def test_the_index_follows_the_language():
     easy = ["El gato duerme. La casa es azul. Hoy hace sol. Me gusta el pan."] * 3
     hard = ["La implementación de mecanismos de autenticación multifactorial constituye una contramedida "
@@ -60,6 +68,7 @@ def test_verify_warns_of_hard_prose_and_of_a_unit_without_reflection(project, ca
     assert "Apartado 2: readability index 0 (Szigriszt-Pazos)" in out and "(Szigriszt-Pazos), below 55 for a general audience" in out
     assert "Apartado 2: 13 of 13 sentences go over 30 words (general audience)" in out
     assert "Apartado 3: the unit does not close with a reflection" in out
+    assert "Apartado 2: a run of prose of 5" in out and "(at most 250)" in out
 
     closed = CONTENT.replace("## Apartado 3 — Resumen *(mín. 40 palabras)*\n",
                              "## Apartado 3 — Resumen *(mín. 40 palabras)*\n\n:::reflection\n¿Qué harías distinto mañana?\n:::\n")
@@ -70,6 +79,12 @@ def test_verify_warns_of_hard_prose_and_of_a_unit_without_reflection(project, ca
     assert main(["verify", "PWD", "--no-update"]) == 0
     out = capsys.readouterr().out
     assert "reflection" not in out and "readability index" not in out
+    (unit / "content.md").write_text(hard, encoding="utf-8")
+    (project / "config" / "rules.yaml").write_text("content: {chunk_max_words: 0}\n", encoding="utf-8")
+    capsys.readouterr()
+    assert main(["verify", "PWD", "--no-update"]) == 0
+    assert "a run of prose" not in capsys.readouterr().out  # 0: not checked
+    (unit / "content.md").write_text(closed, encoding="utf-8")
 
     from coursekit import assemble
 
