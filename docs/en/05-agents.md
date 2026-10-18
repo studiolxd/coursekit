@@ -161,7 +161,7 @@ The design, writing and review agents look for official sources with [`coursekit
 
 ## Permissions: what agents may not do
 
-Agents must never sign anything. Approvals are recorded only by `coursekit approve`, which only a person runs; agents tell you what to type. The same goes for the decisions of people that other commands record: `coursekit client` (rounds of client review and what the client decided) and `coursekit hold` / `coursekit resume` (pausing a course) and `coursekit reviewed --by` (the review of a person). `coursekit handoff` is denied too: it signs by itself, so an agent that could start it would be signing. The project's `AGENTS.md` also tells every tool not to commit or push unless you ask, not to write credentials in versioned files and not to install software (they ask you to run `coursekit setup` instead).
+Agents must never sign anything. Approvals are recorded only by `coursekit approve`, which only a person runs; agents tell you what to type. The same goes for the decisions of people that other commands record: `coursekit client` (rounds of client review and what the client decided) and `coursekit hold` / `coursekit resume` (pausing a course) and `coursekit reviewed --by` (the review of a person). `coursekit handoff` is denied too: it signs by itself, so an agent that could start it would be signing. The project's `AGENTS.md` names all these commands and asks the agent, when you ask for one, not to try it and to give you the exact line to type in the chat with `!` in front. It also tells every tool not to commit or push unless you ask, not to write credentials in versioned files and not to install software (they ask you to run `coursekit setup` instead).
 
 coursekit enforces the essentials in each tool:
 

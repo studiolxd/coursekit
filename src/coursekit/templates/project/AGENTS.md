@@ -39,6 +39,11 @@ and follow it. Content format: `.coursekit/docs/content-format.md`.
 - A course's status only changes in its `course.yaml`. Approvals are recorded only by
   `coursekit approve`, and **only a person runs it**: never run it yourself; tell the person
   what to type.
+- The same holds for the commands that record a person's decision or sign in their place:
+  `coursekit client`, `hold`, `resume`, `reviewed ... --by` and `handoff` (it signs every stage by
+  itself, as Coursekit Handoff). Your tool's settings deny them; when the person asks for one, do
+  not try it: give them the exact line to type in the chat with `!` in front (for example
+  `! coursekit handoff <CODE>`, with the code from `coursekit status`).
 - Do not commit or push unless the person asks.
 - Never write credentials in versioned files: personal settings go in `.env`.
 - Do not install software: if something is missing (`coursekit doctor`), ask the person to run
