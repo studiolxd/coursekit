@@ -8,9 +8,16 @@ props:
   title: {type: text, max_chars: 60, on_screen: true}
   parts: {type: list, required: true, max_items: 6, items_max_chars: 40, on_screen: true}
   current: {type: number, required: true, help: {en: "the part that starts now, from 1", es: "la parte que empieza ahora, desde 1"}}
-  background: {type: choice, values: [plain, surface, accent, photo], help: {en: "default: the background of the style of the project (config/video.yaml)", es: "por defecto: el fondo del estilo del proyecto (config/video.yaml)"}}
+  mark: {type: choice, values: [bar, fill, underline, none], help: {en: "how the current part is marked: a bar at its side (default; under it in a row), a fill behind it, a line under it or nothing", es: "cómo se marca la parte actual: una barra a su lado (por defecto; debajo, en fila), un fondo detrás, una línea debajo o nada"}}
+  emphasis: {type: choice, values: [weight, size, both, none], help: {en: "how its text stands out: the strong weight of the style, a bigger size, both (default) or neither", es: "cómo destaca su texto: el peso fuerte del estilo, más tamaño, las dos cosas (por defecto) o ninguna"}}
+  fill: {type: choice, values: [surface-highlight, surface, accent], when: {mark: fill}, help: {en: "with mark fill: the colour behind the current part (default surface-highlight); its text takes the colour that reads on it", es: "con mark fill: el color detrás de la parte actual (por defecto surface-highlight); su texto toma el color que se lee encima"}}
+  others: {type: choice, values: [muted, normal], help: {en: "the other parts: stepping back, in the secondary text (default), or as the current one, with the normal weight", es: "las demás partes: en segundo plano, con el texto secundario (por defecto), o como la actual, con el peso normal"}}
+  done: {type: choice, values: [same, muted, check], help: {en: "the parts already seen: like the others (default), stepping back or with a tick", es: "las partes ya vistas: como las demás (por defecto), en segundo plano o con un ✔"}}
+  numbers: {type: boolean, default: true, help: {en: "the number before each part (default true)", es: "el número delante de cada parte (por defecto true)"}}
+  layout: {type: choice, values: [list, row], help: {en: "in a column (default) or in a row, like tabs or the steps of a process", es: "en columna (por defecto) o en fila, como unas pestañas o los pasos de un proceso"}}
+  background: {type: choice, values: [plain, surface, accent, inverse, photo], help: {en: "default: the background of the style of the project (config/video.yaml)", es: "por defecto: el fondo del estilo del proyecto (config/video.yaml)"}}
   photo: {type: media, when: {background: photo}, help: {en: "with background photo: a path inside the media folder of the course (files/…), under a veil (`veil`, `veil_opacity`); describe it in `shows` of the scene", es: "con background photo: una ruta dentro de la carpeta media del curso (files/…), bajo un velo (`veil`, `veil_opacity`); descríbela en `shows` de la escena"}}
-  veil: {type: choice, values: [background, surface, accent, none], when: {background: photo}, help: {en: "with a photo: the colour of the veil over it (default that of config/video.yaml › photo_veil); none, no veil, only for a calm, light photo", es: "con foto: el color del velo sobre ella (por defecto el de config/video.yaml › photo_veil); none, sin velo, solo para una foto tranquila y clara"}}
+  veil: {type: choice, values: [background, surface, accent, inverse, none], when: {background: photo}, help: {en: "with a photo: the colour of the veil over it (default that of config/video.yaml › photo_veil); none, no veil, only for a calm, light photo", es: "con foto: el color del velo sobre ella (por defecto el de config/video.yaml › photo_veil); none, sin velo, solo para una foto tranquila y clara"}}
   veil_opacity: {type: number, when: {background: photo}, help: {en: "with a photo: how opaque the veil is, from 0 to 1 (default that of config/video.yaml › photo_veil)", es: "con foto: lo opaco que es el velo, de 0 a 1 (por defecto el de config/video.yaml › photo_veil)"}}
   credit: {type: text, max_chars: 80, on_screen: true, help: {en: "the credit of the image of the scene (its author and its licence), small at the bottom right: a CC-BY photo requires it", es: "el crédito de la imagen de la escena (su autor y su licencia), pequeño abajo a la derecha: una foto CC-BY lo exige"}}
   align: {type: choice, values: [left, center], help: {en: "where the content goes across (default left)", es: "dónde va el contenido en horizontal (por defecto left)"}}
@@ -24,3 +31,7 @@ example:
 # Other ways the gallery draws it: the props of each over those of the example.
 variants:
   - {name: photo, label: {en: "Photo", es: "Foto"}, props: {background: photo, photo: gallery-sample-photo.jpg}}
+  - {name: weight, label: {en: "Weight only", es: "Solo peso"}, props: {mark: none, emphasis: weight, others: normal}}
+  - {name: fill, label: {en: "With a fill", es: "Con fondo"}, props: {mark: fill, emphasis: weight}}
+  - {name: row, label: {en: "In a row", es: "En fila"}, props: {layout: row, numbers: false}}
+  - {name: done, label: {en: "Seen ticked", es: "Lo visto marcado"}, props: {done: check, others: normal}}

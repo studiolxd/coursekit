@@ -10,6 +10,7 @@ import { Player, type PlayerRef } from "@remotion/player";
 import "@studiolxd/brand/brand.css";
 import "@studiolxd/brand/fonts.css";
 import { Alert } from "@studiolxd/brand/alert";
+import { Button } from "@studiolxd/brand/button";
 import { Checkbox } from "@studiolxd/brand/checkbox";
 import { AppHeader } from "@studiolxd/brand/app-header";
 import { AppShell } from "@studiolxd/brand/app-shell";
@@ -314,14 +315,20 @@ const Detail: React.FC<{ piece: Piece }> = ({ piece }) => {
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
           <BrandHeading level={1} size={5}>{piece.label}</BrandHeading>
-          {piece.variants.length ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <Paragraph size="sm" aria-hidden="true" style={{ margin: 0 }}>{L.variant}</Paragraph>
-              <div style={{ width: 240 }}><SelectField id={`${key}-variant`} label={L.variant} labelHidden size="sm" value={variant}
-                options={[{ value: NONE, label: L.example }, ...piece.variants.map((v) => ({ value: v.name, label: v.label }))]}
-                onValueChange={pick} /></div>
-            </div>
-          ) : null}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {data.rendered ? null : (  // back to what the project (or the course) draws: the example, its defaults, no variant
+              <Button variant="outline" size="sm" disabled={variant === NONE && !Object.keys(edits).length}
+                onClick={() => pick(NONE)}>{L.reset}</Button>
+            )}
+            {piece.variants.length ? (
+              <>
+                <Paragraph size="sm" aria-hidden="true" style={{ margin: 0 }}>{L.variant}</Paragraph>
+                <div style={{ width: 240 }}><SelectField id={`${key}-variant`} label={L.variant} labelHidden size="sm" value={variant}
+                  options={[{ value: NONE, label: L.example }, ...piece.variants.map((v) => ({ value: v.name, label: v.label }))]}
+                  onValueChange={pick} /></div>
+              </>
+            ) : null}
+          </div>
         </div>
         <div style={{ display: "flex", gap: 8, margin: "8px 0" }}>
           <Tag tone="primary">{cap(L[piece.kind])}</Tag><Tag tone="neutral">{cap(piece.origin)}</Tag>

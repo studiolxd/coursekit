@@ -198,7 +198,7 @@ Las actividades sumativas de la unidad, en el orden en que se hacen. Un encabeza
 
 ## ACTIVIDAD DE EVALUACIÓN 1.1 — Test de la unidad
 ### Objetivos que evalúa
-### Instrucciones para el alumno
+### Instrucciones para el alumnado
 ### Desarrollo e implementación
 ### Corrección automática y puntuación
 ### Intentos y retroalimentación
@@ -208,13 +208,13 @@ Las actividades sumativas de la unidad, en el orden en que se hacen. Un encabeza
 | Español | Inglés |
 |---|---|
 | `Objetivos que evalúa` | `Objectives assessed` |
-| `Instrucciones para el alumno` | `Instructions for the learner` |
+| `Instrucciones para el alumnado` | `Instructions for the learner` |
 | `Desarrollo e implementación` | `Development and implementation` |
 | `Corrección automática y puntuación` | `Automatic marking and scoring` |
 | `Intentos y retroalimentación` | `Attempts and feedback` |
 | `Banco de preguntas` | `Question bank` |
 
-El montaje carga en la lección de evaluación de la plataforma solo lo que hay bajo **Instrucciones para el alumno** y **Banco de preguntas** (texto y directivas); los demás subapartados documentan la actividad para el equipo. Pon las directivas de pregunta (consulta más abajo) en el banco. Toda pregunta lleva la clave de objetivo y retroalimentación.
+El montaje carga en la lección de evaluación de la plataforma solo lo que hay bajo **Instrucciones para el alumnado** y **Banco de preguntas** (texto y directivas); los demás subapartados documentan la actividad para el equipo. Pon las directivas de pregunta (consulta más abajo) en el banco. Toda pregunta lleva la clave de objetivo y retroalimentación.
 
 - `verify` no comprueba los encabezados de `assessment.md`, pero el montaje los empareja exactamente, con las palabras del idioma del curso: un `### Banco de preguntas` mal escrito no carga ninguna pregunta. Se construye una lección de evaluación por cada encabezado `## ACTIVIDAD DE EVALUACIÓN`.
 - `verify` cuenta todas las directivas de pregunta del fichero, estén donde estén. Una colocada en otro subapartado cuenta para `verify`, pero nunca llega al alumno.

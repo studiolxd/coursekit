@@ -7,6 +7,7 @@ props:
   text: {type: text, required: true, max_chars: 60, on_screen: true}
   corner: {type: choice, values: [top-left, top-right, bottom-left, bottom-right], help: {en: "default top-right", es: "por defecto top-right"}}
   tone: {type: choice, values: [accent, correct, wrong, surface], help: {en: "the mark at its side: the accent (default, a tip), right (a good practice), wrong (a warning) or none (surface)", es: "la marca de su lado: el acento (por defecto, un consejo), correcto (una buena práctica), incorrecto (un aviso) o ninguna (surface)"}}
+  look: {type: choice, values: [bar, fill], help: {en: "bar, a mark of its colour at its side (default); fill, the whole note in that colour (the accent: the highlighted note), its text in the colour that reads on it", es: "bar, una marca de su color a su lado (por defecto); fill, toda la nota de ese color (el acento: la nota destacada), con el texto en el color que se lee encima"}}
 # What the gallery draws it with (`coursekit video gallery`), in each language of the courses.
 example:
   en: {text: "Twelve characters or more"}
@@ -15,3 +16,4 @@ example:
 variants:
   - {name: wrong, label: {en: "Warning", es: "Aviso"}, props: {tone: wrong}}
   - {name: correct, label: {en: "Good practice", es: "Buena práctica"}, props: {tone: correct}}
+  - {name: fill, label: {en: "Filled", es: "Rellena"}, props: {look: fill}}

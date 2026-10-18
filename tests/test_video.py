@@ -345,19 +345,21 @@ def test_the_gallery_draws_every_piece_with_the_theme_and_the_style_of_the_cours
     covers = ["title", "title-centred", "title-surface", "title-accent", "title-photo-side", "title-photo-panel", "title-photo-over",
               "title-still"]
     pairs = lambda name, *variants: [name, *(f"{name}-{v}" for v in variants)]  # noqa: E731
-    assert names == [*covers, *pairs("annotated", "together"), *pairs("chapter", "photo"), *pairs("chart", "stress"),
-                     "code", *pairs("compare", "surface", "accent", "title-top", "photo", "no-marks"),
-                     *pairs("diagram", "surface", "accent", "title-top", "no-arrows", "no-numbers", "photo", "together"),
+    assert names == [*covers, *pairs("annotated", "together", "hide"), *pairs("chapter", "photo", "weight", "fill", "row", "done"),
+                     *pairs("chart", "stress", "columns", "pie"),
+                     *pairs("code", "dim", "bar", "keep"),
+                     *pairs("compare", "surface", "accent", "title-top", "photo", "no-marks", "fill", "header", "top", "rows"),
+                     *pairs("diagram", "surface", "accent", "title-top", "no-arrows", "no-numbers", "photo", "together", "thin"),
                      *pairs("image", "pan", "credit"),
                      *pairs("list", "surface", "accent", "title-top", "bullets", "no-marker", "photo", "together"),
-                     *pairs("outro", "plain", "surface", "photo"), *pairs("question", "photo"),
+                     *pairs("outro", "plain", "surface", "photo", "inverse"), *pairs("question", "photo"),
                      *pairs("quote", "surface", "accent", "photo", "bar", "portrait"),
                      *pairs("screencast", "window"),
                      *pairs("split", "surface", "accent", "numbers", "no-marker", "title-top", "photo", "screenshot", "wide-media"),
                      *pairs("stat", "surface", "accent", "title-top", "photo", "side"),
-                     *pairs("statement", "accent", "surface", "title-top", "photo"), *pairs("timeline", "photo"),
-                     *pairs("callout", "wrong", "correct"), *pairs("highlight", "box-dim"), *pairs("lower-third", "right", "card"),
-                     *pairs("pointer", "top"), "progress",
+                     *pairs("statement", "accent", "surface", "title-top", "photo"), *pairs("timeline", "photo", "alternate"),
+                     *pairs("callout", "wrong", "correct", "fill"), *pairs("highlight", "box-dim"), *pairs("lower-third", "right", "card"),
+                     *pairs("pointer", "top", "thin"), "progress",
                      *[name for kind in video.TRANSITIONS for name in (f"transition-{kind}-from", f"transition-{kind}")]]
     assert props["scenes"][3]["props"]["background"] == "accent" and props["scenes"][3]["type"] == "title"  # a variant
     layer = next(s for s in props["scenes"] if s["layers"] and s["layers"][0]["id"] == "lower-third")

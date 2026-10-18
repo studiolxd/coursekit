@@ -17,7 +17,7 @@ import type { SceneProps } from "../../contract";
 // bottom it keeps clear of the captions.
 export type TitleProps = {
   kicker?: string; title: string; text?: string;
-  background?: "plain" | "surface" | "accent" | "photo"; photo?: string; layout?: "side" | "panel" | "over";
+  background?: "plain" | "surface" | "accent" | "inverse" | "photo"; photo?: string; layout?: "side" | "panel" | "over";
   align?: "left" | "center" | "right"; valign?: "top" | "middle" | "bottom"; ink?: "dark" | "light"; credit?: string;
 };
 

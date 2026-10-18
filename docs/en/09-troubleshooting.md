@@ -415,7 +415,7 @@ The interface language does not touch the content. The words of `content.md` (he
 | Command | Refreshes |
 |---|---|
 | `coursekit agents` | skills, commands, agents, docs and tool settings (`.claude/`, `.opencode/`, `.coursekit/`, `.mcp.json`, `opencode.json`, `.codex/config.toml`). Needed after changing `project.yaml`, `.agents/` or the role models in `.env`, after updating coursekit, and after a pull (the git hooks do it for you) |
-| `coursekit init --update` | `AGENTS.md`, `CLAUDE.md`, `.env.example`, `.gitignore`, `config/*.example.yaml` and the hooks. Never `project.yaml` |
+| `coursekit init --update` | `AGENTS.md`, `CLAUDE.md`, `README.md`, `README.es.md`, `.env.example`, `.gitignore`, `config/*.example.yaml` and the hooks. Never `project.yaml` |
 
 `init --update` keeps any generated file you edited by hand and says so. To take the new template, delete that file and run it again. `coursekit agents` only overwrites files it generated (they carry a marker) and leaves yours alone, reporting them as kept.
 

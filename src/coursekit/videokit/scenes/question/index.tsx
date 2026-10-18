@@ -6,7 +6,8 @@ import { Heading } from "../../atoms/Heading";
 import { Kicker } from "../../atoms/Kicker";
 import { Text } from "../../atoms/Text";
 import { Place, type Placing } from "../../atoms/Place";
-import { useColor, useShapes } from "../../theme";
+import { Track } from "../../atoms/Track";
+import { useTheme } from "../../theme";
 import { useAt } from "../../timing";
 import type { SceneProps } from "../../contract";
 
@@ -17,8 +18,7 @@ export type QuestionProps = { kicker?: string; question: string; say?: string; a
 export default function Question({ props }: SceneProps<QuestionProps>) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const color = useColor();
-  const shapes = useShapes();
+  const { style } = useTheme();  // the bar: config/video.yaml › progress, across the whole width of the content
   const asked = useAt(props.say, 6);
   const pause = Math.max(0, props.pause ?? 3) * fps;
   const answered = useAt(props.answer_say, asked + 12 + pause);
@@ -29,9 +29,7 @@ export default function Question({ props }: SceneProps<QuestionProps>) {
         {props.kicker ? <Kicker>{props.kicker}</Kicker> : null}
         <Enter at={asked}><Heading size={props.question.length > 70 ? 76 : 92} role="statement" style={{ maxWidth: 1400 }}>{props.question}</Heading></Enter>
         {pause > 0 ? (
-          <div style={{ width: 520, height: 10, borderRadius: shapes.corner(5), background: color("border", "surface"), overflow: "hidden" }}>
-            <div style={{ width: `${filled * 100}%`, height: "100%", background: color("accent-ink") }} />
-          </div>
+          <div style={{ alignSelf: "stretch" }}><Track done={filled} width="100%" height={style?.progress?.height ?? 10} /></div>
         ) : null}
         {props.answer ? (
           <Enter at={answered}><Text size={52} weight={600} role="subheading" style={{ maxWidth: 1400 }}>{props.answer}</Text></Enter>

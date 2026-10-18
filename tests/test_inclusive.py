@@ -37,8 +37,8 @@ def test_none_and_slash_warn_about_nothing():
 
 def test_code_comments_addresses_and_format_headings_are_left_out():
     lines = ["```", "clientes = []", "```", "<!-- para los alumnos -->", "<!-- nota", "los alumnos", "-->",
-             "Mira https://example.com/alumno/a o escribe a soporte@example.com.", "### Instrucciones para el alumno"]
-    assert warnings(lines, "neutral", skip=("### Instrucciones para el alumno",)) == []
+             "Mira https://example.com/alumno/a o escribe a soporte@example.com.", "### Instrucciones para el alumnado"]
+    assert warnings(lines, "neutral", skip=("### Instrucciones para el alumnado",)) == []
 
 
 def test_english_lexicon():

@@ -208,7 +208,7 @@ The summative activities of the unit, in the order they are done. One `##` headi
 | English | Spanish |
 |---|---|
 | `Objectives assessed` | `Objetivos que evalúa` |
-| `Instructions for the learner` | `Instrucciones para el alumno` |
+| `Instructions for the learner` | `Instrucciones para el alumnado` |
 | `Development and implementation` | `Desarrollo e implementación` |
 | `Automatic marking and scoring` | `Corrección automática y puntuación` |
 | `Attempts and feedback` | `Intentos y retroalimentación` |

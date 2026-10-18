@@ -9,8 +9,8 @@ export type Align = "left" | "center" | "right";
 export type VAlign = "top" | "middle" | "bottom";
 
 /** The props every scene takes to place itself: its background, and where its content goes across and up and down. */
-export type Placing = { background?: "plain" | "surface" | "accent" | "photo"; photo?: string;
-  veil?: "background" | "surface" | "accent" | "none"; veil_opacity?: number; credit?: string; align?: "left" | "center"; valign?: VAlign };
+export type Placing = { background?: "plain" | "surface" | "accent" | "inverse" | "photo"; photo?: string;
+  veil?: "background" | "surface" | "accent" | "inverse" | "none"; veil_opacity?: number; credit?: string; align?: "left" | "center"; valign?: VAlign };
 /** A scene with a title over its content: the title with the content (`content`, by default) or at the top of the frame. */
 export type Titled = { title_valign?: "content" | "top" };
 

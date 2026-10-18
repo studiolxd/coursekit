@@ -5,7 +5,7 @@
 
 ## ACTIVIDAD DE EVALUACIÓN {n}.1 — <título>
 ### Objetivos que evalúa
-### Instrucciones para el alumno
+### Instrucciones para el alumnado
 ### Desarrollo e implementación
 ### Corrección automática y puntuación
 ### Intentos y retroalimentación

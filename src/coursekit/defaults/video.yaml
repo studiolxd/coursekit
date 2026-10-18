@@ -34,6 +34,28 @@ transition:
   direction: left
   allow: []
 
+# The charts of the videos (the `chart` scene), from the rules of data graphics of the brand. `series`: the colours of the
+# series in order, each a role of the theme or a hex (the data palette of the brand). `single`: the colour of a chart of one
+# series, the bars of the chart scene (null: the first of `series`).
+# `bar`: px of thickness of a bar. `end`: px of rounding of the end of a bar, its base straight (null: the corner of the style).
+# `rest`: with `stress` (one bar stands out), the others: dim (their colour at 35 %) or muted (in `rest_color`, a role or a hex).
+chart:
+  series: [accent]
+  single: null
+  bar: 56
+  end: null
+  rest: dim
+  rest_color: border
+
+# The bars that show an advance (the pause of a question, the progress of a video): `track`, the colour of the rail (a role or
+# a hex); `fill`, the colour of what is done; `outline`, a line of `fill` around the rail, so an empty rail still shows;
+# `height`, px of height of the bar of a question (across the whole width of the content).
+progress:
+  track: border
+  fill: accent-ink
+  outline: false
+  height: 10
+
 # How a scene marks the word the narration stresses (`stress` of a quote, a key phrase, a title): underline (a line that draws
 # itself under it), highlight (a band of the accent behind it) or colour (the word turns to the accent).
 stress: underline

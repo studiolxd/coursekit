@@ -4,9 +4,9 @@ Two kinds of files:
 
 - seed files (`project.yaml`, `brief/notes.md`, `brief/links.md`): written once, then they
   belong to the project; `--update` never touches them;
-- managed files (`AGENTS.md`, `CLAUDE.md`, `.env.example`, `.gitignore`, `config/<name>.example.yaml`): `--update` rewrites
-  them with the current templates, unless the person edited them since coursekit wrote them
-  (then they are left alone and reported). What was written is recorded, with its hash, in
+- managed files (`AGENTS.md`, `CLAUDE.md`, `README.md`, `README.es.md`, `.env.example`, `.gitignore`,
+  `config/<name>.example.yaml`): `--update` rewrites them with the current templates, unless the person edited
+  them since coursekit wrote them (then they are left alone and reported). What was written is recorded, with its hash, in
   `.coursekit/generated.json`.
 """
 
@@ -48,6 +48,8 @@ SEED = {
 MANAGED = {
     "AGENTS.md": "AGENTS.md",
     "CLAUDE.md": "CLAUDE.md",
+    "README.md": "README.md",
+    "README.es.md": "README.es.md",
     "env.example": ".env.example",
     "gitignore": ".gitignore",
     **{f"defaults/{name}.yaml": f"config/{name}.example.yaml" for name in CONFIG_NAMES},

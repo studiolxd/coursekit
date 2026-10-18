@@ -319,7 +319,7 @@ def test_only_the_published_subsections_of_an_activity_are_compared(tmp_path):
     path = tmp_path / "assessment.md"
     path.write_text("# Unidad 1 — Actividades\n\n## ACTIVIDAD DE EVALUACIÓN 1.1 — Test\n"
                     "### Objetivos que evalúa\nObjetivo interno secreto.\n"
-                    "### Instrucciones para el alumno\nResponde con calma.\n### Desarrollo e implementación\nNota interna del equipo.\n"
+                    "### Instrucciones para el alumnado\nResponde con calma.\n### Desarrollo e implementación\nNota interna del equipo.\n"
                     "### Banco de preguntas\n:::single-choice\npregunta: ¿Cuánto?\n- [x] Mucho\n:::\n"
                     "## ACTIVIDAD DE EVALUACIÓN 1.2 — Otro\n### Banco de preguntas\nSegundo banco.\n", encoding="utf-8")
     words = set(check.WORD.findall(check.learner_text(path, tokens, True).casefold()))

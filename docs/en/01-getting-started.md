@@ -165,6 +165,7 @@ acme-courses/
 | `.agents/` | files with the same layout as the package skills, commands and agents (`skills/<name>/SKILL.md`, `commands/<name>.md`, `agents/<name>.md`); one with the same name replaces the package one |
 | `.githooks/` | after every pull and checkout, `coursekit agents` refreshes the generated files; after a pull it also publishes to the mirror folder if you have one configured |
 | `AGENTS.md`, `CLAUDE.md` | project instructions for the AI tools (`CLAUDE.md` points to `AGENTS.md`) |
+| `README.md`, `README.es.md` | the process and the commands of coursekit at a glance, for the people of the project (English and Spanish) |
 | `.claude/`, `.opencode/`, `opencode.json`, `.mcp.json`, `.codex/config.toml` | what each tool reads: skills, commands, the MCP server, and, for Claude Code and opencode, the rule that agents cannot run `coursekit approve`, `client`, `hold`, `resume`, `handoff`, `reviewed --by` or `git push`. Codex has no enforced denial, only the instructions in `AGENTS.md` |
 | `tools/remotion/` | the Remotion workspace for videos, created by `coursekit setup --media`; its sources are versioned, its `node_modules` is a link to the per-machine store |
 | `.cache/` | logs of agent sessions and the saved theme of the platform. Created when needed; not versioned |

@@ -8,9 +8,15 @@ props:
   title: {type: text, max_chars: 60, on_screen: true}
   code: {type: text, required: true, help: {en: "the code, with its line breaks (a YAML block with |); a dozen lines at most so it reads", es: "el código, con sus saltos de línea (un bloque YAML con |); una docena de líneas como mucho para que se lea"}}
   highlight: {type: list, items: {from: {type: number}, to: {type: number}, say: {type: text, help: {en: "the words of the narration that explain those lines", es: "las palabras de la locución que explican esas líneas"}}}, help: {en: "the lines that light up, one group after another (numbers from 1)", es: "las líneas que se iluminan, un grupo tras otro (números desde 1)"}}
-  background: {type: choice, values: [plain, surface, accent, photo], help: {en: "default: the background of the style of the project (config/video.yaml)", es: "por defecto: el fondo del estilo del proyecto (config/video.yaml)"}}
+  mark: {type: choice, values: [fill, bar, both, none], help: {en: "how the lines explained are marked: a fill behind them (default), a bar at their side, both or neither", es: "cómo se marcan las líneas que se explican: un fondo detrás (por defecto), una barra a su lado, las dos cosas o nada"}}
+  fill: {type: choice, values: [surface-highlight, accent, surface], help: {en: "with a fill: its colour, whole (default surface-highlight); the text takes the colour that reads on it", es: "con fondo: su color, entero (por defecto surface-highlight); el texto toma el color que se lee encima"}}
+  emphasis: {type: choice, values: [none, weight], help: {en: "the lines marked in the strong weight of the style, or not (default)", es: "las líneas marcadas en el peso fuerte del estilo, o no (por defecto)"}}
+  others: {type: choice, values: [normal, dim], help: {en: "the other lines while a group is marked: as they are (default) or stepping back", es: "las demás líneas mientras hay un grupo marcado: como están (por defecto) o en segundo plano"}}
+  keep: {type: boolean, default: false, help: {en: "the groups explained stay marked (default false: only the current one)", es: "los grupos explicados se quedan marcados (por defecto false: solo el actual)"}}
+  numbers: {type: boolean, default: true, help: {en: "the numbers of the lines (default true)", es: "los números de las líneas (por defecto true)"}}
+  background: {type: choice, values: [plain, surface, accent, inverse, photo], help: {en: "default: the background of the style of the project (config/video.yaml)", es: "por defecto: el fondo del estilo del proyecto (config/video.yaml)"}}
   photo: {type: media, when: {background: photo}, help: {en: "with background photo: a path inside the media folder of the course (files/…), under a veil (`veil`, `veil_opacity`); describe it in `shows` of the scene", es: "con background photo: una ruta dentro de la carpeta media del curso (files/…), bajo un velo (`veil`, `veil_opacity`); descríbela en `shows` de la escena"}}
-  veil: {type: choice, values: [background, surface, accent, none], when: {background: photo}, help: {en: "with a photo: the colour of the veil over it (default that of config/video.yaml › photo_veil); none, no veil, only for a calm, light photo", es: "con foto: el color del velo sobre ella (por defecto el de config/video.yaml › photo_veil); none, sin velo, solo para una foto tranquila y clara"}}
+  veil: {type: choice, values: [background, surface, accent, inverse, none], when: {background: photo}, help: {en: "with a photo: the colour of the veil over it (default that of config/video.yaml › photo_veil); none, no veil, only for a calm, light photo", es: "con foto: el color del velo sobre ella (por defecto el de config/video.yaml › photo_veil); none, sin velo, solo para una foto tranquila y clara"}}
   veil_opacity: {type: number, when: {background: photo}, help: {en: "with a photo: how opaque the veil is, from 0 to 1 (default that of config/video.yaml › photo_veil)", es: "con foto: lo opaco que es el velo, de 0 a 1 (por defecto el de config/video.yaml › photo_veil)"}}
   credit: {type: text, max_chars: 80, on_screen: true, help: {en: "the credit of the image of the scene (its author and its licence), small at the bottom right: a CC-BY photo requires it", es: "el crédito de la imagen de la escena (su autor y su licencia), pequeño abajo a la derecha: una foto CC-BY lo exige"}}
   align: {type: choice, values: [left, center], help: {en: "where the content goes across (default left)", es: "dónde va el contenido en horizontal (por defecto left)"}}
@@ -21,3 +27,8 @@ props:
 example:
   en: {title: "A length check", code: "def strong(password):\n    if len(password) < 12:\n        return False\n    return True\n", highlight: [{from: 2}, {from: 4}]}
   es: {title: "Comprobar la longitud", code: "def segura(contrasena):\n    if len(contrasena) < 12:\n        return False\n    return True\n", highlight: [{from: 2}, {from: 4}]}
+# Other ways the gallery draws it: the props of each over those of the example.
+variants:
+  - {name: dim, label: {en: "The rest stepping back", es: "El resto en segundo plano"}, props: {others: dim, emphasis: weight}}
+  - {name: bar, label: {en: "Bar", es: "Barra"}, props: {mark: bar}}
+  - {name: keep, label: {en: "Building up", es: "Acumulando"}, props: {keep: true}}

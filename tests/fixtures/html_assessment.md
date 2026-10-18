@@ -1,7 +1,7 @@
 # Unidad 1 — Actividades de evaluación
 
 ## ACTIVIDAD DE EVALUACIÓN 1.1 — Test de la unidad
-### Instrucciones para el alumno
+### Instrucciones para el alumnado
 Responde a todas las preguntas del test.
 
 ### Banco de preguntas

@@ -3,15 +3,16 @@ import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
 import { useColor, useTheme } from "../theme";
 
 // The background of a scene, in the colours of the theme (without `variant`, the one of the style of the project): `plain`; `band`, a band of the surface colour; `shape`, a soft
-// shape of the accent that drifts slowly; `surface`, the surface colour whole; `accent`, the accent colour itself (a close).
+// shape of the accent that drifts slowly; `surface`, the surface colour whole; `accent`, the accent colour itself; `inverse`, the colour of the text (a close in the dark of the brand).
 
-export const Background: React.FC<{ variant?: "plain" | "band" | "shape" | "surface" | "accent"; children?: React.ReactNode }> = (
+export const Background: React.FC<{ variant?: "plain" | "band" | "shape" | "surface" | "accent" | "inverse"; children?: React.ReactNode }> = (
   { variant: asked, children }) => {
   const frame = useCurrentFrame();
   const color = useColor();
   const { style } = useTheme();
   const variant = asked ?? style?.background ?? "plain"; // a scene that asks for none gets the one of the project
-  const base = variant === "accent" ? color("accent") : variant === "surface" ? color("surface", "background") : color("background");
+  const base = variant === "accent" ? color("accent") : variant === "inverse" ? color("text")  // the colour of the text whole
+    : variant === "surface" ? color("surface", "background") : color("background");
   const drift = interpolate(frame, [0, 600], [0, 40], { extrapolateRight: "extend" });
   return (
     <AbsoluteFill style={{ background: base, overflow: "hidden" }}>

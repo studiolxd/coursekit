@@ -388,11 +388,16 @@ def piece_rules(course: dict, name: str, spec: dict) -> dict:
             continue
         for prop, values in (rule.get("allow") or {}).items():
             if prop in spec:
-                out["allow"][prop] = [str(v) for v in (values if isinstance(values, list) else [values])]
+                out["allow"][prop] = list(values) if isinstance(values, list) else [values]  # as written: a boolean stays one
         for prop, value in (rule.get("defaults") or {}).items():
             if prop in spec:
                 out["defaults"][prop] = value
     return out
+
+
+def _key(value: object) -> str:
+    """A value of a prop as the rules compare it: `false` in the YAML and `false` in a script are the same value."""
+    return str(value).lower() if isinstance(value, bool) else str(value)
 
 
 def allowed_spec(spec: dict, rules: dict) -> dict:
@@ -402,7 +407,7 @@ def allowed_spec(spec: dict, rules: dict) -> dict:
         rule = dict(rule) if isinstance(rule, dict) else {}
         allow = rules["allow"].get(prop)
         if allow is not None and rule.get("type") == "choice":
-            rule["values"] = [v for v in rule.get("values") or [] if str(v) in allow]
+            rule["values"] = [v for v in rule.get("values") or [] if _key(v) in map(_key, allow)]
         if prop in rules["defaults"]:
             rule["default"] = rules["defaults"][prop]
         out[prop] = rule
@@ -431,8 +436,9 @@ def rule_findings(course: dict, kind: str, name: str, spec: dict, props: dict, w
         found.append(Finding(level, "PIECE_OFF", where, t("video", "piece_off", kind=t("video", f"gallery_{kind}"), name=name)))
     for prop, allow in rules["allow"].items():
         value = with_defaults(props, rules).get(prop)
-        if value not in (None, "") and str(value) not in allow:
-            found.append(Finding(level, "NOT_ALLOWED", where, t("video", "not_allowed", prop=prop, value=value, allowed=", ".join(allow))))
+        if value not in (None, "") and _key(value) not in map(_key, allow):
+            found.append(Finding(level, "NOT_ALLOWED", where, t("video", "not_allowed", prop=prop, value=_key(value),
+                                                                allowed=", ".join(map(_key, allow)))))
     return found
 
 
@@ -532,6 +538,24 @@ def transition_for(course: dict, before: dict, scene: dict, fade: int) -> dict:
     return {"type": kind, "frames": max(0, int(frames)), "direction": direction if direction in DIRECTIONS else "left"}
 
 
+def _progress(look: dict) -> dict:
+    """The bars that show an advance (config/video.yaml › progress)."""
+    cfg = look.get("progress") if isinstance(look.get("progress"), dict) else {}
+    height = cfg.get("height")
+    return {"track": str(cfg.get("track") or "border"), "fill": str(cfg.get("fill") or "accent-ink"), "outline": cfg.get("outline") is True,
+            "height": float(height) if isinstance(height, (int, float)) and not isinstance(height, bool) and height > 0 else 10}
+
+
+def _chart(look: dict) -> dict:
+    """The look of the charts (config/video.yaml › chart), with what is missing or wrong left to the defaults of the package."""
+    cfg = look.get("chart") if isinstance(look.get("chart"), dict) else {}
+    series = [str(c) for c in (cfg.get("series") or []) if c] or ["accent"]
+    number = lambda v, fallback: float(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else fallback  # noqa: E731
+    return {"series": series, "single": str(cfg["single"]) if cfg.get("single") else series[0],
+            "bar": number(cfg.get("bar"), 56), "end": number(cfg.get("end"), None),
+            "rest": "muted" if cfg.get("rest") == "muted" else "dim", "rest_color": str(cfg.get("rest_color") or "border")}
+
+
 def _look(course: dict) -> dict:
     """What the montage receives of the style: the background, the logo, the shapes, the weights and the fonts."""
     look = style(course)
@@ -541,7 +565,7 @@ def _look(course: dict) -> dict:
     veil = look.get("photo_veil") if isinstance(look.get("photo_veil"), dict) else {}
     opacity = veil.get("opacity")
     return {"background": str(look.get("background") or "shape"), "logo": _logo(course),
-            "stress": stress if stress in STRESSES else "underline",
+            "stress": stress if stress in STRESSES else "underline", "chart": _chart(look), "progress": _progress(look),
             "veil": {"color": str(veil.get("color") or "background"),
                      "opacity": min(1.0, max(0.0, float(opacity))) if isinstance(opacity, (int, float)) else 0.82},
             "shapes": _numbers(look.get("shapes"), ("radius", "border"), ("shadow",)),
@@ -989,7 +1013,7 @@ def _as_allowed(course: dict, name: str, piece: dict, language: str) -> dict:
     def kept(values: dict) -> dict:  # a value the project does not allow becomes the first one it does
         values = with_defaults(values, rules)
         for prop, allow in rules["allow"].items():
-            if values.get(prop) not in (None, "") and str(values[prop]) not in allow and allow:
+            if values.get(prop) not in (None, "") and _key(values[prop]) not in map(_key, allow) and allow:
                 values[prop] = allow[0]
         return values
 
@@ -1119,7 +1143,7 @@ LIVE_LABELS = ("default", "none", "variant", "example", "no_example", "code", "s
                "sample_caption", "skip", "menu", "menu_close", "navigation", "typography_intro", "style_group", "colours",
                "colours_intro", "shapes", "shapes_intro", "id_hint", "background", "radius", "border", "shadow", "weight_normal",
                "weight_strong", "col_value", "rendered_hint", "less", "more", "empty",
-               "transitions", "transitions_intro", "transition", "direction")
+               "transitions", "transitions_intro", "transition", "direction", "reset")
 
 
 def _write(path: Path, text: str) -> None:

@@ -415,7 +415,7 @@ El idioma de la interfaz no toca el contenido. Las palabras de `content.md` (enc
 | Comando | Qué refresca |
 |---|---|
 | `coursekit agents` | skills, comandos, agentes, documentos y ajustes de las herramientas (`.claude/`, `.opencode/`, `.coursekit/`, `.mcp.json`, `opencode.json`, `.codex/config.toml`). Hace falta tras cambiar `project.yaml`, `.agents/` o los modelos de los roles en `.env`, tras actualizar coursekit y tras un pull (los hooks de git lo hacen por ti) |
-| `coursekit init --update` | `AGENTS.md`, `CLAUDE.md`, `.env.example`, `.gitignore`, `config/*.example.yaml` y los hooks. Nunca `project.yaml` |
+| `coursekit init --update` | `AGENTS.md`, `CLAUDE.md`, `README.md`, `README.es.md`, `.env.example`, `.gitignore`, `config/*.example.yaml` y los hooks. Nunca `project.yaml` |
 
 `init --update` conserva cualquier fichero generado que hayas editado a mano y te lo dice. Para tomar la plantilla nueva, borra ese fichero y vuelve a ejecutarlo. `coursekit agents` solo sobrescribe los ficheros que generó (llevan una marca) y deja los tuyos, informándolos como conservados.
 

@@ -113,6 +113,7 @@ live_none: {es: "(ninguna)", en: "(none)"}
 live_less: {es: "Menos", en: "Less"}
 live_more: {es: "Más", en: "More"}
 live_empty: {es: "Sin valor", en: "No value"}
+live_reset: {es: "Restablecer", en: "Reset"}
 live_variant: {es: "Variante", en: "Variant"}
 live_example: {es: "Por defecto", en: "Default"}
 live_no_example: {es: "Sin ejemplo: añade example: a su fichero de metadatos para verla aquí.", en: "No example: add example: to its metadata file to see it here."}

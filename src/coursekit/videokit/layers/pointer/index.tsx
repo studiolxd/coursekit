@@ -8,7 +8,7 @@ import type { LayerProps } from "../../contract";
 
 // A short label with a line that points at a spot of the scene (fractions of the screen, fx and fy): the label goes to one
 // side of it (`side`), far enough not to cover it.
-export type PointerProps = { fx: number; fy: number; text: string; side?: "left" | "right" | "top" | "bottom" };
+export type PointerProps = { fx: number; fy: number; text: string; side?: "left" | "right" | "top" | "bottom"; width?: number };
 
 const REACH = 220;  // px from the spot to the label
 
@@ -29,8 +29,8 @@ export default function Pointer({ props }: LayerProps<PointerProps>) {
   return (
     <AbsoluteFill style={{ opacity: k }}>
       <svg width={width} height={height} style={{ position: "absolute", inset: 0 }}>
-        <line x1={x + dx * k} y1={y + dy * k} x2={x} y2={y} stroke={color("accent-ink")} strokeWidth={5} strokeLinecap="round" />
-        <circle cx={x} cy={y} r={12} fill={color("accent-ink")} />
+        <line x1={x + dx * k} y1={y + dy * k} x2={x} y2={y} stroke={color("accent-ink")} strokeWidth={props.width ?? 5} strokeLinecap="round" />
+        <circle cx={x} cy={y} r={Math.max(6, (props.width ?? 5) * 2.4)} fill={color("accent-ink")} />
       </svg>
       <div style={{ position: "absolute", ...anchor }}>
         <Card padding={20} style={{ maxWidth: 520 }}><Text size={34} weight={700} role="label">{props.text}</Text></Card>

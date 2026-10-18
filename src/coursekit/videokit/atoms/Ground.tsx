@@ -10,8 +10,8 @@ import { OnGround, useColor, useTheme } from "../theme";
 // the photo whole under a veil (`veil`, a colour of the theme or none, and `veilOpacity`; without them, config/video.yaml ›
 // photo_veil), and the inks of the piece follow the colour of the veil.
 
-export type GroundVariant = "plain" | "surface" | "accent" | "photo";
-export type Veil = "background" | "surface" | "accent" | "none";
+export type GroundVariant = "plain" | "surface" | "accent" | "inverse" | "photo";
+export type Veil = "background" | "surface" | "accent" | "inverse" | "none";
 
 export const Ground: React.FC<{ variant?: GroundVariant; photo?: string; veil?: Veil; veilOpacity?: number; credit?: string;
   children: React.ReactNode }> = ({ variant, photo, veil, veilOpacity, credit, children }) => {
@@ -23,8 +23,8 @@ export const Ground: React.FC<{ variant?: GroundVariant; photo?: string; veil?: 
     return (
       <AbsoluteFill>
         <AbsoluteFill><MediaSlot src={photo} style={{ borderRadius: 0 }} /></AbsoluteFill>
-        {tint !== "none" ? <AbsoluteFill style={{ background: color(tint, "background"), opacity }} /> : null}
-        <OnGround ground={tint === "accent" ? "accent" : tint === "surface" ? "surface" : "base"}>{children}</OnGround>
+        {tint !== "none" ? <AbsoluteFill style={{ background: color(tint === "inverse" ? "text" : tint, "background"), opacity }} /> : null}
+        <OnGround ground={tint === "accent" || tint === "inverse" || tint === "surface" ? tint : "base"}>{children}</OnGround>
         <Credit>{credit}</Credit>
       </AbsoluteFill>
     );
@@ -34,7 +34,7 @@ export const Ground: React.FC<{ variant?: GroundVariant; photo?: string; veil?: 
   return (
     <AbsoluteFill>
       <Background variant={asked} />
-      <OnGround ground={drawn === "accent" ? "accent" : drawn === "surface" ? "surface" : "base"}>{children}</OnGround>
+      <OnGround ground={drawn === "accent" || drawn === "inverse" || drawn === "surface" ? drawn : "base"}>{children}</OnGround>
       <Credit>{credit}</Credit>
     </AbsoluteFill>
   );

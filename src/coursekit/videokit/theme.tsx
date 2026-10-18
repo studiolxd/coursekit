@@ -48,6 +48,10 @@ export type Style = {
   background?: "plain" | "band" | "shape";
   /** The veil over a photo for background (config/video.yaml › photo_veil): its colour (a role, or none) and how opaque it is. */
   veil?: { color: string; opacity: number };
+  /** The look of the charts (config/video.yaml › chart): the colours of the series, the bars, and the bars that step back. */
+  chart?: { series: string[]; single?: string; bar: number; end: number | null; rest: "dim" | "muted"; rest_color: string };
+  /** The bars that show an advance (config/video.yaml › progress): the rail, what is done, and a line around the rail. */
+  progress?: { track: string; fill: string; outline: boolean; height?: number };
   /** How the stressed word of a scene is marked (config/video.yaml › stress). */
   stress?: "underline" | "highlight" | "colour";
   logo?: { src: string; corner: string; scenes: string[]; size: number } | null;
@@ -88,13 +92,13 @@ export const useText = () => {
   const { style } = useTheme();
   const weightOf = useWeight();
   return (role: string, own: { family: string; size: number; weight: number; tone: string; leading: number; tracking: number;
-    transform?: string }): React.CSSProperties & { tone: string } => {
+    transform?: string; strong?: boolean }): React.CSSProperties & { tone: string } => {
     const r = style?.text?.[role] ?? {};
     const base = style?.textBase?.[role];
     const family = r.family ? `"${r.family}", ${own.family}` : own.family;
     const out: React.CSSProperties & { tone: string } = {
       fontFamily: family, fontSize: r.size && base ? own.size * (r.size / base) : own.size,
-      fontWeight: r.weight ?? weightOf(own.weight), fontStyle: r.style ?? "normal", lineHeight: r.leading ?? own.leading,
+      fontWeight: own.strong ? weightOf(700) : r.weight ?? weightOf(own.weight),  // what stands out: the strong weight, over the role's fontStyle: r.style ?? "normal", lineHeight: r.leading ?? own.leading,
       letterSpacing: r.tracking ?? own.tracking, textTransform: (r.transform ?? own.transform ?? "none") as React.CSSProperties["textTransform"],
       fontVariantNumeric: r.numeric === "tabular" ? "tabular-nums" : undefined, maxWidth: r.measure ? `${r.measure}ch` : undefined,
       tone: r.color && !INKS.has(own.tone) ? r.color : own.tone,
@@ -142,14 +146,16 @@ export const useColor = (raw = false) => {
 /** What a scene is drawn on: its background (`base`, the background colour or a shape or a band of the style), the surface colour
  *  whole or the accent whole. On the accent every ink of the piece (the text, the titles, the marks, the accent drawn thin) is
  *  the text on the accent, and what is on the accent (a number in its circle) swaps with it; on the surface a panel takes the
- *  background colour, so it still stands out. A panel puts its children back on `base`. */
-export type Ground = "base" | "surface" | "accent";
+ *  background colour, so it still stands out. On `inverse` (the colour of the text whole) the inks take the background colour
+ *  and the accent keeps its own (a fill reads on it). A panel puts its children back on `base`. */
+export type Ground = "base" | "surface" | "accent" | "inverse";
 const GroundContext = React.createContext<Ground>("base");
 const ON_ACCENT = ["text", "headings", "text-muted", "accent-ink", "link", "accent"];
 const SWAPS: Record<Ground, Record<string, string> | undefined> = {
   base: undefined,
   surface: { surface: "background" },
   accent: { ...Object.fromEntries(ON_ACCENT.map((name) => [name, "on-accent"])), "on-accent": "accent" },
+  inverse: Object.fromEntries(["text", "headings", "text-muted", "accent-ink", "link"].map((name) => [name, "background"])),
 };
 export const OnGround: React.FC<{ ground: Ground; children: React.ReactNode }> = ({ ground, children }) => (
   <GroundContext.Provider value={ground}>{children}</GroundContext.Provider>

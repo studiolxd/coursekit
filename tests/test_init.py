@@ -21,10 +21,13 @@ def test_creates_a_project(tmp_path, capsys):
     assert data["content_language"] == "es"
     assert data["address"] == "tu"
     assert data["assembly"]["backend"] == "html"
-    for path in ("AGENTS.md", "CLAUDE.md", ".env.example", ".gitignore", "brief/notes.md", "brief/links.md"):
+    for path in ("AGENTS.md", "CLAUDE.md", "README.md", "README.es.md", ".env.example", ".gitignore", "brief/notes.md",
+                 "brief/links.md"):
         assert (root / path).exists(), path
     for folder in ("courses", "brief/sources", "config", "theme"):
         assert (root / folder).is_dir(), folder
+    readmes = [(root / name).read_text(encoding="utf-8") for name in ("README.md", "README.es.md")]
+    assert all("{name}" not in text and "{backend}" not in text and "coursekit status" in text for text in readmes)  # the process
     agents_md = (root / "AGENTS.md").read_text(encoding="utf-8")
     assert "ACME" in agents_md
     assert "Talk to the person in Spanish (Spain)" in agents_md  # the agents ask and report in the language of the interface

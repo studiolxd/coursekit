@@ -106,7 +106,7 @@ El backend html construye sus páginas a partir de este mismo plan. Las claves d
 | Recurso multimedia subido | Según el id del tipo: `image`, `infographic`, `diagram` y `animated_gif` pasan a `IMAGE`; `video` pasa a `VIDEO` (con subtítulos y transcripción si están registrados); `audio` pasa a `AUDIO`; `simulation` y `terminal_demo` pasan a `EMBED`. Más un `ATTACHMENT` por cada descarga subida |
 | Etiquetas de objetivo, `---`, comentarios HTML | No se publican |
 
-Solo los subapartados **Instrucciones para el alumno** y **Banco de preguntas** de una actividad de `assessment.md` pasan a su lección de evaluación.
+Solo los subapartados **Instrucciones para el alumnado** y **Banco de preguntas** de una actividad de `assessment.md` pasan a su lección de evaluación.
 
 `plan` imprime avisos para un `labelled-graphic` cuya imagen aún no está producida y para una lección sin contenido. Falla (y `verify` lo muestra como `ensamblado: …`) cuando una directiva es desconocida o no sigue su estructura: `single-choice` sin exactamente una opción correcta, `true-false` sin `respuesta: verdadero|falso`, `fill-in-the-blank` sin huecos escritos como `{respuesta}` en la línea `pregunta:`, una directiva de paneles sin paneles `#### Título`, un elemento de `pasapalabra` que no encaja con `- A (empieza): definición :: RESPUESTA`, una clave de la directiva escrita en el otro idioma, o un apartado que no está en el diseño.
 
@@ -417,7 +417,7 @@ No hay subida a ninguna plataforma: la multimedia son ficheros que viajan dentro
 
 ### La comprobación de las palabras
 
-La construcción compara las palabras de `content.md` y `assessment.md` que lee la persona con las palabras de la página. De `assessment.md` solo cuenta el texto bajo **Instrucciones para el alumno** y **Banco de preguntas**, porque solo eso llega al paquete (los demás subapartados documentan la actividad para el equipo). Deja fuera lo que no es texto para la persona: la sintaxis del formato (las líneas `:::`, las claves `pregunta:` y `respuesta:`, las viñetas), los metadatos (las etiquetas de objetivo, la clave de objetivo, los comentarios, `imagen:` y `posición:`), los marcadores multimedia (su caja se sustituye por el recurso o por su nota) y los destinos de los enlaces. Si falta alguna palabra, la construcción falla con `el paquete no contiene N palabra(s) del contenido: …` y las veinte primeras palabras.
+La construcción compara las palabras de `content.md` y `assessment.md` que lee la persona con las palabras de la página. De `assessment.md` solo cuenta el texto bajo **Instrucciones para el alumnado** y **Banco de preguntas**, porque solo eso llega al paquete (los demás subapartados documentan la actividad para el equipo). Deja fuera lo que no es texto para la persona: la sintaxis del formato (las líneas `:::`, las claves `pregunta:` y `respuesta:`, las viñetas), los metadatos (las etiquetas de objetivo, la clave de objetivo, los comentarios, `imagen:` y `posición:`), los marcadores multimedia (su caja se sustituye por el recurso o por su nota) y los destinos de los enlaces. Si falta alguna palabra, la construcción falla con `el paquete no contiene N palabra(s) del contenido: …` y las veinte primeras palabras.
 
 La causa típica es una línea que el formato no renderiza, por ejemplo una pregunta sin su clave `pregunta:` (escrita como una línea normal dentro de la directiva). Corrígela en el `.md` y vuelve a construir. La comparación es por conjuntos de palabras, así que no depende de cómo disponga el texto un componente.
 
