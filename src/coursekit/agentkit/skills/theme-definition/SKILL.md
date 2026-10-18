@@ -128,7 +128,11 @@ colours, `origin.derived`), and the radius and the shadow are its defaults. The 
      illustration that goes with the content, a scene with characters, a diagram): its style, its palette, when the accent
      may appear, and its sources (the illustration sources of `links.md`, with the previews of `style/`; the reference scenes of `style/scenes/`);
    - logo: when it is used and when not;
-   - what never appears.
+   - what never appears;
+   - the indications of `notes.md`: a table with **every** line of `notes.md`, copied exactly as it is, and the section of
+     the guide where it is applied (or why it does not apply to the media). Before you finish, check the table against the
+     file line by line: an indication that is not in the guide is lost for the media. `coursekit approve media-style` and
+     `coursekit media plan` warn of the lines the guide does not quote.
    A rule you infer and the brand does not state is not written as a rule: it goes as a question. The person's
    `notes.md` weighs more than the rest.
 7. Tell the person to look at the gallery of the videos (`coursekit video gallery`, the project's; with `<CODE>`, a course's),

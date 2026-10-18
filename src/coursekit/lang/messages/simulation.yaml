@@ -170,4 +170,9 @@ if_scored_inside:
 if_reads_inside:
   es: "la condición «{condition}» lee '{name}', de una simulación que está dentro del propio bloque"
   en: "condition «{condition}» reads '{name}', of a simulation inside the block itself"
-
+error_to_good_ending:
+  es: "escena {scene}: la decisión «{decision}» está marcada como error y lleva directa a un final bueno ({ending}): dale una consecuencia visible, ahora o más adelante"
+  en: "scene {scene}: the decision \"{decision}\" is marked as an error and leads straight to a good ending ({ending}): give it a visible consequence, now or later"
+error_without_consequence:
+  es: "escena {scene}: la decisión «{decision}» está marcada como error pero va donde una correcta, sin puntos, cambios de estado ni feedback: no tiene consecuencia, ni ahora ni más adelante"
+  en: "scene {scene}: the decision \"{decision}\" is marked as an error but goes where a right one goes, with no points, changes of state or feedback: it has no consequence, now or later"

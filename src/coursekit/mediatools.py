@@ -447,11 +447,49 @@ def render_svg(svg: Path, out: Path, size: tuple[int, int] | None = None, fonts_
                     f'img{{display:block;width:{width}px;height:{height}px}}{extra}</style></head>'
                     f'<body>{body}</body></html>', encoding="utf-8")
     try:
-        run([exe, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--allow-file-access-from-files",
-             "--default-background-color=00000000", f"--window-size={width},{height}", f"--screenshot={out.resolve()}",
-             "--virtual-time-budget=3000", page.resolve().as_uri()])
+        for attempt in range(1, RENDER_ATTEMPTS + 1):
+            if _screenshot(exe, page, out, width, height):
+                break
+            if attempt == RENDER_ATTEMPTS:
+                raise ToolError(t("mediatools", "render_failed", svg=svg.name, attempts=RENDER_ATTEMPTS))
     finally:
         page.unlink(missing_ok=True)
-    if not out.exists():
-        raise ToolError(t("mediatools", "render_failed", svg=svg.name))
     return t("mediatools", "rendered", svg=svg.name, png=out.name, size=f"{width}x{height}")
+
+
+RENDER_ATTEMPTS = 3
+RENDER_TIMEOUT = 90  # seconds: a Chrome that hangs is killed and tried again
+RENDER_MARGIN = 240  # px of window below the drawing: the headless window paints less than its size, so it is cropped after
+
+
+def _screenshot(exe: str, page: Path, out: Path, width: int, height: int) -> bool:
+    """One attempt of Chrome: a profile of its own (two at once do not fight over one, the exit code 2), a window taller than
+    the drawing, and the PNG cropped to its exact size. False when Chrome failed, hung or left a PNG of another size."""
+    import tempfile
+
+    from PIL import Image
+
+    out.unlink(missing_ok=True)
+    with tempfile.TemporaryDirectory(prefix="coursekit-chrome-") as profile:
+        try:
+            done = subprocess.run([exe, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--allow-file-access-from-files",
+                                   "--no-first-run", "--no-default-browser-check", f"--user-data-dir={profile}",
+                                   "--default-background-color=00000000", f"--window-size={width},{height + RENDER_MARGIN}",
+                                   f"--screenshot={out.resolve()}", "--virtual-time-budget=5000", page.resolve().as_uri()],
+                                  capture_output=True, timeout=RENDER_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            return False
+        except FileNotFoundError:
+            raise ToolError(t("mediatools", "program_missing", program=Path(exe).name)) from None
+    if done.returncode != 0 or not out.is_file():
+        return False
+    try:
+        with Image.open(out) as im:
+            im.load()
+            if im.width < width or im.height < height:
+                return False
+            shot = im.crop((0, 0, width, height))
+        shot.save(out)
+    except OSError:  # a PNG cut short
+        return False
+    return True

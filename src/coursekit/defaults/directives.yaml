@@ -73,6 +73,16 @@ not_directives:
   SLIDING_PUZZLE: "image game: not used for now"
   CONDITIONAL: "adaptive blocks :::if / :::elif / :::else (the assembly builds it; category `structure` of the catalog)"
 
+# The directives that carry each type of learning activity of the design (`activities.learning[].type`, the same ids as
+# `design.yaml`): `coursekit verify` warns when the section of the activity (the one the design gives it, else the
+# activities section of the unit) has none of them. A type that is not listed is not checked.
+activity_types:
+  classification: [sorting-groups, match]
+  interactive_decision: [scenario, conversation, single-choice]
+  branching_scenario: [scenario, conversation]
+  hotspot_analysis: [scenario]          # the learner finds what is wrong in the scene: `hotspots`
+  guided_simulation: [scenario, conversation]
+
 # Common e-learning components that are NOT creator bricks, and what to use instead.
 component_equivalents:
   stepper: carousel (or timeline for a temporal sequence)

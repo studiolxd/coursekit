@@ -3,6 +3,7 @@
 signature. The network and the browser are stood in for: these tests reach no website."""
 
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -188,11 +189,15 @@ def test_an_svg_is_drawn_with_the_fonts_of_the_brand_inside(tmp_path, monkeypatc
         from urllib.parse import urlparse
         from urllib.request import url2pathname
 
+        from PIL import Image
+
         pages.append(Path(url2pathname(urlparse(cmd[-1]).path)).read_text(encoding="utf-8"))  # the page, from its file:// address
-        Path(next(a for a in cmd if a.startswith("--screenshot=")).split("=", 1)[1]).write_bytes(b"png")
+        size = next(a for a in cmd if a.startswith("--window-size=")).split("=", 1)[1].split(",")
+        Image.new("RGBA", (int(size[0]), int(size[1]))).save(next(a for a in cmd if a.startswith("--screenshot=")).split("=", 1)[1])
+        return subprocess.CompletedProcess(cmd, 0)
 
     monkeypatch.setattr(mediatools, "browser", lambda: "chrome")
-    monkeypatch.setattr(mediatools, "run", run)
+    monkeypatch.setattr(mediatools.subprocess, "run", run)
     mediatools.render_svg(svg, tmp_path / "a.png", None, "@font-face { font-family: 'Acme Sans'; src: url(data:font/woff2;base64,AA); }")
     assert "@font-face" in pages[0] and '<div class="svg"><svg' in pages[0] and "<?xml" not in pages[0]
     mediatools.render_svg(svg, tmp_path / "b.png")

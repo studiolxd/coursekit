@@ -337,9 +337,13 @@ def find_asset(course: dict, asset_id: str) -> tuple:
     return ry, path, data, asset
 
 
-def save_manifest(ry, path: Path, data) -> None:
-    with path.open("w", encoding="utf-8", newline="\n") as fh:
-        ry.dump(data, fh)
+def save_capture(course: dict, asset_id: str, state: dict) -> None:
+    """The capture state of the asset, written on the manifest as it is now (other agents may have changed it meanwhile)."""
+    with mediamod.editing_manifest(course["_dir"]) as data:
+        asset = next((a for a in data["assets"] if str(a["id"]) == asset_id), None)
+        if asset is None:
+            raise CaptureError(t("capture", "not_interface", ids=asset_id, code=course["code"]))
+        asset["capture"] = state
 
 
 def _recording(course: dict, asset_id: str) -> Path | None:
@@ -356,7 +360,7 @@ def redact(project: Project, course: dict, asset_id: str, source: Path | None = 
     it again after a rejection); the covered one goes to media/recordings/<id> and waits for a person to approve it."""
     cfg = settings(project)
     _require_enabled(cfg)
-    ry, path, data, asset = find_asset(course, asset_id)
+    _, _, _, asset = find_asset(course, asset_id)
     previous = dict(asset.get("capture") or {})
     raw = _raw_file(project, course["code"], asset_id)
     warnings = []
@@ -399,7 +403,7 @@ def redact(project: Project, course: dict, asset_id: str, source: Path | None = 
     asset["capture"] = {"state": "captured", "source": "redact", "engine": report.engine, "at": _stamp(_now()),
                         "findings": dict(report.findings), "warnings": result["warnings"],
                         "file": target.relative_to(course["_dir"]).as_posix(), "masks": terms or None}
-    save_manifest(ry, path, data)
+    save_capture(course, asset_id, asset["capture"])
     purge_raw(project)
     return {**result, "file": target, "review": review}
 
@@ -441,7 +445,7 @@ def decide(project: Project, course: dict, asset_id: str, approved: bool, note: 
     who = identity.current()
     if who is None:
         raise CaptureError(t("capture", "no_identity"))
-    ry, path, data, asset = find_asset(course, asset_id)
+    _, _, _, asset = find_asset(course, asset_id)
     state = dict(asset.get("capture") or {})
     if state.get("state") != "captured":
         raise CaptureError(t("capture", "not_captured", id=asset_id, state=state.get("state") or "—"))
@@ -457,5 +461,5 @@ def decide(project: Project, course: dict, asset_id: str, approved: bool, note: 
         state["note"] = (note or "").strip() or None
         state["masks"] = sorted({*(state.get("masks") or []), *(m.strip() for m in masks or [] if m.strip())}) or None
     asset["capture"] = state
-    save_manifest(ry, path, data)
+    save_capture(course, asset_id, asset["capture"])
     return state

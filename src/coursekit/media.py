@@ -14,6 +14,7 @@ from __future__ import annotations
 import os
 import re
 import shutil
+from contextlib import contextmanager
 from pathlib import Path
 
 import yaml
@@ -24,7 +25,7 @@ from coursekit import i18n, lang
 from coursekit import story as storymod
 from coursekit import theme as thememod
 from coursekit.i18n import t
-from coursekit.util import character_asset_id, roundtrip_yaml
+from coursekit.util import LockTimeout, character_asset_id, file_lock, roundtrip_yaml, save_yaml_atomic
 
 FIELD_KEYS = ("title", "description", "how", "specs")  # in the order of the language's placeholder_fields
 
@@ -175,13 +176,14 @@ def scan_characters(course: dict) -> list[dict]:
                 inside = False
             elif inside and section is not None and (m := DIALOG_LINE.match(line.strip())):
                 name = m.group(1).strip()
-                if storymod.is_learner(course, name):
+                if storymod.is_learner(course, name) or storymod.is_anonymous(course, name):
                     continue
                 name = storymod.canonical(course, name) or name
                 found.setdefault(character_asset_id(name), {
                     "id": character_asset_id(name), "unit": unit["n"], "section": section, "type": "image", "character": name,
                     "title": t("media", "character_title", name=name), "description": t("media", "character_description", name=name),
-                    "specs": t("media", "character_specs")})
+                    "specs": t("media", "character_specs"), **({"avatar": storymod.avatar(course, name)}
+                                                              if storymod.avatar(course, name) else {})})
     return list(found.values())
 
 
@@ -273,8 +275,30 @@ def load_manifest(course_dir):
     return ry, path, data
 
 
+def save_manifest(ry, path: Path, data) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    save_yaml_atomic(ry, data, path)
+
+
+@contextmanager
+def editing_manifest(course_dir: Path):
+    """The manifest to change, locked from the read to the write: agents working in parallel (`media set` from several at once)
+    each change it on top of what the others saved, and none loses what another wrote. Saved when the block ends without an error."""
+    try:
+        with file_lock(course_dir / "media" / ".manifest.lock"):
+            ry, path, data = load_manifest(course_dir)
+            yield data
+            save_manifest(ry, path, data)
+    except LockTimeout:
+        raise MediaError(t("media", "manifest_locked", path=(course_dir / "media" / "manifest.yaml").as_posix())) from None
+
+
 def extract(course: dict) -> dict[str, int]:
-    ry, path, data = load_manifest(course["_dir"])
+    with editing_manifest(course["_dir"]) as data:
+        return _extract(course, data)
+
+
+def _extract(course: dict, data: dict) -> dict[str, int]:
     existing = {a["id"]: a for a in data["assets"]}
     simulations = scan_simulations(course)
     of_simulations = {a["id"] for a in simulations}
@@ -299,13 +323,28 @@ def extract(course: dict) -> dict[str, int]:
         orphan["status"] = "orphaned"
         merged.append(orphan)
     data["assets"] = merged
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8", newline="\n") as fh:
-        ry.dump(data, fh)
+    for asset in merged:
+        if asset.get("avatar") and asset.get("status") in (None, "pending"):
+            _take_avatar(course, asset)
     by_status: dict[str, int] = {}
     for a in merged:
         by_status[a["status"]] = by_status.get(a["status"], 0) + 1
     return dict(sorted(by_status.items()))
+
+
+def _take_avatar(course: dict, asset: dict) -> None:
+    """The portrait of a speaker with an avatar of the brand (`speakers › avatars`): that file, copied as the produced asset."""
+    origin = next((base / asset["avatar"] for base in (course["_dir"], course["_project"].root) if (base / asset["avatar"]).is_file()),
+                  None)
+    if origin is None:
+        asset["note"] = t("media", "avatar_missing", path=asset["avatar"])
+        return
+    target = course["_dir"] / "media" / "files" / f"{asset['id']}{origin.suffix.lower()}"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(origin, target)
+    asset.update(status="produced", recipe="brand-avatar", file=f"media/files/{target.name}", made_with="brand-avatar",
+                 alt=asset.get("alt") or asset.get("character"))
+    asset.pop("note", None)
 
 
 DOWNLOAD_HINT = re.compile(r"\b(pdf|descargable|descarga|download|downloadable|docx|xlsx|pptx)\b", re.I)
@@ -367,6 +406,10 @@ def plan(course: dict) -> tuple[list[str], list[str]]:
 
     if mediastyle.waiting(course):
         warnings.append(t("media", "media_style_not_approved", code=course["code"]))
+    guide = mediastyle.path(course)
+    missing = mediastyle.missing_notes(guide) if guide else []
+    if missing:
+        warnings.append(t("media", "media_style_notes_missing", count=len(missing), path=guide.parent.name + "/notes.md"))
     required, real = depicts_rules(cfg)
     for a in (a for a in data["assets"] if a.get("status") in ("pending", "scripted")):
         chain = options_for(a["type"], cfg, root)
@@ -459,7 +502,7 @@ def narrate(course: dict, ids: list[str] | None = None, again: bool = False, say
 
     from coursekit import mediatools, ttsbatch
 
-    ry, path, data = load_manifest(course["_dir"])
+    _, _, data = load_manifest(course["_dir"])
     todo = [a for a in data["assets"] if a.get("kind") == "voice" and a.get("narration")
             and ((ids and a["id"] in ids) or (not ids and (again or a.get("status") in (None, "pending", "scripted"))))]
     done = 0
@@ -478,11 +521,12 @@ def narrate(course: dict, ids: list[str] | None = None, again: bool = False, say
             text = Path(tmp) / "scene.txt"
             text.write_text(str(asset["narration"]), encoding="utf-8")
             say(mediatools.tts(course, None, text, out, character=asset.get("character") or None))
-        asset.update(status="produced", file=f"media/files/{out.name}", transcript=str(asset["narration"]),
-                     recipe="coursekit media narrate", note=None)
+        with editing_manifest(course["_dir"]) as fresh:  # after each one: a provider that fails halfway keeps what was made
+            saved = next((a for a in fresh["assets"] if a["id"] == asset["id"]), None)
+            if saved is not None:
+                saved.update(status="produced", file=f"media/files/{out.name}", transcript=str(asset["narration"]),
+                             recipe="coursekit media narrate", note=None)
         done += 1
-        with path.open("w", encoding="utf-8", newline="\n") as fh:  # after each one: a provider that fails halfway keeps what was made
-            ry.dump(data, fh)
     return done
 
 
@@ -492,7 +536,7 @@ def stock(course: dict, asset_id: str, find: str | None = None, take: int | None
     or one of them taken as its SVG (`take`), recoloured to the brand and recorded with where it comes from."""
     from coursekit import brand, illustrations
 
-    ry, path, data = load_manifest(course["_dir"])
+    _, _, data = load_manifest(course["_dir"])
     asset = next((a for a in data["assets"] if a["id"] == asset_id), None)
     if asset is None:
         raise MediaError(t("media", "asset_not_found", asset_id=asset_id))
@@ -523,30 +567,39 @@ def stock(course: dict, asset_id: str, find: str | None = None, take: int | None
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(illustrations.recolour(svg, ink, paper), encoding="utf-8", newline="\n")
     author = about.get("author")
-    asset.update(file=f"media/files/{out.name}", recipe="magnific-stock",
-                 source={"provider": "magnific", "resource": int(take), "author": author, "url": about.get("url"),
-                         "license": about.get("license"), "license_url": about.get("license_url")})
-    with path.open("w", encoding="utf-8", newline="\n") as fh:
-        ry.dump(data, fh)
+    with editing_manifest(course["_dir"]) as fresh:
+        saved = next((a for a in fresh["assets"] if a["id"] == asset_id), None)
+        if saved is None:
+            raise MediaError(t("media", "asset_not_found", asset_id=asset_id))
+        saved.update(file=f"media/files/{out.name}", recipe="magnific-stock",
+                     source={"provider": "magnific", "resource": int(take), "author": author, "url": about.get("url"),
+                             "license": about.get("license"), "license_url": about.get("license_url")})
     return [t("illustrations", "taken", asset=asset_id, path=f"media/files/{out.name}", resource=take, author=author or "?", ink=ink)]
 
 
-def image_tool(course: dict, asset_id: str, action: str, size: str | None = None) -> str:
-    """`fit`: the file of an asset to an exact size; `render`: its SVG as a PNG next to it (to look at it, and for creator)."""
+def image_tool(course: dict, asset_id: str | None, action: str, size: str | None = None, file: str | None = None) -> str:
+    """`fit`: the file of an asset to an exact size; `render`: its SVG as a PNG next to it (to look at it, and for creator).
+    With `file`, that file instead of the one of the manifest: one not recorded yet, or a sample of the style sheet."""
     from coursekit import mediatools
 
-    _, _, data = load_manifest(course["_dir"])
-    asset = next((a for a in data["assets"] if a["id"] == asset_id), None)
-    if asset is None:
-        raise MediaError(t("media", "asset_not_found", asset_id=asset_id))
-    path = next((base / str(asset.get("file") or "") for base in (course["_dir"], course["_dir"] / "media")
-                 if asset.get("file") and (base / str(asset["file"])).is_file()), None)
-    if path is None:
-        raise MediaError(t("media", "asset_without_file", asset=asset_id))
+    bases = (course["_dir"], course["_dir"] / "media", course["_project"].root)
+    if file:
+        path = next((base / file for base in bases if (base / file).is_file()), None)
+        if path is None:
+            raise MediaError(t("media", "file_not_found", file=file))
+    else:
+        _, _, data = load_manifest(course["_dir"])
+        asset = next((a for a in data["assets"] if a["id"] == asset_id), None)
+        if asset is None:
+            raise MediaError(t("media", "asset_not_found", asset_id=asset_id))
+        path = next((base / str(asset.get("file") or "") for base in bases[:2]
+                     if asset.get("file") and (base / str(asset["file"])).is_file()), None)
+        if path is None:
+            raise MediaError(t("media", "asset_without_file", asset=asset_id))
     if action == "fit":
         return mediatools.fit(path, mediatools.parse_size(size or ""))
     if path.suffix.lower() != ".svg":
-        raise MediaError(t("media", "render_needs_svg", asset=asset_id))
+        raise MediaError(t("media", "render_needs_svg", asset=asset_id or path.name))
     from coursekit import brand
 
     sheet = brand.fonts_stylesheet(course["_project"], course)
@@ -610,8 +663,12 @@ def redo(course: dict, ids: list[str] | None = None, everything: bool = False, c
     the uploaded path; their script and file stay for the agent to start from. With `clean` they also forget the file, the alt
     text, the transcript, the captions and the tool that made them (the files stay on disk): for what is made again from
     nothing, as a resource that showed an interface that was invented."""
+    with editing_manifest(course["_dir"]) as data:
+        return _redo(course, data, ids, everything, clean)
+
+
+def _redo(course: dict, data: dict, ids: list[str] | None, everything: bool, clean: bool) -> list[str]:
     cfg = config(course=course)
-    ry, path, data = load_manifest(course["_dir"])
     found = thememod.status(course["_project"], course)
     current = thememod.fingerprint(found.tokens) if found.tokens else None
     known = {a["id"] for a in data["assets"]}
@@ -637,15 +694,16 @@ def redo(course: dict, ids: list[str] | None = None, everything: bool = False, c
             for download in asset.get("downloads") or []:
                 download["asset_path"] = None
             chosen.append(asset["id"])
-    if chosen:
-        with path.open("w", encoding="utf-8", newline="\n") as fh:
-            ry.dump(data, fh)
     return chosen
 
 
 def set_asset(course: dict, asset_id: str, **values) -> str:
     """Update an asset of the manifest. `download` adds or updates an extra downloadable file."""
-    ry, path, data = load_manifest(course["_dir"])
+    with editing_manifest(course["_dir"]) as data:
+        return _set_asset(course, data, asset_id, **values)
+
+
+def _set_asset(course: dict, data: dict, asset_id: str, **values) -> str:
     asset = next((a for a in data["assets"] if a["id"] == asset_id), None)
     if asset is None:
         raise MediaError(t("media", "asset_not_found", asset_id=asset_id))
@@ -708,6 +766,4 @@ def set_asset(course: dict, asset_id: str, **values) -> str:
         asset["downloads"] = downloads
     elif values.get("download_title") or values.get("download_asset_path"):
         raise MediaError(t("media", "download_needs_file"))
-    with path.open("w", encoding="utf-8", newline="\n") as fh:
-        ry.dump(data, fh)
     return f"{asset_id}: {asset.get('status')}"

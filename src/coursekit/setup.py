@@ -436,6 +436,8 @@ def agent_roles(project: Project, say: Say, ask: Ask | None, confirm: Callable[[
         set_env_value(project.env_file, f"{role.upper()}_AGENT", tool)
         set_env_value(project.env_file, f"{role.upper()}_MODEL", model)
     say(t("setup", "roles_saved"))
+    if plan["writer"] == plan["reviewer"]:
+        say(t("doctor", "same_model"))
 
 
 def run(project: Project, say: Say, ask: Ask | None, confirm: Callable[[str], bool] | None, *,

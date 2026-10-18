@@ -23,6 +23,13 @@ extra elements to fill the gap. It only needs what is in the project: anything i
 `coursekit approve media-style`, a course's own with `coursekit approve media-style <CODE>`) before a visual resource is marked
 produced: when `coursekit media plan` warns that it is not, stop and ask the person to read and sign it; never sign it yourself. Where the guide and `tokens.css` differ, the guide wins; the material behind it is in
 `theme/branding/index.md` (fonts in `fonts/fonts.css`, logos in `logo/`, icons, the converted brand pages in `text/`).
+Read also the `notes.md` next to the guide (the person's indications the guide was written from): where they and the guide
+differ, the notes win; say so in your report, so that the guide is written again.
+
+**An icon the brand's library lacks.** Look for it in the library first (also under other names). If it is not there, draw
+it with the rules of the guide for icons (grid, stroke, joins, corners, live area), measured on the icons of the library,
+never with another set; save it in `media/files/icons/<name>.svg` and list it in your report under "Icons drawn", so that a
+person can add it to the library of the brand.
 
 {{> _slxd-tools}}
 

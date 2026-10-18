@@ -194,7 +194,7 @@ help_reviewed_note: {es: "nota de la revisión de la persona (con --by)", en: "n
 help_reviewed_report: {es: "informe de la revisión de la persona, dentro de la carpeta del curso (con --by)", en: "report of the person's review, inside the course folder (with --by)"}
 reviewed_needs_by: {es: "coursekit: --note y --report necesitan --by", en: "coursekit: --note and --report need --by"}
 help_approve: {es: "firma el diseño o una unidad (solo personas, nunca un agente)", en: "sign off the design or a unit (people only, never an agent)"}
-help_approve_asset: {es: "id del recurso (aprobación de su guion)", en: "id of the resource (script gate)"}
+help_approve_asset: {es: "id del recurso (aprobación de su guion); varios separados por comas o repitiendo --asset", en: "id of the resource (script gate); several separated by commas or repeating --asset"}
 help_approve_unit: {es: "número de unidad (aprobación de contenido)", en: "unit number (content gate)"}
 help_approve_code: {es: "código del curso; sin él, media-style firma la guía del proyecto para todos los cursos que la usan", en: "code of the course; without it, media-style signs the guide of the project for every course that uses it"}
 help_approve_yes:
@@ -330,7 +330,7 @@ help_assemble_replace_id:
   es: "applied: con --keep-ids, cambia el id de un bloque borrado y añadido de nuevo: ID_VIEJO=ID_NUEVO, separados por comas"
   en: "applied: with --keep-ids, swaps the id of a brick that was deleted and added again: OLD_ID=NEW_ID, separated by commas"
 help_media_size: {es: "fit (obligatorio) y render: tamaño ANCHOxALTO, p. ej. 1920x1080", en: "fit (required) and render: size WIDTHxHEIGHT, e.g. 1920x1080"}
-media_fit_needs: {es: "fit necesita el id del recurso y --size; render, el id", en: "fit needs the asset id and --size; render, the id"}
+media_fit_needs: {es: "fit necesita el id del recurso (o --file) y --size; render, el id o --file", en: "fit needs the asset id (or --file) and --size; render, the id or --file"}
 help_media_force: {es: "set: marca el recurso aunque los tokens del tema no vengan de la plataforma", en: "set: mark the asset even if the theme tokens do not come from the platform"}
 theme_import_needs_file: {es: "coursekit: theme import necesita el fichero con el resultado de get_theme", en: "coursekit: theme import needs the file with the get_theme result"}
 theme_imported:

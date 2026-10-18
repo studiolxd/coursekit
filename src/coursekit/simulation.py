@@ -470,7 +470,29 @@ def parse(kind: str, body: list[str], where: str, line: int = 0) -> Simulation:
         _walk(sim, scenes, str(start), state, err)
         if sim.scored and sim.max_score <= 0:
             err("no_points")
+        sim.warnings += [f"{where}: {w}" for w in consequence_warnings(scenes)]
     return sim
+
+
+def consequence_warnings(scenes: dict) -> list[str]:
+    """The decisions marked as a common error (`error`) that the learner pays for nowhere: one that leads straight to a good
+    ending, or one that goes where a right decision of its scene goes without points, changes of state or feedback (nothing
+    happens now and nothing can happen later)."""
+    out = []
+    for sid, scene in scenes.items():
+        decisions = _decisions(scene) if isinstance(scene, dict) else []
+        for d in decisions:
+            if not d.get("error"):
+                continue
+            name = str(d.get("text") or d.get("label") or "")[:60]
+            target = scenes.get(d["goto"]) if isinstance(d.get("goto"), str) else None
+            if isinstance(target, dict) and target.get("ending") == "good":
+                out.append(t("simulation", "error_to_good_ending", scene=sid, decision=name, ending=d.get("goto")))
+                continue
+            silent = not (d.get("effects") or d.get("set") or d.get("feedback")) and float(d.get("score") or 0) >= 0
+            if silent and any(o is not d and not o.get("error") and o.get("goto") == d.get("goto") for o in decisions):
+                out.append(t("simulation", "error_without_consequence", scene=sid, decision=name))
+    return out
 
 
 def _check_condition(value: object, variables: dict, err, where: str) -> None:

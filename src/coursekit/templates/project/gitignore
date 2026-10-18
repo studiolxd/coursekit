@@ -20,3 +20,5 @@ courses/*/assembly/html/
 tools/remotion/kit/
 tools/remotion/src/.course/
 courses/*/media/edit/
+courses/*/media/.manifest.lock
+courses/*/media/.manifest.yaml.*.tmp

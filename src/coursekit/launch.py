@@ -60,8 +60,10 @@ DONE = {"writer": ("verified", "reviewed", "approved"), "reviewer": ("reviewed",
 HEADLESS_NOTE = (
     "\n\nYou are running without an interface: nobody can answer you. Do not ask questions; decide "
     "with what you have, leave doubts noted (<!-- VERIFICAR: … --> or in the report) and finish with "
-    "a short summary of what you did and what is pending."
+    "a short summary of what you did and what is pending, between <summary> and </summary>, as the last thing "
+    "you write (after any background task has finished): it is what the person reads."
 )
+SUMMARY = re.compile(r"<summary>\s*(.*?)\s*</summary>", re.S)
 _BASE_TOOLS = ["Read", "Edit", "Write", "Glob", "Grep", "Skill", "TodoWrite",
                "Bash(coursekit verify:*)", "Bash(coursekit brief:*)", "Bash(coursekit research:*)", "Bash(coursekit status:*)",
                "Bash(coursekit outline:*)", "Bash(coursekit paths:*)", "Bash(coursekit config:*)", "Bash(git status:*)", "Bash(git diff:*)"]
@@ -319,9 +321,9 @@ def mcp_blocker(project: Project, log: Path) -> str | None:
 
 
 def final_message(tool: str, log: Path, last_message: Path) -> str:
-    """Last answer of the session, for the summary printed after a headless run."""
-    if last_message.exists():
-        return last_message.read_text(encoding="utf-8").strip()
+    """The summary printed after a headless run: the last <summary> block the agent wrote in the session (its last answer
+    may be about something else, such as a background task that ended); else its last answer."""
+    texts = [last_message.read_text(encoding="utf-8")] if last_message.exists() else []
     result = ""
     for line in log.read_text(encoding="utf-8", errors="replace").splitlines():
         try:
@@ -330,9 +332,30 @@ def final_message(tool: str, log: Path, last_message: Path) -> str:
             continue
         if tool == "claude" and event.get("type") == "result":
             result = event.get("result") or result
+        elif tool == "claude" and event.get("type") == "assistant":
+            texts += [c.get("text") or "" for c in (event.get("message") or {}).get("content") or [] if c.get("type") == "text"]
         elif tool == "opencode" and event.get("type") == "text":
             result = (event.get("part") or {}).get("text") or result
-    return result.strip()
+            texts.append(result)
+    blocks = [m.group(1) for text in [*texts, result] for m in SUMMARY.finditer(text)]
+    if blocks:
+        return blocks[-1].strip()
+    return (texts[0] if last_message.exists() else result).strip()
+
+
+def report_summary(course: dict, n: int) -> str:
+    """The summary of the AI review report of a unit (its last partial review when it has them): what a review that did
+    not end with its own summary leaves for the person."""
+    path = course["_dir"] / "reviews" / f"unit-{n:02d}-ai-review.md"
+    if not path.exists():
+        return ""
+    text = path.read_text(encoding="utf-8")
+    parts = re.split(r"^## ", text, flags=re.M)
+    for part in reversed(parts[1:]):
+        heading, _, body = part.partition("\n")
+        if heading.strip().lower().startswith(("partial review", "revisión parcial", "summary", "resumen")):
+            return f"{heading.strip()}\n{body.strip()}"[:2000].strip()
+    return ""
 
 
 def execute(project: Project, agent: Agent, text: str, headless: bool, log_name: str) -> tuple[int, Path | None, str]:
@@ -428,6 +451,8 @@ def run_unit(project: Project, code: str, role: str, n: int, agent: Agent, headl
     text = prompt(agent, command, f"{course['code']} {n}", headless, extra)
     kind = "write" if role == "writer" else "review"
     exit_code, log, summary = execute(project, agent, text, headless, f"{course['code']}-u{n:02d}-{kind}")
+    if headless and role == "reviewer" and log is not None and not SUMMARY.search(log.read_text(encoding="utf-8", errors="replace")):
+        summary = report_summary(course, n) or summary
     status = next((u.get("status") for u in _units(coursemod.load(project, code)) if u["n"] == n), None)
     return UnitResult(n, status, exit_code, log, summary, warnings)
 

@@ -195,7 +195,7 @@ def approve_media_style(course: dict, confirm: Confirm, do_commit: bool = True, 
         raise ApprovalError(t("approve", "media_style_missing", code=course["code"]))
     rel = found.relative_to(course["_project"].root).as_posix()
     who = who or signer()
-    if not confirm(_gallery_first(course["_project"], course["code"]) + "\n"
+    if not confirm(_gallery_first(course["_project"], course["code"]) + "\n" + _notes_left_out(found)
                    + t("approve", "media_style_confirm", path=rel, code=course["code"], who=who)):
         raise ApprovalError(t("approve", "cancelled"))
     entry = {"gate": "media_style", "by": str(who), "at": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
@@ -206,6 +206,16 @@ def approve_media_style(course: dict, confirm: Confirm, do_commit: bool = True, 
     if do_commit and not commit([course["_dir"]], f"Media style approval {course['code']}", who, course["_dir"]):
         return t("approve", "media_style_approved_uncommitted", who=who, path=rel)
     return t("approve", "media_style_approved", who=who, path=rel)
+
+
+def _notes_left_out(guide: Path) -> str:
+    """The warning before signing a guide that does not quote every indication of its notes.md."""
+    from coursekit import mediastyle
+
+    missing = mediastyle.missing_notes(guide)
+    if not missing:
+        return ""
+    return t("approve", "media_style_notes_missing", count=len(missing), notes="\n".join(f"  · {n}" for n in missing)) + "\n"
 
 
 def _gallery_first(project, code: str | None) -> str:
@@ -231,7 +241,8 @@ def approve_project_media_style(project, confirm: Confirm, do_commit: bool = Tru
         raise ApprovalError(t("approve", "media_style_missing_project"))
     rel = found.relative_to(project.root).as_posix()
     who = who or signer()
-    if not confirm(_gallery_first(project, None) + "\n" + t("approve", "media_style_confirm_project", path=rel, who=who)):
+    if not confirm(_gallery_first(project, None) + "\n" + _notes_left_out(found)
+                   + t("approve", "media_style_confirm_project", path=rel, who=who)):
         raise ApprovalError(t("approve", "cancelled"))
     ry, data = edit_yaml(project.file)
     if data.get("approvals") is None:
@@ -266,6 +277,33 @@ def approve_script(course: dict, asset_id: str, confirm: Confirm, do_commit: boo
     if do_commit and not commit([course["_dir"]], f"Script approval {course['code']} {asset_id}", who, course["_dir"]):
         return t("approve", "script_approved_uncommitted", who=who, id=asset_id)
     return t("approve", "script_approved", who=who, id=asset_id)
+
+
+def approve_scripts(course: dict, asset_ids: list[str], confirm: Confirm, do_commit: bool = True) -> str:
+    """Several scripts signed at once: one question, one signature for each, one commit. None is signed if one has no script."""
+    if len(asset_ids) == 1:
+        return approve_script(course, asset_ids[0], confirm, do_commit)
+    from coursekit import mediascript
+
+    found = {asset_id: mediascript.files(course, asset_id) for asset_id in asset_ids}
+    for asset_id, files in found.items():
+        if not files:
+            raise ApprovalError(t("mediascript", "no_script", id=asset_id, path=f"media/scripts/{asset_id}.md"))
+    who = signer()
+    summary = "\n".join("  " + t("approve", "script_summary", code=course["code"], id=asset_id, files=", ".join(p.name for p in files))
+                        for asset_id, files in found.items())
+    if not confirm(t("approve", "scripts_confirm", count=len(found), summary=summary, who=who)):
+        raise ApprovalError(t("approve", "cancelled"))
+    at = dt.datetime.now().astimezone().isoformat(timespec="seconds")
+    for asset_id, files in found.items():
+        entry = {"gate": "script", "asset": asset_id, "by": str(who), "at": at,
+                 "fingerprint": mediascript.fingerprint(course, asset_id), "files": [p.name for p in files]}
+        _record(course["_dir"], entry, None, f"Script of {asset_id} approved")
+        course.setdefault("approvals", []).append(entry)
+    ids = ", ".join(found)
+    if do_commit and not commit([course["_dir"]], f"Script approval {course['code']} {ids}", who, course["_dir"]):
+        return t("approve", "script_approved_uncommitted", who=who, id=ids)
+    return t("approve", "script_approved", who=who, id=ids)
 
 
 def approve_content(course: dict, n: int, confirm: Confirm, do_commit: bool = True, force: bool = False,

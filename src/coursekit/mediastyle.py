@@ -6,6 +6,7 @@ for that course alone); in handoff mode coursekit signs it."""
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from coursekit import course as coursemod
@@ -39,6 +40,31 @@ def path(course: dict) -> Path | None:
         if (base / NAME).is_file():
             return base / NAME
     return None
+
+
+NOTES = "notes.md"
+
+
+def _plain(text: str) -> str:
+    return re.sub(r"\s+", " ", re.sub(r"[`*_«»\"“”]", "", text)).strip().casefold().rstrip(".;:")
+
+
+def notes(guide: Path) -> list[str]:
+    """The indications of the person next to a guide (notes.md of the same folder): one per line, without headings, comments
+    and list marks."""
+    found = guide.parent / NOTES
+    if not found.is_file():
+        return []
+    text = re.sub(r"<!--.*?-->", "", found.read_text(encoding="utf-8"), flags=re.S)
+    lines = (re.sub(r"^\s*(?:[-*+]|\d+[.)])\s+", "", line).strip() for line in text.splitlines())
+    return [line for line in lines if line and not line.startswith("#")]
+
+
+def missing_notes(guide: Path) -> list[str]:
+    """The indications of notes.md that the guide does not quote: the guide lists each one, as it is, with where it applies
+    (theme-definition skill), so an indication that is not there was left out when the guide was written."""
+    text = _plain(guide.read_text(encoding="utf-8"))
+    return [line for line in notes(guide) if _plain(line) not in text]
 
 
 def required(course: dict) -> bool:

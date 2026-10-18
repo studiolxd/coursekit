@@ -25,6 +25,18 @@ visual:
   style: illustration          # flat | pixel-art | 3d | isometric | illustration | photo
   fallback: flat               # the style when there is no image generator: the illustration role draws it as SVG
 
+# The speakers of the dialogues that get no portrait made for them (names as they are written in the dialogues; the learner,
+# "You" in the course language, never has one):
+#   learner    other names that stand for the learner
+#   anonymous  names that stand for anyone ("Person", "Client"): no portrait (the dialogue shows the initial) and, in a
+#              decision-based course, allowed although they are not in the cast
+#   avatars    a speaker always shown with the same image of the brand (an AI assistant, a mascot): a file of the course or
+#              of the project, which `coursekit media extract` takes as their portrait, e.g. {Assistant: theme/branding/assistant.png}
+speakers:
+  learner: []
+  anonymous: []
+  avatars: {}
+
 # The illustrations taken from the illustration sources of the brand (`coursekit media stock`): `color` filters the search
 # (black: the line versions; null: any), and the taken SVG is recoloured, its dark colours to the role `ink` of the tokens and
 # its light ones to the role `paper` (an accent the script asks for is added by hand afterwards).

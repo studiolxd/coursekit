@@ -38,6 +38,15 @@ Mandatory format: `.coursekit/docs/content-format.md`. Write in {{language_name}
    run `coursekit brief <CODE>` and cite the brief; the review approves or removes the sources you add. When the command
    says there is no search provider, use your own web search under the same rules. With no official source, the
    `<!-- VERIFICAR -->` stays.
+8. `courses/<CODE>/decisions.md`: what a person has already decided or checked in this course. Respect it and do not
+   reopen it. Its **checked interface labels** are the texts of the real interface (menus, buttons, options): write them
+   exactly as they are there. A label that is neither there nor in the brief gets a `<!-- VERIFICAR -->`.
+9. The style guide of the media (`theme/branding/media-style.md`, or the course's own in `courses/<CODE>/theme/branding/`):
+   read it before describing any resource, so that a placeholder never asks for what it forbids or advises against.
+
+**When the design is out of date** (it contradicts the brief, the notes, `decisions.md` or the real interface), do not
+write around it: follow the design, mark the spot with `<!-- VERIFICAR: the design says …, but … -->` and list it in your
+final summary under "Design out of date" so that a person decides.
 
 ## How to write
 
@@ -47,6 +56,9 @@ Mandatory format: `.coursekit/docs/content-format.md`. Write in {{language_name}
   professional practice of the audience. No bare word lists or unexpanded outlines.
 - Facts, versions, commands and product names **real and verifiable**. If unsure, do not invent
   it: mark it with `<!-- VERIFICAR: … -->` for the review.
+- **Only what is there now.** Describe the interface, the rule or the product as it is in the version the course teaches.
+  Never what it used to be ("it no longer exists", "it used to be called", "it has been removed"), unless the change
+  itself is what the objective teaches.
 - **Minimum words** are floors, never targets. Aim about {{word_margin_pct}} % above. Placeholder
   text, objective tags and comments **do not count**.
 - By section `kind`:
@@ -58,7 +70,9 @@ Mandatory format: `.coursekit/docs/content-format.md`. Write in {{language_name}
     `use` for the kind of content (equivalent alternatives → tabs; sequence → timeline;
     equivalent items one by one → carousel; secondary detail → accordion; parts of a diagram →
     labelled-graphic…). Integrate the learning activities of its objectives with question
-    directives (a learning activity with `section` in `activities.learning` goes in that section).
+    directives (a learning activity with `section` in `activities.learning` goes in that section). **Each activity
+    keeps its type**: write it with a directive of its type (`coursekit config directives` › `activity_types`; a
+    `hotspot_analysis` is a scenario with `hotspots`, not a multi-select). `coursekit verify` warns when it is not.
   - `activities`: the unit's learning activities (`activities.learning`) with question
     directives, each with `{{t_question_key}}` and feedback that points back to the section.
   - `summary`: key ideas, glossary (`:::accordion` or `:::flashcards`), a closing `:::reflection` (at least
@@ -79,6 +93,17 @@ Mandatory format: `.coursekit/docs/content-format.md`. Write in {{language_name}
   Where the tests go: {{assessment_delivery}}. `coursekit verify` refuses in the bank a question type the format cannot
   take. When the tests go apart, the section still tells the learner where the test is (the assessment package after the
   units), not that it follows.
+- **Questions:**
+  - A `sorting` or `order-words` question has **one valid order**: before writing it, check that no other order could be
+    defended, and say in its correct feedback why that order is the only one. If two items could swap, change them or use
+    another directive.
+  - The **test puts the learner in a new situation**: no question of the bank repeats the case, the data or the wording
+    of a practice activity of the content (`coursekit verify` warns when they share too many words).
+  - The **explanation of the right answer is also seen by whoever fails**: the incorrect feedback explains why the right
+    answer is right (the calculation, the reason), not only which section to review.
+  - The **text before an activity does not give the answer** (no example, hint or highlight that solves it).
+  - A `fill-in-the-blank` accepts the **synonyms** the learner may write (`{a/b}`) and never asks for a name the content
+    made up (a character, a file, a company of the example): only for what the learner has learnt.
 - **Common errors** (`courses/<CODE>/design/misconceptions.yaml`, signed with the design): every error of the unit's
   objectives is put in front of the learner at least once in the unit, and explained. In `single-choice` and
   `multi-select`, each distractor is one of those errors and ends with its id, `- [ ] <option> ‹reuse›` (the learner
@@ -161,6 +186,11 @@ simulation format in `.coursekit/docs/content-format.md` (section 2.1).
     right, none absurd, similar length. Three is usual; hotspots when the decision is to notice something in the scene.
   - Consequences in the story, not "Correct!": what happens next. Make some appear later (state + `variants`, layers
     with `if`, conditional choices, `next`) and give paths to recover from a mistake.
+  - **Every decision with `error` has a visible consequence**, now (what happens next, points, feedback) or later (a
+    change of state that a later scene, variant or ending shows). It never leads straight to a good ending nor goes where a
+    right decision goes with nothing changed: `coursekit verify` warns of both.
+  - **Continuity:** what a scene says matches what the learner did before on every path that reaches it (who knows what,
+    what was sent, what time it is). Read every path of `reviews/unit-NN-paths.md` with that in mind.
   - `score` rewards the decisions an expert would take (and subtracts the harmful ones); a scored simulation must have a
     path that earns points. Give it `pass_requires` with the key behaviour of the objective (a state variable), and make
     the endings and the grades agree: a good ending passes, a bad one fails (`coursekit verify` checks both). `checkpoint: true` on the scenes worth trying again (rewind is {{simulation_rewind}}).
@@ -188,7 +218,7 @@ simulation format in `.coursekit/docs/content-format.md` (section 2.1).
 
 1. `coursekit verify <CODE> --unit N` without errors (warnings justified).
 2. Do not touch statuses: `coursekit verify` moves the unit and the course.
-3. Summarise: words per section, directives used, placeholders and any pending
-   `<!-- VERIFICAR -->`.
+3. Summarise: words per section, directives used, placeholders, any pending `<!-- VERIFICAR -->` and, under "Design out of
+   date", what the design says that no longer holds.
 
 Do not commit or push unless asked.

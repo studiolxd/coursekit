@@ -10,6 +10,7 @@ Cómo se organiza la carpeta de un curso, el formato de `content.md` y `assessme
 courses/PWD/
 ├── course.yaml                  ficha del curso: unidades, estado, aprobaciones, entregas, historial
 ├── brief/                       material de referencia (links.md, notes.md, sources/; text/ e index.md tras `coursekit brief`)
+├── decisions.md                 lo que las personas decidieron y comprobaron: la redacción y la revisión lo respetan
 ├── design/
 │   ├── matrix.json              diseño instruccional, tal como se exporta de la plataforma
 │   ├── PWD-instructional-design.xlsx   el fichero que revisan las personas
@@ -34,7 +35,7 @@ courses/PWD/
     └── PWD-U01-v1.0-scorm12.zip paquetes SCORM
 ```
 
-`coursekit new` crea `brief/`, `design/`, `content/`, `media/` (con un `manifest.yaml` vacío), `reviews/` y `course.yaml`. `assembly/` aparece con el primer `coursekit assemble plan` (backend creator) o `coursekit assemble build` (backend html) y `delivery/` con el primer paquete. `theme/` existe solo si el curso tiene un theme propio (`/define-theme PWD`); si no, el curso usa el `theme/` del proyecto (junto a `courses/`), que guarda los tokens de diseño que heredan todos los cursos.
+`coursekit new` crea `brief/`, `design/`, `content/`, `media/` (con un `manifest.yaml` vacío), `reviews/`, `decisions.md` y `course.yaml`. `assembly/` aparece con el primer `coursekit assemble plan` (backend creator) o `coursekit assemble build` (backend html) y `delivery/` con el primer paquete. `theme/` existe solo si el curso tiene un theme propio (`/define-theme PWD`); si no, el curso usa el `theme/` del proyecto (junto a `courses/`), que guarda los tokens de diseño que heredan todos los cursos.
 
 Otras dos carpetas del proyecto importan al backend html, ambas junto a `courses/` y ambas escritas por personas:
 
@@ -61,8 +62,18 @@ Ambas se explican en [Estilos](08-assembly-and-delivery.md#estilos).
 | `assembly/html/` | `coursekit assemble build` (backend html) | `coursekit assemble build` lo reconstruye desde cero; es generado y git lo ignora |
 | `delivery/*.zip` | agente de montaje (descarga, backend creator) o `coursekit assemble build --version` (backend html) | se registran con `coursekit delivery add` |
 | `brief/` | `coursekit new` | las personas dejan el material; `coursekit brief` lo convierte |
+| `decisions.md` | `coursekit new` (o `coursekit brief`) | las personas, o un agente al que se lo dicta una persona |
 
 Las aprobaciones (`approvals` en `course.yaml`) las escribe solo `coursekit approve`, y solo lo ejecuta una persona.
+
+### Decisiones del curso
+
+`courses/PWD/decisions.md` es el registro de lo que una persona ya ha decidido o comprobado en el curso, para que la redacción y la revisión no lo vuelvan a abrir. Lo crea `coursekit new`, en el idioma de la interfaz, y `coursekit brief CODE` lo crea en un curso hecho antes de que existiera. Tiene dos partes:
+
+- **Decisiones**: una línea cada una, con la fecha y quién la tomó (`- 2026-10-18 · Ana: el encabezado de las unidades se queda como está`).
+- **Rótulos de interfaz comprobados**: los textos de la interfaz real (menús, botones, pestañas, opciones) tal como se ven en la versión que enseña el curso, comprobados por una persona (una captura, la aplicación abierta). El redactor los usa tal cual; el revisor no los cuestiona, y un rótulo de la unidad que difiere de ellos es un hallazgo.
+
+Lo escribe una persona, o un agente cuando una persona se lo dicta en la conversación, nunca un agente por su cuenta; para cambiar una decisión, se cambia su línea. El revisor nunca propone en contra de él y, antes de repetir una propuesta de una revisión anterior, la comprueba contra el estado actual de la unidad, del diseño y de este fichero: lo que ya está hecho o decidido sale de la lista de propuestas pendientes de decisión.
 
 ## Idioma del contenido e idioma de la interfaz
 
@@ -335,6 +346,16 @@ feedback-incorrecto: Repasa el apartado sobre la longitud.
 Cada clave va en una sola línea. Los nombres de clave dentro de las directivas (`pregunta:`, `respuesta:`, `respuestas:`, `feedback-correcto:`, `feedback-incorrecto:`, `feedback:`, `título:`, `imagen:`, `posición:`) y la clave de objetivo (`objetivo:`) son los del idioma del contenido que se muestra aquí; un curso en inglés escribe `question:`, `answer:`, `objective:`… (consulta [Tipos de recurso y claves de las directivas por idioma](#tipos-de-recurso-y-claves-de-las-directivas-por-idioma)). Mezclar idiomas es un error.
 
 `pregunta:` es obligatoria, pero `verify` solo avisa cuando falta `objetivo:`. Una pregunta sin `pregunta:`, un `multi-select` sin ningún `- [x]`, un `match` sin ningún par `::` o un `short-answer` sin `respuestas:` pasa `verify` y se publica vacía o rota, así que revísalas a mano. `objetivo:` lleva el identificador de un objetivo de la unidad (`U1.1`); su valor no se valida. Toda pregunta debería llevar además retroalimentación (`feedback-correcto:`, `feedback-incorrecto:` o `feedback:`); es una norma editorial que `verify` no comprueba.
+
+Lo que `verify` no puede comprobar lo sigue el redactor y lo comprueba la revisión (skills `content-writing` y `content-review`):
+
+- Solo la interfaz, la norma o el producto tal como son en la versión que enseña el curso: nunca lo que fueron («se ha retirado», «antes se llamaba»), salvo que el cambio sea lo que enseña el objetivo.
+- Una pregunta `sorting` u `order-words` tiene un solo orden defendible, y su retroalimentación de acierto dice por qué.
+- El banco del test pone al alumno ante situaciones nuevas, no las de la práctica (`verify` avisa cuando una pregunta del banco comparte demasiadas palabras con una de práctica, `rules › content.bank_practice_overlap`).
+- La retroalimentación de error también explica la respuesta correcta (el cálculo, la razón), porque también la lee quien falla; el texto previo a una actividad no da la respuesta; un `fill-in-the-blank` acepta los sinónimos que escribiría un alumno y nunca pide un nombre que se inventó el contenido.
+- Cada actividad de aprendizaje mantiene el tipo que le da el diseño (`verify` avisa cuando su sección no tiene ninguna de las directivas de `directives › activity_types`; un `hotspot_analysis` es un escenario con `hotspots`, no una selección múltiple).
+- Cuando el diseño está desfasado (contradice el brief, las notas, `decisions.md` o la interfaz real), el redactor lo sigue, marca el sitio con `<!-- VERIFICAR -->` y lo lista en su resumen en «Diseño desfasado» para que decida una persona; nunca lo rodea en el texto.
+- Las especificaciones de un marcador de recurso respetan la guía de estilo de los recursos (`theme/branding/media-style.md`), que el redactor lee antes de describir un recurso.
 
 ### Errores típicos
 
@@ -689,6 +710,9 @@ Las cifras son los valores por defecto del paquete (`src/coursekit/defaults/rule
 | Objetivo de la pregunta | Toda directiva de pregunta lleva la clave de objetivo (`objetivo:` / `objective:`) | — | aviso |
 | Errores típicos | Cada error de `design/misconceptions.yaml` de los objetivos de la unidad está en un distractor (`‹id›`) o una decisión (`error:`); cada id existe; ninguna opción correcta lleva uno | — | error (un distractor o una decisión que resta puntos sin él: aviso) |
 | Banco de preguntas | `questions_per_objective` × número de objetivos distintos evaluados por una actividad cuyo instrumento es `cuestionario` (el valor del campo de instrumento del diseño, sea cual sea el idioma del curso) | 5 por objetivo | aviso |
+| Tipo de actividad | Cada actividad de aprendizaje del diseño se escribe, en su sección (o en el apartado de actividades), con una directiva de su tipo (`directives › activity_types`) | ver [`directives`](04-configuration.md#directives-directivas-y-bricks-de-creator) | aviso |
+| Situaciones nuevas en el test | Ninguna pregunta del banco comparte `bank_practice_overlap` o más de sus palabras con una pregunta de práctica de `content.md` | 0,5 | aviso |
+| Consecuencia de un error | En una simulación, una decisión con `error` no lleva directa a un final `good` ni va donde una decisión correcta de su escena sin puntos, cambios de estado ni retroalimentación | — | aviso |
 | Reflexión | El apartado de resumen (o el último, si no lo hay) tiene al menos `reflections_per_unit` `:::reflection` | 1 | aviso |
 | Legibilidad | Por apartado, la proporción de frases de más de `readability.long_sentence_words` palabras y el índice de legibilidad del idioma (Szigriszt-Pazos en español, Flesch en inglés), según el público `readability.audience`; un apartado con menos de `readability.min_sentences` frases de prosa no se mide | público general: 30 palabras, como mucho un 20 % largas, índice 55 | aviso |
 | Lenguaje inclusivo | `rules › inclusive_language`: con `neutral`, las palabras de `lang/<código>.yaml › inclusive` que nombran a las personas en masculino genérico (un aviso por palabra, con sus líneas y la alternativa neutra) y las formas con barra o arroba; con `split`, las barras. Quedan fuera el código, los comentarios y las direcciones | `neutral` | aviso |

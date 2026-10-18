@@ -238,13 +238,11 @@ def _finish(course: dict, item: dict, pcm: bytes, rate: int, say) -> None:
     if item["kind"] == "narrate":
         from coursekit import media as mediamod
 
-        ry, path, manifest = mediamod.load_manifest(course["_dir"])
-        asset = next((a for a in manifest["assets"] if a["id"] == item["asset"]), None)
-        if asset is not None:
-            asset.update(status="produced", file=out.relative_to(course["_dir"]).as_posix(), transcript=item["text"],
-                         recipe="coursekit media narrate", note=None)
-            with path.open("w", encoding="utf-8", newline="\n") as fh:
-                ry.dump(manifest, fh)
+        with mediamod.editing_manifest(course["_dir"]) as manifest:
+            asset = next((a for a in manifest["assets"] if a["id"] == item["asset"]), None)
+            if asset is not None:
+                asset.update(status="produced", file=out.relative_to(course["_dir"]).as_posix(), transcript=item["text"],
+                             recipe="coursekit media narrate", note=None)
     elif item["kind"] == "video":
         from coursekit import video
 

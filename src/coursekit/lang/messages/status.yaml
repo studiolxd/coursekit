@@ -12,8 +12,8 @@ next_ai_review:
   es: "revisión con IA con `coursekit review {code} <N>` (o registra tu revisión con `coursekit reviewed {code} <N> --by \"Nombre\"`)"
   en: "AI review with `coursekit review {code} <N>` (or record your own review with `coursekit reviewed {code} <N> --by \"Name\"`)"
 next_editorial_review:
-  es: "revisión editorial y firma de cada unidad con `coursekit approve content {code} --unit <N>`"
-  en: "editorial review and sign-off of each unit with `coursekit approve content {code} --unit <N>`"
+  es: "revisión editorial de cada unidad (compruébala con /approve-unit {code} <N>) y firma con `coursekit approve content {code} --unit <N>`"
+  en: "editorial review of each unit (check it with /approve-unit {code} <N>) and sign-off with `coursekit approve content {code} --unit <N>`"
 next_media:
   es: "produce el multimedia con /produce-media {code} y monta con /assemble {code}"
   en: "produce the media with /produce-media {code} and assemble with /assemble {code}"

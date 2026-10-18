@@ -268,8 +268,12 @@ characters:
 ## Export (always the three together, so they match the same version)
 
 1. `design_matrix_get` → save the JSON **as it is** in `courses/<CODE>/design/matrix.json`, with your file-writing tool
-   (the whole response, including `updatedAt`): never patch the previous file by hand or with a script.
-2. `design_matrix_validate` with `locale: "{{ui_language}}"` → `courses/<CODE>/design/validation.json`.
+   (the whole response, including `updatedAt`): never patch the previous file by hand or with a script. When your tool
+   saved the response of the MCP tool to a file (a long response) and that file holds the JSON as it is, copy it
+   instead of writing it again. When the
+   matrix is the same as the one already saved (same `updatedAt`), leave the file as it is and skip step 2.
+2. `design_matrix_validate` with `locale: "{{ui_language}}"` → `courses/<CODE>/design/validation.json` (the same: copy the
+   saved response when there is one). A matrix saved again with the content the design was signed with keeps its validation.
 3. `coursekit design <CODE>`: writes `courses/<CODE>/design/<CODE>-instructional-design.xlsx` from those two files, which is
    what the person reviews (profile, competencies, objectives with where they are developed, practised and assessed,
    structure with hours and minimum words, activities with their grading, common errors, validation). It prints the

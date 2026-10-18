@@ -10,6 +10,7 @@ How a course folder is laid out, the format of `content.md` and `assessment.md`,
 courses/PWD/
 ├── course.yaml                  record of the course: units, status, approvals, deliveries, history
 ├── brief/                       reference material (links.md, notes.md, sources/; text/ and index.md after `coursekit brief`)
+├── decisions.md                 what people decided and checked: writing and review respect it
 ├── design/
 │   ├── matrix.json              instructional design, exactly as exported from the platform
 │   ├── PWD-instructional-design.xlsx   the file people review
@@ -34,7 +35,7 @@ courses/PWD/
     └── PWD-U01-v1.0-scorm12.zip SCORM packages
 ```
 
-`coursekit new` creates `brief/`, `design/`, `content/`, `media/` (with an empty `manifest.yaml`), `reviews/` and `course.yaml`. `assembly/` appears with the first `coursekit assemble plan` (creator backend) or `coursekit assemble build` (html backend) and `delivery/` with the first package. `theme/` exists only if the course has a theme of its own (`/define-theme PWD`); without it the course uses the project's `theme/` (next to `courses/`), which holds the design tokens every course inherits.
+`coursekit new` creates `brief/`, `design/`, `content/`, `media/` (with an empty `manifest.yaml`), `reviews/`, `decisions.md` and `course.yaml`. `assembly/` appears with the first `coursekit assemble plan` (creator backend) or `coursekit assemble build` (html backend) and `delivery/` with the first package. `theme/` exists only if the course has a theme of its own (`/define-theme PWD`); without it the course uses the project's `theme/` (next to `courses/`), which holds the design tokens every course inherits.
 
 Two more folders of the project matter to the html backend, both next to `courses/` and both written by people:
 
@@ -61,8 +62,18 @@ Both are explained in [Styles](08-assembly-and-delivery.md#styles).
 | `assembly/html/` | `coursekit assemble build` (html backend) | `coursekit assemble build` rebuilds it from scratch; it is generated and git-ignored |
 | `delivery/*.zip` | assembly agent (download, creator backend) or `coursekit assemble build --version` (html backend) | recorded with `coursekit delivery add` |
 | `brief/` | `coursekit new` | people drop material in it; `coursekit brief` converts it |
+| `decisions.md` | `coursekit new` (or `coursekit brief`) | people, or an agent a person dictates it to |
 
 Approvals (`approvals` in `course.yaml`) are written only by `coursekit approve`, and only a person runs it.
+
+### Course decisions
+
+`courses/PWD/decisions.md` is the record of what a person has already decided or checked in the course, so that writing and review do not open it again. `coursekit new` creates it, in the language of the interface, and `coursekit brief CODE` creates it in a course made before it existed. It has two parts:
+
+- **Decisions**: one line each, with the date and who took it (`- 2026-10-18 · Ana: the heading of the units stays as it is`).
+- **Checked interface labels**: the texts of the real interface (menus, buttons, tabs, options) as they appear in the version the course teaches, checked by a person (a capture, the application open). The writer uses them exactly as they are; the reviewer does not question them, and a label of the unit that differs from them is a finding.
+
+A person writes it, or an agent when a person dictates it in the conversation, never an agent on its own; to change a decision, change its line. The reviewer never proposes against it, and before repeating a proposal of an earlier review it checks it against the current state of the unit, of the design and of this file: what has been done or decided leaves the list of proposals awaiting a decision.
 
 ## Content language and UI language
 
@@ -335,6 +346,16 @@ feedback-incorrect: Review the section on length.
 Each key goes on one line. The key names inside directives (`question:`, `answer:`, `answers:`, `feedback-correct:`, `feedback-incorrect:`, `feedback:`, `title:`, `image:`, `position:`) and the objective key (`objective:`) are the ones of the content language shown here; a Spanish course writes `pregunta:`, `respuesta:`, `objetivo:`… (see [Resource types and directive keys by language](#resource-types-and-directive-keys-by-language)). Mixing languages is an error.
 
 `question:` is required, but `verify` only warns when `objective:` is missing. A question without `question:`, a `multi-select` with no `- [x]`, a `match` with no `::` pair or a `short-answer` without `answers:` passes `verify` and is published empty or broken, so check them by hand. `objective:` takes a unit objective id (`U1.1`); its value is not validated. Every question should also carry feedback (`feedback-correct:`, `feedback-incorrect:` or `feedback:`); that is an editorial rule that `verify` does not check.
+
+What `verify` cannot check, the writer follows and the review checks (skills `content-writing` and `content-review`):
+
+- Only the interface, the rule or the product as it is in the version the course teaches: never what it used to be ("it has been removed", "it used to be called"), unless the change is what the objective teaches.
+- A `sorting` or `order-words` question has only one defensible order, and its correct feedback says why.
+- The test bank puts the learner in new situations, not those of the practice (`verify` warns when a bank question shares too many words with a practice question, `rules › content.bank_practice_overlap`).
+- The incorrect feedback also explains the right answer (the calculation, the reason), because whoever fails reads it too; the text before an activity does not give the answer; a `fill-in-the-blank` accepts the synonyms a learner would write and never asks for a name the content made up.
+- Each learning activity keeps the type the design gives it (`verify` warns when its section has none of the directives of `directives › activity_types`; a `hotspot_analysis` is a scenario with `hotspots`, not a multi-select).
+- When the design is out of date (it contradicts the brief, the notes, `decisions.md` or the real interface), the writer follows it, marks the spot with `<!-- VERIFICAR -->` and lists it in its summary under "Design out of date" for a person to decide; it never writes around it.
+- The specifications of a media placeholder respect the style guide of the media (`theme/branding/media-style.md`), which the writer reads before describing a resource.
 
 ### Common errors
 
@@ -683,6 +704,9 @@ The numbers are the package defaults (`src/coursekit/defaults/rules.yaml`). A pr
 | Question objective | Every question directive has the objective key (`objective:` / `objetivo:`) | — | warning |
 | Common errors | Every error of `design/misconceptions.yaml` of the unit's objectives is in a distractor (`‹id›`) or a decision (`error:`); every id exists; no right option carries one | — | error (a distractor or a decision that loses points without one: warning) |
 | Question bank | `questions_per_objective` × number of distinct objectives assessed by an activity whose instrument is `cuestionario` (the value of the instrument field of the design, whatever the course language) | 5 per objective | warning |
+| Activity type | Each learning activity of the design is written, in its section (else the activities section), with a directive of its type (`directives › activity_types`) | see [`directives`](04-configuration.md#directives-directives-and-creator-bricks) | warning |
+| New situations in the test | No question of the bank shares `bank_practice_overlap` or more of its words with a practice question of `content.md` | 0.5 | warning |
+| Consequence of an error | In a simulation, a decision with `error` does not lead straight to a `good` ending, nor go where a right decision of its scene goes with no points, changes of state or feedback | — | warning |
 | Reflection | The summary section (the last one without it) has at least `reflections_per_unit` `:::reflection` | 1 | warning |
 | Readability | Per section, the share of sentences longer than `readability.long_sentence_words` and the readability index of the language (Szigriszt-Pazos in Spanish, Flesch in English), by the audience `readability.audience`; a section with fewer than `readability.min_sentences` sentences of prose is not measured | general audience: 30 words, at most 20 % long, index 55 | warning |
 | Inclusive language | `rules › inclusive_language`: with `neutral`, the words of `lang/<code>.yaml › inclusive` that name people in the generic masculine (one warning per word, with its lines and the neutral alternative) and the forms with a slash or an @; with `split`, the slashes. Code, comments and addresses are left out | `neutral` | warning |

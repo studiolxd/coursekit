@@ -589,7 +589,8 @@ def cmd_approve(args: argparse.Namespace) -> int:
         if not args.asset:
             print(t("commands", "approve_needs_asset"), file=sys.stderr)
             return 2
-        print(approve.approve_script(course, args.asset, confirm, do_commit=not args.no_commit))
+        ids = list(dict.fromkeys(i.strip() for value in args.asset for i in value.split(",") if i.strip()))
+        print(approve.approve_scripts(course, ids, confirm, do_commit=not args.no_commit))
     else:
         if args.unit is None:
             print(t("commands", "approve_needs_unit"), file=sys.stderr)
@@ -644,6 +645,7 @@ def cmd_brief(args: argparse.Namespace) -> int:
     if args.code:
         course = coursemod.load(project, args.code)
         new.ensure_brief(course["_dir"])
+        new.ensure_decisions(course["_dir"])  # the courses made before it had one
         if (general / "links.md").exists() or (general / "sources").exists():
             briefmod.build(general, project.root.name, args.refresh, log=log, language=project_language, importing=importing)
         rel = "../../../brief/index.md" if (general / "index.md").exists() else None
@@ -1017,10 +1019,14 @@ def cmd_media(args: argparse.Namespace) -> int:
         _mirror(course["_project"], course["code"])
         return 0
     if args.action in ("fit", "render"):
-        if not args.id or (args.action == "fit" and not args.size):
+        if not (args.id or args.file) or (args.action == "fit" and not args.size):
             print(t("commands", "media_fit_needs"), file=sys.stderr)
             return 2
-        print(mediamod.image_tool(course, args.id, args.action, args.size))
+        try:
+            print(mediamod.image_tool(course, args.id, args.action, args.size, args.file))
+        except (mediamod.MediaError, mediatools.ToolError) as exc:
+            print(t("commands", "error_line", text=exc), file=sys.stderr)
+            return 1
         return 0
     if args.action == "adopt":
         statesmod.ensure_active(course)
@@ -1430,7 +1436,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("gate", choices=("design", "content", "style", "media-style", "script"))
     p.add_argument("code", nargs="?", help=t("commands", "help_approve_code"))
     p.add_argument("--unit", type=int, help=t("commands", "help_approve_unit"))
-    p.add_argument("--asset", help=t("commands", "help_approve_asset"))
+    p.add_argument("--asset", action="append", help=t("commands", "help_approve_asset"))
     p.add_argument("--yes", action="store_true", help=t("commands", "help_approve_yes"))
     p.add_argument("--no-commit", action="store_true", help=t("commands", "help_approve_no_commit"))
     p.add_argument("--force", action="store_true", help=t("commands", "help_approve_force"))

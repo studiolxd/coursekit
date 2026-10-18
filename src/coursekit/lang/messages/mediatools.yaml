@@ -44,6 +44,6 @@ fitted: {es: "{path}: {before} → {after}", en: "{path}: {before} → {after}"}
 no_browser:
   es: "no hay Chrome, Chromium ni Edge en esta máquina para renderizar el SVG (instálalo o revisa el SVG en la vista previa del curso)"
   en: "there is no Chrome, Chromium or Edge on this machine to render the SVG (install one or check the SVG in the preview of the course)"
-render_failed: {es: "no se pudo renderizar {svg}", en: "could not render {svg}"}
+render_failed: {es: "no se pudo renderizar {svg} tras {attempts} intentos con Chrome", en: "could not render {svg} after {attempts} attempts with Chrome"}
 rendered: {es: "{svg} → {png} ({size})", en: "{svg} → {png} ({size})"}
 gemini_flex_busy: {es: "Gemini no tiene capacidad en el nivel flex ahora mismo (429/503 tras varios intentos): vuelve a intentarlo, o pon media.yaml › gemini › flex_fallback: true para pasar al nivel normal", en: "Gemini has no capacity in the flex tier right now (429/503 after several attempts): try again, or set media.yaml › gemini › flex_fallback: true to go on in the standard tier"}

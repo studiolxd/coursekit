@@ -5,7 +5,7 @@ brief/links.md and writes indications in brief/notes.md. This converts all of it
 brief/text/ and writes brief/index.md, which is what the design, writing and review agents read:
 
     sources/<path>      -> text/files/<path>.md   (MarkItDown)
-    links.md (URLs)     -> text/web/<site>/       (web2md.js, Node)
+    links.md (URLs)     -> text/web/<site>/       (web2md.js, Node; a link to a PDF or an Office file, with MarkItDown)
 
 Only new or changed files are converted; URLs are downloaded once (refresh downloads them again).
 Images are listed for the agents to open directly; audio and video need a transcript.
@@ -21,13 +21,16 @@ import os
 import re
 import shutil
 import subprocess
+import tempfile
+import urllib.parse
+import urllib.request
 from importlib import resources
 from pathlib import Path
 
 from coursekit import config as configmod
 from coursekit import exelearning, i18n
 from coursekit.lang import format_number
-from coursekit.util import sha256_file
+from coursekit.util import USER_AGENT, sha256_file
 
 WEB2MD = Path(str(resources.files("coursekit.tools").joinpath("web2md.js")))
 BLOCKED = re.compile(r"^BLOCKED\t(\S+)", re.M)  # what web2md says of a page that answered empty or with a check against robots
@@ -228,10 +231,50 @@ def _web2md(node: str, url: str, folder: Path, extra: list[str] | None = None) -
                           capture_output=True, text=True, encoding="utf-8", errors="replace")
 
 
+DOCUMENT_TYPES = {
+    "application/pdf": ".pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": ".pptx",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
+}
+
+
+def fetch_document(url: str) -> tuple[bytes, str] | None:
+    """The file behind a link when it is a document (PDF, Word, PowerPoint, Excel) and not a web page: its bytes and its
+    extension, by the type the server says or, when it says only "binary", by the extension of the address. None otherwise."""
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    try:
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            kind = resp.headers.get_content_type()
+            suffix = DOCUMENT_TYPES.get(kind)
+            if suffix is None and kind in ("application/octet-stream", "binary/octet-stream", "application/download"):
+                found = Path(urllib.parse.urlparse(resp.url).path).suffix.lower()
+                suffix = found if found in DOCUMENT_TYPES.values() else None
+            return (resp.read(), suffix) if suffix else None
+    except (OSError, ValueError):  # unreachable or not HTTP: web2md tries it and says what happened
+        return None
+
+
+def save_document(url: str, body: bytes, suffix: str, folder: Path) -> tuple[str, dict] | None:
+    """A downloaded document as Markdown in its folder of text/web/, as the files of sources/ are. A warning when it has no text."""
+    folder.mkdir(parents=True, exist_ok=True)
+    name = Path(urllib.parse.urlparse(url).path).stem or "document"
+    with tempfile.TemporaryDirectory() as tmp:
+        src = Path(tmp) / f"{name}{suffix}"
+        src.write_bytes(body)
+        text, problem = markitdown(src)
+    if problem:
+        return problem
+    if not (text or "").strip():
+        return note("document_no_text")
+    (folder / f"{name}.md").write_text(f"<!-- {url} -->\n\n{text.strip()}\n", encoding="utf-8", newline="\n")
+    return None
+
+
 def download_links(brief: Path, state: dict, refresh: bool, log=None, links: list[tuple[str, str]] | None = None
                    ) -> tuple[list[dict], int]:
     """Each link of links.md (or the `links` given) as Markdown in text/web/<site>/: a Storybook read whole from its manifests,
-    any other site with web2md."""
+    a link to a document (PDF, Office) with MarkItDown, any other site with web2md."""
     from coursekit import storybook
 
     web_root = brief / "text" / "web"
@@ -252,8 +295,19 @@ def download_links(brief: Path, state: dict, refresh: bool, log=None, links: lis
             done = storybook.download(root, folder)
             info.update(downloaded=dt.date.today().isoformat(), errors=False, storybook=root,
                         files=[p.relative_to(brief).as_posix() for p in done["files"]], manifests=done["manifests"])
+        elif (refresh or not folder.exists()) and (document := fetch_document(url)) is not None:
+            info.pop("storybook", None)
+            if folder.exists():
+                shutil.rmtree(folder)
+            if log:
+                log(i18n.t("brief", "downloading", url=url))
+            problem = save_document(url, *document, folder)
+            info.update(downloaded=dt.date.today().isoformat(), document=document[1].lstrip("."), blocked=[], rendered=0,
+                        errors=False, problem=list(problem) if problem else None)
         elif refresh or not folder.exists():
             info.pop("storybook", None)
+            info.pop("document", None)
+            info.pop("problem", None)
             if node is None:
                 failed += 1
                 rows.append({"url": url, "note": comment, "folder": None, "pages": 0, "words": 0,
@@ -284,7 +338,11 @@ def download_links(brief: Path, state: dict, refresh: bool, log=None, links: lis
             notes.append(note("pages_rendered", count=info["rendered"]))
         if info.get("storybook"):
             notes.append(note("storybook" if info.get("manifests") else "storybook_index_only"))
-        if folder.exists() and not pages and not info.get("blocked"):
+        if info.get("document"):
+            notes.append(note("document", kind=info["document"].upper()))
+        if info.get("problem"):
+            notes.append(tuple(info["problem"]))
+        elif folder.exists() and not pages and not info.get("blocked"):
             notes.append(note("no_web_text"))
         rows.append({"url": url, "note": comment, "folder": folder.relative_to(brief).as_posix() if folder.exists() else None,
                      "pages": len(pages), "words": sum(words(p.read_text(encoding="utf-8")) for p in pages),

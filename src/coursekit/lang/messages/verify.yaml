@@ -123,3 +123,10 @@ unit_short: {es: "unidad {unit} (curso importado): {words} palabras < {minimum} 
 unit_long: {es: "unidad {unit} (curso importado): {words} palabras, por encima de las {minimum} de sus {hours} h: se pasa", en: "unit {unit} (imported course): {words} words, above the {minimum} of its {hours} h: it runs over"}
 unit_inflated: {es: "unidad {unit} (curso importado): content.md tiene {words} palabras, más de {times} veces las {package} de su paquete: se ha añadido texto. El texto del cliente se reutiliza, no se reescribe (solo se añaden las actividades del diseño que el paquete no trae)", en: "unit {unit} (imported course): content.md has {words} words, more than {times} times the {package} of its package: text was added. The client's text is reused, not written again (only the activities of the design that the package lacks are added)"}
 unit_trimmed: {es: "unidad {unit} (curso importado): content.md tiene {words} palabras, menos de la mitad de las {package} de su paquete: puede faltar texto del cliente", en: "unit {unit} (imported course): content.md has {words} words, less than half of the {package} of its package: text of the client may be missing"}
+bank_repeats_practice:
+  es: "assessment.md:{line}: la pregunta comparte el {share} % de sus palabras con la práctica de content.md:{line_practice}: el test debe poner una situación nueva"
+  en: "assessment.md:{line}: the question shares {share} % of its words with the practice in content.md:{line_practice}: the test has to set a new situation"
+activity_type_not_written:
+  es: "la actividad «{title}» del diseño es de tipo {type}, pero su sección ({n}) no tiene ninguna de sus directivas ({directives})"
+  en: "the activity \"{title}\" of the design is of type {type}, but its section ({n}) has none of its directives ({directives})"
+

@@ -162,7 +162,7 @@ def transcript(course: dict, asset: dict) -> tuple[str, str]:
 
 def write(course: dict, asset_id: str) -> dict:
     """Writes the transcript and the descriptions next to the video and makes the transcript the one of the resource."""
-    ry, path, data = mediamod.load_manifest(course["_dir"])
+    _, _, data = mediamod.load_manifest(course["_dir"])
     asset = next((a for a in data["assets"] if str(a["id"]) == asset_id), None)
     if asset is None:
         raise AccessError(t("media", "asset_not_found", asset_id=asset_id))
@@ -173,7 +173,8 @@ def write(course: dict, asset_id: str) -> dict:
     out_text, out_vtt = video.with_suffix(".transcript.txt"), video.with_suffix(".descriptions.vtt")
     out_text.write_text(text, encoding="utf-8", newline="\n")
     out_vtt.write_text(vtt, encoding="utf-8", newline="\n")
-    asset["transcript"] = text.strip()
-    with path.open("w", encoding="utf-8", newline="\n") as fh:
-        ry.dump(data, fh)
+    with mediamod.editing_manifest(course["_dir"]) as fresh:
+        saved = next((a for a in fresh["assets"] if str(a["id"]) == asset_id), None)
+        if saved is not None:
+            saved["transcript"] = text.strip()
     return {"transcript": out_text, "descriptions": out_vtt, "scenes": text.count("\n\n") + 1}

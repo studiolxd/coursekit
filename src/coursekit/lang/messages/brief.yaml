@@ -56,6 +56,10 @@ note_pages_blocked:
   en: "{count} page(s) answered empty or with a check against robots and could not be opened in a browser of the machine (Chrome or Edge): {pages}. Look for another official source (for European law, the text of the Official Journal on boe.es)"
 note_pages_rendered: {es: "{count} página(s) leídas con el navegador de la máquina (la descarga directa estaba bloqueada)", en: "{count} page(s) read with the browser of the machine (the direct download was blocked)"}
 rendering: {es: "{url} está bloqueada para una descarga directa: abriéndola con el navegador de la máquina …", en: "{url} is blocked for a direct download: opening it with the browser of the machine …"}
+note_document: {es: "documento {kind} (convertido como los de sources/)", en: "{kind} document (converted as the ones in sources/)"}
+note_document_no_text:
+  es: "el documento no tiene texto que extraer (¿un PDF escaneado?): pásalo por OCR y déjalo en sources/"
+  en: "the document has no text to extract (a scanned PDF?): run it through OCR and put it in sources/"
 note_no_web_text:
   es: "no se extrajo texto (¿web con JavaScript?)"
   en: "no text was extracted (a web page that needs JavaScript?)"

@@ -363,7 +363,7 @@ def directive_brick(name: str, body: list[str], ctx: dict) -> dict:
         people = []
         course = ctx.get("course")
         for name in characters:
-            if course and storymod.is_learner(course, name):
+            if course and (storymod.is_learner(course, name) or storymod.is_anonymous(course, name)):
                 people.append({"name": name})
                 continue
             full = (storymod.canonical(course, name) if course and course.get("_dir") else None) or name

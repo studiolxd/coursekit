@@ -297,13 +297,13 @@ def replay(project, code: str, asset_id: str, backend_factory=None) -> dict:
               "warnings": session.warnings, "frames": len(list(capturemod.review_dir(course, asset_id).glob("t*.png"))),
               "samples": []}
     review = capturemod.write_review(course, asset_id, report)
-    ry, path, data, asset = capturemod.find_asset(course, asset_id)
+    _, _, _, asset = capturemod.find_asset(course, asset_id)
     previous = dict(asset.get("capture") or {})
     main = video or (shots[-1] if shots else None)
     asset["capture"] = {"state": "captured", "source": "replay", "engine": report["engine"], "at": sessionmod._now(),
                         "findings": findings, "warnings": session.warnings,
                         "file": main.relative_to(course["_dir"]).as_posix() if main else None, "masks": previous.get("masks")}
-    capturemod.save_manifest(ry, path, data)
+    capturemod.save_capture(course, asset_id, asset["capture"])
     return {"video": video, "shots": shots, "findings": findings, "warnings": session.warnings, "review": review,
             "events": events_path(video) if video else None}
 

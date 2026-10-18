@@ -143,6 +143,9 @@ content:
   interactive_per_hour: 4              # distinct interactive directives per content-section hour
   min_interactive_per_content_section: 1
   questions_per_objective: 5           # summative question bank, per objective of the unit
+  bank_practice_overlap: 0.5           # a question of the test bank whose words (question and options) are this share or more of
+                                       # all the words it and a practice question of the content have between them repeats its
+                                       # situation: the test has to be a new one. `verify` warns (0: not checked)
   reflections_per_unit: 1              # :::reflection in the summary section (or the last one): the learner looks back at what
                                        # they did and how they will apply it (warning only; 0: not checked)
   placeholder_types: [image, video, animated_gif, infographic, diagram, simulation, terminal_demo, audio]

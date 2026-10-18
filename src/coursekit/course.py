@@ -137,6 +137,7 @@ def rules(course: dict | None = None, project: Project | None = None) -> dict:
     content["non_interactive_directives"] = by_role("static")
     content["simulation_directives"] = by_role("simulation")
     content["component_equivalents"] = registry.get("component_equivalents") or {}
+    content["activity_types"] = registry.get("activity_types") or {}
     return cfg
 
 

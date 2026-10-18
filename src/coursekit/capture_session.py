@@ -338,13 +338,13 @@ class Session:
             report = {"engine": engine + (f" + {self.redactor.report.engine}" if self.redactor else ""), "findings": findings,
                       "warnings": self.warnings, "frames": len(self.shots), "samples": []}
             review = capturemod.write_review(self.course, self.asset_id, report)
-            ry, path, data, asset = capturemod.find_asset(self.course, self.asset_id)
+            _, _, _, asset = capturemod.find_asset(self.course, self.asset_id)
             previous_state = dict(asset.get("capture") or {})
             asset["capture"] = {"state": "captured", "source": "session", "engine": report["engine"], "at": _now(),
                                 "findings": findings, "warnings": self.warnings,
                                 "file": f"media/recordings/{self.asset_id}.png" if self.shots else None,
                                 "masks": previous_state.get("masks"), "replay": recorded or None}
-            capturemod.save_manifest(ry, path, data)
+            capturemod.save_capture(self.course, self.asset_id, asset["capture"])
             return {"brief": brief, "findings": findings, "file": asset["capture"]["file"], "review": review,
                     "replay": recorded}
         finally:

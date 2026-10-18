@@ -248,6 +248,62 @@ def check_questions(path: Path, directives, rules: dict, syntax: Syntax, report:
     return count
 
 
+def question_situation(body: list[str], tokens: dict, syntax: Syntax) -> str:
+    """What a question puts in front of the learner: its question and its options, without the feedback, the objective and
+    the ids of the common errors."""
+    keys = tokens["directive_keys"]
+    skip = tuple(f"{keys[k]}:" for k in ("feedback", "feedback_correct", "feedback_incorrect") if k in keys) + (syntax.question_key,)
+    return " ".join(re.sub(r"‹[^›]*›", "", b) for b in body if not b.strip().startswith(skip))
+
+
+MIN_SITUATION_TERMS = 6  # a shorter question says too little to tell whether it repeats a situation
+
+
+def check_bank_overlap(course: dict, practice: list, bank: list, rules: dict, syntax: Syntax, report: Report) -> None:
+    """A question of the test bank that repeats the situation of a practice question of the content (the test has to put the
+    learner in front of a new one): the words they share over all the words of both, from `bank_practice_overlap` up."""
+    from coursekit import sources
+
+    limit = float(rules.get("bank_practice_overlap") or 0)
+    if not limit:
+        return
+    tokens = coursemod.tokens(course)
+    stop = sources.stopwords(coursemod.language(course))
+    questions = set(rules["question_directives"])
+
+    def words(body: list[str]) -> set[str]:
+        return set(sources.terms(question_situation(body, tokens, syntax), stop))
+
+    seen = [(line, words(body)) for line, name, body in practice if name in questions]
+    seen = [(line, w) for line, w in seen if len(w) >= MIN_SITUATION_TERMS]
+    for line, name, body in bank:
+        mine = words(body) if name in questions else set()
+        if len(mine) < MIN_SITUATION_TERMS:
+            continue
+        for practice_line, theirs in seen:
+            share = len(mine & theirs) / len(mine | theirs)
+            if share >= limit:
+                report.warn(t("verify", "bank_repeats_practice", line=line, line_practice=practice_line, share=round(share * 100)))
+                break
+
+
+def check_activity_types(unit: dict, by_n: dict, activities_n: int | None, rules: dict, report: Report) -> None:
+    """Each learning activity of the design is written with a directive of its type (`directives › activity_types`)."""
+    from coursekit.localdesign import LEARNING_TYPES
+
+    wanted = rules.get("activity_types") or {}
+    ids = {slxd: own for own, slxd in LEARNING_TYPES.items()}
+    for act in (unit.get("activities") or {}).get("learning") or []:
+        kind = ids.get(str(act.get("type")), str(act.get("type")))
+        allowed = wanted.get(kind)
+        n = act.get("section") or activities_n
+        sec = by_n.get(n)
+        if not allowed or sec is None or set(sec.directives) & set(allowed):
+            continue
+        report.warn(t("verify", "activity_type_not_written", title=act.get("title") or "?", type=kind, n=n,
+                      directives=", ".join(allowed)))
+
+
 def learner_words(lines: list[str], syntax: Syntax, skip: tuple[str, ...] = ()) -> int:
     """Learner-facing words: without comments, directive fences, objective tags and placeholders, nor the body of the
     directives in `skip` (simulations: their time is counted apart) nor the `:::if` branch of adaptive blocks (the `:::else`
@@ -629,6 +685,7 @@ def verify_unit(course: dict, unit: dict) -> Report:
         shortfall(t("verify", "few_placeholder_types", count=len(kinds), needed=needed_types))
 
     quiet = list(parse_directives(Path("content.md"), text.splitlines(), rules, Report()))
+    check_activity_types(unit, by_n, activities, rules, report)
     content_questions = check_questions(content_path, quiet, rules, syntax, report)
     sims = course_simulations(course, rules)
     adaptive = check_adaptive(content_path, text.splitlines(), unit["n"], sims, report)
@@ -644,6 +701,7 @@ def verify_unit(course: dict, unit: dict) -> Report:
         directives = list(parse_directives(assessment_path, a_text.splitlines(), rules, report))
         assessment_directives = directives
         questions = check_questions(assessment_path, directives, rules, syntax, report)
+        check_bank_overlap(course, quiet, directives, rules, syntax, report)
         check_bank_format(course, assessment_path, directives, rules, report)
         passing = float(((course.get("design") or {}).get("grading") or {}).get("passing_score") or 50)
         # with a test, the grade is the test's: a scored simulation of the content does not count (in any backend)
@@ -687,6 +745,7 @@ def verify_unit(course: dict, unit: dict) -> Report:
             for line_no, line in enumerate(text.splitlines(), 1):
                 m = re.match(r"^\*\*(.+?):\*\*", line.strip())
                 if m and in_dialog(text.splitlines(), line_no) and not storymod.is_learner(course, m.group(1)) \
+                        and not storymod.is_anonymous(course, m.group(1)) and not storymod.avatar(course, m.group(1)) \
                         and storymod.canonical(course, m.group(1)) is None:
                     report.error(f"content.md:{line_no}: " + t("story", "unknown_speaker", name=m.group(1),
                                                                  learner=coursemod.tokens(course).get("learner", "")))

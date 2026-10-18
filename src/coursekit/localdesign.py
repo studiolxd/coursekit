@@ -558,9 +558,17 @@ def validation_problem(course: dict, required: bool = True) -> str | None:
         return None
     if not validation.is_file():
         return t("design", "validation_missing", code=course["code"]) if required else None
-    if validation.stat().st_mtime < matrix.stat().st_mtime - 1:
+    if validation.stat().st_mtime < matrix.stat().st_mtime - 1 and not _signed_as_is(course, matrix):
         return t("design", "validation_stale", code=course["code"])
     return None
+
+
+def _signed_as_is(course: dict, matrix: Path) -> bool:
+    """matrix.json saved again with the same content the last signature of the design has: its validation still holds."""
+    from coursekit.util import sha256_file
+
+    signed = [a for a in course.get("approvals") or [] if a.get("gate") == "design"]
+    return bool(signed) and signed[-1].get("snapshot_sha256") == sha256_file(matrix)
 
 
 def key_findings(course: dict, graph: dict) -> list[Finding]:

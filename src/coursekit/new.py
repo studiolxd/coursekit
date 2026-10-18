@@ -11,7 +11,7 @@ import json
 from importlib import resources
 from pathlib import Path
 
-from coursekit import config, course, identity, localdesign
+from coursekit import config, course, i18n, identity, localdesign
 from coursekit.i18n import t
 from coursekit.project import Project
 from coursekit.util import render, slugify
@@ -38,6 +38,19 @@ def ensure_brief(course_dir: Path) -> list[str]:
             (brief / name).write_text(_template("brief", name), encoding="utf-8", newline="\n")
             created.append(name)
     return created
+
+
+DECISIONS = "decisions.md"
+
+
+def ensure_decisions(course_dir: Path) -> bool:
+    """Create the course's record of human decisions (decisions.md, in the language of the interface) if missing."""
+    path = course_dir / DECISIONS
+    if path.exists():
+        return False
+    language = i18n.language() if i18n.language() in ("es", "en") else "en"
+    path.write_text(_template("course", language, DECISIONS), encoding="utf-8", newline="\n")
+    return True
 
 
 def create(
@@ -94,6 +107,7 @@ def create(
         (course_dir / sub).mkdir(parents=True, exist_ok=True)
     (course_dir / "course.yaml").write_text(text, encoding="utf-8", newline="\n")
     ensure_brief(course_dir)
+    ensure_decisions(course_dir)
     if design_tool == "local":  # the design agent fills it in
         (course_dir / localdesign.FILE).write_text(localdesign.template(code), encoding="utf-8", newline="\n")
     (course_dir / "media" / "manifest.yaml").write_text(

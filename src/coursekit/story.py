@@ -101,11 +101,37 @@ def canonical(course: dict, name: str) -> str | None:
     return first[0] if len(first) == 1 else None
 
 
+def speakers(course: dict) -> dict:
+    """`media.yaml › speakers` of the course: the speakers of the dialogues that get no portrait made for them."""
+    from coursekit import config as configmod
+
+    if not course.get("_project"):
+        return {}
+    return dict(configmod.effective("media", course["_project"], course).value.get("speakers") or {})
+
+
+def _named(names: object, name: str) -> bool:
+    return name.strip().casefold() in {str(n).strip().casefold() for n in names or []}
+
+
 def is_learner(course: dict, name: str) -> bool:
-    """The learner speaking in a dialogue ("Tú", "You"): they have no portrait."""
+    """The learner speaking in a dialogue ("Tú", "You", or a name of `speakers › learner`): they have no portrait."""
     from coursekit import course as coursemod
 
-    return name.strip().casefold() == str(coursemod.tokens(course).get("learner") or "").casefold()
+    learner = str(coursemod.tokens(course).get("learner") or "").casefold()
+    return name.strip().casefold() == learner or _named(speakers(course).get("learner"), name)
+
+
+def is_anonymous(course: dict, name: str) -> bool:
+    """A speaker that stands for anyone (`speakers › anonymous`: "Person", "Client"): no portrait, not in the cast."""
+    return _named(speakers(course).get("anonymous"), name)
+
+
+def avatar(course: dict, name: str) -> str | None:
+    """The image of the brand a speaker is always shown with (`speakers › avatars`: an AI assistant, a mascot), or None."""
+    wanted = name.strip().casefold()
+    return next((str(path) for who, path in (speakers(course).get("avatars") or {}).items()
+                 if str(who).strip().casefold() == wanted and path), None)
 
 
 def character_names(data: dict | None) -> set[str]:

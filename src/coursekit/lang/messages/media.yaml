@@ -36,6 +36,16 @@ theme_changed:
 asset_not_found:
   es: "no se encuentra el recurso {asset_id} (ejecuta antes `coursekit media extract`)"
   en: "asset {asset_id} not found (run `coursekit media extract` first)"
+file_not_found:
+  es: "no se encuentra {file} (ni en la carpeta del curso, ni en su media/, ni en la del proyecto)"
+  en: "{file} not found (not in the course folder, its media/ or the project folder)"
+avatar_missing: {es: "no se encuentra el avatar {path} (media.yaml › speakers › avatars)", en: "avatar {path} not found (media.yaml › speakers › avatars)"}
+media_style_notes_missing:
+  es: "la guía de estilo no recoge {count} indicación(es) de {path}: lee también las notas (mandan sobre la guía) y pide que se reescriba la guía"
+  en: "the style guide does not take {count} indication(s) of {path}: read the notes as well (they win over the guide) and ask for the guide to be written again"
+manifest_locked:
+  es: "otro proceso lleva más de dos minutos escribiendo en {path}: espera a que termine y vuelve a intentarlo"
+  en: "another process has been writing {path} for over two minutes: wait for it to finish and try again"
 bad_status:
   es: "el estado debe ser uno de {statuses}"
   en: "status must be one of {statuses}"
