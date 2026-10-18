@@ -11,6 +11,18 @@ come from. One theme per project, which every course inherits; a course can have
 
 {{> _slxd-tools}}
 
+## 0. Complete, do not redo
+
+When the theme is already defined (the tokens come from the platform theme or the stylesheet, `coursekit theme show`, and
+the style guide of the media exists), this run **completes** it: whatever is already there stays as it is and is not proposed
+again (the tokens, the roles, `config/video.yaml`, the sections of the guide, the template of the job aids). Find what is
+missing, compared with the steps below (a block of the style with nothing set from the brand, such as `media › job_aid` with
+only the defaults of coursekit; a section the guide does not have; a font, icon or logo of the brand added after the guide),
+and do only those steps for it. When you add to the guide, change only those sections, so the person reads only what is
+new before signing again. Redo a part only when the person asks for it in the arguments or in the session («redo the style
+of the videos», «review the whole theme»); a mere `/define-theme` with no indication completes. Say at the end what you
+added, what you left as it was, and that the guide asks for a new signature because of the added sections.
+
 ## 1. Where are we
 
 1. `coursekit theme show` (project) or `coursekit theme show --course <CODE>`. If the tokens already come from a

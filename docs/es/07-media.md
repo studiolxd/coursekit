@@ -490,7 +490,7 @@ Las infografías, los esquemas, los GIF, las simulaciones y los vídeos usan los
 
 ### Definir el tema
 
-El comando `/define-theme [CODE]` (agente de diseño; `coursekit run define-theme [CODE]` desde una terminal) hace todo el flujo, y `/new-course` recuerda a la persona que lo ejecute cuando el proyecto aún no tiene tokens:
+El comando `/define-theme [CODE]` (agente de diseño; `coursekit run define-theme [CODE]` desde una terminal) hace todo el flujo, y `/new-course` recuerda a la persona que lo ejecute cuando el proyecto aún no tiene tokens. Cuando el tema ya está definido (tokens derivados y una guía de estilo de los medios), lo **completa**: lo que existe se queda como está y no se vuelve a proponer, el agente añade solo lo que falta (un bloque del estilo aún con los valores por defecto de coursekit, como `media › job_aid`, o un apartado de la guía) y dice qué ha añadido; la guía pide entonces una firma nueva por esos apartados. Para rehacer una parte, pídelo: `/define-theme rehaz el estilo de los vídeos`. La primera vez:
 
 1. `coursekit theme show` indica si ya hay tokens y de dónde salen.
 2. El agente lista los temas de la plataforma (`list_themes`) y, con la persona, elige uno, crea uno (desde cero, desde un preajuste o como copia de otro) o adapta uno con `update_theme` usando los colores y las tipografías de la marca del cliente. Un cambio de tema en la plataforma cambia todos los contenidos que lo usan, así que un curso que necesita un aspecto propio recibe una copia del tema.

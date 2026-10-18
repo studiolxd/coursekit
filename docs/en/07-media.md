@@ -489,7 +489,7 @@ Infographics, diagrams, GIFs, simulations and videos use the colours and fonts o
 
 ### Define the theme
 
-The `/define-theme [CODE]` command (design agent; `coursekit run define-theme [CODE]` from a terminal) does the whole flow, and `/new-course` reminds the person to run it when the project has no tokens yet:
+The `/define-theme [CODE]` command (design agent; `coursekit run define-theme [CODE]` from a terminal) does the whole flow, and `/new-course` reminds the person to run it when the project has no tokens yet. When the theme is already defined (tokens derived and a style guide of the media), it **completes** it: what exists stays as it is and is not proposed again, the agent adds only what is missing (a block of the style still with the defaults of coursekit, such as `media › job_aid`, or a section of the guide) and says what it added; the guide then asks for a new signature because of those sections. To redo a part, say so: `/define-theme redo the style of the videos`. The first time:
 
 1. `coursekit theme show` tells whether tokens already exist and where they come from.
 2. The agent lists the themes of the platform (`list_themes`) and, with the person, picks one, creates one (from scratch, from a preset or as a copy of another) or adapts one with `update_theme` using the colours and fonts of the client's brand. A theme change in the platform changes every content that uses it, so a course that needs its own look gets a copy of the theme.

@@ -5,6 +5,7 @@ argument-hint: "[CODE]"
 
 Theme definition: $ARGUMENTS (without a course code, the theme of the project; with one, the own theme of that course).
 
-Load the `theme-definition` skill and follow it (it reads the brand material in `theme/branding/` and the project's choice,
+When the theme is already defined, this command completes what is missing and leaves the rest as it is; to redo a part,
+say so in the arguments (e.g. `/define-theme redo the style of the videos`). Load the `theme-definition` skill and follow it (it reads the brand material in `theme/branding/` and the project's choice,
 `project.yaml › theme › source`). Never write or edit `tokens.json` by hand: it is derived from the
 theme of the platform with `coursekit theme import`.
