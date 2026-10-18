@@ -21,7 +21,7 @@ DIRECTIVE = "labelled-graphic"
 RASTER = (".png", ".jpg", ".jpeg", ".webp")
 INK = "#6b7280"  # a subtle grey: it shows where the point goes without competing with the image
 HALO = "#ffffff"
-ARM = 0.009  # half the cross, as a share of the shorter side of the image
+ARM = 0.012  # half the cross, as a share of the shorter side of the image
 GROUP_RE = re.compile(r'\s*<g data-ck-anchor="[^"]*"[^>]*>.*?</g>', re.S)
 
 
