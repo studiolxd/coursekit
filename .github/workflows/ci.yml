@@ -12,8 +12,8 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
       - run: uv sync --group dev
       - run: uv run ruff check .
       - run: uv run pytest -q
@@ -27,8 +27,8 @@ jobs:
   capture:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg libgl1  # libgl1: what OpenCV needs on Linux
       - run: uv sync --group dev --extra capture
       - run: uv run pytest -q tests/test_capture.py tests/test_capture_browser.py tests/test_media_checks.py
