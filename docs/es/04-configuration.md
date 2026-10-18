@@ -371,8 +371,8 @@ Los perfiles de las aplicaciones web, los permisos de [`coursekit capture`](03-c
 | Clave | Por defecto | Significado |
 |---|---|---|
 | `enabled` | `false` | Si el proyecto captura o no. |
-| `grant_minutes` | `60` | Cuánto dura un permiso de `coursekit capture allow` si no dice `--minutes`. |
-| `modes` | `[browser, desktop]` | Las formas de capturar que permite el proyecto: `browser` (una aplicación web en un navegador que abre coursekit) y `desktop` (una ventana de un programa de la máquina). |
+| `grant_minutes` | `480` | Cuánto dura un permiso de `coursekit capture allow` si no dice `--minutes`. `0`: no caduca, dura hasta `coursekit capture revoke`. |
+| `modes` | `[browser, desktop, terminal]` | Las formas de capturar que permite el proyecto: `browser` (una aplicación web en un navegador que abre coursekit), `desktop` (una ventana de un programa de la máquina) y `terminal` (una shell propia en un escenario del curso, macOS y Linux). |
 | `profiles` | `{}` | Las aplicaciones web, un perfil cada una. La clave es el nombre que usa `coursekit capture login` (minúsculas, cifras y guiones). Cada uno tiene `start_url` (dónde se abre), `allow_domains` (los únicos dominios que puede abrir; un dominio cubre sus subdominios, y el dominio del inicio de sesión único también va aquí si el acceso pasa por uno) `account` (solo una etiqueta de qué cuenta es, nunca un nombre de usuario ni una contraseña), si hace falta `login: false` (un sitio que no necesita cuenta: sin `capture login`, y `start_url` puede faltar cuando el guion dice dónde empezar) y, si hace falta, `login_url` (el principio de la dirección de la página de acceso: llegar ahí termina una sesión de captura, y una persona vuelve a iniciar sesión). El nombre `course` está reservado: es el perfil incorporado que graba el propio curso ([`coursekit capture`](03-commands.md#coursekit-capture)). |
 | `browser.visible` | `true` | El navegador se ve mientras captura (una persona puede mirarlo); `false` lo abre oculto, para una máquina sin pantalla. |
 | `screenshot.max_edge` | `1920` | Píxeles del lado mayor de lo que ve el agente; sus coordenadas están en ese espacio. |
@@ -392,6 +392,13 @@ Los perfiles de las aplicaciones web, los permisos de [`coursekit capture`](03-c
 | `replay.type_delay_ms` | `70` | Milisegundos entre letras. |
 | `replay.fps` | `30` | Fotogramas por segundo del vídeo. |
 | `replay.cursor` | `true` | Un puntero visible y un círculo en cada clic (el screencast no dibuja el del sistema). |
+| `terminal.cols`, `terminal.rows` | `120`, `34` | Modo terminal: el tamaño de la terminal, salvo que el bloque `capture` del guion diga `terminal: {cols, rows}`. |
+| `terminal.width` | `1920` | Píxeles de ancho de las imágenes y del vídeo en los que se dibuja la terminal (el tamaño de la letra se ajusta). |
+| `terminal.font` | `""` | Ruta de una fuente monoespaciada; vacío: la primera que se encuentre (Menlo en macOS, DejaVu Sans Mono en Linux). |
+| `terminal.idle_limit` | `2` | Segundos: una pausa más larga de la grabación (el modelo pensando entre acciones) se acorta a esto. |
+| `terminal.folder` | `projects` | Dónde se monta un escenario, dentro de la carpeta personal (un `stage.yaml` puede decir su propia `folder`). |
+| `terminal.setup_timeout` | `600` | Segundos para cada orden del `setup` de un escenario. |
+| `terminal.palette` | clara, de alto contraste | `background`, `foreground` y los 16 colores `ansi` con los que se dibuja la terminal; el reproductor de un `.cast` los recibe también. Un programa que pinta sus propios colores los conserva. |
 | `raw.keep_days` | `7` | Días que se guarda fuera del proyecto el original de una grabación (para taparlo de nuevo tras un rechazo); se borra al aprobar la captura. |
 
 ```yaml

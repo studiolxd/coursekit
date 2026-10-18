@@ -127,6 +127,7 @@ voice_specs: {es: "MP3, la voz configurada (coursekit voice)", en: "MP3, the con
 
 adopt_missing: {es: "no existe el fichero {path} (una ruta desde la carpeta del curso o del proyecto)", en: "the file {path} does not exist (a path from the course or the project folder)"}
 interface_line: {es: "  muestra la interfaz de una aplicación real: solo material real (captura o grabación de una persona, vídeo de un canal oficial); nunca dibujada ni recreada", en: "  shows the interface of a real application: only real material (a capture or recording from a person, a video of an official channel); never drawn or recreated"}
+capturable_line: {es: "  el permiso de captura en vigor deja que lo grabe el agente de media (guion en {path}): /produce-media", en: "  the permission to capture in force lets the media agent record it (brief in {path}): /produce-media"}
 awaiting_line: {es: "  espera a una persona: guion en {path}, y la captura o grabación en {folder}.*", en: "  waits for a person: brief in {path}, and the capture or recording in {folder}.*"}
 classify_line: {es: "  ¿qué muestra? coursekit media set CODE {id} --depicts interface|concept (hace falta antes de producirlo con una receta generada)", en: "  what does it show? coursekit media set CODE {id} --depicts interface|concept (needed before it is made with a generated recipe)"}
 interface_no_option: {es: "  sin opción posible: hace falta material real de la aplicación (una persona lo aporta)", en: "  no option available: real material of the application is needed (a person provides it)"}

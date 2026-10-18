@@ -153,7 +153,7 @@ When `capture.yaml › enabled` is on, `coursekit agents` also registers `course
 | opencode | `opencode.json` | `mcp.coursekit-capture` with `type: local` and `command: [coursekit, capture, serve]` |
 | Codex | `.codex/config.toml` | `[mcp_servers."coursekit-capture"]` with `command` and `args` |
 
-Its tools mirror the actions of computer use, so any model knows how to use them: `session_start`, `screenshot`, `zoom`, `left_click`, `double_click`, `right_click`, `point`, `mouse_move`, `drag`, `scroll`, `type`, `key`, `wait`, `navigate`, `save_shot`, `record_start`, `record_stop` and `session_end`. A session starts only when a person allowed it (`coursekit capture allow`), and what the agent sees already has the personal data replaced; see [`coursekit capture`](03-commands.md#coursekit-capture). The headless media agent is allowed its tools. The images reach the model only if the tool passes the images of an MCP tool to it: Claude Code does; check it for the others.
+Its tools mirror the actions of computer use, so any model knows how to use them: `session_start`, `screenshot`, `zoom`, `left_click`, `double_click`, `right_click`, `point`, `mouse_move`, `drag`, `scroll`, `type`, `key`, `wait`, `navigate`, `save_shot`, `record_start`, `record_stop` and `session_end`, and, for the terminal mode, `read_screen`, `wait_for` and `point_text`. A session starts only when a person allowed it (`coursekit capture allow`), and what the agent sees already has the personal data replaced; see [`coursekit capture`](03-commands.md#coursekit-capture). The headless media agent is allowed its tools. The images reach the model only if the tool passes the images of an MCP tool to it: Claude Code does; check it for the others.
 
 ## Source search
 

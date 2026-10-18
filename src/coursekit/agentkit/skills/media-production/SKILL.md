@@ -76,14 +76,15 @@ What you may do with an `interface` resource, in this order:
    replace the placeholder with it (`coursekit videos propose <CODE> <address> --why "…" --for <id>`). While it waits for a
    person, and once approved, the resource is not made (the capture and the voice refuse it): go on with the other resources.
    Never put an address in the content yourself.
-2. **Real material that a person provides**, in `courses/<CODE>/media/recordings/<id>.mp4` (or `.png` for a capture). If it is
-   there, work from it: for a **video**, the recipe `screen-recording` (Remotion over the real recording: narration with the
+2. **Real material that a person provides**, in `courses/<CODE>/media/recordings/<id>.mp4` (or `.png` for a capture, `.cast`
+   for a terminal demo). If it is there, work from it: for a **video**, the recipe `screen-recording` (Remotion over the real recording: narration with the
    voice of the course, captions, zooms, highlights, the cursor of the recording; nothing of the screen is redrawn), with
    the `Screencast` component of `tools/remotion/src/Screencast.tsx`: its zooms follow what the narration names (`focus` with
    the `word` said and the `event` of `media/recordings/<id>.events.json`, or `fx`/`fy`), with the words of the narration
    (`<audio>.words.json`, written by `coursekit subtitles`); never guess a coordinate when there is an event; for an
    **image**, the recipe `screenshot` (crop it and mark it with numbers, frames or arrows; never redraw it); for a **GIF**, cut
-   and convert the recording with ffmpeg. Record it with the recipe and `--depicts interface`. When the project captures
+   and convert the recording with ffmpeg; for a **terminal demo**, the recipe `asciinema` (the person's `.cast` in the EMBED
+   package of the player; never retype or rerecord it). Record it with the recipe and `--depicts interface`. When the project captures
    (`coursekit config capture` › `enabled`), first cover the personal data of what the person provided:
    `coursekit capture redact <CODE> <id>` (the original leaves the project), and work from the covered file only after a
    person approved it (`coursekit capture approve`, which you may not run: tell them `coursekit capture review <CODE> <id>`).
@@ -98,16 +99,35 @@ What you may do with an `interface` resource, in this order:
    around the steps it shows), and `session_end`. The personal data on screen is already replaced with invented data: never
    try to undo it, never log in or type a password or a code, never leave the application. If a tool says that the
    permission or the session is gone, stop and tell the person what to run. The capture then waits for a person
-   (`coursekit capture review` and `approve`); compose the resource from it only once approved. For a video, after
+   (`coursekit capture review` and `approve`; in the handoff, coursekit approves it when your run ends, and you compose it in
+   the next one); compose the resource from it only once approved. For a video, after
    `session_end` run `coursekit capture replay <CODE> <id>`: it repeats the steps at the pace of a person and records the
    stretches you marked (if a step is not found, fix the `capture` block of the brief and run it again).
+
+   **In terminal mode** (the permission says `--mode terminal`: a program of the terminal, a command line, an installation)
+   the session is a shell of its own in a **stage** of the course, recorded as it goes, with no window of the person. Before
+   it, write the stage the brief needs in `courses/<CODE>/media/stages/<name>/`: `stage.yaml` (`title`; `setup`, the
+   commands that leave it ready, such as `git init` and a first commit; `home: clean` for a machine as just installed;
+   `hide: [<command>]` for a machine without that program; `env`) and `files/`, the project as it starts, with invented
+   data only. One stage serves every resource that shows the same project; what a resource needs on top (a file taken away,
+   a change already made) goes in `prepare: [...]` of its `capture` block, with `mode: terminal`, `stage: <name>` and, if
+   it needs another size, `terminal: {cols, rows}`. Try it with `coursekit capture stage <CODE> <name>` (it mounts it from
+   scratch and says where). Then `session_start`: read the screen with `read_screen` (the image with `screenshot` only
+   when the look matters), `type` and `key` as a person would, `wait_for` the text that says a program answered (a model
+   can take a while), `point_text` on what the narration names, `save_shot` for a capture, `record_start` and
+   `record_stop` around what the resource shows (without them, the whole session), and `session_end`: it writes
+   `media/recordings/<id>.cast` for a terminal demo (recipe `asciinema`), `<id>.mp4` and its `<id>.events.json` for a
+   video, `<id>.png` for a capture. The application is recorded as it is configured on this machine (its theme, its
+   colors, its size of text): never change its theme for a recording. There is no replay: if a take goes wrong, start another session (the stage is mounted
+   again from scratch). Never type a password, a key or a token, and never print the environment.
 4. **Nothing of the above exists yet: do not produce it.** Write the **brief for the person** in
    `courses/<CODE>/media/scripts/<id>.md` and leave the asset waiting:
-   `coursekit media set <CODE> <id> --status scripted --recipe screen-recording|screenshot --depicts interface`.
-   The brief says: what the resource teaches; the exact account, application and version to use; the steps in order (what to
+   `coursekit media set <CODE> <id> --status scripted --recipe screen-recording|screenshot|asciinema --depicts interface`.
+   The brief says: what the resource teaches; the exact account, application and version to use (as it is configured: never
+   ask for another theme or other colors); the steps in order (what to
    click or type, what must be on screen at each moment, with the labels as the application shows them); how long each one
    takes; the narration, sentence by sentence, ready to be spoken over the recording; the file name and format to deliver
-   (`media/recordings/<id>.mp4`, 1920 × 1080, no personal data on screen) and, for a video, what to highlight and where to
+   (`media/recordings/<id>.mp4`, 1920 × 1080, no personal data on screen; for a terminal demo `media/recordings/<id>.cast`) and, for a video, what to highlight and where to
    zoom. Never mark it `produced`. The handoff does not stop for it: the course is assembled with the placeholder showing,
    and the final report lists every resource that waits for a person.
 
@@ -202,7 +222,8 @@ credits.
   or quoted `Output` path). Otherwise animated SVG (`media/files/<id>.svg`) or a short Remotion
   composition exported to GIF. Creator rejects SVG as an image: an animated SVG goes up as an EMBED
   package, see step 4.
-- **Interactive terminal demo** — asciinema recording of the script's commands and an EMBED
+- **Interactive terminal demo** — asciinema recording of the script's commands (when it shows a real application, the
+  `.cast` of `media/recordings/`, from a person or a terminal capture) and an EMBED
   package (`media/src/<id>/index.html` with the player and `tokens.css`).
 - **Video** — a **montage** first (recipe `montage`, `coursekit video`): the video as data in
   `media/scripts/<id>.video.yaml`, scenes one after another, each with its `type`, its `props` and what it `says`; each lasts

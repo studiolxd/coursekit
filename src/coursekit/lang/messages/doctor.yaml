@@ -81,3 +81,7 @@ capture_screen_hint: {es: "Ajustes del Sistema › Privacidad y seguridad › Gr
 capture_accessibility: {es: "permiso de accesibilidad para la terminal (ratón y teclado)", en: "Accessibility permission for the terminal (mouse and keyboard)"}
 capture_accessibility_hint: {es: "Ajustes del Sistema › Privacidad y seguridad › Accesibilidad", en: "System Settings › Privacy & Security › Accessibility"}
 capture_opencv_hint: {es: "el extra capture (uv tool install \"slxd-coursekit[capture]\"); en Linux, además, sudo apt install libgl1", en: "the capture extra (uv tool install \"slxd-coursekit[capture]\"); on Linux, also sudo apt install libgl1"}
+capture_terminal_emulator: {es: "emulador de terminal del modo terminal (pyte)", en: "terminal emulator of the terminal mode (pyte)"}
+capture_terminal_font: {es: "fuente monoespaciada para dibujar la terminal ({font})", en: "monospaced font to draw the terminal ({font})"}
+capture_terminal_font_hint: {es: "pon la ruta de una en capture.yaml › terminal.font", en: "set the path of one in capture.yaml › terminal.font"}
+capture_terminal_windows: {es: "el modo terminal no funciona en Windows (no hay pseudoterminal): usa el modo desktop", en: "the terminal mode does not work on Windows (there is no pseudo-terminal): use the desktop mode"}

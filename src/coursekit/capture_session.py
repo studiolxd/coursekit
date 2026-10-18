@@ -40,7 +40,7 @@ from coursekit import redact as redactmod
 from coursekit.i18n import t
 from coursekit.mcpserver import ToolError
 
-RECIPES = ("screenshot", "screen-recording")
+RECIPES = capturemod.MODE_RECIPES["browser"]
 
 
 class SessionGone(ToolError):
@@ -138,6 +138,7 @@ class Session:
     redactor: redactmod.Redactor | None = None
     started_at: str = ""
     server: object | None = None  # the local server of the package of the course, when it is what is recorded
+    terminal: dict | None = None  # terminal mode: the stage, its folder and what covers its output
     _scale: float = 1.0  # model pixels → css pixels
 
     # the agent sees the screen at most `max_edge` wide or tall: these are its coordinates
@@ -245,6 +246,31 @@ class Session:
         if note.strip():
             step["note"] = note.strip()
         self.steps.append({"point": step})
+        if hasattr(self.backend, "mark"):  # terminal: the time of the point, for the zoom of the video
+            self.backend.mark("point", x=cx, y=cy, label=note.strip())
+
+    def point_text(self, text: str, note: str = "") -> None:
+        """Terminal: marks the first place a text is on screen, as `point` does."""
+        self.check()
+        found = self.backend.find_text(text) if hasattr(self.backend, "find_text") else None
+        if found is None:
+            raise ToolError(t("capture", "terminal_text_not_found", text=text))
+        self.point(found[0] / self._scale, found[1] / self._scale, note or text)
+
+    def read_screen(self) -> str:
+        self.check()
+        if not hasattr(self.backend, "screen_text"):
+            raise ToolError(t("capture", "terminal_only"))
+        return self.backend.screen_text()
+
+    def wait_for(self, text: str, timeout_ms: int) -> bool:
+        self.check()
+        if not hasattr(self.backend, "wait_for"):
+            raise ToolError(t("capture", "terminal_only"))
+        ms = max(0, min(int(timeout_ms), 600000))
+        found = self.backend.wait_for(text, ms)
+        self.steps.append({"wait_for": {"text": text, "found": found}})
+        return found
 
     def move(self, x: float, y: float) -> None:
         self.check()
@@ -311,9 +337,13 @@ class Session:
     def record(self, on: bool) -> None:
         self.check()
         self.steps.append({"record": "start" if on else "stop"})
+        if hasattr(self.backend, "mark"):
+            self.backend.mark("record", on=on)
 
     def end(self, notes: str = "") -> dict:
         """Writes the steps in the brief and leaves the capture waiting for a person."""
+        if self.terminal is not None:
+            return self._end_terminal(notes)
         try:
             size = {"width": self.backend.viewport[0], "height": self.backend.viewport[1]}
             if self.grant.get("mode") == "desktop":
@@ -351,6 +381,42 @@ class Session:
             self.close()
 
 
+    def _end_terminal(self, notes: str) -> dict:
+        """Terminal mode: the recording becomes the file the resource needs, and the capture waits for a review."""
+        from coursekit import capture_terminal
+
+        info = self.terminal
+        previous = read_block(self.course, self.asset_id)
+        block = {"mode": "terminal", **{k: previous[k] for k in ("stage", "prepare", "terminal") if k in previous},
+                 "steps": self.steps}
+        if previous.get("mask"):
+            block["mask"] = previous["mask"]
+        if notes.strip():
+            block["notes"] = notes.strip()
+        brief = write_block(self.course, self.asset_id, block)
+        _, _, _, asset = capturemod.find_asset(self.course, self.asset_id)
+        recipe = str(asset.get("recipe") or "")
+        review = capturemod.review_dir(self.course, self.asset_id)
+        recordings = self.course["_dir"] / "media" / "recordings"
+        if recipe == "screenshot" and not self.shots:
+            self.save_shot()  # the screen as it ended
+        out = capture_terminal.finish(self.backend, self.asset_id, recipe, recordings, review, capturemod.settings(self.project),
+                                      self.rules, info["who"], info["terms"])
+        self.warnings += out["warnings"]
+        main = out["file"] or (self.shots and recordings / f"{self.asset_id}.png") or None
+        findings = {kind: len(values) for kind, values in sorted(self.seen.items())}
+        if main is None:
+            return {"brief": brief, "findings": findings, "file": None}
+        report = {"engine": "terminal", "findings": findings, "warnings": self.warnings,
+                  "frames": out["frames"] + len(self.shots), "samples": []}
+        review_file = capturemod.write_review(self.course, self.asset_id, report)
+        asset["capture"] = {"state": "captured", "source": "session", "engine": "terminal", "at": _now(), "findings": findings,
+                            "warnings": self.warnings, "file": main.relative_to(self.course["_dir"]).as_posix(),
+                            "masks": (asset.get("capture") or {}).get("masks"), "replay": None}
+        capturemod.save_capture(self.course, self.asset_id, asset["capture"])
+        return {"brief": brief, "findings": findings, "file": asset["capture"]["file"], "review": review_file, "replay": False}
+
+
 def _now() -> str:
     return dt.datetime.now().astimezone().isoformat(timespec="seconds")
 
@@ -366,15 +432,18 @@ def start(project, code: str, asset_id: str, backend_factory=None, cursor: bool 
         _, _, _, asset = capturemod.find_asset(course, asset_id)
     except capturemod.CaptureError as exc:
         raise ToolError(str(exc)) from None
-    if asset.get("recipe") not in RECIPES:
-        raise ToolError(t("capture", "bad_recipe", id=asset_id, recipes=", ".join(RECIPES)))
+    grant = capturemod.active_grant(project, course["code"], asset_id)
+    recipes = capturemod.MODE_RECIPES.get(grant["mode"], RECIPES) if grant else RECIPES
+    if asset.get("recipe") not in recipes:
+        raise ToolError(t("capture", "bad_recipe", id=asset_id, recipes=", ".join(recipes)))
     try:
         mediascript.ready(course, asset_id)
     except mediascript.ScriptError as exc:
         raise ToolError(str(exc)) from None
-    grant = capturemod.active_grant(project, course["code"], asset_id)
     if grant is None:
         raise ToolError(t("capture", "no_grant", code=course["code"], id=asset_id))
+    if grant["mode"] == "terminal":
+        return _start_terminal(project, cfg, course, asset, asset_id, grant, backend_factory)
     if grant["mode"] == "desktop":
         return _start_desktop(project, cfg, course, asset, asset_id, grant, backend_factory)
     try:
@@ -486,6 +555,41 @@ def _start_desktop(project, cfg, course, asset, asset_id, grant, backend_factory
                       "", [], started_at=_now(), redactor=redactor, warnings=list(redactor.report.warnings))
     session.backend = backend_factory(str(grant["window"]))
     session.frame()  # the scale of the screen of the window (a Retina screen has two pixels per point)
+    return session
+
+
+def _start_terminal(project, cfg, course, asset, asset_id, grant, backend_factory) -> Session:
+    """A shell of its own in the stage the brief names: its output covered in the text, its screen drawn."""
+    from coursekit import capture_stage
+    from coursekit import capture_terminal as termmod
+
+    if not termmod.supported():
+        raise ToolError(t("capture", "terminal_unsupported"))
+    if backend_factory is None and not termmod.emulator_available():
+        raise ToolError(t("capture", "terminal_needs_pyte"))
+    block = read_block(course, asset_id)
+    if not block.get("stage"):
+        raise ToolError(t("capture", "terminal_needs_stage", path=brief_file(course, asset_id).name))
+    settings = dict(cfg.get("terminal") or {})
+    size = block.get("terminal") or {}
+    cols, rows = int(size.get("cols") or settings.get("cols") or 120), int(size.get("rows") or settings.get("rows") or 34)
+    font = termmod.find_font(str(settings.get("font") or ""))
+    if not font:
+        raise ToolError(t("capture", "terminal_no_font"))
+    try:
+        workspace = capture_stage.mount(project, course, str(block["stage"]), [str(c) for c in block.get("prepare") or []])
+    except capture_stage.StageError as exc:
+        raise ToolError(str(exc)) from None
+    rules, who, terms = _rules(cfg, course, asset, block)
+    terms += termmod.secret_terms(workspace.env)
+    session = Session(project, course, asset_id, grant, None, rules, int((cfg.get("screenshot") or {}).get("max_edge") or 1920),
+                      workspace.folder.name, [], started_at=_now())
+    session.terminal = {"stage": block["stage"], "folder": workspace.folder, "who": who, "terms": terms}
+    painter = termmod.Painter(cols, rows, int(settings.get("width") or 1920), font, dict(settings.get("palette") or {}))
+    delay = int((cfg.get("replay") or {}).get("type_delay_ms") or 70)
+    factory = backend_factory or termmod.TerminalBackend
+    session.backend = factory(workspace, cols, rows, painter, delay, lambda text: session.note_texts([text], who, terms)[0])
+    session.frame()
     return session
 
 
@@ -721,7 +825,9 @@ INSTRUCTIONS = (
     "(media/scripts/<id>.md): look with screenshot, act with the other tools (coordinates are those of the last screenshot), "
     "save the final capture with save_shot, mark the stretches of a video with record_start and record_stop, and finish "
     "with session_end. Personal data is already replaced on screen: never try to see the real data, never log in or type "
-    "a password (a person does it), and stop if a tool says the permission or the session is gone."
+    "a password (a person does it), and stop if a tool says the permission or the session is gone. In terminal mode the "
+    "session is a shell in the stage of the brief, recorded as it goes: read it with read_screen, type and press keys, wait "
+    "for the answers of a program with wait_for, mark what the narration names with point_text; there is no pointer."
 )
 
 
@@ -757,16 +863,30 @@ class Manager:
                 raise ToolError(t("capture", "session_running", id=self.session.asset_id))
             self.session = start(self.project, str(args["code"]), str(args["asset_id"]), self.factory)
             s = self.session
+            if s.terminal is not None:
+                notes = [t("capture", "terminal_started", id=s.asset_id, stage=s.terminal["stage"], folder=s.start_url)]
+                return [text("\n".join([*notes, *s.warnings, "", s.read_screen()])), image(s.screenshot())]
             notes = [t("capture", "session_started", id=s.asset_id, url=s.start_url, domains=", ".join(s.allow_domains))]
             notes += s.warnings
             return [text("\n".join(notes)), image(s.screenshot())]
+
+        def after(s: Session) -> list:
+            """What an action returns: the screen as text in a terminal (the image when asked), the screenshot elsewhere."""
+            if s.terminal is not None:
+                return [text(s.read_screen())]
+            return [image(s.screenshot())]
 
         def act(fn, *names, shot=True):
             def run(args):
                 values = [args[n] for n in names]
                 self._guarded(lambda: fn(self._current())(*values))
-                return [image(self._guarded(lambda: self._current().screenshot()))] if shot else [text("OK")]
+                return self._guarded(lambda: after(self._current())) if shot else [text("OK")]
             return run
+
+        def wait_for_tool(args):
+            found = self._guarded(lambda: self._current().wait_for(str(args["text"]), int(args.get("timeout_ms") or 30000)))
+            note = t("capture", "terminal_found" if found else "terminal_not_found", text=args["text"])
+            return [text(note + "\n\n" + self._guarded(lambda: self._current().read_screen()))]
 
         def end_tool(args):
             s = self._current()
@@ -786,6 +906,14 @@ class Manager:
                  "first screenshot.", schema({"code": string, "asset_id": string}, ["code", "asset_id"]), start_tool),
             Tool("screenshot", "The screen now, with personal data replaced.", schema(),
                  lambda a: [image(self._guarded(lambda: self._current().screenshot()))]),
+            Tool("read_screen", "Terminal: the text of the screen now, with personal data replaced.", schema(),
+                 lambda a: [text(self._guarded(lambda: self._current().read_screen()))]),
+            Tool("wait_for", "Terminal: wait until a text is on screen (at most timeout_ms, default 30000; the answer of a "
+                 "program can take a while).", schema({"text": string, "timeout_ms": num}, ["text"]), wait_for_tool),
+            Tool("point_text", "Terminal: mark the first place a text is on screen, where the video should zoom when the "
+                 "narration names it.", schema({"text": string, "note": string}, ["text"]),
+                 lambda a: [self._guarded(lambda: self._current().point_text(str(a["text"]), str(a.get("note") or "")))
+                            or text("OK")]),
             Tool("zoom", "A closer look at a region of the last screenshot (its coordinates).",
                  schema({**xy, "width": num, "height": num}, ["x", "y", "width", "height"]),
                  lambda a: [image(self._guarded(lambda: self._current().zoom(a["x"], a["y"], a["width"], a["height"])))]),
@@ -804,7 +932,8 @@ class Manager:
                  ["x1", "y1", "x2", "y2"]), act(lambda s: s.drag, "x1", "y1", "x2", "y2")),
             Tool("scroll", "Scroll at a point: dy > 0 goes down, dx > 0 goes right (pixels).",
                  schema({**xy, "dx": num, "dy": num}, ["x", "y", "dx", "dy"]), act(lambda s: s.scroll, "x", "y", "dx", "dy")),
-            Tool("type", "Type text into the focused field (never a password or a code).", schema({"text": string}, ["text"]),
+            Tool("type", "Type text into the focused field, or the terminal (never a password or a code).",
+                 schema({"text": string}, ["text"]),
                  act(lambda s: s.type, "text")),
             Tool("key", "Press a key or a combination, e.g. Enter, Tab, ctrl+a.", schema({"key": string}, ["key"]),
                  act(lambda s: s.key, "key")),

@@ -1,18 +1,22 @@
 # Real captures of an application that coursekit makes itself (`coursekit capture`), for the resources that show a real
-# interface (`depicts: interface`, recipes `screenshot` and `screen-recording`): instead of waiting for a person to drop the
-# file in media/recordings/<id>, an agent drives the application and coursekit captures it, with the permission of a person.
+# interface (`depicts: interface`, recipes `screenshot` and `screen-recording`, and `asciinema` in the terminal): instead of
+# waiting for a person to drop the file in media/recordings/<id>, an agent drives the application and coursekit captures it,
+# with the permission of a person.
 #
 # Nothing is captured until a project turns it on. Then a person, never an agent:
 #   - logs in once per application with `coursekit capture login PROFILE` (a browser of their own machine opens with a
 #     profile kept outside the project; coursekit never sees or stores the password);
-#   - gives a permission that expires with `coursekit capture allow CODE [ID…] --mode browser|desktop`.
+#   - gives a permission that expires (or not) with `coursekit capture allow CODE [ID…] --mode browser|desktop`.
+# The handoff approves by itself the captures its media agent made, as it signs every gate; its report lists them.
 # Use an account or an environment of tests with invented data: what hides real data is a safety net, not the main measure.
 enabled: false
 
-grant_minutes: 60              # how long a permission of `coursekit capture allow` lasts unless it says --minutes
+grant_minutes: 480             # how long a permission of `coursekit capture allow` lasts unless it says --minutes; 0: it does
+                               # not expire, it lasts until `coursekit capture revoke`
 
-modes: [browser, desktop]      # the ways of capturing a project allows: browser (a web application, driven in a browser
-                               # coursekit opens) and desktop (a window of a program of the machine)
+modes: [browser, desktop, terminal]  # the ways of capturing a project allows: browser (a web application, driven in a
+                               # browser coursekit opens), desktop (a window of a program of the machine) and terminal (a shell
+                               # of its own, in a pseudo-terminal, in a stage of the course: macOS and Linux)
 
 # The web applications, one profile each: the key is the name `coursekit capture login NAME` uses (lowercase letters,
 # digits and hyphens). Every address the capture opens must be on one of its `allow_domains` (a domain covers its
@@ -74,6 +78,23 @@ replay:
   type_delay_ms: 70            # between letters
   fps: 30                      # frames per second of the video
   cursor: true                 # a visible pointer and a ring on each click (the screencast does not draw the system one)
+
+# The terminal mode: a shell started in a stage of the course (media/stages/<name>/, mounted from scratch before each session),
+# its output covered in the text (the user, the home folder, the machine and the secret values too) and kept as a recording.
+# It becomes media/recordings/<id>.cast (a terminal demo), .mp4 with its .events.json (a video) or .png (a capture).
+terminal:
+  cols: 120                    # size of the terminal, unless the capture block of the brief says `terminal: {cols, rows}`
+  rows: 34
+  width: 1920                  # px wide of the images and the video it is drawn in (the font size follows)
+  font: ""                     # path of a monospaced font; empty: the first found (Menlo on macOS, DejaVu Sans Mono on Linux)
+  idle_limit: 2                # s: a longer pause (the model thinking between actions) is shortened to this
+  folder: projects             # where a stage is mounted, inside the home folder (a stage.yaml can say its own `folder`)
+  setup_timeout: 600           # s for each command of the setup of a stage
+  palette:                     # the colors it is drawn with (light and of high contrast), and of the player of a .cast
+    background: "#ffffff"
+    foreground: "#1f2328"
+    ansi: ["#24292f", "#cf222e", "#116329", "#6f4e00", "#0550ae", "#8250df", "#0a6a74", "#6e7781",
+           "#57606a", "#a40e26", "#1a7f37", "#7d5800", "#0969da", "#a475f9", "#1b7c83", "#8c959f"]
 
 raw:
   keep_days: 7                 # the original of a recording, kept outside the project to cover it again after a rejection;

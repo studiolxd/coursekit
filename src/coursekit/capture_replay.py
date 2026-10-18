@@ -113,7 +113,8 @@ def _point(session, step: dict, n: int) -> tuple[float, float]:
 
 
 def encode(frames: list[tuple[float, bytes]], target: Path, fps: int) -> None:
-    """The frames of a screencast (each with the time it appeared; the last one, empty, is when it stopped) as an MP4."""
+    """The frames of a screencast (each with the time it appeared; the last one, empty, is when it stopped) as an MP4. A frame
+    is a JPEG or a PNG."""
     ffmpeg = shutil.which("ffmpeg")
     if not ffmpeg:
         raise ReplayError(t("redact", "ffmpeg_missing"))
@@ -123,12 +124,13 @@ def encode(frames: list[tuple[float, bytes]], target: Path, fps: int) -> None:
     with tempfile.TemporaryDirectory() as tmp:
         folder = Path(tmp)
         lines = []
+        suffix = ".png" if shown[0][1].startswith(b"\x89PNG") else ".jpg"
         for i, (at, data) in enumerate(shown):
-            name = f"f{i:05d}.jpg"
+            name = f"f{i:05d}{suffix}"
             (folder / name).write_bytes(data)
             following = shown[i + 1][0] if i + 1 < len(shown) else frames[-1][0]
             lines += [f"file '{name}'", f"duration {max(1 / fps, following - at):.4f}"]
-        lines.append(f"file 'f{len(shown) - 1:05d}.jpg'")  # the concat demuxer needs the last one twice
+        lines.append(f"file 'f{len(shown) - 1:05d}{suffix}'")  # the concat demuxer needs the last one twice
         (folder / "list.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
         target.parent.mkdir(parents=True, exist_ok=True)
         total = max(1 / fps, frames[-1][0] - shown[0][0])  # the repeated last image would add its own length: cut it
@@ -221,6 +223,9 @@ def replay(project, code: str, asset_id: str, backend_factory=None) -> dict:
     """Repeats the steps of the brief of a resource, records its video and leaves the result waiting for a person."""
     cfg = capturemod.settings(project)
     pace = dict(cfg.get("replay") or {})
+    grant = capturemod.active_grant(project, code, asset_id)
+    if grant and grant.get("mode") == "terminal":  # a terminal session is recorded while it happens
+        raise ReplayError(t("capture", "terminal_no_replay", code=code, id=asset_id))
     try:
         session = sessionmod.start(project, code, asset_id, backend_factory, cursor=bool(pace.get("cursor", True)))
     except ToolError as exc:

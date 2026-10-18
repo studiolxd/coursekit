@@ -96,10 +96,13 @@ def capture_waiting(asset: dict) -> str | None:
     return state if state in ("captured", "rejected") and asset.get("status") not in ("produced", "uploaded") else None
 
 
+PERSON_RECIPES = ("screen-recording", "screenshot", "asciinema")  # recorded live from the real application: a person does it
+
+
 def awaiting_recording(asset: dict) -> bool:
     """A resource that shows a real interface and waits for a person to provide the capture or the recording."""
     return (asset.get("depicts") == "interface" and asset.get("status") == "scripted"
-            and asset.get("recipe") in ("screen-recording", "screenshot") and not (asset.get("capture") or {}).get("state"))
+            and asset.get("recipe") in PERSON_RECIPES and not (asset.get("capture") or {}).get("state"))
 
 
 def _script_lines(course: dict, asset: dict) -> list[str]:
@@ -461,6 +464,9 @@ def plan(course: dict) -> tuple[list[str], list[str]]:
     if missing:
         warnings.append(t("media", "media_style_notes_missing", count=len(missing), path=guide.parent.name + "/notes.md"))
     required, real = depicts_rules(cfg)
+    from coursekit import capture as capturemod
+
+    capturable = set(capturemod.capturable(course))
     for a in (a for a in data["assets"] if a.get("status") in ("pending", "scripted")):
         chain = options_for(a["type"], cfg, root)
         real_interface = a.get("depicts") == "interface"
@@ -474,6 +480,8 @@ def plan(course: dict) -> tuple[list[str], list[str]]:
             if waiting:
                 note = (a.get("capture") or {}).get("note") or "—"
                 lines.append(t("media", f"capture_{waiting}_line", code=course["code"], id=a["id"], note=note))
+            elif awaiting_recording(a) and str(a["id"]) in capturable:
+                lines.append(t("media", "capturable_line", path=f"media/scripts/{a['id']}.md"))
             elif awaiting_recording(a):
                 lines.append(t("media", "awaiting_line", path=f"media/scripts/{a['id']}.md", folder=f"media/recordings/{a['id']}"))
         elif a["type"] in required and not a.get("depicts"):

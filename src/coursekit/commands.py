@@ -283,9 +283,9 @@ def cmd_capture(args: argparse.Namespace) -> int:
             course = coursemod.load(project, args.target)
             statesmod.ensure_active(course)
             grant = capturemod.allow(project, course, args.ids, args.mode, args.profile, args.window, args.minutes)
-            print(t("capture", "allowed", code=grant["code"], mode=grant["mode"], what=grant["profile"] or grant["window"],
+            print(t("capture", "allowed", code=grant["code"], mode=grant["mode"], what=grant["profile"] or grant["window"] or "—",
                     assets=", ".join(grant["assets"] or []) or t("capture", "every_interface_asset"),
-                    until=grant["expires_at"]))
+                    until=grant["expires_at"] or t("capture", "no_expiry")))
         elif args.action == "revoke":
             done = capturemod.revoke(project, args.target)
             print(t("capture", "revoked" if done else "revoke_none", code=args.target))
@@ -305,6 +305,11 @@ def cmd_capture(args: argparse.Namespace) -> int:
                         review=result["review"].relative_to(project.root).as_posix()))
             elif args.action == "review":
                 print(capturemod.review(course, asset_id).relative_to(project.root).as_posix())
+            elif args.action == "stage":
+                statesmod.ensure_active(course)
+                workspace = capturemod.mount_stage(project, course, asset_id, args.prepare or [])
+                print(t("capture", "stage_mounted", name=asset_id, folder=workspace.folder.as_posix(),
+                        home=t("capture", "stage_home_clean") if workspace.home != Path.home() else t("capture", "stage_home_real")))
             elif args.action == "replay":
                 from coursekit import capture_replay
 
@@ -1551,7 +1556,7 @@ def register(sub: argparse._SubParsersAction) -> None:
 
     p = sub.add_parser("capture", help=t("commands", "help_capture"))
     p.add_argument("action", choices=("login", "logout", "profiles", "allow", "revoke", "redact", "review", "approve", "reject",
-                                      "serve", "replay"))
+                                      "serve", "replay", "stage"))
     p.add_argument("target", nargs="?", help=t("commands", "help_capture_target"))
     p.add_argument("ids", nargs="*", help=t("commands", "help_capture_ids"))
     p.add_argument("--mode", choices=capturemod.MODES, help=t("commands", "help_capture_mode"))
@@ -1561,6 +1566,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--file", help=t("commands", "help_capture_file"))
     p.add_argument("--note", help=t("commands", "help_capture_note"))
     p.add_argument("--mask", action="append", help=t("commands", "help_capture_mask"))
+    p.add_argument("--prepare", action="append", help=t("commands", "help_capture_prepare"))
     p.set_defaults(func=cmd_capture)
 
     p = sub.add_parser("download", help=t("commands", "help_download"))

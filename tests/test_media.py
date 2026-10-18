@@ -407,6 +407,9 @@ def test_a_resource_waiting_for_a_recording_does_not_hold_the_handoff(course, ca
     loaded = coursemod.load(find_project(), "PWD")
     assert handoff._pending_media(loaded) == []  # it waits for a person, not for the media agent
     assert [a["id"] for a in handoff.awaiting_recordings(loaded)] == ["U1-S2-M1"]
+    assert main(["media", "set", "PWD", "U1-S2-M1", "--recipe", "asciinema"]) == 0  # a terminal demo recorded live: a person too
+    loaded = coursemod.load(find_project(), "PWD")
+    assert handoff._pending_media(loaded) == [] and [a["id"] for a in handoff.awaiting_recordings(loaded)] == ["U1-S2-M1"]
     assert main(["media", "set", "PWD", "U1-S2-M1", "--recipe", "agent-svg"]) == 0  # a generated recipe: the media agent's again
     assert [a["id"] for a in handoff._pending_media(coursemod.load(find_project(), "PWD"))] == ["U1-S2-M1"]
 

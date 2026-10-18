@@ -98,12 +98,46 @@ Cada recurso de los tipos de `media › depicts › required_for` (imagen, infog
 
 - `coursekit media plan` ofrece para un recurso `interface` solo las opciones que parten de material real (`shows: interface`, más `imported`, `vhs` y `asciinema`), y avisa de que un recurso que no ha dicho qué muestra tiene que decirlo.
 - `coursekit media set --status produced` (o `uploaded`, la primera vez) rechaza una receta generada para un recurso `interface`, y para un recurso de esos tipos hecho con una receta generada que no ha dicho qué muestra. No tiene `--force`. Los recursos ya producidos no se vuelven a preguntar.
-- Lo que se puede hacer con un recurso `interface`, por este orden: **un vídeo de un canal oficial** (no es un recurso: es una dirección en el contenido, ver [`coursekit videos`](03-commands.md#coursekit-videos)); **material real que aporta una persona** en `courses/CODE/media/recordings/<id>.mp4` o `.png` (un vídeo se compone sobre la grabación real con locución, subtítulos, zooms y resaltados, receta `screen-recording`; una imagen es una captura real que solo se recorta y se marca, receta `screenshot`; un GIF es la grabación cortada y convertida); o, si todavía no hay, **no se produce nada**: el agente escribe el guion para la persona en `media/scripts/<id>.md` (qué mostrar, la cuenta y la versión que usar, los pasos con las etiquetas como las muestra la aplicación, la locución, el fichero que entregar) y deja el recurso en `scripted`.
+- Lo que se puede hacer con un recurso `interface`, por este orden: **un vídeo de un canal oficial** (no es un recurso: es una dirección en el contenido, ver [`coursekit videos`](03-commands.md#coursekit-videos)); **material real que aporta una persona** en `courses/CODE/media/recordings/<id>.mp4`, `.png` o `.cast` (un vídeo se compone sobre la grabación real con locución, subtítulos, zooms y resaltados, receta `screen-recording`; una imagen es una captura real que solo se recorta y se marca, receta `screenshot`; un GIF es la grabación cortada y convertida; una demo de terminal es el `.cast` de la persona en el reproductor, receta `asciinema`); o, si todavía no hay, **no se produce nada**: el agente escribe el guion para la persona en `media/scripts/<id>.md` (qué mostrar, la cuenta y la versión que usar, los pasos con las etiquetas como las muestra la aplicación, la locución, el fichero que entregar) y deja el recurso en `scripted`. Un recurso `scripted` con la receta `screen-recording`, `screenshot` o `asciinema` espera a una persona: el handoff no se para por él y lo lista en su informe.
 - **El orden se cumple, y el guion se aprueba antes.** Un vídeo oficial propuesto para el recurso (`coursekit videos propose … --for <id>`) impide capturarlo o locutarlo mientras espera a una persona, y para siempre si se aprueba. Y el guion de una grabación o de un montaje (sus pasos y su locución) lo aprueba una persona, `coursekit approve script CODE --asset ID`, antes de capturarlo o locutarlo, y de nuevo si cambia (`rules › review › scripts`; el handoff lo firma por sí solo).
 - **El propio curso**: un vídeo o una captura del curso (cómo se navega, una demo para el cliente) se graba con el perfil incorporado `course` y `start: unit:N`: el paquete del backend html servido en esta máquina, o el enlace de revisión de la unidad en creator, sin iniciar sesión. Mira [`coursekit capture`](03-commands.md#coursekit-capture).
 - **Datos personales en una grabación**: antes de usar una grabación o una captura que aportó una persona, `coursekit capture redact` saca el original del proyecto y tapa sus datos personales (correos, teléfonos, cuentas, documentos de identidad, nombres, caras, los términos del proyecto); una persona revisa el resultado y lo aprueba (`coursekit capture review`, `approve`), y hasta entonces el recurso no se puede producir. Mira [`coursekit capture`](03-commands.md#coursekit-capture).
-- **Capturas que hace el propio coursekit** (aplicaciones web): una persona prepara el perfil de la aplicación y da un permiso que caduca (`coursekit capture login` y `allow`); después `/produce-media` puede manejar la aplicación en el navegador y guardar la captura, con los datos personales sustituidos en pantalla antes de que el agente los vea; el vídeo se graba repitiendo sus pasos al ritmo de una persona (`coursekit capture replay`), y una persona aprueba el resultado. La ventana de un programa de escritorio funciona igual, tapada sobre los píxeles, en macOS, Windows y Linux con X11 (Windows y Linux aún no se han probado en máquinas reales).
-- Un recurso que espera una grabación no detiene el handoff: el curso se monta con el marcador a la vista, y el mensaje final del handoff lista cada recurso que espera a una persona, con la ruta de su guion, y cada captura con los datos personales tapados que espera revisión y aprobación (o que se rechazó); `coursekit media plan` también lo dice, con el comando que hay que ejecutar. Cuando la grabación está en `media/recordings/`, `/produce-media` compone el recurso.
+- **Capturas que hace el propio coursekit** (aplicaciones web): una persona prepara el perfil de la aplicación y da un permiso que caduca (`coursekit capture login` y `allow`); después `/produce-media` puede manejar la aplicación en el navegador y guardar la captura, con los datos personales sustituidos en pantalla antes de que el agente los vea; el vídeo se graba repitiendo sus pasos al ritmo de una persona (`coursekit capture replay`), y una persona aprueba el resultado. La ventana de un programa de escritorio funciona igual, tapada sobre los píxeles, en macOS, Windows y Linux con X11 (Windows y Linux aún no se han probado en máquinas reales). Un programa de la terminal se graba en una shell propia, en un escenario que prepara el agente: [Capturas de terminal y escenarios](#capturas-de-terminal-y-escenarios).
+- Un recurso que espera una grabación no detiene el handoff: el curso se monta con el marcador a la vista, y el mensaje final del handoff lista cada recurso que espera a una persona, con la ruta de su guion, y cada captura con los datos personales tapados que espera revisión y aprobación (o que se rechazó). Las capturas que hizo su propio agente de media las aprueba el handoff, como firma cada puerta, y su informe las lista para que una persona las mire después; `coursekit media plan` también lo dice, con el comando que hay que ejecutar. Cuando la grabación está en `media/recordings/`, `/produce-media` compone el recurso. Cuando hay un permiso de captura en vigor (`coursekit capture allow`) y su modo puede hacer un recurso que espera (el modo terminal hace `screenshot`, `screen-recording` y `asciinema`; el navegador y el escritorio, las dos primeras), ese recurso es trabajo del agente de media: el handoff le da sus rondas y `coursekit media plan` lo dice; el que no pudo capturar va al informe como antes.
+
+### Capturas de terminal y escenarios
+
+Un programa de la terminal (un agente de programación, una instalación, unas órdenes) lo graba el propio agente de media, en una shell propia: no se toca ninguna ventana de la persona y no hace falta ningún permiso de pantalla. Una persona lo permite una vez: `coursekit capture allow CODE --mode terminal` (con `--minutes 0`, hasta que se retire).
+
+El entorno de una grabación es un **escenario** del curso, que escribe el agente con datos inventados y que se guarda con el curso en `courses/CODE/media/stages/<nombre>/`:
+
+```
+media/stages/recipes/
+  stage.yaml
+  files/          # el proyecto tal como empieza, copiado entero
+```
+
+```yaml
+title: Recipe website with a search that ignores accents
+folder: projects        # dentro de la carpeta personal (por defecto capture.yaml › terminal.folder)
+setup:                  # órdenes que lo dejan listo, antes de cada sesión (no se graban)
+  - git init -q && git add -A && git commit -qm "First version"
+home: real              # real: la carpeta personal de esta máquina (la configuración y la sesión de los programas);
+                        # clean: una vacía, como una máquina recién instalada
+hide: [opencode]        # órdenes que no están en el PATH (una máquina sin el programa)
+env: {}                 # variables añadidas
+```
+
+Antes de cada sesión coursekit monta el escenario de cero en `<home>/<folder>/<nombre>`: copia `files/`, ejecuta su `setup` y el `prepare` del bloque `capture` del recurso (lo que ese necesita además: un fichero quitado, un cambio ya hecho), y arranca allí `bash` sin ningún fichero de arranque de la persona, con un prompt corto, el idioma del curso y un autor de git inventado. Así cada toma empieza limpia y se puede repetir. coursekit apunta las carpetas que crea y nunca borra ni pisa una que no haya creado. `home: clean` da una carpeta personal vacía (en el almacén de coursekit), y `hide` deja órdenes fuera del PATH (cada carpeta que tiene una se sustituye por enlaces a todo lo demás).
+
+```capture
+mode: terminal
+stage: recipes
+prepare: ["rm -f AGENTS.md"]
+terminal: {cols: 120, rows: 34}
+```
+
+La sesión se graba mientras ocurre y su salida se tapa en el texto (mira [`coursekit capture`](03-commands.md#coursekit-capture)); `session_end` deja el `.cast` de una demo de terminal (se ve con el reproductor y el texto se puede copiar), el `.mp4` de un vídeo con los sitios que nombra la locución (para los zooms de [El componente Screencast](#el-componente-screencast)) o el `.png` de una captura. Se dibuja con los colores propios del programa, sobre la paleta de `capture.yaml › terminal`. `coursekit capture stage CODE NOMBRE` monta un escenario para mirarlo o probarlo.
 
 ### Estados
 
@@ -696,7 +730,7 @@ tools/remotion/
 
 ### El componente Screencast
 
-`Screencast` es la composición de un tutorial sobre una grabación real (receta `screen-recording`): la grabación no se redibuja, y sus zooms se calculan a partir de datos, no van cocidos en el vídeo, así que un zoom se cambia cambiando un número y volviendo a renderizar. Usa los eventos de la grabación (`media/recordings/<id>.events.json`, que escribe `coursekit capture replay`) y las palabras de la locución (`<audio>.words.json`, que escriben `coursekit subtitles` o la voz de ElevenLabs). El zoom sigue a lo que nombra la locución, no a cada clic: un foco entra cuando se dicen sus palabras, se mantiene hasta el final de la frase (o `hold` segundos) y vuelve a la pantalla entera; dos focos cercanos en el tiempo pasan de uno a otro sin alejarse. Sin focos, los clics cercanos en el tiempo y en la pantalla se unen en un solo zoom sostenido. Escalar alrededor de un punto dentro del encuadre siempre lo cubre entero, así que nunca se ven los bordes.
+`Screencast` es la composición de un tutorial sobre una grabación real (receta `screen-recording`): la grabación no se redibuja, y sus zooms se calculan a partir de datos, no van cocidos en el vídeo, así que un zoom se cambia cambiando un número y volviendo a renderizar. Usa los eventos de la grabación (`media/recordings/<id>.events.json`, que escribe `coursekit capture replay` o una sesión de terminal) y las palabras de la locución (`<audio>.words.json`, que escriben `coursekit subtitles` o la voz de ElevenLabs). El zoom sigue a lo que nombra la locución, no a cada clic: un foco entra cuando se dicen sus palabras, se mantiene hasta el final de la frase (o `hold` segundos) y vuelve a la pantalla entera; dos focos cercanos en el tiempo pasan de uno a otro sin alejarse. Sin focos, los clics cercanos en el tiempo y en la pantalla se unen en un solo zoom sostenido. Escalar alrededor de un punto dentro del encuadre siempre lo cubre entero, así que nunca se ven los bordes.
 
 ```tsx
 import { Screencast } from "../Screencast";

@@ -128,6 +128,8 @@ report_title: {es: "{code} — {title}: informe del handoff", en: "{code} — {t
 report_assumptions: {es: "Decisiones del diseño sin confirmar ({path})", en: "Design decisions to confirm ({path})"}
 report_recordings: {es: "Grabaciones o capturas que tiene que hacer una persona", en: "Recordings or captures a person has to make"}
 report_captures: {es: "Capturas con datos personales tapados que revisar", en: "Captures with personal data covered to review"}
+report_captures_approved: {es: "Capturas que aprobó el handoff sin que nadie las revisara (mira que no quede ningún dato personal)", en: "Captures the handoff approved with no one reviewing them (check that no personal data is left)"}
+capture_approved_line: {es: "  · captura de {id} aprobada por {who}", en: "  · capture of {id} approved by {who}"}
 report_videos: {es: "Vídeos de sitios prohibidos por comprobar ({path})", en: "Videos of forbidden sites to check ({path})"}
 report_nothing: {es: "Nada pendiente de revisar.", en: "Nothing waiting for review."}
 report_stopped:

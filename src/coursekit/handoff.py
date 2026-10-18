@@ -24,7 +24,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from coursekit import approve, clientreview, config, fixes, identity, launch, localdesign, new, ttsbatch, verify
+from coursekit import approve, capture, clientreview, config, fixes, identity, launch, localdesign, new, ttsbatch, verify
 from coursekit import assemble as assemblemod
 from coursekit import course as coursemod
 from coursekit import media as mediamod
@@ -341,6 +341,33 @@ def captures_to_review(course: dict) -> list[dict]:
     return [a for a in data["assets"] if mediamod.capture_waiting(a)]
 
 
+def _approve_captures(ctx: Context) -> int:
+    """The captures the media agent made, covered and waiting for a review: nobody reviews the handoff, so it approves them
+    (a rejected one stays as it is: only a person rejects). The report lists them, for a person to look at later."""
+    approved = 0
+    for asset in captures_to_review(ctx.course()):
+        if mediamod.capture_waiting(asset) == "captured":
+            capture.decide(ctx.project, ctx.course(), str(asset["id"]), True, who=HANDOFF)
+            ctx.log(t("handoff", "capture_approved_line", id=asset["id"], who=HANDOFF.name))
+            approved += 1
+    return approved
+
+
+def _capturable(course: dict) -> list[dict]:
+    """What waits for a recording but the permission to capture in force lets the media agent make: its work, not a stop."""
+    ids = set(capture.capturable(course))
+    return [a for a in awaiting_recordings(course) if str(a["id"]) in ids]
+
+
+def approved_captures(course: dict) -> list[dict]:
+    """The captures the handoff approved by itself."""
+    if not course.get("_dir"):
+        return []
+    _, _, data = mediamod.load_manifest(course["_dir"])
+    return [a for a in data["assets"] if (a.get("capture") or {}).get("state") == "approved"
+            and (a.get("capture") or {}).get("by") == str(HANDOFF)]
+
+
 def awaiting_recordings(course: dict) -> list[dict]:
     """The resources that show a real interface and wait for a person to provide the capture or the recording."""
     if not course.get("_dir"):
@@ -425,8 +452,9 @@ def _in_sync(ctx: Context) -> bool:
 
 
 def _produce(ctx: Context, course: dict) -> None:
-    """The media agent produces the pending assets (with the theme defined first when they use it)."""
-    pending = _pending_media(course)
+    """The media agent produces the pending assets (with the theme defined first when they use it) and captures what the
+    permission in force lets it; a capture it could not make goes to the report, as any recording waiting for a person."""
+    pending = _pending_media(course) + _capturable(course)
     cfg = mediamod.config(course=course)
     needs_theme = any(a["type"] in (cfg.get("uses_theme") or []) for a in pending)
     if needs_theme and thememod.status(ctx.project, course).state != "derived":
@@ -448,11 +476,14 @@ def _produce(ctx: Context, course: dict) -> None:
             ctx.log(t("handoff", "signed_line", text=approve.approve_style(ctx.course(), lambda question: True, who=HANDOFF, via=VIA)))
         except approve.ApprovalError as exc:
             raise _stuck(ctx, "style_missing", None, why=str(exc)) from exc
-    log = None
-    for _ in range(ctx.rounds):
+    log, rounds, extra = None, 0, 0
+    while rounds < ctx.rounds:
+        rounds += 1
         _, log, summary = _agent(ctx, "media", "produce-media", ctx.code, "media")
+        if _approve_captures(ctx) and extra < ctx.rounds:  # what it captured is composed in another round
+            rounds, extra = rounds - 1, extra + 1
         pending = _pending_media(ctx.course())
-        if not pending or _cannot(ctx, log, "media"):
+        if not (pending or _capturable(ctx.course())) or _cannot(ctx, log, "media"):
             break
     if pending:
         raise _stuck(ctx, "media_pending", log, why=_why(ctx, log, summary, "media"), assets=", ".join(a["id"] for a in pending))
@@ -488,6 +519,8 @@ def write_report(course: dict, stopped: str | None = None) -> Path | None:
         (t("handoff", "report_recordings"), [f"{a['id']} ({a.get('title', '')}) → media/scripts/{a['id']}.md"
                                              for a in awaiting_recordings(course)]),
         (t("handoff", "report_captures"), [f"{a['id']} ({mediamod.capture_waiting(a)})" for a in captures_to_review(course)]),
+        (t("handoff", "report_captures_approved"), [f"{a['id']} ({a.get('title', '')}) → coursekit capture review {course['code']} "
+                                                    f"{a['id']}" for a in approved_captures(course)]),
         (t("handoff", "report_videos", path=videosmod.REPORT), [f"{(v.get('channel') or {}).get('name') or '—'} · {v['url']}"
                                                                for v in unchecked_videos(course)]),
     ]
@@ -534,7 +567,8 @@ def _media(ctx: Context, course: dict) -> None:
     _videos(ctx, course)
     mediamod.extract(course)
     _tts_batch(ctx, course, send=False)
-    if _pending_media(ctx.course()):
+    _approve_captures(ctx)  # left by an earlier run
+    if _pending_media(ctx.course()) or _capturable(ctx.course()):
         _produce(ctx, ctx.course())
     _tts_batch(ctx, ctx.course(), send=True)  # what the media agent left in the batch queue
     ctx.mirror()

@@ -15,7 +15,8 @@ not_logged_in: {es: "el perfil {name} no tiene sesión: una persona inicia sesi�
 desktop_needs_window: {es: "--mode desktop necesita --window: el nombre de la única ventana que se puede capturar", en: "--mode desktop needs --window: the name of the only window that may be captured"}
 not_interface: {es: "{ids} no son recursos de {code} que muestren una interfaz (coursekit media set CODE ID --depicts interface)", en: "{ids} are not resources of {code} that show an interface (coursekit media set CODE ID --depicts interface)"}
 no_interface_assets: {es: "{code} no tiene recursos que muestren una interfaz: no hay nada que capturar", en: "{code} has no resources that show an interface: there is nothing to capture"}
-bad_minutes: {es: "la duración del permiso tiene que ser mayor que cero", en: "the permission has to last more than zero minutes"}
+bad_minutes: {es: "la duración del permiso no puede ser negativa (0: hasta que se retire)", en: "the permission cannot last a negative time (0: until it is revoked)"}
+no_expiry: {es: "cuando se retire (coursekit capture revoke)", en: "when it is revoked (coursekit capture revoke)"}
 needs_target: {es: "{action} necesita el perfil o el código del curso", en: "{action} needs the profile or the code of the course"}
 needs_mode: {es: "allow necesita --mode browser o --mode desktop", en: "allow needs --mode browser or --mode desktop"}
 login_open: {es: "se abre el navegador con el perfil {name}: inicia sesión y ciérralo cuando termines (coursekit no ve la contraseña)", en: "the browser opens with the profile {name}: log in and close it when you are done (coursekit never sees the password)"}
@@ -90,3 +91,30 @@ course_needs_unit: {es: "el perfil course graba el propio curso: el bloque captu
 bad_unit: {es: "{start} no es una unidad del curso (start: unit:N)", en: "{start} is not a unit of the course (start: unit:N)"}
 no_package: {es: "la unidad {n} no está construida: coursekit assemble build {code} --unit {n}", en: "unit {n} is not built: coursekit assemble build {code} --unit {n}"}
 no_review_link: {es: "la unidad {n} no tiene enlace de revisión en creator todavía: lo crea el agente de montaje (/assemble)", en: "unit {n} has no review link in creator yet: the assembly agent creates it (/assemble)"}
+terminal_unsupported: {es: "el modo terminal necesita un pseudoterminal: solo macOS y Linux (en Windows, el modo desktop)", en: "the terminal mode needs a pseudo-terminal: macOS and Linux only (on Windows, the desktop mode)"}
+terminal_needs_pyte: {es: "el modo terminal necesita el emulador del extra capture de coursekit: uv tool install \"slxd-coursekit[capture]\"", en: "the terminal mode needs the emulator of the capture extra of coursekit: uv tool install \"slxd-coursekit[capture]\""}
+terminal_no_font: {es: "no se encuentra ninguna fuente monoespaciada para dibujar la terminal: pon su ruta en capture.yaml › terminal.font", en: "no monospaced font found to draw the terminal: set its path in capture.yaml › terminal.font"}
+terminal_needs_stage: {es: "el bloque capture de {path} no dice en qué escenario se graba (stage: NOMBRE, de media/stages/NOMBRE/)", en: "the capture block of {path} does not say which stage it is recorded in (stage: NAME, from media/stages/NAME/)"}
+terminal_failed: {es: "no se pudo abrir la shell del escenario: {reason}", en: "the shell of the stage could not start: {reason}"}
+terminal_ended: {es: "la shell del escenario se ha cerrado: termina con session_end y vuelve a empezar", en: "the shell of the stage has closed: finish with session_end and start again"}
+terminal_bad_key: {es: "«{key}» no es una tecla que se pueda enviar a la terminal (Enter, Tab, Escape, flechas, ctrl+c, shift+tab, F1…)", en: "«{key}» is not a key that can be sent to the terminal (Enter, Tab, Escape, arrows, ctrl+c, shift+tab, F1…)"}
+terminal_no_pointer: {es: "en la terminal no hay puntero: usa type, key y point_text", en: "the terminal has no pointer: use type, key and point_text"}
+terminal_no_navigate: {es: "la terminal no navega a direcciones: escribe la orden", en: "the terminal does not navigate to addresses: type the command"}
+terminal_only: {es: "esta herramienta es del modo terminal", en: "this tool belongs to the terminal mode"}
+terminal_text_not_found: {es: "«{text}» no está en la pantalla", en: "«{text}» is not on the screen"}
+terminal_found: {es: "«{text}» ya está en pantalla", en: "«{text}» is on screen"}
+terminal_not_found: {es: "«{text}» no ha salido en el tiempo de espera", en: "«{text}» did not come out in the time waited"}
+terminal_started: {es: "sesión de {id} en la terminal, en el escenario {stage} (carpeta {folder}); se graba desde ya y los datos personales ya están sustituidos", en: "session of {id} in the terminal, in the stage {stage} (folder {folder}); it is recorded from now on and personal data is already replaced"}
+terminal_leftover: {es: "puede quedar un dato personal en la grabación: {where}", en: "personal data may be left in the recording: {where}"}
+terminal_no_replay: {es: "una sesión de terminal se graba mientras ocurre: no se repite; empieza otra sesión de {id} (el agente de media, con el servidor de captura)", en: "a terminal session is recorded while it happens: it is not replayed; start another session of {id} (the media agent, with the capture server)"}
+stage_bad_name: {es: "«{name}» no es un nombre de escenario: minúsculas, cifras y guiones", en: "«{name}» is not a stage name: lowercase letters, digits and hyphens"}
+stage_missing: {es: "no existe el escenario {name}: falta {path}", en: "the stage {name} does not exist: {path} is missing"}
+stage_bad_file: {es: "el stage.yaml del escenario {name} no se puede leer: {error}", en: "the stage.yaml of the stage {name} cannot be read: {error}"}
+stage_bad_home: {es: "el escenario {name} tiene home: {value}; tiene que ser real o clean", en: "the stage {name} has home: {value}; it must be real or clean"}
+stage_not_ours: {es: "{path} ya existe y no lo creó coursekit: no se toca; cambia folder en el stage.yaml o mueve esa carpeta", en: "{path} already exists and coursekit did not make it: it is not touched; change folder in the stage.yaml or move that folder"}
+stage_timeout: {es: "la orden «{command}» del escenario no terminó en {seconds} s", en: "the command «{command}» of the stage did not finish in {seconds} s"}
+stage_failed: {es: "la orden «{command}» del escenario falló (código {code}): {reason}", en: "the command «{command}» of the stage failed (code {code}): {reason}"}
+stage_needs_grant: {es: "montar un escenario ejecuta sus órdenes: hace falta un permiso de captura en modo terminal para {code} (coursekit capture allow {code} --mode terminal)", en: "mounting a stage runs its commands: it needs a permission to capture in terminal mode for {code} (coursekit capture allow {code} --mode terminal)"}
+stage_mounted: {es: "escenario {name} montado en {folder} ({home})", en: "stage {name} mounted in {folder} ({home})"}
+stage_home_real: {es: "con la carpeta personal de esta máquina", en: "with the home folder of this machine"}
+stage_home_clean: {es: "con una carpeta personal vacía", en: "with an empty home folder"}

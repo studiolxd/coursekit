@@ -196,6 +196,15 @@ def capture_section(project: Project) -> Section | None:
             s.add(shutil.which("xdotool") is not None, "xdotool", t("doctor", "capture_xdotool_hint"))
         elif sys.platform == "win32":
             s.add(None, t("doctor", "capture_windows"))
+    if "terminal" in modes:
+        from coursekit import capture_terminal
+
+        if not capture_terminal.supported():
+            s.add(None, t("doctor", "capture_terminal_windows"))
+        else:
+            s.add(capture_terminal.emulator_available(), t("doctor", "capture_terminal_emulator"), hint)
+            font = capture_terminal.find_font(str((cfg.get("terminal") or {}).get("font") or ""))
+            s.add(bool(font), t("doctor", "capture_terminal_font", font=font or "—"), t("doctor", "capture_terminal_font_hint"))
     return s
 
 

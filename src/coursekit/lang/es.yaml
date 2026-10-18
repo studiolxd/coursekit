@@ -225,6 +225,7 @@ player:
 # Personas y empresas inventadas para `coursekit capture`: lo que sustituye en pantalla a los datos reales de una aplicación,
 # y los nombres y apellidos que ayudan a encontrar el nombre de una persona en una captura (se usan las listas de todos los
 # idiomas para encontrarlos). Los nombres van aparte para mujeres y hombres, para que el inventado conserve el género del real.
+locale: es_ES.UTF-8                    # the locale of a terminal capture (LANG)
 capture_people:
   women: [Lucía, María, Paula, Laura, Carmen, Ana, Sara, Marta, Elena, Isabel, Cristina, Raquel, Silvia, Patricia,
           Beatriz, Nuria, Irene, Alba, Julia, Clara, Andrea, Sofía]

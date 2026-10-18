@@ -35,7 +35,9 @@ from coursekit.i18n import t
 from coursekit.project import Project
 from coursekit.util import git, slugify
 
-MODES = ("browser", "desktop")
+MODES = ("browser", "desktop", "terminal")
+MODE_RECIPES = {"browser": ("screenshot", "screen-recording"), "desktop": ("screenshot", "screen-recording"),
+                "terminal": ("screenshot", "screen-recording", "asciinema")}  # a terminal session is also a terminal demo
 NAME_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,39}$")
 
 Launcher = Callable[[Path, str], None]
@@ -239,7 +241,8 @@ def _interface_assets(course: dict) -> dict[str, dict]:
 
 def allow(project: Project, course: dict, ids: list[str], mode: str, profile: str | None = None, window: str | None = None,
           minutes: float | None = None) -> dict:
-    """A person gives the permission to capture, until it expires. It replaces the one the course had."""
+    """A person gives the permission to capture, until it expires (0 minutes: until it is revoked). It replaces the one the
+    course had."""
     cfg = settings(project)
     _require_enabled(cfg)
     who = identity.current()
@@ -254,6 +257,12 @@ def allow(project: Project, course: dict, ids: list[str], mode: str, profile: st
         if not ready(project, profile, profile_config(cfg, profile)):
             raise CaptureError(t("capture", "not_logged_in", name=profile))
         window = None
+    elif mode == "terminal":  # a shell of its own, in a stage: no window and no profile
+        from coursekit import capture_terminal
+
+        if not capture_terminal.supported():
+            raise CaptureError(t("capture", "terminal_unsupported"))
+        profile = window = None
     else:
         if not (window or "").strip():
             raise CaptureError(t("capture", "desktop_needs_window"))
@@ -265,14 +274,43 @@ def allow(project: Project, course: dict, ids: list[str], mode: str, profile: st
     if not ids and not interface:
         raise CaptureError(t("capture", "no_interface_assets", code=course["code"]))
     minutes = float(minutes if minutes is not None else cfg.get("grant_minutes") or 0)
-    if minutes <= 0:
+    if minutes < 0:
         raise CaptureError(t("capture", "bad_minutes"))
     start = _now()
     grant = {"code": course["code"], "assets": list(ids) or None, "mode": mode, "profile": profile,
              "window": window.strip() if window else None, "by": str(who), "granted_at": _stamp(start),
-             "expires_at": _stamp(start + dt.timedelta(minutes=minutes))}
+             "expires_at": _stamp(start + dt.timedelta(minutes=minutes)) if minutes else None}
     _write_json(_grant_file(project, course["code"]), grant)
     return grant
+
+
+def capturable(course: dict) -> list[str]:
+    """The resources waiting for a recording that the permission in force lets the media agent capture (mode and recipe)."""
+    project = course.get("_project")
+    if project is None or not course.get("_dir") or not settings(project).get("enabled"):
+        return []
+    grant = active_grant(project, course["code"])
+    if grant is None:
+        return []
+    recipes = MODE_RECIPES.get(str(grant.get("mode")), ())
+    _, _, data = mediamod.load_manifest(course["_dir"])
+    return [str(a["id"]) for a in data["assets"] if mediamod.awaiting_recording(a) and a.get("recipe") in recipes
+            and (not grant.get("assets") or str(a["id"]) in grant["assets"])]
+
+
+def mount_stage(project: Project, course: dict, name: str, prepare: list[str]):
+    """Mounts a stage of the course to look at it or try it (`coursekit capture stage`): it runs the commands of the stage, so
+    it needs the permission of a person to capture in terminal mode."""
+    from coursekit import capture_stage
+
+    _require_enabled(settings(project))
+    grant = active_grant(project, course["code"])
+    if grant is None or grant.get("mode") != "terminal":
+        raise CaptureError(t("capture", "stage_needs_grant", code=course["code"]))
+    try:
+        return capture_stage.mount(project, course, name, prepare)
+    except capture_stage.StageError as exc:
+        raise CaptureError(str(exc)) from None
 
 
 def revoke(project: Project, code: str) -> bool:
@@ -287,12 +325,15 @@ def active_grant(project: Project, code: str, asset_id: str | None = None, now: 
     grant = _read_json(_grant_file(project, code))
     if not grant:
         return None
-    try:
-        expires = dt.datetime.fromisoformat(grant["expires_at"])
-    except (KeyError, TypeError, ValueError):
+    if "expires_at" not in grant:
         return None
-    if (now or _now()) >= expires:
-        return None
+    if grant["expires_at"] is not None:  # None: until it is revoked
+        try:
+            expires = dt.datetime.fromisoformat(grant["expires_at"])
+        except (TypeError, ValueError):
+            return None
+        if (now or _now()) >= expires:
+            return None
     if asset_id is not None and grant.get("assets") and asset_id not in grant["assets"]:
         return None
     return grant
@@ -440,9 +481,10 @@ def review(course: dict, asset_id: str) -> Path:
 
 
 def decide(project: Project, course: dict, asset_id: str, approved: bool, note: str | None = None,
-           masks: list[str] | None = None) -> dict:
-    """A person approves the covered capture (the original is deleted) or rejects it, saying what was left to cover."""
-    who = identity.current()
+           masks: list[str] | None = None, who: identity.Identity | None = None) -> dict:
+    """A person approves the covered capture (the original is deleted) or rejects it, saying what was left to cover. The
+    handoff approves it by itself (`who`), as it signs every gate."""
+    who = who or identity.current()
     if who is None:
         raise CaptureError(t("capture", "no_identity"))
     _, _, _, asset = find_asset(course, asset_id)

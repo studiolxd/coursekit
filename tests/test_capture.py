@@ -127,6 +127,18 @@ def test_a_grant_is_signed_expires_and_names_what_it_covers(course, browser, cap
     assert "had no permission" in capsys.readouterr().out
 
 
+def test_a_grant_of_zero_minutes_lasts_until_it_is_revoked(course, browser, capsys):  # noqa: F811
+    configure(course.parent.parent, grant_minutes=0)
+    interface_asset(course, capsys)
+    assert main(["capture", "allow", "PWD", "--mode", "desktop", "--window", "Terminal"]) == 0
+    assert "expires when it is revoked" in capsys.readouterr().out
+    project = find_project()
+    grant = capture.active_grant(project, "PWD", "U1-S2-M1", now=dt.datetime(2100, 1, 1).astimezone())
+    assert grant["expires_at"] is None
+    assert main(["capture", "revoke", "PWD"]) == 0
+    assert capture.active_grant(project, "PWD") is None
+
+
 def test_without_ids_a_grant_covers_every_resource_that_shows_an_interface(course, browser, capsys):  # noqa: F811
     root = course.parent.parent
     configure(root, grant_minutes=5)
@@ -148,7 +160,7 @@ def test_a_grant_is_refused_when_something_is_missing(course, browser, capsys, m
         (["--mode", "desktop", "--window", "W"], "the mode desktop is not allowed"),
         (["--mode", "browser"], "--mode browser needs --profile"),
         (["NOPE", "--mode", "browser", "--profile", "acme-admin"], "NOPE are not resources of PWD"),
-        (["--mode", "browser", "--profile", "acme-admin", "--minutes", "0"], "more than zero minutes"),
+        (["--mode", "browser", "--profile", "acme-admin", "--minutes", "-5"], "cannot last a negative time"),
     ]
     assert main(["capture", "login", "acme-admin"]) == 0
     for extra, text in cases:
@@ -1084,6 +1096,21 @@ def test_the_plan_and_the_handoff_say_which_captures_wait_for_a_person(recording
     assert main(["media", "plan", "PWD"]) == 0
     assert "capture rejected (a name in the header): cover it again" in capsys.readouterr().out
     assert media.capture_waiting({"capture": asset_capture(course_dir), "status": "scripted"}) == "rejected"
+
+
+def test_the_handoff_approves_the_captures_and_reports_them(recording, capsys):
+    from coursekit import handoff
+    from coursekit.course import load as load_course
+
+    assert main(["capture", "redact", "PWD", "U1-S2-M1"]) == 0
+    lines = []
+    ctx = handoff.Context(find_project(), "PWD", 2, lines.append, lambda: None)
+    handoff._approve_captures(ctx)
+    state = asset_capture(recording)
+    assert state["state"] == "approved" and state["by"] == str(handoff.HANDOFF) and "approved by Coursekit Handoff" in lines[0]
+    loaded = load_course(find_project(), "PWD")
+    assert handoff.captures_to_review(loaded) == [] and [a["id"] for a in handoff._pending_media(loaded)] == ["U1-S2-M1"]
+    assert "coursekit capture review PWD U1-S2-M1" in handoff.write_report(loaded).read_text(encoding="utf-8")
 
 
 def test_a_name_read_without_its_accents_is_still_a_name():
