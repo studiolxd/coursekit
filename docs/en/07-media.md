@@ -264,6 +264,22 @@ scenes:
 
 Before an audio or a video goes to the course, `coursekit media check CODE` looks at its loudness (EBU R128 for the web: -16 LUFS, peak -1 dBTP; `--fix` brings it there), at its captions (none faster than 17 characters per second) and at what it shows and does not say; `coursekit media sheet CODE ID` puts frames of a video in one image, to look at it without playing it. The limits are in `media.yaml › checks`. See [`coursekit media`](03-commands.md#coursekit-media).
 
+## Images with points
+
+An image that a `:::labelled-graphic` names, or the background of a simulation with hotspots that have an `area`, has
+**points**: `coursekit media extract` lists them in the manifest (`points`), so the media agent draws the image with room for
+them. Once the image is produced, [`coursekit media anchors CODE ID`](03-commands.md#coursekit-media) draws on it a numbered
+crosshair where each point goes, taken from the content (the `position` of the point, the centre of the `area` of the
+hotspot), and records them (`anchors`). The crosshairs **stay in the final image**: whoever reviews it sees where each point
+will be and can ask to move it. The image and the content always agree, because the crosshairs are drawn from the content:
+
+- A point with no `position` (the writer does not see the image): the media agent gives it one looking at the image, with
+  `--set "<point>=x,y"` (in % from the top left corner), which writes it in the content and draws the crosshair.
+- To move a point, the same `--set`; to move a hotspot, its `area` in the content, then `anchors` again.
+- `coursekit verify` fails when the content moved or added a point and the image was not drawn again, and warns of a point with
+  no position. An `uploaded` image whose crosshairs change goes back to `produced`, to upload it again; an SVG for creator is
+  exported to PNG after its crosshairs (`coursekit media render`).
+
 ## Job aids
 
 A **job aid** (`job_aid`) is a checklist or a quick guide the learner downloads as a PDF to use at work, when the procedure

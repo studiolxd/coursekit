@@ -344,6 +344,14 @@ def _extract(course: dict, data: dict) -> dict[str, int]:
         orphan["status"] = "orphaned"
         merged.append(orphan)
     data["assets"] = merged
+    from coursekit import anchors as anchorsmod
+
+    with_points = anchorsmod.points_of(course, merged)
+    for asset in merged:  # the images with points: the media agent leaves room and their crosshairs are drawn on them
+        if with_points.get(asset["id"]):
+            asset["points"] = [p.label for p in with_points[asset["id"]]]
+        else:
+            asset.pop("points", None)
     for asset in merged:
         if asset.get("avatar") and asset.get("status") in (None, "pending"):
             _take_avatar(course, asset)
@@ -652,6 +660,67 @@ def image_tool(course: dict, asset_id: str | None, action: str, size: str | None
     except brand.BrandError as exc:
         raise MediaError(str(exc)) from None
     return mediatools.render_svg(path, path.with_suffix(".png"), mediatools.parse_size(size) if size else None, fonts_css)
+
+
+def anchors(course: dict, ids: list[str] | None = None, sets: list[str] | None = None) -> list[str]:
+    """Draws the crosshairs of the points on their images (all of them, or the ones named) from the content, and records them
+    in the manifest. `sets` ("<point>=x,y", with one image named) first writes the position of those points in the content."""
+    from coursekit import anchors as anchorsmod
+    from coursekit.lang import directive_key
+
+    with editing_manifest(course["_dir"]) as data:
+        live = [a for a in data["assets"] if a.get("status") != "orphaned"]
+        if sets:
+            if not ids or len(ids) != 1:
+                raise MediaError(t("anchors", "set_needs_one_image"))
+            key = directive_key(coursemod.tokens(course), "position")
+            for item in sets:
+                label, _, value = item.partition("=")
+                parts = [v.strip() for v in value.split(",")]
+                try:
+                    at = (float(parts[0]), float(parts[1]))
+                except (ValueError, IndexError):
+                    raise MediaError(t("anchors", "bad_set", value=item)) from None
+                if not all(0 <= v <= 100 for v in at):
+                    raise MediaError(t("anchors", "bad_set", value=item))
+                points = anchorsmod.points_of(course, live).get(ids[0], [])
+                point = next((p for p in points if p.label == label.strip()), None)
+                if point is None:
+                    raise MediaError(t("anchors", "unknown_point", label=label.strip(), asset=ids[0],
+                                       points=", ".join(p.label for p in points) or "-"))
+                if point.kind != "point":
+                    raise MediaError(t("anchors", "hotspot_moves_in_content", label=point.label))
+                anchorsmod.set_position(point, at, key)
+        out = []
+        for asset_id, points in anchorsmod.points_of(course, live).items():
+            if ids and asset_id not in ids:
+                continue
+            asset = next((a for a in live if a["id"] == asset_id), None)
+            if asset is None:
+                continue
+            missing = [p.label for p in points if p.at is None]
+            if missing:
+                out.append(t("anchors", "without_position", asset=asset_id, points=", ".join(missing), code=course["code"]))
+                continue
+            path = next((base / str(asset.get("file") or "") for base in (course["_dir"] / "media", course["_dir"])
+                         if asset.get("file") and (base / str(asset["file"])).is_file()), None)
+            if path is None:
+                out.append(t("anchors", "not_produced", asset=asset_id))
+                continue
+            marks = anchorsmod.recorded(points)
+            try:
+                anchorsmod.draw(path, marks)
+            except anchorsmod.AnchorError as exc:
+                raise MediaError(f"{asset_id}: {exc}") from None
+            changed = asset.get("anchors") != marks
+            asset["anchors"] = marks
+            if changed and asset.get("status") == "uploaded":  # the platform has the image without these crosshairs
+                asset["status"], asset["asset_path"] = "produced", None
+                asset["note"] = "The crosshairs changed: upload it again"
+            out.append(t("anchors", "drawn", asset=asset_id, count=len(marks), file=path.name)
+                       + (" " + t("anchors", "render_again", code=course["code"], asset=asset_id)
+                          if path.suffix.lower() == ".svg" and coursemod.backend(course) == "creator" else ""))
+        return out
 
 
 def render_job_aid(course: dict, asset_id: str) -> str:

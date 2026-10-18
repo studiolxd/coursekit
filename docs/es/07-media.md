@@ -264,6 +264,22 @@ scenes:
 
 Antes de que un audio o un vídeo vaya al curso, `coursekit media check CODE` revisa su sonoridad (EBU R128 para la web: -16 LUFS, pico -1 dBTP; `--fix` la corrige), sus subtítulos (ninguno más rápido de 17 caracteres por segundo) y lo que muestra y no dice; `coursekit media sheet CODE ID` pone fotogramas de un vídeo en una sola imagen, para mirarlo sin reproducirlo. Los límites están en `media.yaml › checks`. Mira [`coursekit media`](03-commands.md#coursekit-media).
 
+## Imágenes con puntos
+
+Una imagen que nombra un `:::labelled-graphic`, o el fondo de una simulación con zonas activas que tienen `area`, tiene
+**puntos**: `coursekit media extract` los anota en el manifiesto (`points`), así que el agente de multimedia dibuja la imagen
+dejándoles sitio. Con la imagen producida, [`coursekit media anchors CODE ID`](03-commands.md#coursekit-media) dibuja en ella
+una cruceta numerada donde va cada punto, tomada del contenido (la `posición` del punto, el centro del `area` de la zona) y las
+anota (`anchors`). Las crucetas **se quedan en la imagen final**: quien la revisa ve dónde irá cada punto y puede pedir
+moverlo. La imagen y el contenido coinciden siempre, porque las crucetas se dibujan desde el contenido:
+
+- Un punto sin `posición` (quien redacta no ve la imagen): el agente de multimedia se la da mirando la imagen, con
+  `--set "<punto>=x,y"` (en % desde la esquina superior izquierda), que la escribe en el contenido y dibuja la cruceta.
+- Para mover un punto, el mismo `--set`; para mover una zona, su `area` en el contenido, y después `anchors` otra vez.
+- `coursekit verify` falla cuando el contenido movió o añadió un punto y la imagen no se volvió a dibujar, y avisa de un punto
+  sin posición. Una imagen `uploaded` cuyas crucetas cambian vuelve a `produced`, para subirla otra vez; un SVG para creator se
+  pasa a PNG después de sus crucetas (`coursekit media render`).
+
 ## Ayudas de trabajo
 
 Una **ayuda de trabajo** (`job_aid`) es una lista de comprobación o una guía rápida que el alumno descarga en PDF para usarla

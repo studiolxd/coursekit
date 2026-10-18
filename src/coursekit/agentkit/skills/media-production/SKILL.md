@@ -144,6 +144,16 @@ credits.
 
 ## 3. Production by type
 
+- **An image with points** (`points` in the manifest: the points of a `:::labelled-graphic` that names it, or the hotspots
+  with an `area` of a simulation on that background) — draw it so that what each point names is clearly visible and has room
+  for its marker. Once it is produced, `coursekit media anchors <CODE> <id>` draws a numbered crosshair on the image where each
+  point goes, from the content, and records them: they stay in the final image, so whoever reviews it sees where each point
+  will be. A point without a position: look at the image and give it one, `--set "<point>=x,y"` (in % of the image, from the
+  top left corner), which writes it in the content too. Check that every crosshair falls on what its point names; if not, move
+  it the same way (a hotspot: its `area` in the content, then `anchors` again). Draw the crosshairs before exporting an SVG to
+  PNG (`coursekit media render`) and before uploading; `coursekit verify` fails when a point moved and the image was not drawn
+  again.
+
 - **Job aid (`job_aid`)** — a checklist or a quick guide the learner downloads as a PDF. Its text is the body of the
   placeholder, written and reviewed with the unit: never write, add or change its content; if it is wrong or missing, say so
   for the writer. `coursekit media render <CODE> <id>` lays it out with the template of the theme

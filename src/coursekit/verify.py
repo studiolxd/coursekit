@@ -454,6 +454,31 @@ def check_stretches(course: dict, label: str, lines: list[str], report: Report) 
             report.warn(t("verify", "long_stretch", label=label, words=count, limit=limit, start=readmod.start(run)))
 
 
+def check_anchors(course: dict, unit: dict, report: Report) -> None:
+    """The images with points of the unit: every point has a position, and the crosshairs drawn on a produced image are the
+    ones the content says (`coursekit media anchors`)."""
+    from coursekit import anchors as anchorsmod
+
+    manifest = course["_dir"] / "media" / "manifest.yaml"
+    if not manifest.exists():
+        return
+    assets = [a for a in (yaml.safe_load(manifest.read_text(encoding="utf-8")) or {}).get("assets") or []
+              if a.get("status") != "orphaned"]
+    here = anchorsmod.points_of(course, assets, [unit])
+    if not here:
+        return
+    every = anchorsmod.points_of(course, assets)
+    for asset_id, points in here.items():
+        for point in points:
+            if point.at is None:
+                report.warn(t("anchors", "point_without_position", line=point.line, label=point.label, asset=asset_id))
+        asset = next(a for a in assets if a["id"] == asset_id)
+        if asset.get("status") not in ("produced", "uploaded") or any(p.at is None for p in every[asset_id]):
+            continue
+        if asset.get("anchors") != anchorsmod.recorded(every[asset_id]):
+            report.error(t("anchors", "out_of_date", asset=asset_id, code=course["code"]))
+
+
 CHOICE_BRICKS = ("SINGLE_CHOICE", "MULTI_SELECT", "TRIVIAL")
 
 
@@ -694,6 +719,7 @@ def verify_unit(course: dict, unit: dict) -> Report:
             report.error(t("verify", "placeholder_missing_fields", line=ph.line, fields=", ".join(missing)))
         if syntax.media_type(ph.kind) == "job_aid" and not ph.body:
             report.error(t("verify", "job_aid_without_text", line=ph.line))
+    check_anchors(course, unit, report)
     kinds = {syntax.media_type(ph.kind) or ph.kind for ph in placeholders}
     needed_ph = math.ceil(float(unit["hours"]) * rules["placeholders_per_hour"])
     needed_types = min(rules["min_placeholder_types"], needed_ph)

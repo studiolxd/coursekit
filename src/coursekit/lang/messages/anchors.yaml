@@ -1,0 +1,40 @@
+# The crosshairs of the images with points (anchors.py, coursekit media anchors, verify).
+svg_without_size:
+  es: "el SVG no tiene viewBox ni width y height: no se puede situar una cruceta"
+  en: "the SVG has no viewBox nor width and height: a crosshair cannot be placed"
+not_an_image:
+  es: "{file} no es una imagen (SVG, PNG, JPEG o WebP): no se le pueden dibujar crucetas"
+  en: "{file} is not an image (SVG, PNG, JPEG or WebP): crosshairs cannot be drawn on it"
+set_needs_one_image:
+  es: "--set necesita un único recurso: coursekit media anchors CODE ID --set \"<punto>=x,y\""
+  en: "--set needs one asset: coursekit media anchors CODE ID --set \"<point>=x,y\""
+bad_set:
+  es: "«{value}»: se escribe <punto>=x,y, con x e y entre 0 y 100"
+  en: "«{value}»: it is written <point>=x,y, with x and y between 0 and 100"
+unknown_point:
+  es: "{asset} no tiene el punto «{label}»; sus puntos: {points}"
+  en: "{asset} has no point «{label}»; its points: {points}"
+hotspot_moves_in_content:
+  es: "«{label}» es una zona de una simulación: se mueve cambiando su area en el contenido"
+  en: "«{label}» is a hotspot of a simulation: it moves by changing its area in the content"
+without_position:
+  es: "{asset}: puntos sin posición ({points}); mira la imagen y dásela: coursekit media anchors {code} {asset} --set \"<punto>=x,y\""
+  en: "{asset}: points without a position ({points}); look at the image and give it one: coursekit media anchors {code} {asset} --set \"<point>=x,y\""
+not_produced:
+  es: "{asset}: aún no tiene fichero; las crucetas se dibujan cuando esté producido"
+  en: "{asset}: it has no file yet; the crosshairs are drawn once it is produced"
+drawn:
+  es: "{asset}: {count} crucetas en {file}"
+  en: "{asset}: {count} crosshairs on {file}"
+render_again:
+  es: "Pásalo otra vez a PNG para creator: coursekit media render {code} {asset}"
+  en: "Export it to PNG again for creator: coursekit media render {code} {asset}"
+point_without_position:
+  es: "content.md:{line}: el punto «{label}» de {asset} no tiene posición: el agente de multimedia se la da mirando la imagen (coursekit media anchors --set)"
+  en: "content.md:{line}: the point «{label}» of {asset} has no position: the media agent gives it one looking at the image (coursekit media anchors --set)"
+out_of_date:
+  es: "{asset}: las crucetas de la imagen no son las del contenido (se movió o se añadió un punto): coursekit media anchors {code} {asset}"
+  en: "{asset}: the crosshairs of the image are not the ones of the content (a point moved or was added): coursekit media anchors {code} {asset}"
+nothing:
+  es: "ninguna imagen con puntos"
+  en: "no image with points"

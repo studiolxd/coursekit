@@ -18,7 +18,9 @@ objetivo–contenido–actividad–evaluación, que ya está.
   plantilla en la huella de la firma de la guía (`mediastyle.fingerprint`), `ATTACHMENT` en los dos montajes.
 - **Pendiente de validar:** una ayuda subida a creator (`request_asset_upload` de tipo `attachment`) y el paquete html
   con una; el PDF con Chrome en Windows y Linux.
-- **Pendiente (tercera parte):** el arreglo de los puntos de los gráficos con zonas activas (apartado 6).
+- **Hecho (tercera parte):** crucetas de los puntos (`anchors.py`, `coursekit media anchors`, `--set`, `points` y `anchors`
+  en el manifiesto, `verify`), en `:::labelled-graphic` y en las zonas con `area` de las simulaciones.
+- **Pendiente de validar (tercera parte):** las crucetas en una imagen generada por API y en un fondo de simulación real.
 - **Pendiente de validar:** un curso expositivo completo escrito y revisado con el ciclo.
 
 ## Punto de partida
@@ -172,14 +174,16 @@ Propuesta:
 - Una imagen que no es SVG (generada por API, una captura) no tiene crucetas: el agente de medios escribe las posiciones
   mirando la imagen (`media set --anchor "<título>=x,y"`), y `verify` avisa de los puntos sin posición.
 
-Decisiones abiertas:
+Decidido:
 
-6a. ¿La cruceta se queda en la imagen final (la marca del punto la tapa) o se quita al exportar el PNG? Recomendación: se
-    quita en la exportación (una cruceta visible si el punto se desplaza un poco queda fea) y se guarda solo su posición.
-6b. Si hay `posición` escrita y cruceta, ¿cuál manda? Recomendación: la cruceta (es lo que dibuja la imagen); la posición
-    escrita queda como aviso de `verify`.
-6c. ¿Entran también las `area` de los hotspots de las simulaciones, o solo `:::labelled-graphic`? Recomendación: las dos,
-    con la cruceta en el centro del área.
+- **6a.** La cruceta **se queda en la imagen final**: quien revisa ve dónde irá cada punto y puede pedir moverlo.
+- **6b.** La cruceta y la posición escrita **coinciden siempre**: coursekit dibuja las crucetas desde lo escrito
+  (`posición:` de cada punto, centro del `area` de cada hotspot), así que no pueden diferir. `coursekit media anchors CODE
+  [ID]` las dibuja (SVG: un `<g data-ck-anchor>` por punto; PNG/JPEG/WebP: sobre una copia limpia que se guarda junto a la
+  imagen) y las anota en el manifiesto; con `--set "<punto>=x,y"` escribe además la `posición` del punto en el contenido. Un
+  punto sin posición se la da el agente de medios mirando la imagen. `verify` falla cuando las crucetas de una imagen ya no
+  coinciden con lo escrito (se movió un punto) y avisa de un punto sin posición.
+- **6c.** Las dos: `:::labelled-graphic` y los hotspots con `area` sobre un fondo (para moverlos se edita el `area`).
 
 ## Qué se toca
 

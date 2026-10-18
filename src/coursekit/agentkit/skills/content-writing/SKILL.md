@@ -101,6 +101,9 @@ final summary under "Design out of date" so that a person decides.
     link with the next unit. In an expository course with *integration* in the cycle, the reflection is the integration
     of the unit: its questions put the learner in their own work (the next time they face the problem of the
     introduction), and one sentence says what to do first. It takes no more words: the integration is the reflection.
+- **Points on an image** (`:::labelled-graphic`, the `area` of a hotspot): you do not see the image, so a point's `{{k_position}}`
+  is a first guess or nothing; the media agent places it on the image (`coursekit media anchors --set`) and the crosshairs drawn
+  on the image show where it went. Name each point after what it points at in the image.
 - **Job aids** (`{{t_job_aid}}`, the ones the design gives the unit in `proposal-notes.md`): a checklist or a quick guide
   the learner downloads to use at work, in the section where the procedure is taught. After the four fields, its text in
   Markdown on lines that also start with `>`: a `##` heading per block, steps as a numbered list, checks as `- [ ]` items
