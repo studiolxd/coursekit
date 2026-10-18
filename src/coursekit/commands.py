@@ -151,7 +151,10 @@ def cmd_handoff(args: argparse.Namespace) -> int:
             _handoff_report(project, code, str(exc))
         return 1
     print(t("handoff", "done", code=course["code"], who=handoffmod.HANDOFF.name))
-    recordings = handoffmod.awaiting_recordings(course)
+    capturable = {str(a["id"]) for a in handoffmod.capturable(course)}
+    if capturable and course["status"] == "delivered":  # granted after the delivery: a new version records them
+        print(t("handoff", "capturable_new_version", count=len(capturable), code=course["code"], list=", ".join(sorted(capturable))))
+    recordings = [a for a in handoffmod.awaiting_recordings(course) if str(a["id"]) not in capturable]
     if recordings:
         items = "; ".join(f"{a['id']} ({a.get('title', '')}) → media/scripts/{a['id']}.md" for a in recordings)
         print(t("handoff", "recordings_needed", count=len(recordings), list=items))

@@ -361,13 +361,13 @@ def _sign_capture_scripts(ctx: Context) -> None:
     course = ctx.course()
     if not mediascript.required(course):
         return
-    for asset in _capturable(course):
+    for asset in capturable(course):
         if mediascript.state(course, str(asset["id"])) in ("pending", "changed"):
             text = approve.approve_script(ctx.course(), str(asset["id"]), lambda question: True, who=HANDOFF, via=VIA)
             ctx.log(t("handoff", "signed_line", text=text))
 
 
-def _capturable(course: dict) -> list[dict]:
+def capturable(course: dict) -> list[dict]:
     """What waits for a recording but the permission to capture in force lets the media agent make: its work, not a stop."""
     ids = set(capture.capturable(course))
     return [a for a in awaiting_recordings(course) if str(a["id"]) in ids]
@@ -408,7 +408,7 @@ def _refresh_media(ctx: Context, course: dict) -> None:
     (`coursekit media redo`, after the theme changed)
     are produced. With the creator backend the produced ones are uploaded, which can only be done to the content of their unit that
     the assembly creates; then the course is assembled again so that they replace their placeholders."""
-    again = bool(_pending_media(course) or _capturable(course))  # also what a permission granted later lets it capture
+    again = bool(_pending_media(course) or capturable(course))  # also what a permission granted later lets it capture
     if again:
         _produce(ctx, course)
     creator = coursemod.backend(course) == "creator"
@@ -468,7 +468,7 @@ def _in_sync(ctx: Context) -> bool:
 def _produce(ctx: Context, course: dict) -> None:
     """The media agent produces the pending assets (with the theme defined first when they use it) and captures what the
     permission in force lets it; a capture it could not make goes to the report, as any recording waiting for a person."""
-    pending = _pending_media(course) + _capturable(course)
+    pending = _pending_media(course) + capturable(course)
     cfg = mediamod.config(course=course)
     needs_theme = any(a["type"] in (cfg.get("uses_theme") or []) for a in pending)
     if needs_theme and thememod.status(ctx.project, course).state != "derived":
@@ -498,7 +498,7 @@ def _produce(ctx: Context, course: dict) -> None:
         if _approve_captures(ctx) and extra < ctx.rounds:  # what it captured is composed in another round
             rounds, extra = rounds - 1, extra + 1
         pending = _pending_media(ctx.course())
-        if not (pending or _capturable(ctx.course())) or _cannot(ctx, log, "media"):
+        if not (pending or capturable(ctx.course())) or _cannot(ctx, log, "media"):
             break
     if pending:
         raise _stuck(ctx, "media_pending", log, why=_why(ctx, log, summary, "media"), assets=", ".join(a["id"] for a in pending))
@@ -583,7 +583,7 @@ def _media(ctx: Context, course: dict) -> None:
     mediamod.extract(course)
     _tts_batch(ctx, course, send=False)
     _approve_captures(ctx)  # left by an earlier run
-    if _pending_media(ctx.course()) or _capturable(ctx.course()):
+    if _pending_media(ctx.course()) or capturable(ctx.course()):
         _produce(ctx, ctx.course())
     _tts_batch(ctx, ctx.course(), send=True)  # what the media agent left in the batch queue
     ctx.mirror()

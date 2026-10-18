@@ -76,9 +76,9 @@ def test_the_plan_says_the_agent_records_what_the_grant_lets_it(course, capsys):
     assert main(["media", "plan", "PWD"]) == 0
     assert "lets the media agent record it" in capsys.readouterr().out
     loaded = load()
-    assert handoff._pending_media(loaded) == [] and [a["id"] for a in handoff._capturable(loaded)] == ["U1-S2-M1"]
+    assert handoff._pending_media(loaded) == [] and [a["id"] for a in handoff.capturable(loaded)] == ["U1-S2-M1"]
     assert main(["capture", "revoke", "PWD"]) == 0
-    assert handoff._capturable(load()) == []  # without the permission it waits for a person again
+    assert handoff.capturable(load()) == []  # without the permission it waits for a person again
 
 
 def test_a_replay_is_not_for_a_terminal(course, capsys):  # noqa: F811

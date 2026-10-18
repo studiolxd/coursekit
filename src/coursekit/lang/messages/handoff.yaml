@@ -135,3 +135,4 @@ report_nothing: {es: "Nada pendiente de revisar.", en: "Nothing waiting for revi
 report_stopped:
   es: "El handoff se ha parado en «{status}»: {reason}"
   en: "The handoff stopped at '{status}': {reason}"
+capturable_new_version: {es: "El permiso de captura en vigor deja que el agente de media grabe {count} recursos, pero el curso ya está entregado: sácalos en una versión nueva con coursekit handoff {code} --new-version ({list})", en: "The permission to capture in force lets the media agent record {count} resources, but the course is already delivered: make them in a new version with coursekit handoff {code} --new-version ({list})"}
