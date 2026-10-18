@@ -152,7 +152,7 @@ A placeholder reserves the place of an image, video or other resource until it i
 > **Specifications:** 1280x720 px, alt text required.
 ```
 
-The four fields are mandatory. The `<type>` is one of eight resource types, written with the word of the course language (in English: `Image`, `Video`, `Animated GIF`, `Infographic`, `Diagram`, `Interactive simulation`, `Interactive terminal demo`, `Audio`; the Spanish words are in the table below). Each type also has an id (`image`, `video`, `animated_gif`, `infographic`, `diagram`, `simulation`, `terminal_demo`, `audio`) used in the configuration and the manifest. Production is explained in [07-media.md](07-media.md).
+The four fields are mandatory. The `<type>` is one of nine resource types, written with the word of the course language (in English: `Image`, `Video`, `Animated GIF`, `Infographic`, `Diagram`, `Interactive simulation`, `Interactive terminal demo`, `Audio`, `Job aid`; the Spanish words are in the table below). Each type also has an id (`image`, `video`, `animated_gif`, `infographic`, `diagram`, `simulation`, `terminal_demo`, `audio`, `job_aid`) used in the configuration and the manifest. A **job aid** (a checklist or a quick guide the learner downloads as a PDF) has, after the four fields, its text in Markdown on lines that also start with `>` (`> ## Check`, `> - [ ] …` for a checkbox, `> 1. …`); its words do not count, and `verify` fails when it has none (see [Job aids](07-media.md#job-aids)). Production is explained in [07-media.md](07-media.md).
 
 ### What counts as a word
 
@@ -174,6 +174,7 @@ Some words of the format are written in the language of the course, but the conf
 | `simulation` | `Simulación interactiva` | `Interactive simulation` |
 | `terminal_demo` | `Demo interactiva en terminal` | `Interactive terminal demo` |
 | `audio` | `Audio` | `Audio` |
+| `job_aid` | `Ayuda de trabajo` | `Job aid` |
 
 - In `content.md` you write the **word** of the course language in the placeholder (`> **[MEDIA ASSET — Infographic]**`). Case and surrounding spaces do not matter, but accents do: in a Spanish course `Video` and `Infografia` are errors, only `Vídeo` and `Infografía` are accepted. The dash of the placeholder heading can be `—` or `-`.
 - Everywhere else the **id** is used: `content.placeholder_types` in `config/rules.yaml`, the keys of `types` and the `uses_theme` list in `config/media.yaml` (see [04-configuration.md](04-configuration.md)), and `type` in `media/manifest.yaml › assets`. `coursekit media extract` converts the word to the id, so the manifest is the same whatever the language of the course.

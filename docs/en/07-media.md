@@ -4,7 +4,7 @@ How media placeholders become produced assets: the manifest, the production opti
 
 ## Placeholders and types
 
-A media placeholder is written in `content.md` (format in [06-content.md](06-content.md#media-placeholders)). Its type is one of eight resource types. Each type has an English **id**, the same in every course, which is what the configuration (`config/media.yaml › types` and `uses_theme`, `config/rules.yaml › content.placeholder_types`), the media manifest (`media/manifest.yaml › assets[].type`), the output of `coursekit media plan` and the theme guard use. What the author **writes** in the placeholder is the word of the course language for that type (for example `Infographic` in an English course and `Infografía` in a Spanish one); the table that maps each id to its words is in [06-content.md](06-content.md#media-placeholders). The word of the other language is a `coursekit verify` error that lists the valid words.
+A media placeholder is written in `content.md` (format in [06-content.md](06-content.md#media-placeholders)). Its type is one of nine resource types. Each type has an English **id**, the same in every course, which is what the configuration (`config/media.yaml › types` and `uses_theme`, `config/rules.yaml › content.placeholder_types`), the media manifest (`media/manifest.yaml › assets[].type`), the output of `coursekit media plan` and the theme guard use. What the author **writes** in the placeholder is the word of the course language for that type (for example `Infographic` in an English course and `Infografía` in a Spanish one); the table that maps each id to its words is in [06-content.md](06-content.md#media-placeholders). The word of the other language is a `coursekit verify` error that lists the valid words.
 
 | Id | Meaning | Options, in order of preference (what each one needs) |
 |---|---|---|
@@ -16,6 +16,7 @@ A media placeholder is written in `content.md` (format in [06-content.md](06-con
 | `video` | Video | `remotion` (`node` and `tools/remotion/node_modules`) · `vhs` (terminal content only) |
 | `audio` | Audio | `voice` (nothing): the voice chain below |
 | `simulation` | Interactive simulation | `agent-html` (nothing): self-contained HTML/JS that uses `tokens.css` |
+| `job_aid` | Job aid | `agent-html-pdf` (a Chrome, Chromium or Edge): its text with the template of the theme, printed to PDF ([Job aids](#job-aids)) |
 
 "Nothing" means the agent produces it itself. The agent uses the first option it can actually run and records it in the manifest. The option descriptions that `coursekit media plan` prints come from the configuration and are written in English; a project can write its own in `config/media.yaml`.
 
@@ -262,6 +263,28 @@ scenes:
 ## Checking audios and videos
 
 Before an audio or a video goes to the course, `coursekit media check CODE` looks at its loudness (EBU R128 for the web: -16 LUFS, peak -1 dBTP; `--fix` brings it there), at its captions (none faster than 17 characters per second) and at what it shows and does not say; `coursekit media sheet CODE ID` puts frames of a video in one image, to look at it without playing it. The limits are in `media.yaml › checks`. See [`coursekit media`](03-commands.md#coursekit-media).
+
+## Job aids
+
+A **job aid** (`job_aid`) is a checklist or a quick guide the learner downloads as a PDF to use at work, when the procedure
+of a section is something they will do again. The design proposes the ones a unit needs; the writer writes its text in the
+body of its placeholder (after the four fields, on lines that start with `>`: `##` headings, numbered steps, `- [ ]` checks),
+so it is reviewed with the unit; the media agent never writes it.
+
+Every job aid of a project comes out of one **template**: `theme/templates/job-aid.html` of the course, else of the project,
+else the one of coursekit (neutral, with the tokens and the fonts of the brand). Its values in double braces are `lang`,
+`title`, `subtitle` (the course and the unit), `content` (the text as HTML; a list whose items all start with `[ ]` comes out
+as a checklist), `page`, `tokens_css` and `fonts_css`. The page is `media › job_aid` (`page`: `A4` by default, `A5`, `letter`,
+`legal` or a size such as `210mm 99mm`; `orientation`: `portrait` or `landscape`).
+
+- While the theme is defined, [`coursekit theme sample`](03-commands.md#coursekit-theme) prints a job aid with sample text to
+  `theme/branding/samples/job-aid.pdf`: the person opens it and asks for changes until it looks right.
+- The template is signed with the [style guide of the media](#the-style-guide-of-the-media): a change to it asks for a new signature.
+- `coursekit media render CODE ID` prints each job aid to `media/<id>.pdf` with the Chrome, Chromium or Edge of the machine.
+  The PDF is tagged (headings, lists, tables, the language and the title) and has the outline of its headings, so a screen
+  reader follows it; keep the template semantic for that.
+- In the course it is a download in place of its placeholder: an `ATTACHMENT` in creator (uploaded with
+  `request_asset_upload` of kind `attachment`) and a link in the html package.
 
 ## Upload to creator
 
@@ -533,7 +556,7 @@ With the html backend the tokens come from the CSS variables of the base layout 
 
 ### The media guard
 
-The asset types that use the tokens are listed in `uses_theme` of the media configuration (`infographic`, `diagram`, `animated_gif`, `simulation`, `video` and `terminal_demo` by default; see [04-configuration.md](04-configuration.md)). For them:
+The asset types that use the tokens are listed in `uses_theme` of the media configuration (`infographic`, `diagram`, `animated_gif`, `simulation`, `video`, `terminal_demo` and `job_aid` by default; see [04-configuration.md](04-configuration.md)). For them:
 
 - `coursekit media plan` warns when the course has assets of those types and its tokens are missing or were written by hand (neither `creator` nor `css` origin), and for each produced or uploaded asset that was made with other tokens than the current ones (produce it again).
 - `coursekit media set CODE ID --status produced` (or `uploaded`) is refused until the tokens are derived: from the platform theme (creator backend) or from the stylesheet of the project (html backend, `coursekit theme import FILE.css`). `--force` skips the check, for the rare case of a course that deliberately does not follow the theme.
@@ -680,6 +703,7 @@ import words from "../../../../courses/PWD/media/files/u1-s2-m1.words.json";
 | `video` | `node` + Remotion (`tools/remotion`), `ffmpeg`, a voice provider and `stable-ts` or ElevenLabs for captions; `vhs` for terminal videos. Also the theme tokens |
 | `audio` | A voice provider (`ffmpeg` for MP3 joining and Piper) |
 | `simulation` | None (HTML/JS by the agent with `tokens.css`) |
+| `job_aid` | A Chrome, Chromium or Edge (headless) |
 
 The types `infographic`, `diagram`, `animated_gif`, `simulation`, `video` and `terminal_demo` also need the theme tokens derived from the platform theme, or from the stylesheet with the html backend ([Theme tokens](#theme-tokens)).
 

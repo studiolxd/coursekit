@@ -49,6 +49,7 @@ media_types:
   simulation: Interactive simulation
   terminal_demo: Interactive terminal demo
   audio: Audio
+  job_aid: Job aid
 # Keys of the "key: value" lines of the directives (the objective key is question_objective_key) ...
 directive_keys:
   question: question
@@ -66,6 +67,27 @@ directive_words:
   "false": "false"
   starts: starts
   contains: contains
+
+# The sample of the job aids (`coursekit theme sample`): generic text to look at the template of the theme.
+job_aid_sample:
+  title: Before you create a password
+  subtitle: Sample job aid · Strong passwords
+  body: |
+    Use it every time an application asks you for a new password.
+
+    ## Check
+
+    - [ ] I open the password manager before I type anything.
+    - [ ] The password has at least 16 characters or is a phrase of four words.
+    - [ ] I do not use it in any other account.
+    - [ ] I turn on two-step verification if the application offers it.
+
+    ## If something goes wrong
+
+    1. If the application does not accept the length, use the longest it allows.
+    2. If you suspect a password has leaked, change it now and tell the support team.
+
+    > **Remember:** a long password resists more than a complicated one.
 
 # Texts of the interface of the html backend's package (buttons, feedback), in the language of the content.
 player:

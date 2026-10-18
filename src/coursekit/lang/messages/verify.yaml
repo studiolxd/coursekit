@@ -45,6 +45,9 @@ objective_not_tagged:
 unknown_placeholder_type:
   es: "content.md:{line}: tipo de recurso multimedia desconocido o no permitido '{kind}' (usa: {allowed})"
   en: "content.md:{line}: unknown or not allowed placeholder type '{kind}' (use: {allowed})"
+job_aid_without_text:
+  es: "content.md:{line}: la ayuda de trabajo no tiene texto: escríbelo después de los campos, en líneas que empiezan por `>` (lo que la persona descarga)"
+  en: "content.md:{line}: the job aid has no text: write it after the fields, in lines that start with `>` (what the learner downloads)"
 placeholder_missing_fields:
   es: "content.md:{line}: al recurso multimedia le faltan campos: {fields}"
   en: "content.md:{line}: placeholder missing fields: {fields}"

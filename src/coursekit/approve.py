@@ -199,7 +199,7 @@ def approve_media_style(course: dict, confirm: Confirm, do_commit: bool = True, 
                    + t("approve", "media_style_confirm", path=rel, code=course["code"], who=who)):
         raise ApprovalError(t("approve", "cancelled"))
     entry = {"gate": "media_style", "by": str(who), "at": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
-             "path": rel, "sha256": sha256_file(found)}
+             "path": rel, "sha256": mediastyle.fingerprint(found)}
     if via:
         entry["via"] = via
     _record(course["_dir"], entry, None, "Media style guide approved")
@@ -248,7 +248,7 @@ def approve_project_media_style(project, confirm: Confirm, do_commit: bool = Tru
     if data.get("approvals") is None:
         data["approvals"] = []
     data["approvals"].append({"gate": "media_style", "by": str(who), "at": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
-                              "path": rel, "sha256": sha256_file(found)})
+                              "path": rel, "sha256": mediastyle.fingerprint(found)})
     save_yaml(ry, data, project.file)
     if do_commit and not commit([project.file], "Media style approval (project)", who, project.root):
         return t("approve", "media_style_approved_uncommitted", who=who, path=rel)

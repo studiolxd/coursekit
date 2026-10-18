@@ -87,7 +87,7 @@ KV_RE = re.compile(r"^([a-zà-ÿ][a-zà-ÿ-]*):\s*(.*)$")
 # The brick each resource type becomes once it is produced (the type ids are those of `lang/<language>.yaml › media_types`).
 MEDIA_KIND = {
     "image": "image", "infographic": "image", "diagram": "image", "animated_gif": "image",
-    "video": "video", "audio": "audio", "simulation": "embed", "terminal_demo": "embed",
+    "video": "video", "audio": "audio", "simulation": "embed", "terminal_demo": "embed", "job_aid": "attachment",
 }
 PANEL_BRICKS = ("ACCORDION", "TABS", "CAROUSEL", "TIMELINE", "FLASHCARD_CAROUSEL", "FLASHCARD_GALLERY")
 FIELD_KEYS = ("title", "description", "how", "specs")  # in the order of the language's placeholder_fields
@@ -485,23 +485,24 @@ def download_bricks(asset: dict | None, download_label: str) -> list[dict]:
     """An ATTACHMENT after the media brick for each uploaded download of the asset (e.g. a PDF)."""
     if not asset or asset.get("status") != "uploaded":
         return []
-    out = []
-    for d in asset.get("downloads") or []:
-        if not d.get("asset_path"):
-            continue
-        ext = Path(d.get("file") or d["asset_path"]).suffix
-        stem = d.get("name") or asset.get("title") or Path(d.get("file") or d["asset_path"]).stem
-        name = re.sub(r"[^a-z0-9]+", "-", unicodedata.normalize("NFKD", stem).encode("ascii", "ignore").decode().lower()).strip("-") + ext
-        title = d.get("title") or f"{download_label}: {asset.get('title') or name}"
-        size = d.get("size")
-        description = f"{Path(name).suffix.lstrip('.').upper()}" + (f", {size / 1_000_000:.1f} MB" if size and size >= 1_000_000
-                                                                   else f", {round(size / 1000)} KB" if size else "")
-        out.append({"type": "ATTACHMENT",
-                    "data": {"properties": {"filePath": d["asset_path"], "fileName": name, "fileSize": size,
-                                            "showDownloadIcon": True},
-                             "content": {"title": inline(title), "description": html(description)}},
-                    "meta": {"download": d["asset_path"], "asset": asset["id"]}})
-    return out
+    return [attachment_brick(d["asset_path"], d.get("file"), d.get("name") or asset.get("title"),
+                             d.get("title") or f"{download_label}: {asset.get('title') or Path(d.get('file') or d['asset_path']).stem}",
+                             d.get("size"), {"download": d["asset_path"], "asset": asset["id"]})
+            for d in asset.get("downloads") or [] if d.get("asset_path")]
+
+
+def attachment_brick(path: str, file: str | None, stem: str | None, title: str, size: int | None, meta: dict) -> dict:
+    """A file the learner downloads (ATTACHMENT): named after `stem` (ASCII, with the extension of the file), with its type and
+    weight under the title."""
+    ext = Path(file or path).suffix
+    stem = stem or Path(file or path).stem
+    name = re.sub(r"[^a-z0-9]+", "-", unicodedata.normalize("NFKD", stem).encode("ascii", "ignore").decode().lower()).strip("-") + ext
+    description = f"{Path(name).suffix.lstrip('.').upper()}" + (f", {size / 1_000_000:.1f} MB" if size and size >= 1_000_000
+                                                               else f", {round(size / 1000)} KB" if size else "")
+    return {"type": "ATTACHMENT",
+            "data": {"properties": {"filePath": path, "fileName": name, "fileSize": size, "showDownloadIcon": True},
+                     "content": {"title": inline(title), "description": html(description)}},
+            "meta": meta}
 
 
 def placeholder_brick(kind: str, fields: dict, asset: dict | None, label: str, written: str | None = None,
@@ -529,6 +530,8 @@ def placeholder_brick(kind: str, fields: dict, asset: dict | None, label: str, w
                     "content": {"transcription": html(asset.get("transcript") or "")}}, "meta": meta}
         if media == "embed":
             return {"type": "EMBED", "data": {"properties": {"embedFolderPrefix": asset["asset_path"], "embedTitle": title}}, "meta": meta}
+        if media == "attachment":  # a job aid: the PDF the learner downloads
+            return attachment_brick(asset["asset_path"], asset.get("file"), title, title, asset.get("size"), meta)
     names = fields.get("_names", {})
     body = "\n\n".join(f"**{names.get(k, k)}:** {fields[k]}" for k in ("description", "specs") if fields.get(k))
     return {"type": "NOTE", "data": {"content": {"title": inline(f"{label} — {written or kind}: {title}"), "content": html(body)}},

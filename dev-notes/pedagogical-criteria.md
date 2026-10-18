@@ -12,7 +12,13 @@ objetivo–contenido–actividad–evaluación, que ya está.
   cognitiva y práctica espaciada en `content-writing`, criterio 11 «Pedagogy» en `content-review`, problema por sección en
   `instructional-design`, redundancia en `media-production`, aviso `content.chunk_max_words` en `verify` (no en importados),
   docs y READMEs.
-- **Pendiente (segunda parte):** las ayudas de trabajo en PDF (apartado 4).
+- **Hecho (segunda parte):** las ayudas de trabajo (`job_aid`, `jobaid.py`): texto en el cuerpo del recurso, plantilla
+  `theme/templates/job-aid.html` (la de coursekit en `templates/media/`), `coursekit theme sample`, `media render` a PDF
+  etiquetado con el Chrome de la máquina (comprobado en macOS: `StructTreeRoot`, esquema, idioma, orden de lectura), la
+  plantilla en la huella de la firma de la guía (`mediastyle.fingerprint`), `ATTACHMENT` en los dos montajes.
+- **Pendiente de validar:** una ayuda subida a creator (`request_asset_upload` de tipo `attachment`) y el paquete html
+  con una; el PDF con Chrome en Windows y Linux.
+- **Pendiente (tercera parte):** el arreglo de los puntos de los gráficos con zonas activas (apartado 6).
 - **Pendiente de validar:** un curso expositivo completo escrito y revisado con el ciclo.
 
 ## Punto de partida
@@ -142,6 +148,38 @@ Propuesta:
 
 Las actividades de aprendizaje de una unidad recuperan algún objetivo de unidades anteriores (no la evaluación, que mide los
 suyos). `coursekit outline` ya da al redactor lo que necesita.
+
+### 6. Arreglo: los puntos de los gráficos con zonas activas
+
+Hoy un `:::labelled-graphic` apunta a una imagen por su título y cada punto puede llevar `posición: x,y` (0–100). Sin ella, el
+montaje los reparte a ciegas (`assemble.py`, `LABELLED_GRAPHIC`: x del 20 al 80 %, y al 50 %); con ella, quien redacta pone
+números sin ver la imagen. En los dos casos el punto cae donde no está lo que nombra. Lo mismo puede pasar con las `area` de
+los `hotspots` de una simulación sobre un fondo dibujado.
+
+Propuesta:
+
+- **El agente de medios sabe que la imagen es para zonas activas.** `media extract` anota en el recurso los puntos que la
+  usan (`anchors: [<título de cada punto>]`, de los `:::labelled-graphic` que la nombran; y de las `area` de las simulaciones
+  sobre ese fondo). El plan y la skill de medios lo dicen al producirla.
+- **Una cruceta por punto en el SVG.** Al dibujar la imagen, el agente pone una cruceta pequeña en el sitio exacto de cada
+  punto, con un id que la identifica (`<g id="anchor-1" data-anchor="<título>">`), en el color de los tokens y que la marca
+  del punto tapa al montarse.
+- **coursekit lee las crucetas.** Al registrar el recurso (`media set --status produced`, o `media render` al pasarlo a PNG)
+  calcula la posición de cada cruceta en % del `viewBox` y la guarda en el manifiesto (`anchors: {<título>: [x, y]}`). El
+  montaje (creator y html) usa esa posición para el punto.
+- **`verify` y `media plan` avisan** de un punto sin cruceta en su imagen, de una cruceta que ningún punto usa y de un punto
+  cuya `posición` escrita difiere de la cruceta.
+- Una imagen que no es SVG (generada por API, una captura) no tiene crucetas: el agente de medios escribe las posiciones
+  mirando la imagen (`media set --anchor "<título>=x,y"`), y `verify` avisa de los puntos sin posición.
+
+Decisiones abiertas:
+
+6a. ¿La cruceta se queda en la imagen final (la marca del punto la tapa) o se quita al exportar el PNG? Recomendación: se
+    quita en la exportación (una cruceta visible si el punto se desplaza un poco queda fea) y se guarda solo su posición.
+6b. Si hay `posición` escrita y cruceta, ¿cuál manda? Recomendación: la cruceta (es lo que dibuja la imagen); la posición
+    escrita queda como aviso de `verify`.
+6c. ¿Entran también las `area` de los hotspots de las simulaciones, o solo `:::labelled-graphic`? Recomendación: las dos,
+    con la cruceta en el centro del área.
 
 ## Qué se toca
 

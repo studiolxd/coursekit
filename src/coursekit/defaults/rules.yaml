@@ -165,6 +165,6 @@ content:
   chunk_max_words: 250                 # cognitive load: the most words of prose the learner reads in a row, without a heading, a
                                        # directive, a medium, a highlight (`>`), a list or a table (a blank line does not break
                                        # it). `verify` warns, except in an imported course (0: not checked)
-  placeholder_types: [image, video, animated_gif, infographic, diagram, simulation, terminal_demo, audio]
+  placeholder_types: [image, video, animated_gif, infographic, diagram, simulation, terminal_demo, audio, job_aid]
   # Directives and their creator bricks: config/directives.yaml
   allowed_symbols: "★✔✘·—‹›"

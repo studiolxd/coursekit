@@ -68,7 +68,7 @@ not_directives:
   VIDEO_GALLERY: "several video placeholders in a row (assembly)"
   AUDIO: "placeholder of type audio"
   EMBED: "placeholder of type simulation or terminal_demo"
-  ATTACHMENT: "not used for now"
+  ATTACHMENT: "the downloads of a resource (coursekit media set --download) and the job aids (placeholder of type job_aid, a PDF)"
   PUZZLE: "image game: not used for now"
   SLIDING_PUZZLE: "image game: not used for now"
   CONDITIONAL: "adaptive blocks :::if / :::elif / :::else (the assembly builds it; category `structure` of the catalog)"

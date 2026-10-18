@@ -49,6 +49,7 @@ media_types:
   simulation: Simulación interactiva
   terminal_demo: Demo interactiva en terminal
   audio: Audio
+  job_aid: Ayuda de trabajo
 # Keys of the "key: value" lines of the directives (the objective key is question_objective_key) ...
 directive_keys:
   question: pregunta
@@ -66,6 +67,27 @@ directive_words:
   "false": falso
   starts: empieza
   contains: contiene
+
+# The sample of the job aids (`coursekit theme sample`): generic text to look at the template of the theme.
+job_aid_sample:
+  title: Antes de crear una contraseña
+  subtitle: Muestra de ayuda de trabajo · Contraseñas seguras
+  body: |
+    Úsala cada vez que una aplicación te pida una contraseña nueva.
+
+    ## Comprueba
+
+    - [ ] Abro el gestor de contraseñas antes de escribir nada.
+    - [ ] La contraseña tiene al menos 16 caracteres o es una frase de cuatro palabras.
+    - [ ] No la uso en ninguna otra cuenta.
+    - [ ] Activo la verificación en dos pasos si la aplicación la ofrece.
+
+    ## Si algo falla
+
+    1. Si la aplicación no acepta la longitud, usa la más larga que permita.
+    2. Si sospechas que una contraseña se ha filtrado, cámbiala ahora y avisa al equipo de soporte.
+
+    > **Recuerda:** una contraseña larga resiste más que una complicada.
 
 # Texts of the interface of the html backend's package (buttons, feedback), in the language of the content.
 player:

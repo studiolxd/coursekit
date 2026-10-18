@@ -144,6 +144,15 @@ credits.
 
 ## 3. Production by type
 
+- **Job aid (`job_aid`)** — a checklist or a quick guide the learner downloads as a PDF. Its text is the body of the
+  placeholder, written and reviewed with the unit: never write, add or change its content; if it is wrong or missing, say so
+  for the writer. `coursekit media render <CODE> <id>` lays it out with the template of the theme
+  (`theme/templates/job-aid.html`, or the one of coursekit) and prints `media/<id>.pdf`; open it, check that nothing is cut
+  or overflows, and record it with the command it prints (`--status produced --recipe agent-html-pdf --file …`). The look is
+  the template's, never fixed by hand in one PDF: what has to change for every job aid is a change of the template (the theme
+  step). Creator: upload it to the content of its unit with `request_asset_upload` of kind `attachment` and record its
+  `--asset-path`; the assembly puts the download in place of the placeholder.
+
 - **Portrait of a character (`CHAR-<NAME>`)** — `coursekit media extract` adds one image per character that speaks in a
   dialogue: never leave a character with an initial or without a face. Square 512x512 px, centred bust, plain background in a colour
   of the theme palette (not the same for the two characters of a dialogue), the same style for every character of the course:

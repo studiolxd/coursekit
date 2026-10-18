@@ -457,6 +457,36 @@ def render_svg(svg: Path, out: Path, size: tuple[int, int] | None = None, fonts_
     return t("mediatools", "rendered", svg=svg.name, png=out.name, size=f"{width}x{height}")
 
 
+def print_pdf(page: Path, out: Path) -> str:
+    """An HTML page as a PDF, printed by the Chrome, Chromium or Edge of the machine (headless): tagged (headings, lists and
+    reading order for a screen reader), with the outline of its headings and no header or footer of the browser. Its page size
+    comes from its `@page` rule."""
+    import tempfile
+
+    require_file(page)
+    exe = browser()
+    if not exe:
+        raise ToolError(t("mediatools", "no_browser"))
+    for attempt in range(1, RENDER_ATTEMPTS + 1):
+        out.unlink(missing_ok=True)
+        with tempfile.TemporaryDirectory(prefix="coursekit-chrome-") as profile:
+            try:
+                done = subprocess.run([exe, "--headless=new", "--disable-gpu", "--allow-file-access-from-files", "--no-first-run",
+                                       "--no-default-browser-check", f"--user-data-dir={profile}", "--no-pdf-header-footer",
+                                       "--export-tagged-pdf", "--generate-pdf-document-outline", "--virtual-time-budget=5000",
+                                       f"--print-to-pdf={out.resolve()}", page.resolve().as_uri()],
+                                      capture_output=True, timeout=RENDER_TIMEOUT)
+            except subprocess.TimeoutExpired:
+                continue
+            except FileNotFoundError:
+                raise ToolError(t("mediatools", "program_missing", program=Path(exe).name)) from None
+        if done.returncode == 0 and out.is_file() and out.read_bytes()[:5] == b"%PDF-":
+            return t("mediatools", "printed", page=page.name, pdf=out.name)
+        if attempt == RENDER_ATTEMPTS:
+            raise ToolError(t("mediatools", "print_failed", page=page.name, attempts=RENDER_ATTEMPTS))
+    raise ToolError(t("mediatools", "print_failed", page=page.name, attempts=RENDER_ATTEMPTS))
+
+
 RENDER_ATTEMPTS = 3
 RENDER_TIMEOUT = 90  # seconds: a Chrome that hangs is killed and tried again
 RENDER_MARGIN = 240  # px of window below the drawing: the headless window paints less than its size, so it is cropped after

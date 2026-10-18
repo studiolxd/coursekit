@@ -152,7 +152,7 @@ Un recurso multimedia reserva el sitio de una imagen, un vídeo u otro recurso h
 > **Especificaciones:** 1280x720 px, texto alternativo obligatorio.
 ```
 
-Los cuatro campos son obligatorios. El `<tipo>` es uno de ocho tipos de recurso, escrito con la palabra del idioma del curso (en español: `Imagen`, `Vídeo`, `GIF animado`, `Infografía`, `Esquema/Diagrama`, `Simulación interactiva`, `Demo interactiva en terminal`, `Audio`; las palabras en inglés están en la tabla siguiente). Cada tipo tiene además un id (`image`, `video`, `animated_gif`, `infographic`, `diagram`, `simulation`, `terminal_demo`, `audio`) que se usa en la configuración y en el manifiesto. La producción se explica en [07-media.md](07-media.md).
+Los cuatro campos son obligatorios. El `<tipo>` es uno de nueve tipos de recurso, escrito con la palabra del idioma del curso (en español: `Imagen`, `Vídeo`, `GIF animado`, `Infografía`, `Esquema/Diagrama`, `Simulación interactiva`, `Demo interactiva en terminal`, `Audio`, `Ayuda de trabajo`; las palabras en inglés están en la tabla siguiente). Cada tipo tiene además un id (`image`, `video`, `animated_gif`, `infographic`, `diagram`, `simulation`, `terminal_demo`, `audio`, `job_aid`) que se usa en la configuración y en el manifiesto. Una **ayuda de trabajo** (una lista de comprobación o una guía rápida que el alumno descarga en PDF) lleva, después de los cuatro campos, su texto en Markdown en líneas que también empiezan por `>` (`> ## Comprueba`, `> - [ ] …` para una casilla, `> 1. …`); sus palabras no cuentan, y `verify` falla cuando no tiene texto (ver [Ayudas de trabajo](07-media.md#ayudas-de-trabajo)). La producción se explica en [07-media.md](07-media.md).
 
 ### Qué cuenta como palabra
 
@@ -174,6 +174,7 @@ Algunas palabras del formato se escriben en el idioma del curso, pero la configu
 | `simulation` | `Interactive simulation` | `Simulación interactiva` |
 | `terminal_demo` | `Interactive terminal demo` | `Demo interactiva en terminal` |
 | `audio` | `Audio` | `Audio` |
+| `job_aid` | `Job aid` | `Ayuda de trabajo` |
 
 - En `content.md` escribes en el recurso la **palabra** del idioma del curso (`> **[RECURSO MULTIMEDIA — Infografía]**`). No importan las mayúsculas ni los espacios alrededor, pero sí las tildes: en un curso en español `Video` e `Infografia` son errores, solo se aceptan `Vídeo` e `Infografía`. El guion del encabezado del recurso puede ser `—` o `-`.
 - En cualquier otro sitio se usa el **id**: `content.placeholder_types` en `config/rules.yaml`, las claves de `types` y la lista `uses_theme` en `config/media.yaml` (consulta [04-configuration.md](04-configuration.md)) y `type` en `media/manifest.yaml › assets`. `coursekit media extract` convierte la palabra en el id, así que el manifiesto es el mismo sea cual sea el idioma del curso.

@@ -116,6 +116,9 @@ def _script_lines(course: dict, asset: dict) -> list[str]:
     return []
 
 
+JOB_AID = "job_aid"  # its text is the body of its placeholder (jobaid.py)
+
+
 def scan(course: dict) -> list[dict]:
     tk = coursemod.tokens(course)
     section_re = re.compile(rf"^## {re.escape(tk['section'])} (\d+)\s*[—-]")
@@ -148,6 +151,11 @@ def scan(course: dict) -> list[dict]:
                     current[keys[f.group(1)]] = f.group(2).strip()
                 elif not line.startswith(">"):
                     current = None
+                elif current["type"] == JOB_AID:  # the lines after the fields are the text of the job aid
+                    current["body"] = (current.get("body", "") + re.sub(r"^>\s?", "", line) + "\n")
+    for asset in assets:
+        if "body" in asset:
+            asset["body"] = asset["body"].strip("\n")
     return assets
 
 
@@ -319,7 +327,8 @@ def _extract(course: dict, data: dict) -> dict[str, int]:
     for asset in found:
         old = existing.pop(asset["id"], None)
         if old is not None:
-            changed = any(old.get(k) != asset.get(k) for k in ("type", "title", "description", "specs", "kind", "narration"))
+            changed = any(old.get(k) != asset.get(k) for k in ("type", "title", "description", "specs", "kind", "narration",
+                                                               "body"))
             for k, v in asset.items():
                 old[k] = v
             if "dialogue_units" not in asset:
@@ -625,6 +634,8 @@ def image_tool(course: dict, asset_id: str | None, action: str, size: str | None
         asset = next((a for a in data["assets"] if a["id"] == asset_id), None)
         if asset is None:
             raise MediaError(t("media", "asset_not_found", asset_id=asset_id))
+        if asset["type"] == JOB_AID and action == "render":  # made from its text, not from a file
+            return render_job_aid(course, asset_id)
         path = next((base / str(asset.get("file") or "") for base in bases[:2]
                      if asset.get("file") and (base / str(asset["file"])).is_file()), None)
         if path is None:
@@ -641,6 +652,23 @@ def image_tool(course: dict, asset_id: str | None, action: str, size: str | None
     except brand.BrandError as exc:
         raise MediaError(str(exc)) from None
     return mediatools.render_svg(path, path.with_suffix(".png"), mediatools.parse_size(size) if size else None, fonts_css)
+
+
+def render_job_aid(course: dict, asset_id: str) -> str:
+    """The PDF of a job aid (media/<id>.pdf), from the text of its placeholder and the template of the theme."""
+    from coursekit import jobaid, mediatools
+
+    _, _, data = load_manifest(course["_dir"])
+    asset = next((a for a in data["assets"] if a["id"] == asset_id), None)
+    if asset is None:
+        raise MediaError(t("media", "asset_not_found", asset_id=asset_id))
+    try:
+        out = jobaid.render_asset(course, asset)
+    except (jobaid.JobAidError, mediatools.ToolError) as exc:
+        raise MediaError(str(exc)) from None
+    root = course["_project"].root
+    return t("jobaid", "rendered", path=out.relative_to(root).as_posix(), code=course["code"], asset=asset_id,
+             file=out.relative_to(course["_dir"] / "media").as_posix())
 
 
 def optimize(course: dict, ids: list[str] | None = None) -> list[str]:
@@ -794,6 +822,10 @@ def _set_asset(course: dict, data: dict, asset_id: str, **values) -> str:
     for key in ("status", "recipe", "asset_path", "file", "alt", "transcript", "subtitles_path", "made_with"):
         if values.get(key) is not None:
             asset[key] = values[key]
+    if values.get("file") and asset["type"] == JOB_AID:  # its weight goes under the title of the download
+        local = course["_dir"] / "media" / str(values["file"]).removeprefix("media/")
+        if local.is_file():
+            asset["size"] = local.stat().st_size
     if values.get("status") in ("produced", "uploaded"):
         asset.pop("note", None)  # "produce it again" no longer applies
     download = values.get("download")

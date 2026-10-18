@@ -123,6 +123,15 @@ types:
     - {id: voice, needs: none, how: "Voice-over with the `voice` chain + transcript"}
   simulation:
     - {id: agent-html, needs: none, how: "Self-contained HTML/JS with the theme tokens.css → request_embed_upload (EMBED)"}
+  job_aid:
+    - {id: agent-html-pdf, needs: none, how: "The text of the placeholder laid out with the job aid template of the theme and printed to PDF by the Chrome of the machine (coursekit media render); the learner downloads it (ATTACHMENT)"}
+
+# The job aids (a checklist or a quick guide the learner downloads, `job_aid`): the page they are printed on. The template is
+# theme/templates/job-aid.html of the course, else of the project, else the one of coursekit; `coursekit theme sample`
+# prints one with sample text, and the template is signed with the style guide of the media.
+job_aid:
+  page: A4                     # A4 | A5 | letter | legal, or a size such as "210mm 99mm"
+  orientation: portrait        # portrait | landscape
 
 # Lighter media, locally and without credits. `coursekit media optimize CODE [ID…]` applies it in place to the file of the
 # produced assets (run it before uploading to creator); the html backend applies it to the copy it puts in the package (the
@@ -161,7 +170,7 @@ depicts:
 # Types whose production uses the tokens of the theme (theme/tokens.json, or the course's own): `coursekit media plan`
 # warns when the tokens are missing or were not derived from the theme of the platform (`/define-theme`), and
 # `coursekit media set --status produced` refuses (unless --force) and remembers which tokens the asset was made with.
-uses_theme: [infographic, diagram, animated_gif, simulation, video, terminal_demo]
+uses_theme: [infographic, diagram, animated_gif, simulation, video, terminal_demo, job_aid]
 
 # Resources are validated in the assembled course (preview), not one by one.
 statuses: [pending, scripted, produced, uploaded]

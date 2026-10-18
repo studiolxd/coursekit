@@ -169,6 +169,7 @@ def context(project: Project) -> dict[str, str]:
         "t_intro_title": tokens["intro_title"],
         "t_summary_title": tokens["summary_title"],
         "t_unit": tokens["unit"],
+        "t_job_aid": tokens["media_types"].get("job_aid", "job_aid"),
         "t_question_key": tokens["question_objective_key"],
         "placeholder_field_lines": "\n".join(f"> **{f}:** …" for f in fields),
         "pages_per_hour": str(rules["pages_per_hour"]),

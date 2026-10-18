@@ -235,6 +235,9 @@ Exact format (shown as a visible box until the asset is produced):
 {{placeholder_field_lines}}
 ```
 
+A **job aid** (`{{t_job_aid}}`) has, after the fields, its text in Markdown on lines that start with `>` too (`> ## Check`,
+`> - [ ] …`, `> 1. …`): it is printed to the PDF the learner downloads.
+
 Allowed types (what is written in the placeholder, and its id in the configuration): {{placeholder_types}}. Per unit: {{placeholders_per_hour}} placeholders per hour
 of the unit and at least {{min_placeholder_types}} different types.
 

@@ -1,0 +1,50 @@
+<!doctype html>
+<!-- The template of the job aids of coursekit: a checklist or a quick guide the learner downloads, printed to PDF by the
+     Chrome of the machine (`coursekit media render`, `coursekit theme sample`). A project changes it in
+     theme/templates/job-aid.html (a course in courses/<CODE>/theme/templates/), and every job aid of it follows that one.
+     Its values: {{lang}} the language of the course, {{title}} the title of the job aid, {{subtitle}} the course and the
+     unit, {{content}} the text of the placeholder as HTML, {{page}} the page of `media › job_aid` (e.g. "A4 portrait"),
+     {{tokens_css}} the CSS variables of the theme (tokens.css), {{fonts_css}} the fonts of the brand. -->
+<html lang="{{lang}}">
+<head>
+<meta charset="utf-8">
+<title>{{title}}</title>
+<style>
+{{fonts_css}}
+{{tokens_css}}
+@page { size: {{page}}; margin: 16mm 16mm 18mm; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { margin: 0; font-family: var(--font-family, system-ui, sans-serif); font-size: 11pt; line-height: 1.45;
+  color: var(--color-text, #1a1a1a); background: var(--color-background, #fff); }
+header { border-bottom: 3px solid var(--color-accent, #1a1a1a); padding-bottom: 4mm; margin-bottom: 6mm; }
+header p { margin: 0 0 1mm; font-size: 9pt; color: var(--color-text-muted, #555); text-transform: uppercase; letter-spacing: .04em; }
+h1 { margin: 0; font-family: var(--font-family-headings, var(--font-family, inherit)); font-size: 20pt; line-height: 1.15;
+  color: var(--color-text, #1a1a1a); }
+h2 { font-family: var(--font-family-headings, var(--font-family, inherit)); font-size: 13pt; margin: 6mm 0 2mm;
+  color: var(--color-accent-ink, var(--color-accent, #1a1a1a)); break-after: avoid; }
+h3 { font-size: 11pt; margin: 4mm 0 1mm; break-after: avoid; }
+p { margin: 0 0 2.5mm; }
+ol, ul { margin: 0 0 3mm; padding-left: 7mm; }
+li { margin: 0 0 1.5mm; break-inside: avoid; }
+ul.checklist { list-style: none; padding-left: 0; }
+ul.checklist li { padding-left: 7.5mm; text-indent: -7.5mm; }
+ul.checklist li::before { content: ""; display: inline-block; box-sizing: border-box; width: 3.6mm; height: 3.6mm;
+  margin-right: 3.9mm; vertical-align: -0.6mm; border: 1.5px solid var(--color-text, #1a1a1a); border-radius: 1px; }
+table { border-collapse: collapse; width: 100%; margin: 0 0 4mm; font-size: 10pt; }
+th, td { border: 1px solid var(--color-border, #ccc); padding: 1.5mm 2mm; text-align: left; vertical-align: top; }
+th { background: var(--color-surface-highlight, #f2f2f2); }
+blockquote { margin: 0 0 3mm; padding: 2mm 4mm; border-left: 4px solid var(--color-accent, #1a1a1a);
+  background: var(--color-surface-highlight, #f2f2f2); }
+strong { font-weight: var(--font-weight-strong, 700); }
+</style>
+</head>
+<body>
+<header>
+<p>{{subtitle}}</p>
+<h1>{{title}}</h1>
+</header>
+<main>
+{{content}}
+</main>
+</body>
+</html>

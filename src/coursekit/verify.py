@@ -85,6 +85,7 @@ class Placeholder:
     kind: str
     line: int
     fields: set[str] = field(default_factory=set)
+    body: int = 0  # words after the fields (the text of a job aid)
 
 
 @dataclass
@@ -388,9 +389,10 @@ def analyse_section(path: Path, sec: Section, rules: dict, syntax: Syntax, repor
             if not line.startswith(">"):
                 current = None
                 continue
-            for f in syntax.placeholder_fields:
-                if re.match(rf"^>\s*\*\*{re.escape(f)}:\*\*", line):
-                    current.fields.add(f)
+            named = [f for f in syntax.placeholder_fields if re.match(rf"^>\s*\*\*{re.escape(f)}:\*\*", line)]
+            current.fields.update(named)
+            if not named:
+                current.body += len(line.lstrip(">").split())
 
 
 def course_simulations(course: dict, rules: dict) -> list[tuple[int, str, int, str, set[str], bool]]:
@@ -690,6 +692,8 @@ def verify_unit(course: dict, unit: dict) -> Report:
         missing = [f for f in syntax.placeholder_fields if f not in ph.fields]
         if missing:
             report.error(t("verify", "placeholder_missing_fields", line=ph.line, fields=", ".join(missing)))
+        if syntax.media_type(ph.kind) == "job_aid" and not ph.body:
+            report.error(t("verify", "job_aid_without_text", line=ph.line))
     kinds = {syntax.media_type(ph.kind) or ph.kind for ph in placeholders}
     needed_ph = math.ceil(float(unit["hours"]) * rules["placeholders_per_hour"])
     needed_types = min(rules["min_placeholder_types"], needed_ph)

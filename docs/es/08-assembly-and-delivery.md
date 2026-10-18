@@ -103,7 +103,7 @@ El backend html construye sus páginas a partir de este mismo plan. Las claves d
 | Cita simple `> …` | `HIGHLIGHT` |
 | Directiva `:::nombre` | El brick del registro (tabla en [06-content.md](06-content.md)) |
 | Recurso multimedia sin subir | `NOTE` titulada `Recurso multimedia — <tipo>: <título>` (las primeras palabras son las del idioma del curso, y el tipo se escribe como en el contenido, por ejemplo `Infografía`), con descripción y especificaciones |
-| Recurso multimedia subido | Según el id del tipo: `image`, `infographic`, `diagram` y `animated_gif` pasan a `IMAGE`; `video` pasa a `VIDEO` (con subtítulos y transcripción si están registrados); `audio` pasa a `AUDIO`; `simulation` y `terminal_demo` pasan a `EMBED`. Más un `ATTACHMENT` por cada descarga subida |
+| Recurso multimedia subido | Según el id del tipo: `image`, `infographic`, `diagram` y `animated_gif` pasan a `IMAGE`; `video` pasa a `VIDEO` (con subtítulos y transcripción si están registrados); `audio` pasa a `AUDIO`; `simulation` y `terminal_demo` pasan a `EMBED`; `job_aid` pasa a un `ATTACHMENT` (el PDF). Más un `ATTACHMENT` por cada descarga subida |
 | Etiquetas de objetivo, `---`, comentarios HTML | No se publican |
 
 Solo los subapartados **Instrucciones para el alumnado** y **Banco de preguntas** de una actividad de `assessment.md` pasan a su lección de evaluación.
@@ -285,7 +285,7 @@ La página se construye con mejora progresiva. Las lecciones (una por apartado d
 | Marcador de vídeo (producido) | `VIDEO` | Vídeo con controles, pista de subtítulos (si hay un `.vtt`) y la transcripción en un `details` |
 | Marcador de audio (producido) | `AUDIO` | Audio con controles y la transcripción |
 | Marcador de simulación y de demo de terminal (producido) | `EMBED` | Un `iframe` de la carpeta del paquete (`media/<id>/index.html`) |
-| Descarga de un recurso | `ATTACHMENT` | Un enlace de descarga |
+| Descarga de un recurso, ayuda de trabajo | `ATTACHMENT` | Un enlace de descarga |
 | `single-choice`, `multi-select`, `true-false` | `SINGLE_CHOICE`, `MULTI_SELECT`, `TRUE_FALSE` | Botones de opción o casillas; verdadero-falso ofrece Verdadero y Falso |
 | `sorting` | `SORTING` | Los elementos desordenados, con botones para subir y bajar |
 | `match` | `MATCH` | Una lista desplegable por término de la izquierda, con los términos de la derecha desordenados |

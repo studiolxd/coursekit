@@ -135,8 +135,18 @@ colours, `origin.derived`), and the radius and the shadow are its defaults. The 
      `coursekit media plan` warn of the lines the guide does not quote.
    A rule you infer and the brand does not state is not written as a rule: it goes as a question. The person's
    `notes.md` weighs more than the rest.
-7. Tell the person to look at the gallery of the videos (`coursekit video gallery`, the project's; with `<CODE>`, a course's),
-   to read the guide and to sign it: the guide of the project once for every course that uses it
+7. **Job aids** (the checklists and quick guides the learner downloads as a PDF): every one comes out of one template,
+   `theme/templates/job-aid.html` (a course with its own brand: `courses/<CODE>/theme/templates/`). Without one, coursekit uses
+   its own, neutral, with the tokens and the fonts of the brand. When the brand has printed or downloadable material (a
+   letterhead, a document template, a one-pager), copy the template of coursekit (`coursekit theme sample` says which one is in
+   use) and adapt it to the brand: header, hierarchy of headings, checkboxes, tables, a highlight, the margins. Keep its
+   values in double braces (`title`, `content`, `page`, `tokens_css`…) and the semantic HTML (headings, lists, tables: the PDF is tagged for screen readers from them). Then
+   `coursekit theme sample` (or `--course <CODE>`) prints `theme/branding/samples/job-aid.pdf` with sample text: tell the
+   person to open it, change what they ask and print it again. The page is `media › job_aid` (`page`, `orientation`). Add to
+   the guide a section on the job aids (what the template does and why, with its sources). The template is signed with the
+   guide: changing it asks for a new signature.
+8. Tell the person to look at the gallery of the videos (`coursekit video gallery`, the project's; with `<CODE>`, a course's),
+   and at the sample of the job aids, to read the guide and to sign it: the guide of the project once for every course that uses it
    (`coursekit approve media-style`), the own guide of a course with its code (`coursekit approve media-style <CODE>`). No
    visual resource is produced until it is signed, and it is signed again when it changes. You never sign it.
 

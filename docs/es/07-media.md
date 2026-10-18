@@ -4,7 +4,7 @@ Cómo los recursos multimedia reservados en el contenido se convierten en recurs
 
 ## Recursos multimedia y tipos
 
-Un recurso multimedia se escribe en `content.md` (formato en [06-content.md](06-content.md#recursos-multimedia)). Su tipo es uno de ocho tipos de recurso. Cada tipo tiene un **id** en inglés, igual en todos los cursos, que es lo que usan la configuración (`config/media.yaml › types` y `uses_theme`, `config/rules.yaml › content.placeholder_types`), el manifiesto multimedia (`media/manifest.yaml › assets[].type`), la salida de `coursekit media plan` y el control del tema. Lo que la persona **escribe** en el recurso reservado es la palabra del idioma del curso para ese tipo (por ejemplo `Infografía` en un curso en español e `Infographic` en uno en inglés); la tabla que relaciona cada id con sus palabras está en [06-content.md](06-content.md#recursos-multimedia). La palabra del otro idioma es un error de `coursekit verify` que enumera las palabras válidas.
+Un recurso multimedia se escribe en `content.md` (formato en [06-content.md](06-content.md#recursos-multimedia)). Su tipo es uno de nueve tipos de recurso. Cada tipo tiene un **id** en inglés, igual en todos los cursos, que es lo que usan la configuración (`config/media.yaml › types` y `uses_theme`, `config/rules.yaml › content.placeholder_types`), el manifiesto multimedia (`media/manifest.yaml › assets[].type`), la salida de `coursekit media plan` y el control del tema. Lo que la persona **escribe** en el recurso reservado es la palabra del idioma del curso para ese tipo (por ejemplo `Infografía` en un curso en español e `Infographic` en uno en inglés); la tabla que relaciona cada id con sus palabras está en [06-content.md](06-content.md#recursos-multimedia). La palabra del otro idioma es un error de `coursekit verify` que enumera las palabras válidas.
 
 | Id | Significado | Opciones, por orden de preferencia (qué necesita cada una) |
 |---|---|---|
@@ -16,6 +16,7 @@ Un recurso multimedia se escribe en `content.md` (formato en [06-content.md](06-
 | `video` | Vídeo | `remotion` (`node` y `tools/remotion/node_modules`) · `vhs` (solo contenido de terminal) |
 | `audio` | Audio | `voice` (nada): la cadena de voz de más abajo |
 | `simulation` | Simulación interactiva | `agent-html` (nada): HTML/JS autocontenido que usa `tokens.css` |
+| `job_aid` | Ayuda de trabajo | `agent-html-pdf` (un Chrome, Chromium o Edge): su texto con la plantilla del tema, impreso a PDF ([Ayudas de trabajo](#ayudas-de-trabajo)) |
 
 «Nada» significa que lo produce el propio agente. El agente usa la primera opción que realmente pueda ejecutar y la anota en el manifiesto. Las descripciones de las opciones que imprime `coursekit media plan` salen de la configuración y están escritas en inglés; un proyecto puede escribir las suyas en `config/media.yaml`.
 
@@ -262,6 +263,29 @@ scenes:
 ## Revisar audios y vídeos
 
 Antes de que un audio o un vídeo vaya al curso, `coursekit media check CODE` revisa su sonoridad (EBU R128 para la web: -16 LUFS, pico -1 dBTP; `--fix` la corrige), sus subtítulos (ninguno más rápido de 17 caracteres por segundo) y lo que muestra y no dice; `coursekit media sheet CODE ID` pone fotogramas de un vídeo en una sola imagen, para mirarlo sin reproducirlo. Los límites están en `media.yaml › checks`. Mira [`coursekit media`](03-commands.md#coursekit-media).
+
+## Ayudas de trabajo
+
+Una **ayuda de trabajo** (`job_aid`) es una lista de comprobación o una guía rápida que el alumno descarga en PDF para usarla
+en su puesto, cuando el procedimiento de un apartado es algo que volverá a hacer. El diseño propone las que necesita una
+unidad; la redacción escribe su texto en el cuerpo de su recurso (después de los cuatro campos, en líneas que empiezan por
+`>`: encabezados `##`, pasos numerados, comprobaciones `- [ ]`), así que se revisa con la unidad; el agente de multimedia
+nunca lo escribe.
+
+Todas las ayudas de un proyecto salen de una **plantilla**: `theme/templates/job-aid.html` del curso, si no la del proyecto,
+si no la de coursekit (neutra, con los tokens y las fuentes de la marca). Sus valores entre llaves dobles son `lang`, `title`,
+`subtitle` (el curso y la unidad), `content` (el texto en HTML; una lista cuyos elementos empiezan todos por `[ ]` sale como
+lista de comprobación), `page`, `tokens_css` y `fonts_css`. La página es `media › job_aid` (`page`: `A4` por defecto, `A5`,
+`letter`, `legal` o un tamaño como `210mm 99mm`; `orientation`: `portrait` o `landscape`).
+
+- Mientras se define el tema, [`coursekit theme sample`](03-commands.md#coursekit-theme) imprime una ayuda con texto de muestra
+  en `theme/branding/samples/job-aid.pdf`: la persona la abre y pide cambios hasta que queda bien.
+- La plantilla se firma con la [guía de estilo de los medios](#la-guía-de-estilo-de-los-recursos): un cambio en ella pide una firma nueva.
+- `coursekit media render CODE ID` imprime cada ayuda en `media/<id>.pdf` con el Chrome, Chromium o Edge de la máquina. El PDF
+  está etiquetado (encabezados, listas, tablas, el idioma y el título) y tiene el esquema de sus encabezados, así que un lector
+  de pantalla lo sigue; para eso la plantilla debe ser semántica.
+- En el curso es una descarga en el lugar de su recurso: un `ATTACHMENT` en creator (subido con `request_asset_upload` de tipo
+  `attachment`) y un enlace en el paquete html.
 
 ## Subida a creator
 
@@ -533,7 +557,7 @@ Con el backend html los tokens salen de las variables CSS de la maqueta base del
 
 ### El control de los recursos
 
-Los tipos de recurso que usan los tokens figuran en `uses_theme` de la configuración multimedia (por defecto `infographic`, `diagram`, `animated_gif`, `simulation`, `video` y `terminal_demo`; consulta [04-configuration.md](04-configuration.md)). Para ellos:
+Los tipos de recurso que usan los tokens figuran en `uses_theme` de la configuración multimedia (por defecto `infographic`, `diagram`, `animated_gif`, `simulation`, `video`, `terminal_demo` y `job_aid`; consulta [04-configuration.md](04-configuration.md)). Para ellos:
 
 - `coursekit media plan` avisa cuando el curso tiene recursos de esos tipos y sus tokens faltan o están escritos a mano (ni origen `creator` ni `css`), y por cada recurso producido o subido que se hizo con otros tokens distintos de los actuales (hay que producirlo de nuevo).
 - `coursekit media set CODE ID --status produced` (o `uploaded`) se rechaza mientras los tokens no estén derivados: del tema de la plataforma (backend creator) o de la hoja de estilos del proyecto (backend html, `coursekit theme import FICHERO.css`). `--force` se salta la comprobación, para el caso poco habitual de un curso que deliberadamente no sigue el tema.
@@ -680,6 +704,7 @@ import words from "../../../../courses/PWD/media/files/u1-s2-m1.words.json";
 | `video` | `node` + Remotion (`tools/remotion`), `ffmpeg`, un proveedor de voz y `stable-ts` o ElevenLabs para los subtítulos; `vhs` para vídeos de terminal. También los tokens del tema |
 | `audio` | Un proveedor de voz (`ffmpeg` para unir MP3 y para Piper) |
 | `simulation` | Ninguna (HTML/JS del agente con `tokens.css`) |
+| `job_aid` | Un Chrome, Chromium o Edge (sin interfaz) |
 
 Los tipos `infographic`, `diagram`, `animated_gif`, `simulation`, `video` y `terminal_demo` necesitan además los tokens del tema derivados del tema de la plataforma, o de la hoja de estilos con el backend html ([Tokens del tema](#tokens-del-tema)).
 

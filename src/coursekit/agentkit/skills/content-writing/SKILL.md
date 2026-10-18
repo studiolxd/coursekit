@@ -101,6 +101,12 @@ final summary under "Design out of date" so that a person decides.
     link with the next unit. In an expository course with *integration* in the cycle, the reflection is the integration
     of the unit: its questions put the learner in their own work (the next time they face the problem of the
     introduction), and one sentence says what to do first. It takes no more words: the integration is the reflection.
+- **Job aids** (`{{t_job_aid}}`, the ones the design gives the unit in `proposal-notes.md`): a checklist or a quick guide
+  the learner downloads to use at work, in the section where the procedure is taught. After the four fields, its text in
+  Markdown on lines that also start with `>`: a `##` heading per block, steps as a numbered list, checks as `- [ ]` items
+  (they come out as checkboxes), at most one page. It is the procedure of the section summed up for the moment of doing it:
+  short sentences in the imperative, no explanation of why (that is in the course), the same terms as the content. It does
+  not count as words of the section. `coursekit verify` fails when it has no text.
 - Media placeholders where an asset really adds something, with all their fields and
   accessibility; verify gives the minimum per unit (by hours) and of types. **A resource that shows the screen of a real
   application (a tutorial, a capture, a menu) comes from real material**: in "how it is made" say that it is a recording or

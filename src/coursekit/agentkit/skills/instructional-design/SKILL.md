@@ -77,6 +77,9 @@ sections the course needs, and justify it.
      answers a problem of the work of the audience (the cycle of its sections: {{expository_cycle}}; the course may set its
      own, `coursekit config rules --course <CODE>`): its title may name the task, and the proposal notes say that problem in
      one line, so the person sees it when signing.
+   - **Job aids:** when a unit teaches a procedure the learner will repeat at work, propose a job aid for it (a checklist
+     or a quick guide they download): say in the proposal notes which unit and section, and what it sums up. None when
+     nothing is done again after the course.
    - Subsections only if they add real structure.
 5. **Links** (`design_matrix_node_link_objetivo`): each content section with the objectives it
    develops. Every objective is covered by at least one section.

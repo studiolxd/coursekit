@@ -6,6 +6,7 @@ for that course alone); in handoff mode coursekit signs it."""
 
 from __future__ import annotations
 
+import hashlib
 import re
 from pathlib import Path
 
@@ -21,9 +22,20 @@ def project_path(project) -> Path | None:
     return found if found.is_file() else None
 
 
+def fingerprint(guide: Path) -> str:
+    """What a signature of the guide covers: the guide and, when its theme has one, the template of the job aids
+    (theme/templates/job-aid.html next to theme/branding/); a change in either asks for a new signature."""
+    from coursekit.jobaid import NAME
+
+    template = guide.parent.parent / "templates" / NAME
+    if not template.is_file():
+        return sha256_file(guide)
+    return hashlib.sha256((sha256_file(guide) + sha256_file(template)).encode()).hexdigest()
+
+
 def _last(approvals: list | None, found: Path) -> dict | None:
     signed = [a for a in approvals or [] if a.get("gate") == "media_style"]
-    return signed[-1] if signed and signed[-1].get("sha256") == sha256_file(found) else None
+    return signed[-1] if signed and signed[-1].get("sha256") == fingerprint(found) else None
 
 
 def project_approval(project) -> dict | None:

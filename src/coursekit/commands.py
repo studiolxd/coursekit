@@ -1309,6 +1309,17 @@ def cmd_theme(args: argparse.Namespace) -> int:
         if not _print_contrast(tokens):
             print(t("commands", "theme_contrast_hint_css" if origin["source"] == "css" else "theme_contrast_hint"))
         return 0
+    if args.action == "sample":
+        from coursekit import jobaid
+
+        try:
+            out = jobaid.sample(project, course)
+        except (jobaid.JobAidError, mediatools.ToolError) as exc:
+            print(t("commands", "error_line", text=exc), file=sys.stderr)
+            return 1
+        used = jobaid.own_template(project, course)
+        print(t("jobaid", "sample", path=rel(out), template=rel(used) if used else "coursekit"))
+        return 0
     if args.action == "roles":
         tokens = thememod.load(project, course)
         for row in thememod.roles(tokens):
@@ -1624,7 +1635,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.set_defaults(func=cmd_catalog)
 
     p = sub.add_parser("theme", help=t("commands", "help_theme"))
-    p.add_argument("action", choices=("tokens", "check", "import", "show", "roles"), help=t("commands", "help_theme_action"))
+    p.add_argument("action", choices=("tokens", "check", "import", "show", "roles", "sample"), help=t("commands", "help_theme_action"))
     p.add_argument("file", nargs="?", help=t("commands", "help_theme_file"))
     p.add_argument("--course", help=t("commands", "help_theme_course"))
     p.set_defaults(func=cmd_theme)

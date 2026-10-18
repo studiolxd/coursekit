@@ -103,7 +103,7 @@ The html backend builds its pages from this same plan. Lesson keys are `U<unit>-
 | Plain blockquote `> …` | `HIGHLIGHT` |
 | `:::name` directive | The brick of the registry (table in [06-content.md](06-content.md)) |
 | Media placeholder not uploaded | `NOTE` titled `Media asset — <type>: <title>` (the first words are those of the course language, and the type is written as in the content, for example `Infographic`), with description and specifications |
-| Media placeholder uploaded | By type id: `image`, `infographic`, `diagram` and `animated_gif` become `IMAGE`; `video` becomes `VIDEO` (with captions and transcript if registered); `audio` becomes `AUDIO`; `simulation` and `terminal_demo` become `EMBED`. Plus an `ATTACHMENT` per uploaded download |
+| Media placeholder uploaded | By type id: `image`, `infographic`, `diagram` and `animated_gif` become `IMAGE`; `video` becomes `VIDEO` (with captions and transcript if registered); `audio` becomes `AUDIO`; `simulation` and `terminal_demo` become `EMBED`; `job_aid` becomes an `ATTACHMENT` (the PDF). Plus an `ATTACHMENT` per uploaded download |
 | Objective tags, `---`, HTML comments | Not published |
 
 Only the **Instructions for the learner** and **Question bank** subsections of an activity of `assessment.md` go into its assessment lesson.
@@ -285,7 +285,7 @@ The page is built with progressive enhancement. The lessons (one per section of 
 | Video placeholder (produced) | `VIDEO` | Video with controls, captions track (if there is a `.vtt`) and the transcript in a `details` |
 | Audio placeholder (produced) | `AUDIO` | Audio with controls and the transcript |
 | Simulation and terminal demo placeholder (produced) | `EMBED` | An `iframe` of the package folder (`media/<id>/index.html`) |
-| Download of an asset | `ATTACHMENT` | A download link |
+| Download of an asset, job aid | `ATTACHMENT` | A download link |
 | `single-choice`, `multi-select`, `true-false` | `SINGLE_CHOICE`, `MULTI_SELECT`, `TRUE_FALSE` | Radio buttons or checkboxes; true-false offers True and False |
 | `sorting` | `SORTING` | The items shuffled, with move up and move down buttons |
 | `match` | `MATCH` | One drop-down per term on the left, with the terms on the right shuffled |
