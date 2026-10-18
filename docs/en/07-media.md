@@ -290,8 +290,14 @@ so it is reviewed with the unit; the media agent never writes it.
 Every job aid of a project comes out of one **template**: `theme/templates/job-aid.html` of the course, else of the project,
 else the one of coursekit (neutral, with the tokens and the fonts of the brand). Its values in double braces are `lang`,
 `title`, `subtitle` (the course and the unit), `content` (the text as HTML; a list whose items all start with `[ ]` comes out
-as a checklist), `page`, `tokens_css` and `fonts_css`. The page is `media › job_aid` (`page`: `A4` by default, `A5`, `letter`,
-`legal` or a size such as `210mm 99mm`; `orientation`: `portrait` or `landscape`).
+as a checklist), `page`, `margins`, `tokens_css`, `fonts_css` and `style_css`.
+
+The job aids have a **style of their own**, because paper is not a screen: `media › job_aid` (see
+[`media`](04-configuration.md#media-production-options)) gives the page (`page`, `orientation`, `margins`), the typography of each
+part (`text`: `kicker`, `title`, `heading`, `subheading`, `body`, `quote`, with a family of the fonts of the brand, the size in
+pt and the colour of a role of the theme) and the shapes (`shapes`). `/define-theme` sets it from the brand as it sets the style
+of the videos, and the template reads it as CSS variables (`--ja-<role>-<key>`), falling back to the theme for what it leaves
+empty. The template is changed only for a layout the style cannot give (a logo, a footer).
 
 - While the theme is defined, [`coursekit theme sample`](03-commands.md#coursekit-theme) prints a job aid with sample text to
   `theme/branding/samples/job-aid.pdf`: the person opens it and asks for changes until it looks right.

@@ -20,6 +20,10 @@ NAME = "job-aid.html"
 DEFAULT = Path(__file__).parent / "templates" / "media" / NAME
 SAMPLE = Path("branding") / "samples" / "job-aid.pdf"  # inside the theme folder of the project or of the course
 CHECKBOX = re.compile(r"^\[ \]\s+")
+ROLES = ("kicker", "title", "heading", "subheading", "body", "quote")
+TEXT_KEYS = ("family", "size", "weight", "style", "transform", "tracking", "leading", "color")
+SHAPE_KEYS = ("rule", "rule_color", "radius", "border", "fill")
+CSS_VALUE = re.compile(r"^[\w .,#%-]+$")  # what a value of the style may hold: no braces, quotes or semicolons
 
 
 class JobAidError(Exception):
@@ -35,6 +39,48 @@ def own_template(project, course: dict | None = None) -> Path | None:
 
 def template(project, course: dict | None = None) -> Path:
     return own_template(project, course) or DEFAULT
+
+
+def style_css(project, course: dict | None, families: list[str]) -> tuple[str, list[str]]:
+    """The style of the job aids (`media › job_aid › text` and `shapes`) as CSS variables for the template (`--ja-<role>-<key>`,
+    `--ja-<shape>`), and the warnings: a family that is not one of the fonts of the brand is left out."""
+    cfg = configmod.effective("media", project, course).value.get("job_aid") or {}
+    known = {f.lower() for f in families}
+    lines, warnings = [], []
+
+    def value(key: str, raw: object) -> str | None:
+        if raw is None or raw == "" or not CSS_VALUE.match(str(raw)):
+            return None
+        if key in ("color", "rule_color", "fill"):
+            return f"var(--color-{raw})"
+        if key in ("size", "rule", "radius", "border"):
+            return f"{raw}pt"
+        if key == "tracking":
+            return f"{raw}em"
+        return str(raw)
+
+    for role in ROLES:
+        values = (cfg.get("text") or {}).get(role) or {}
+        for key in TEXT_KEYS:
+            raw = values.get(key) if isinstance(values, dict) else None
+            if key == "family" and raw:
+                if str(raw).lower() not in known:
+                    warnings.append(t("jobaid", "font_not_brand", family=raw, role=role, families=", ".join(families) or "-"))
+                    continue
+                lines.append(f'  --ja-{role}-family: "{raw}";')
+                continue
+            css = value(key, raw)
+            if css is not None:
+                lines.append(f"  --ja-{role}-{key}: {css};")
+    shapes = cfg.get("shapes") or {}
+    for key in SHAPE_KEYS:
+        css = value(key, shapes.get(key)) if isinstance(shapes, dict) else None
+        if css is not None:
+            lines.append(f"  --ja-{key.replace('_', '-')}: {css};")
+    margins = cfg.get("margins")
+    if margins and CSS_VALUE.match(str(margins)):
+        lines.append(f"  --ja-margins: {margins};")
+    return (":root {\n" + "\n".join(lines) + "\n}") if lines else "", warnings
 
 
 def page(project, course: dict | None = None) -> str:
@@ -61,8 +107,9 @@ def body_html(body: str) -> str:
     return re.sub(r"<ul>(.*?)</ul>", checklist, out, flags=re.S)
 
 
-def page_html(project, course: dict | None, title: str, subtitle: str, body: str, language: str) -> str:
-    """The page of a job aid: its template with the theme, the fonts of the brand and the text."""
+def page_html(project, course: dict | None, title: str, subtitle: str, body: str, language: str) -> tuple[str, list[str]]:
+    """The page of a job aid: its template with the theme, the fonts and the style of the job aids, and the text; and the
+    warnings of the style."""
     from coursekit import brand
 
     try:
@@ -71,29 +118,36 @@ def page_html(project, course: dict | None, title: str, subtitle: str, body: str
         tokens_css = ""  # without tokens the template keeps its own neutral colours
     sheet = brand.fonts_stylesheet(project, course)
     try:
-        fonts_css = brand.inline_fonts(sheet, project.root)[0] if sheet else ""
+        fonts_css, families = brand.inline_fonts(sheet, project.root) if sheet else ("", [])
     except brand.BrandError as exc:
         raise JobAidError(str(exc)) from None
+    own_css, warnings = style_css(project, course, families)
+    margins = str((configmod.effective("media", project, course).value.get("job_aid") or {}).get("margins") or "16mm 16mm 18mm")
     values = {"lang": language, "title": htmlmod.escape(title), "subtitle": htmlmod.escape(subtitle),
-              "content": body_html(body), "page": page(project, course), "tokens_css": tokens_css, "fonts_css": fonts_css}
-    return re.sub(r"\{\{(\w+)\}\}", lambda m: values.get(m.group(1), m.group(0)),
+              "content": body_html(body), "page": page(project, course), "tokens_css": tokens_css, "fonts_css": fonts_css,
+              "style_css": own_css, "margins": margins if CSS_VALUE.match(margins) else "16mm 16mm 18mm"}
+    html = re.sub(r"\{\{(\w+)\}\}", lambda m: values.get(m.group(1), m.group(0)),
                   template(project, course).read_text(encoding="utf-8"))
+    return html, warnings
 
 
-def render(project, course: dict | None, title: str, subtitle: str, body: str, language: str, out: Path) -> Path:
+def render(project, course: dict | None, title: str, subtitle: str, body: str, language: str,
+           out: Path) -> tuple[Path, list[str]]:
+    """The PDF of a job aid, and the warnings of its style."""
     if not body.strip():
         raise JobAidError(t("jobaid", "no_body", title=title))
     out.parent.mkdir(parents=True, exist_ok=True)
     source = out.with_suffix(".print.html")
-    source.write_text(page_html(project, course, title, subtitle, body, language), encoding="utf-8", newline="\n")
+    html, warnings = page_html(project, course, title, subtitle, body, language)
+    source.write_text(html, encoding="utf-8", newline="\n")
     try:
         mediatools.print_pdf(source, out)
     finally:
         source.unlink(missing_ok=True)
-    return out
+    return out, warnings
 
 
-def render_asset(course: dict, asset: dict) -> Path:
+def render_asset(course: dict, asset: dict) -> tuple[Path, list[str]]:
     """The PDF of a job aid of the manifest, in media/<id>.pdf."""
     unit = coursemod.package_unit(course, asset.get("unit"))
     tk = coursemod.tokens(course)
@@ -103,7 +157,7 @@ def render_asset(course: dict, asset: dict) -> Path:
                   coursemod.language(course), out)
 
 
-def sample(project, course: dict | None = None) -> Path:
+def sample(project, course: dict | None = None) -> tuple[Path, list[str]]:
     """A job aid with sample text, in theme/branding/samples/job-aid.pdf (of the course with its own theme): to look at the
     template while the theme is adjusted."""
     from coursekit import lang

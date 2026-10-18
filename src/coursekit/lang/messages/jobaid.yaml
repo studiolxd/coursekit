@@ -11,3 +11,6 @@ rendered:
 sample:
   es: "{path}: la muestra de las ayudas de trabajo con la plantilla {template}; ábrela, pide los cambios de la plantilla o del tema y vuelve a generarla"
   en: "{path}: the sample of the job aids with the template {template}; open it, ask for the changes of the template or the theme and print it again"
+font_not_brand:
+  es: "media › job_aid › text › {role}: «{family}» no es una de las fuentes de la marca ({families}); se deja fuera"
+  en: "media › job_aid › text › {role}: «{family}» is not one of the fonts of the brand ({families}); it is left out"

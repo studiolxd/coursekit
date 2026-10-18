@@ -732,12 +732,13 @@ def render_job_aid(course: dict, asset_id: str) -> str:
     if asset is None:
         raise MediaError(t("media", "asset_not_found", asset_id=asset_id))
     try:
-        out = jobaid.render_asset(course, asset)
+        out, warnings = jobaid.render_asset(course, asset)
     except (jobaid.JobAidError, mediatools.ToolError) as exc:
         raise MediaError(str(exc)) from None
     root = course["_project"].root
-    return t("jobaid", "rendered", path=out.relative_to(root).as_posix(), code=course["code"], asset=asset_id,
-             file=out.relative_to(course["_dir"] / "media").as_posix())
+    return "\n".join([t("jobaid", "rendered", path=out.relative_to(root).as_posix(), code=course["code"], asset=asset_id,
+                         file=out.relative_to(course["_dir"] / "media").as_posix()),
+                       *(t("commands", "warning_line", text=w) for w in warnings)])
 
 
 def optimize(course: dict, ids: list[str] | None = None) -> list[str]:

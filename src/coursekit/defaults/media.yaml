@@ -126,12 +126,30 @@ types:
   job_aid:
     - {id: agent-html-pdf, needs: none, how: "The text of the placeholder laid out with the job aid template of the theme and printed to PDF by the Chrome of the machine (coursekit media render); the learner downloads it (ATTACHMENT)"}
 
-# The job aids (a checklist or a quick guide the learner downloads, `job_aid`): the page they are printed on. The template is
-# theme/templates/job-aid.html of the course, else of the project, else the one of coursekit; `coursekit theme sample`
-# prints one with sample text, and the template is signed with the style guide of the media.
+# The job aids (a checklist or a quick guide the learner downloads, `job_aid`): their page and their style, their own (paper is
+# not a screen), set from the brand by /define-theme as the style of the videos is. The template is
+# theme/templates/job-aid.html of the course, else of the project, else the one of coursekit, and it reads this style as CSS
+# variables; `coursekit theme sample` prints one with sample text, and the template is signed with the style guide of the
+# media. A course changes them in its course.yaml › media › job_aid.
 job_aid:
   page: A4                     # A4 | A5 | letter | legal, or a size such as "210mm 99mm"
   orientation: portrait        # portrait | landscape
+  margins: 16mm 16mm 18mm      # top, sides and bottom of the page, as CSS writes them
+  # The typography of each part of the page. `family` is a family of the fonts of the brand (theme/branding/fonts/fonts.css;
+  # another one is warned of and left out); `size` in pt; `weight`; `style` (normal, italic); `transform` (none, uppercase,
+  # lowercase, capitalize); `tracking` (em between letters, e.g. 0.04); `leading` (the line height, e.g. 1.4); `color` the name
+  # of a role of the theme (text, headings, text-muted, accent-ink…), never a hex. null: what the template draws.
+  text:
+    kicker:     {family: null, size: 9,  weight: null, style: null, transform: uppercase, tracking: 0.04, leading: null, color: text-muted}   # the course and the unit, over the title
+    title:      {family: null, size: 20, weight: null, style: null, transform: null, tracking: null, leading: 1.15, color: headings}        # the title of the job aid
+    heading:    {family: null, size: 13, weight: null, style: null, transform: null, tracking: null, leading: null, color: accent-ink}      # the `##` of each block
+    subheading: {family: null, size: 11, weight: null, style: null, transform: null, tracking: null, leading: null, color: headings}        # a `###`
+    body:       {family: null, size: 11, weight: null, style: null, transform: null, tracking: null, leading: 1.45, color: text}             # text, steps, checks, tables
+    quote:      {family: null, size: null, weight: null, style: null, transform: null, tracking: null, leading: null, color: text}           # a `>` highlight
+  # The shapes: `rule` the line under the header (pt; 0: none) and its `rule_color` (a role of the theme), `radius` the corners
+  # of a highlight and of the checkboxes (pt), `border` the borders of tables and checkboxes (pt), `fill` the background of a
+  # highlight and of the head of a table (a role of the theme). null: what the template draws.
+  shapes: {rule: 2, rule_color: accent, radius: null, border: null, fill: surface-highlight}
 
 # Lighter media, locally and without credits. `coursekit media optimize CODE [ID…]` applies it in place to the file of the
 # produced assets (run it before uploading to creator); the html backend applies it to the copy it puts in the package (the

@@ -291,8 +291,14 @@ nunca lo escribe.
 Todas las ayudas de un proyecto salen de una **plantilla**: `theme/templates/job-aid.html` del curso, si no la del proyecto,
 si no la de coursekit (neutra, con los tokens y las fuentes de la marca). Sus valores entre llaves dobles son `lang`, `title`,
 `subtitle` (el curso y la unidad), `content` (el texto en HTML; una lista cuyos elementos empiezan todos por `[ ]` sale como
-lista de comprobación), `page`, `tokens_css` y `fonts_css`. La página es `media › job_aid` (`page`: `A4` por defecto, `A5`,
-`letter`, `legal` o un tamaño como `210mm 99mm`; `orientation`: `portrait` o `landscape`).
+lista de comprobación), `page`, `margins`, `tokens_css`, `fonts_css` y `style_css`.
+
+Las ayudas de trabajo tienen un **estilo propio**, porque el papel no es una pantalla: `media › job_aid` (ver
+[`media`](04-configuration.md#media-opciones-de-producción)) da la página (`page`, `orientation`, `margins`), la tipografía de cada
+parte (`text`: `kicker`, `title`, `heading`, `subheading`, `body`, `quote`, con una familia de las fuentes de la marca, el
+tamaño en pt y el color de un rol del tema) y las formas (`shapes`). `/define-theme` lo ajusta desde la marca igual que el
+estilo de los vídeos, y la plantilla lo lee como variables CSS (`--ja-<rol>-<clave>`), con el tema para lo que deja vacío. La
+plantilla solo se cambia para una maquetación que el estilo no da (un logo, un pie).
 
 - Mientras se define el tema, [`coursekit theme sample`](03-commands.md#coursekit-theme) imprime una ayuda con texto de muestra
   en `theme/branding/samples/job-aid.pdf`: la persona la abre y pide cambios hasta que queda bien.

@@ -3,8 +3,11 @@
      Chrome of the machine (`coursekit media render`, `coursekit theme sample`). A project changes it in
      theme/templates/job-aid.html (a course in courses/<CODE>/theme/templates/), and every job aid of it follows that one.
      Its values: {{lang}} the language of the course, {{title}} the title of the job aid, {{subtitle}} the course and the
-     unit, {{content}} the text of the placeholder as HTML, {{page}} the page of `media › job_aid` (e.g. "A4 portrait"),
-     {{tokens_css}} the CSS variables of the theme (tokens.css), {{fonts_css}} the fonts of the brand. -->
+     unit, {{content}} the text of the placeholder as HTML, {{page}} and {{margins}} the page of `media › job_aid`,
+     {{tokens_css}} the CSS variables of the theme (tokens.css), {{fonts_css}} the fonts of the brand and {{style_css}} the
+     style of the job aids (`media › job_aid › text` and `shapes`) as variables: `--ja-<role>-<key>` for the roles kicker,
+     title, heading, subheading, body and quote (family, size, weight, style, transform, tracking, leading, color) and
+     `--ja-rule`, `--ja-rule-color`, `--ja-radius`, `--ja-border`, `--ja-fill`. Each rule below falls back to the theme. -->
 <html lang="{{lang}}">
 <head>
 <meta charset="utf-8">
@@ -12,29 +15,55 @@
 <style>
 {{fonts_css}}
 {{tokens_css}}
-@page { size: {{page}}; margin: 16mm 16mm 18mm; }
+{{style_css}}
+@page { size: {{page}}; margin: {{margins}}; }
 html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-body { margin: 0; font-family: var(--font-family, system-ui, sans-serif); font-size: 11pt; line-height: 1.45;
-  color: var(--color-text, #1a1a1a); background: var(--color-background, #fff); }
-header { border-bottom: 3px solid var(--color-accent, #1a1a1a); padding-bottom: 4mm; margin-bottom: 6mm; }
-header p { margin: 0 0 1mm; font-size: 9pt; color: var(--color-text-muted, #555); text-transform: uppercase; letter-spacing: .04em; }
-h1 { margin: 0; font-family: var(--font-family-headings, var(--font-family, inherit)); font-size: 20pt; line-height: 1.15;
-  color: var(--color-text, #1a1a1a); }
-h2 { font-family: var(--font-family-headings, var(--font-family, inherit)); font-size: 13pt; margin: 6mm 0 2mm;
-  color: var(--color-accent-ink, var(--color-accent, #1a1a1a)); break-after: avoid; }
-h3 { font-size: 11pt; margin: 4mm 0 1mm; break-after: avoid; }
+body { margin: 0; background: var(--color-background, #fff);
+  font-family: var(--ja-body-family, var(--font-family, system-ui, sans-serif)); font-size: var(--ja-body-size, 11pt);
+  font-weight: var(--ja-body-weight, var(--font-weight, 400)); font-style: var(--ja-body-style, normal);
+  line-height: var(--ja-body-leading, 1.45); letter-spacing: var(--ja-body-tracking, normal);
+  text-transform: var(--ja-body-transform, none); color: var(--ja-body-color, var(--color-text, #1a1a1a)); }
+header { border-bottom: var(--ja-rule, 2pt) solid var(--ja-rule-color, var(--color-accent, #1a1a1a)); padding-bottom: 4mm;
+  margin-bottom: 6mm; }
+header p { margin: 0 0 1mm;
+  font-family: var(--ja-kicker-family, inherit); font-size: var(--ja-kicker-size, 9pt); font-weight: var(--ja-kicker-weight, inherit);
+  font-style: var(--ja-kicker-style, normal); line-height: var(--ja-kicker-leading, 1.3);
+  letter-spacing: var(--ja-kicker-tracking, .04em); text-transform: var(--ja-kicker-transform, uppercase);
+  color: var(--ja-kicker-color, var(--color-text-muted, #555)); }
+h1 { margin: 0;
+  font-family: var(--ja-title-family, var(--font-family-headings, inherit)); font-size: var(--ja-title-size, 20pt);
+  font-weight: var(--ja-title-weight, var(--font-weight-strong, 700)); font-style: var(--ja-title-style, normal);
+  line-height: var(--ja-title-leading, 1.15); letter-spacing: var(--ja-title-tracking, normal);
+  text-transform: var(--ja-title-transform, none); color: var(--ja-title-color, var(--color-headings, #1a1a1a)); }
+h2 { margin: 6mm 0 2mm; break-after: avoid;
+  font-family: var(--ja-heading-family, var(--font-family-headings, inherit)); font-size: var(--ja-heading-size, 13pt);
+  font-weight: var(--ja-heading-weight, var(--font-weight-strong, 700)); font-style: var(--ja-heading-style, normal);
+  line-height: var(--ja-heading-leading, 1.25); letter-spacing: var(--ja-heading-tracking, normal);
+  text-transform: var(--ja-heading-transform, none);
+  color: var(--ja-heading-color, var(--color-accent-ink, var(--color-accent, #1a1a1a))); }
+h3 { margin: 4mm 0 1mm; break-after: avoid;
+  font-family: var(--ja-subheading-family, inherit); font-size: var(--ja-subheading-size, 11pt);
+  font-weight: var(--ja-subheading-weight, var(--font-weight-strong, 700)); font-style: var(--ja-subheading-style, normal);
+  line-height: var(--ja-subheading-leading, 1.3); letter-spacing: var(--ja-subheading-tracking, normal);
+  text-transform: var(--ja-subheading-transform, none); color: var(--ja-subheading-color, var(--color-headings, inherit)); }
 p { margin: 0 0 2.5mm; }
 ol, ul { margin: 0 0 3mm; padding-left: 7mm; }
 li { margin: 0 0 1.5mm; break-inside: avoid; }
 ul.checklist { list-style: none; padding-left: 0; }
 ul.checklist li { padding-left: 7.5mm; text-indent: -7.5mm; }
 ul.checklist li::before { content: ""; display: inline-block; box-sizing: border-box; width: 3.6mm; height: 3.6mm;
-  margin-right: 3.9mm; vertical-align: -0.6mm; border: 1.5px solid var(--color-text, #1a1a1a); border-radius: 1px; }
-table { border-collapse: collapse; width: 100%; margin: 0 0 4mm; font-size: 10pt; }
-th, td { border: 1px solid var(--color-border, #ccc); padding: 1.5mm 2mm; text-align: left; vertical-align: top; }
-th { background: var(--color-surface-highlight, #f2f2f2); }
-blockquote { margin: 0 0 3mm; padding: 2mm 4mm; border-left: 4px solid var(--color-accent, #1a1a1a);
-  background: var(--color-surface-highlight, #f2f2f2); }
+  margin-right: 3.9mm; vertical-align: -0.6mm; border: var(--ja-border, 1.2pt) solid var(--ja-body-color, var(--color-text, #1a1a1a));
+  border-radius: var(--ja-radius, 1pt); }
+table { border-collapse: collapse; width: 100%; margin: 0 0 4mm; font-size: .92em; }
+th, td { border: var(--ja-border, .75pt) solid var(--color-border, #ccc); padding: 1.5mm 2mm; text-align: left; vertical-align: top; }
+th { background: var(--ja-fill, var(--color-surface-highlight, #f2f2f2)); }
+blockquote { margin: 0 0 3mm; padding: 2mm 4mm; border-left: 4px solid var(--ja-rule-color, var(--color-accent, #1a1a1a));
+  border-radius: var(--ja-radius, 0); background: var(--ja-fill, var(--color-surface-highlight, #f2f2f2));
+  font-family: var(--ja-quote-family, inherit); font-size: var(--ja-quote-size, inherit);
+  font-weight: var(--ja-quote-weight, inherit); font-style: var(--ja-quote-style, normal);
+  line-height: var(--ja-quote-leading, inherit); letter-spacing: var(--ja-quote-tracking, normal);
+  text-transform: var(--ja-quote-transform, none); color: var(--ja-quote-color, inherit); }
+blockquote p:last-child { margin-bottom: 0; }
 strong { font-weight: var(--font-weight-strong, 700); }
 </style>
 </head>

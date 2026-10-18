@@ -1323,12 +1323,14 @@ def cmd_theme(args: argparse.Namespace) -> int:
         from coursekit import jobaid
 
         try:
-            out = jobaid.sample(project, course)
+            out, warnings = jobaid.sample(project, course)
         except (jobaid.JobAidError, mediatools.ToolError) as exc:
             print(t("commands", "error_line", text=exc), file=sys.stderr)
             return 1
         used = jobaid.own_template(project, course)
         print(t("jobaid", "sample", path=rel(out), template=rel(used) if used else "coursekit"))
+        for warning in warnings:
+            print(t("commands", "warning_line", text=warning))
         return 0
     if args.action == "roles":
         tokens = thememod.load(project, course)

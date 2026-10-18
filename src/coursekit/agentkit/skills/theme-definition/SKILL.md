@@ -135,16 +135,23 @@ colours, `origin.derived`), and the radius and the shadow are its defaults. The 
      `coursekit media plan` warn of the lines the guide does not quote.
    A rule you infer and the brand does not state is not written as a rule: it goes as a question. The person's
    `notes.md` weighs more than the rest.
-7. **Job aids** (the checklists and quick guides the learner downloads as a PDF): every one comes out of one template,
-   `theme/templates/job-aid.html` (a course with its own brand: `courses/<CODE>/theme/templates/`). Without one, coursekit uses
-   its own, neutral, with the tokens and the fonts of the brand. When the brand has printed or downloadable material (a
-   letterhead, a document template, a one-pager), copy the template of coursekit (`coursekit theme sample` says which one is in
-   use) and adapt it to the brand: header, hierarchy of headings, checkboxes, tables, a highlight, the margins. Keep its
-   values in double braces (`title`, `content`, `page`, `tokens_css`…) and the semantic HTML (headings, lists, tables: the PDF is tagged for screen readers from them). Then
-   `coursekit theme sample` (or `--course <CODE>`) prints `theme/branding/samples/job-aid.pdf` with sample text: tell the
-   person to open it, change what they ask and print it again. The page is `media › job_aid` (`page`, `orientation`). Add to
-   the guide a section on the job aids (what the template does and why, with its sources). The template is signed with the
-   guide: changing it asks for a new signature.
+7. **Job aids** (the checklists and quick guides the learner downloads as a PDF) have a style of their own, because paper is
+   not a screen: set it from the brand as you set the one of the videos (step 5), in `config/media.yaml › job_aid` (a course
+   with its own brand: `course.yaml › media › job_aid`). `text`, the typography of each part of the page (`kicker`, the course
+   and the unit over the title; `title`; `heading`, the `##` of each block; `subheading`; `body`, the text, steps, checks and
+   tables; `quote`, a highlight), each with the family of one of the fonts of the brand, the size in pt, the weight, the case,
+   the tracking (em), the leading and the colour of a role of the theme, from what the brand does in print (a letterhead, a
+   document template, a one-pager, a brochure) and, without print material, from its type scale; `shapes` (`rule`, the line
+   under the header, and its `rule_color`; `radius`; `border`; `fill`, the background of a highlight and of the head of a
+   table); `margins`; and the page (`page`, `orientation`). Read `config/media.example.yaml › job_aid`: its defaults are not
+   the brand; set every value the brand contradicts. Every job aid comes out of one template, `theme/templates/job-aid.html`
+   (a course: `courses/<CODE>/theme/templates/`), which reads that style; without one, coursekit uses its own. Copy and change
+   the template only when the brand asks for a layout the style cannot give (a logo in the header, a footer, two columns),
+   keeping its values in double braces (`title`, `content`, `style_css`…) and the semantic HTML (headings, lists, tables: the
+   PDF is tagged for screen readers from them). Then `coursekit theme sample` (or `--course <CODE>`) prints
+   `theme/branding/samples/job-aid.pdf` with sample text; it warns of a family that is not one of the fonts of the brand. Tell
+   the person to open it, change what they ask and print it again. Add to the guide a section on the job aids (the style and,
+   if any, the template, with their sources). The template is signed with the guide: changing it asks for a new signature.
 8. Tell the person to look at the gallery of the videos (`coursekit video gallery`, the project's; with `<CODE>`, a course's),
    and at the sample of the job aids, to read the guide and to sign it: the guide of the project once for every course that uses it
    (`coursekit approve media-style`), the own guide of a course with its code (`coursekit approve media-style <CODE>`). No
