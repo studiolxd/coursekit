@@ -19,6 +19,9 @@ from coursekit.i18n import t
 
 DIRECTIVE = "labelled-graphic"
 RASTER = (".png", ".jpg", ".jpeg", ".webp")
+INK = "#6b7280"  # a subtle grey: it shows where the point goes without competing with the image
+HALO = "#ffffff"
+ARM = 0.009  # half the cross, as a share of the shorter side of the image
 GROUP_RE = re.compile(r'\s*<g data-ck-anchor="[^"]*"[^>]*>.*?</g>', re.S)
 
 
@@ -150,11 +153,11 @@ def _svg_box(text: str) -> tuple[float, float, float, float]:
 
 
 def draw_svg(path: Path, marks: list[dict]) -> None:
-    """The crosshairs as groups at the end of the SVG (the ones it had are replaced): a cross with a white halo, and the number
-    of the point, so that they read on any background."""
+    """The crosshairs as groups at the end of the SVG (the ones it had are replaced): a small grey cross with a thin white halo,
+    so that it reads on any background, and the number of the point tight in its upper right quadrant."""
     text = GROUP_RE.sub("", path.read_text(encoding="utf-8"))
     x0, y0, w, h = _svg_box(text)
-    size = min(w, h) * 0.022
+    size = min(w, h) * ARM
     groups = []
     for n, mark in enumerate(marks, 1):
         x, y = x0 + w * mark["at"][0] / 100, y0 + h * mark["at"][1] / 100
@@ -162,10 +165,11 @@ def draw_svg(path: Path, marks: list[dict]) -> None:
         cross = f"M{-size:g} 0H{size:g}M0 {-size:g}V{size:g}"
         groups.append(
             f'<g data-ck-anchor="{label}" transform="translate({x:.2f} {y:.2f})" aria-hidden="true">'
-            f'<path d="{cross}" stroke="#fff" stroke-width="{size * 0.45:.2f}" stroke-linecap="round"/>'
-            f'<path d="{cross}" stroke="#d0021b" stroke-width="{size * 0.18:.2f}" stroke-linecap="round"/>'
-            f'<text x="{size * 1.2:.2f}" y="{-size * 0.6:.2f}" font-family="sans-serif" font-size="{size * 1.4:.2f}" '
-            f'font-weight="700" fill="#d0021b" stroke="#fff" stroke-width="{size * 0.25:.2f}" paint-order="stroke">{n}</text></g>')
+            f'<path d="{cross}" stroke="{HALO}" stroke-opacity="0.8" stroke-width="{size * 0.4:.2f}" stroke-linecap="round"/>'
+            f'<path d="{cross}" stroke="{INK}" stroke-width="{size * 0.16:.2f}" stroke-linecap="round"/>'
+            f'<text x="{size * 0.22:.2f}" y="{-size * 0.22:.2f}" font-family="sans-serif" font-size="{size * 1.05:.2f}" '
+            f'font-weight="600" fill="{INK}" stroke="{HALO}" stroke-opacity="0.8" stroke-width="{size * 0.22:.2f}" '
+            f'paint-order="stroke">{n}</text></g>')
     text = text.replace("</svg>", "".join(f"\n  {g}" for g in groups) + "\n</svg>", 1) if groups else text
     path.write_text(text, encoding="utf-8")
 
@@ -177,7 +181,7 @@ def clean_copy(path: Path) -> Path:
 def draw_raster(path: Path, marks: list[dict]) -> None:
     """The crosshairs over the clean copy of the image (kept the first time, `<name>.clean.<ext>`), so moving a point does not
     leave the old cross behind."""
-    from PIL import Image, ImageDraw
+    from PIL import Image, ImageDraw, ImageFont
 
     clean = clean_copy(path)
     if not clean.exists():
@@ -185,13 +189,15 @@ def draw_raster(path: Path, marks: list[dict]) -> None:
     with Image.open(clean) as source:
         im = source.convert("RGBA")
     draw = ImageDraw.Draw(im)
-    size = max(6, round(min(im.size) * 0.022))
+    size = max(4, round(min(im.size) * ARM))
+    font = ImageFont.load_default(size=max(8, round(size * 1.05)))
     for n, mark in enumerate(marks, 1):
         x, y = im.width * mark["at"][0] / 100, im.height * mark["at"][1] / 100
-        for color, width in (("white", max(3, size // 2)), ((208, 2, 27), max(1, size // 5))):
+        for color, width in ((HALO, max(2, round(size * 0.4))), (INK, max(1, round(size * 0.16)))):
             draw.line((x - size, y, x + size, y), fill=color, width=width)
             draw.line((x, y - size, x, y + size), fill=color, width=width)
-        draw.text((x + size * 1.2, y - size * 2), str(n), fill=(208, 2, 27), stroke_width=2, stroke_fill="white")
+        gap = max(1, round(size * 0.22))  # the number in the upper right quadrant, tight to the cross
+        draw.text((x + gap, y - gap), str(n), font=font, anchor="ls", fill=INK, stroke_width=1, stroke_fill=HALO)
     out = im if path.suffix.lower() == ".png" else im.convert("RGB")
     out.save(path)
 
