@@ -111,7 +111,9 @@ What you may do with an `interface` resource, in this order:
    `hide: [<command>]` for a machine without that program; `env`) and `files/`, the project as it starts, with invented
    data only. One stage serves every resource that shows the same project; what a resource needs on top (a file taken away,
    a change already made) goes in `prepare: [...]` of its `capture` block, with `mode: terminal`, `stage: <name>` and, if
-   it needs another size, `terminal: {cols, rows}`. Try it with `coursekit capture stage <CODE> <name>` (it mounts it from
+   it needs another size, `terminal: {cols, rows}`. The block is a fenced block of its own kind with its keys at the top:
+   ```` ```capture ```` on the first line, then `mode: terminal`, `stage: <name>`, `prepare: [...]`, and ```` ``` ````. In the
+   handoff coursekit signs the script itself (and again when a session starts): do not wait for a person. Try it with `coursekit capture stage <CODE> <name>` (it mounts it from
    scratch and says where). Then `session_start`: read the screen with `read_screen` (the image with `screenshot` only
    when the look matters), `type` and `key` as a person would, `wait_for` the text that says a program answered (a model
    can take a while), `point_text` on what the narration names, `save_shot` for a capture, `record_start` and

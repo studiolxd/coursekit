@@ -353,6 +353,20 @@ def _approve_captures(ctx: Context) -> int:
     return approved
 
 
+def _sign_capture_scripts(ctx: Context) -> None:
+    """The scripts of what the media agent may capture, signed before it starts, as the handoff signs every gate (a session
+    would sign them anyway; signed first, the plan does not tell the agent to wait for a person)."""
+    from coursekit import mediascript
+
+    course = ctx.course()
+    if not mediascript.required(course):
+        return
+    for asset in _capturable(course):
+        if mediascript.state(course, str(asset["id"])) in ("pending", "changed"):
+            text = approve.approve_script(ctx.course(), str(asset["id"]), lambda question: True, who=HANDOFF, via=VIA)
+            ctx.log(t("handoff", "signed_line", text=text))
+
+
 def _capturable(course: dict) -> list[dict]:
     """What waits for a recording but the permission to capture in force lets the media agent make: its work, not a stop."""
     ids = set(capture.capturable(course))
@@ -394,7 +408,7 @@ def _refresh_media(ctx: Context, course: dict) -> None:
     (`coursekit media redo`, after the theme changed)
     are produced. With the creator backend the produced ones are uploaded, which can only be done to the content of their unit that
     the assembly creates; then the course is assembled again so that they replace their placeholders."""
-    again = bool(_pending_media(course))
+    again = bool(_pending_media(course) or _capturable(course))  # also what a permission granted later lets it capture
     if again:
         _produce(ctx, course)
     creator = coursemod.backend(course) == "creator"
@@ -479,6 +493,7 @@ def _produce(ctx: Context, course: dict) -> None:
     log, rounds, extra = None, 0, 0
     while rounds < ctx.rounds:
         rounds += 1
+        _sign_capture_scripts(ctx)
         _, log, summary = _agent(ctx, "media", "produce-media", ctx.code, "media")
         if _approve_captures(ctx) and extra < ctx.rounds:  # what it captured is composed in another round
             rounds, extra = rounds - 1, extra + 1

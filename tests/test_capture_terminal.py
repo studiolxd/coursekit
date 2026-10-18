@@ -244,3 +244,28 @@ def test_a_terminal_capture_saves_the_screen_as_it_is(course, home, capsys):  # 
 
     with Image.open(course / "media" / "recordings" / "U1-S2-M1.png") as image:
         assert image.width > 500
+
+
+def test_a_capture_block_written_as_yaml_with_a_capture_key_is_read_the_same(course, capsys):  # noqa: F811
+    from coursekit import capture_session, mediascript
+
+    terminal_course(course, capsys, "asciinema")
+    brief = course / "media" / "scripts" / "U1-S2-M1.md"
+    block = "```yaml\ncapture:\n  mode: terminal\n  stage: recipes\n  prepare: [\"rm -f a\"]\n```\n"
+    brief.write_text(f"# U1-S2-M1\n\nWhat it shows.\n\n{block}", encoding="utf-8")
+    loaded = load()
+    assert capture_session.read_block(loaded, "U1-S2-M1") == {"mode": "terminal", "stage": "recipes", "prepare": ["rm -f a"]}
+    before = mediascript.fingerprint(loaded, "U1-S2-M1")
+    brief.write_text(brief.read_text(encoding="utf-8").replace("rm -f a", "rm -f b"), encoding="utf-8")
+    assert mediascript.fingerprint(load(), "U1-S2-M1") == before  # the block is not what a person signs
+
+
+def test_the_handoff_signs_the_scripts_of_what_its_agent_may_capture(course, capsys, monkeypatch):  # noqa: F811
+    from coursekit import handoff, mediascript
+
+    monkeypatch.setattr(mediascript, "required", lambda _course: True)
+    terminal_course(course, capsys, "asciinema")
+    assert mediascript.state(load(), "U1-S2-M1") == "pending"
+    lines = []
+    handoff._sign_capture_scripts(handoff.Context(find_project(), "PWD", 2, lines.append, lambda: None))
+    assert mediascript.state(load(), "U1-S2-M1") == "approved" and "U1-S2-M1" in lines[0]

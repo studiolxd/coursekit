@@ -18,7 +18,8 @@ from coursekit import course as coursemod
 from coursekit import identity
 from coursekit.i18n import t
 
-BLOCK_RE = re.compile(r"^```capture[ \t]*\n.*?^```[ \t]*$", re.M | re.S)
+# the capture block of a brief: a ```capture block, or a ```yaml block whose only key is `capture:` (read the same way)
+BLOCK_RE = re.compile(r"^```(?:capture[ \t]*\n(?P<plain>.*?)|ya?ml[ \t]*\n(?P<nested>capture:[ \t]*\n.*?))^```[ \t]*$", re.M | re.S)
 
 
 class ScriptError(Exception):

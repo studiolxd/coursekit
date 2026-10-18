@@ -137,7 +137,7 @@ prepare: ["rm -f AGENTS.md"]
 terminal: {cols: 120, rows: 34}
 ```
 
-La sesión se graba mientras ocurre y su salida se tapa en el texto (mira [`coursekit capture`](03-commands.md#coursekit-capture)); `session_end` deja el `.cast` de una demo de terminal (se ve con el reproductor y el texto se puede copiar), el `.mp4` de un vídeo con los sitios que nombra la locución (para los zooms de [El componente Screencast](#el-componente-screencast)) o el `.png` de una captura. Se dibuja con los colores propios del programa, sobre la paleta de `capture.yaml › terminal`. `coursekit capture stage CODE NOMBRE` monta un escenario para mirarlo o probarlo.
+Un bloque ```` ```yaml ```` cuya única clave es `capture:` se lee igual. En el handoff, los guiones de lo que su agente de media puede capturar se firman antes de que empiece. La sesión se graba mientras ocurre y su salida se tapa en el texto (mira [`coursekit capture`](03-commands.md#coursekit-capture)); `session_end` deja el `.cast` de una demo de terminal (se ve con el reproductor y el texto se puede copiar), el `.mp4` de un vídeo con los sitios que nombra la locución (para los zooms de [El componente Screencast](#el-componente-screencast)) o el `.png` de una captura. Se dibuja con los colores propios del programa, sobre la paleta de `capture.yaml › terminal`. `coursekit capture stage CODE NOMBRE` monta un escenario para mirarlo o probarlo.
 
 ### Estados
 

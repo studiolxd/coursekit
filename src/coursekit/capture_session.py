@@ -45,7 +45,7 @@ RECIPES = capturemod.MODE_RECIPES["browser"]
 
 class SessionGone(ToolError):
     """The permission was taken back or expired, or the session of the profile expired: the capture session ends."""
-BLOCK_RE = re.compile(r"^```capture[ \t]*\n(.*?)^```[ \t]*$", re.M | re.S)
+BLOCK_RE = mediascript.BLOCK_RE
 
 
 # ── the capture block of the brief ───────────────────────────────────────────────────────────
@@ -61,9 +61,11 @@ def read_block(course: dict, asset_id: str) -> dict:
     if not match:
         return {}
     try:
-        data = yaml.safe_load(match.group(1)) or {}
+        data = yaml.safe_load(match.group("plain") if match.group("plain") is not None else match.group("nested")) or {}
     except yaml.YAMLError as exc:
         raise ToolError(t("capture", "bad_block", path=path.name, error=str(exc).splitlines()[0])) from None
+    if match.group("nested") is not None:
+        data = data.get("capture") if isinstance(data, dict) else {}
     return data if isinstance(data, dict) else {}
 
 
