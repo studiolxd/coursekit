@@ -10,20 +10,26 @@ no_browser: {es: "no hay Chrome, Edge ni Chromium instalado: la captura abre el 
 browser_failed: {es: "el navegador no se pudo abrir o se cerró con un error: {reason}", en: "the browser could not open or closed with an error: {reason}"}
 no_identity: {es: "el permiso de captura lo firma una persona: define COURSEKIT_USER_NAME y COURSEKIT_USER_EMAIL (coursekit setup --identity)", en: "the permission to capture is signed by a person: set COURSEKIT_USER_NAME and COURSEKIT_USER_EMAIL (coursekit setup --identity)"}
 mode_not_allowed: {es: "el modo {mode} no está permitido en este proyecto (capture.yaml › modes: {modes})", en: "the mode {mode} is not allowed in this project (capture.yaml › modes: {modes})"}
-browser_needs_profile: {es: "--mode browser necesita --profile: el perfil con el que se abre la aplicación", en: "--mode browser needs --profile: the profile the application opens with"}
+browser_needs_profile: {es: "no se sabe con qué perfil se abre {id}: dilo en el bloque capture del guion (profile: NOMBRE) o en el permiso (--profile); hay: {known}", en: "it is not known which profile {id} opens with: say it in the capture block of the brief (profile: NAME) or in the permission (--profile); there are: {known}"}
 not_logged_in: {es: "el perfil {name} no tiene sesión: una persona inicia sesión con coursekit capture login {name}", en: "the profile {name} has no session: a person logs in with coursekit capture login {name}"}
-desktop_needs_window: {es: "--mode desktop necesita --window: el nombre de la única ventana que se puede capturar", en: "--mode desktop needs --window: the name of the only window that may be captured"}
+desktop_needs_window: {es: "no se sabe qué ventana se captura para {id}: dilo en el bloque capture del guion (window: NOMBRE) o en el permiso (--window)", en: "it is not known which window is captured for {id}: say it in the capture block of the brief (window: NAME) or in the permission (--window)"}
 not_interface: {es: "{ids} no son recursos de {code} que muestren una interfaz (coursekit media set CODE ID --depicts interface)", en: "{ids} are not resources of {code} that show an interface (coursekit media set CODE ID --depicts interface)"}
 no_interface_assets: {es: "{code} no tiene recursos que muestren una interfaz: no hay nada que capturar", en: "{code} has no resources that show an interface: there is nothing to capture"}
 bad_minutes: {es: "la duración del permiso no puede ser negativa (0: hasta que se retire)", en: "the permission cannot last a negative time (0: until it is revoked)"}
 no_expiry: {es: "cuando se retire (coursekit capture revoke)", en: "when it is revoked (coursekit capture revoke)"}
 needs_target: {es: "{action} necesita el perfil o el código del curso", en: "{action} needs the profile or the code of the course"}
-needs_mode: {es: "allow necesita --mode browser o --mode desktop", en: "allow needs --mode browser or --mode desktop"}
+needs_mode: {es: "allow necesita --mode: browser, desktop, terminal o all (se puede repetir)", en: "allow needs --mode: browser, desktop, terminal or all (it can be repeated)"}
 login_open: {es: "se abre el navegador con el perfil {name}: inicia sesión y ciérralo cuando termines (coursekit no ve la contraseña)", en: "the browser opens with the profile {name}: log in and close it when you are done (coursekit never sees the password)"}
 login_done: {es: "sesión guardada en el perfil {name} ({at})", en: "session kept in the profile {name} ({at})"}
 logout_done: {es: "perfil {name} borrado con su sesión", en: "profile {name} deleted with its session"}
 logout_none: {es: "el perfil {name} no tenía sesión", en: "the profile {name} had no session"}
-allowed: {es: "permiso de captura para {code}: {mode} ({what}), recursos: {assets}; caduca {until}", en: "permission to capture for {code}: {mode} ({what}), resources: {assets}; expires {until}"}
+allowed: {es: "permiso de captura para {scope}: {modes}; recursos: {assets}; caduca {until}", en: "permission to capture for {scope}: {modes}; resources: {assets}; expires {until}"}
+scope_project: {es: "todo el proyecto", en: "the whole project"}
+every_course: {es: "los de todos los cursos que muestran una interfaz", en: "those of every course that show an interface"}
+open_profile: {es: "el perfil que diga el guion", en: "the profile the brief says"}
+open_window: {es: "la ventana que diga el guion", en: "the window the brief says"}
+ids_need_course: {es: "los recursos son de un curso: da el permiso con coursekit capture allow CODE ID… (sin código, el permiso es de todo el proyecto)", en: "resources belong to a course: give the permission with coursekit capture allow CODE ID… (without a code, the permission is for the whole project)"}
+session_needs_mode: {es: "{id} se puede capturar en varios modos ({modes}): di cuál en el bloque capture del guion (mode: …)", en: "{id} can be captured in several modes ({modes}): say which in the capture block of the brief (mode: …)"}
 every_interface_asset: {es: "todos los que muestran una interfaz", en: "every one that shows an interface"}
 revoked: {es: "permiso de captura de {code} retirado", en: "permission to capture of {code} taken back"}
 revoke_none: {es: "{code} no tenía permiso de captura", en: "{code} had no permission to capture"}
@@ -56,7 +62,7 @@ session_expired: {es: "la sesión del perfil {name} ha caducado (se ha llegado a
 secret_field: {es: "el campo activo es una contraseña o un código: el agente nunca escribe en él", en: "the focused field is a password or a code: the agent never types into it"}
 domain_blocked: {es: "{host} no está en los allow_domains del perfil: la captura no sale de la aplicación", en: "{host} is not in the allow_domains of the profile: the capture never leaves the application"}
 bad_recipe: {es: "{id} no se hace con una captura: su receta tiene que ser {recipes} (coursekit media set)", en: "{id} is not made from a capture: its recipe must be {recipes} (coursekit media set)"}
-no_grant: {es: "no hay permiso en vigor para capturar {id} de {code}: una persona lo da con coursekit capture allow {code} {id} --mode browser --profile …", en: "there is no permission in force to capture {id} of {code}: a person gives it with coursekit capture allow {code} {id} --mode browser --profile …"}
+no_grant: {es: "no hay permiso en vigor para capturar {id} de {code} en ese modo: una persona lo da con coursekit capture allow --mode … (todo el proyecto) o coursekit capture allow {code} --mode …", en: "there is no permission in force to capture {id} of {code} in that mode: a person gives it with coursekit capture allow --mode … (the whole project) or coursekit capture allow {code} --mode …"}
 pixel_check_off: {es: "sin OCR (extra capture o tesseract) las capturas solo se limpian en la página: el texto dentro de imágenes o de un canvas no se tapa", en: "without an OCR (the capture extra or tesseract) the captures are only cleaned in the page: text inside images or a canvas is not covered"}
 page_not_clean: {es: "la página no ha terminado de limpiarse a tiempo: no se captura; espera y vuelve a intentarlo", en: "the page did not finish being cleaned in time: nothing is captured; wait and try again"}
 no_session_started: {es: "no hay ninguna sesión: empieza con session_start", en: "there is no session: start with session_start"}

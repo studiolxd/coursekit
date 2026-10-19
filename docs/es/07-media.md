@@ -107,7 +107,7 @@ Cada recurso de los tipos de `media › depicts › required_for` (imagen, infog
 
 ### Capturas de terminal y escenarios
 
-Un programa de la terminal (un agente de programación, una instalación, unas órdenes) lo graba el propio agente de media, en una shell propia: no se toca ninguna ventana de la persona y no hace falta ningún permiso de pantalla. Una persona lo permite una vez: `coursekit capture allow CODE --mode terminal` (con `--minutes 0`, hasta que se retire).
+Un programa de la terminal (un agente de programación, una instalación, unas órdenes) lo graba el propio agente de media, en una shell propia: no se toca ninguna ventana de la persona y no hace falta ningún permiso de pantalla. Una persona lo permite una vez: `coursekit capture allow --mode terminal` para todo el proyecto, o `coursekit capture allow CODE --mode terminal` para un curso (con `--minutes 0`, hasta que se retire).
 
 El entorno de una grabación es un **escenario** del curso, que escribe el agente con datos inventados y que se guarda con el curso en `courses/CODE/media/stages/<nombre>/`:
 

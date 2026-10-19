@@ -6,7 +6,8 @@
 # Nothing is captured until a project turns it on. Then a person, never an agent:
 #   - logs in once per application with `coursekit capture login PROFILE` (a browser of their own machine opens with a
 #     profile kept outside the project; coursekit never sees or stores the password);
-#   - gives a permission that expires (or not) with `coursekit capture allow CODE [ID…] --mode browser|desktop`.
+#   - gives a permission that expires (or not), in one mode or several (`--mode all`), to the whole project
+#     (`coursekit capture allow --mode …`) or to one course, which extends it (`coursekit capture allow CODE [ID…] --mode …`).
 # The handoff approves by itself the captures its media agent made, as it signs every gate; its report lists them.
 # Use an account or an environment of tests with invented data: what hides real data is a safety net, not the main measure.
 enabled: false

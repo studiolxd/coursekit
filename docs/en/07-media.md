@@ -107,7 +107,7 @@ Each resource of the types in `media › depicts › required_for` (image, infog
 
 ### Terminal captures and stages
 
-A program of the terminal (a coding agent, an installation, a few commands) is recorded by the media agent itself, in a shell of its own: no window of the person is touched, and no screen permission is needed. A person allows it once: `coursekit capture allow CODE --mode terminal` (with `--minutes 0`, until it is revoked).
+A program of the terminal (a coding agent, an installation, a few commands) is recorded by the media agent itself, in a shell of its own: no window of the person is touched, and no screen permission is needed. A person allows it once: `coursekit capture allow --mode terminal` for the whole project, or `coursekit capture allow CODE --mode terminal` for one course (with `--minutes 0`, until it is revoked).
 
 The environment of a recording is a **stage** of the course, written by the agent with invented data and kept with the course in `courses/CODE/media/stages/<name>/`:
 

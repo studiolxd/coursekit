@@ -113,7 +113,7 @@ def test_a_grant_is_signed_expires_and_names_what_it_covers(course, browser, cap
     assert "has no session" in capsys.readouterr().err  # log in first
     assert main(["capture", "login", "acme-admin"]) == 0
     assert main(["capture", "allow", "PWD", "U1-S2-M1", "--mode", "browser", "--profile", "acme-admin", "--minutes", "30"]) == 0
-    assert "permission to capture for PWD: browser (acme-admin), resources: U1-S2-M1" in capsys.readouterr().out
+    assert "permission to capture for PWD: browser (acme-admin); resources: U1-S2-M1" in capsys.readouterr().out
     project = find_project()
     grant = capture.active_grant(project, "PWD", "U1-S2-M1")
     assert grant["by"] == "Ana <ana@example.com>" and grant["mode"] == "browser" and grant["window"] is None
@@ -139,6 +139,44 @@ def test_a_grant_of_zero_minutes_lasts_until_it_is_revoked(course, browser, caps
     assert capture.active_grant(project, "PWD") is None
 
 
+def test_the_project_grant_covers_every_course_and_a_course_grant_extends_it(course, browser, capsys):  # noqa: F811
+    from coursekit import capture_session
+    from coursekit import course as coursemod
+
+    configure(course.parent.parent, modes=["browser", "desktop", "terminal"], grant_minutes=0)
+    interface_asset(course, capsys)
+    assert main(["capture", "allow", "U1-S2-M1", "--mode", "desktop"]) == 1  # a resource needs its course
+    assert main(["capture", "allow", "--mode", "desktop", "--window", "Calculator"]) == 0
+    assert "permission to capture for the whole project: desktop (Calculator)" in capsys.readouterr().out
+    project = find_project()
+    assert set(capture.grants(project, "PWD", "U1-S2-M1")) == {"desktop"}
+    assert main(["capture", "allow", "PWD", "--mode", "browser", "--mode", "terminal"]) == 0
+    assert "browser (the profile the brief says); terminal" in capsys.readouterr().out
+    assert set(capture.grants(project, "PWD", "U1-S2-M1")) == {"desktop", "browser", "terminal"}
+    assert capture.grants(project, "PWD")["desktop"]["scope"] == "project"
+    asset = {"id": "U1-S2-M1", "recipe": "screenshot"}
+    loaded = coursemod.load(project, "PWD")
+    with pytest.raises(capture_session.ToolError, match="several modes"):
+        capture_session.chosen_grant(project, loaded, asset, {})
+    assert capture_session.chosen_grant(project, loaded, asset, {"mode": "desktop"})["window"] == "Calculator"
+    assert capture_session.chosen_grant(project, loaded, {**asset, "recipe": "asciinema"}, {})["mode"] == "terminal"
+    assert main(["capture", "revoke", "PWD"]) == 0
+    assert set(capture.grants(project, "PWD", "U1-S2-M1")) == {"desktop"}  # what the project allows stays
+    assert main(["capture", "revoke"]) == 0
+    assert "permission to capture of the whole project taken back" in capsys.readouterr().out
+    assert capture.grants(project, "PWD") == {}
+    assert main(["capture", "allow", "--mode", "all"]) == 0
+    assert set(capture.grants(project, "PWD")) == {"browser", "desktop", "terminal"} - (set() if os.name == "posix" else {"terminal"})
+
+
+def test_a_grant_of_one_mode_written_before_is_still_read(course, browser, capsys):  # noqa: F811
+    configure(course.parent.parent)
+    project = find_project()
+    capture._write_json(capture._grant_file(project, "PWD"), {"code": "PWD", "assets": None, "mode": "terminal", "profile": None,
+                                                              "window": None, "by": "Ana", "expires_at": None})
+    assert capture.active_grant(project, "PWD")["mode"] == "terminal"
+
+
 def test_without_ids_a_grant_covers_every_resource_that_shows_an_interface(course, browser, capsys):  # noqa: F811
     root = course.parent.parent
     configure(root, grant_minutes=5)
@@ -158,7 +196,6 @@ def test_a_grant_is_refused_when_something_is_missing(course, browser, capsys, m
     interface_asset(course, capsys)
     cases = [
         (["--mode", "desktop", "--window", "W"], "the mode desktop is not allowed"),
-        (["--mode", "browser"], "--mode browser needs --profile"),
         (["NOPE", "--mode", "browser", "--profile", "acme-admin"], "NOPE are not resources of PWD"),
         (["--mode", "browser", "--profile", "acme-admin", "--minutes", "-5"], "cannot last a negative time"),
     ]

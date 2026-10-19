@@ -91,8 +91,11 @@ def _profile_meta(project: Project, name: str) -> Path:
     return base_dir(project) / "profiles" / f"{name}.json"
 
 
-def _grant_file(project: Project, code: str) -> Path:
-    return base_dir(project) / "grants" / f"{code}.json"
+PROJECT = "_project"  # the permission of the whole project (a course code is never this)
+
+
+def _grant_file(project: Project, scope: str) -> Path:
+    return base_dir(project) / "grants" / f"{scope}.json"
 
 
 def _write_json(path: Path, data: dict) -> None:
@@ -239,48 +242,57 @@ def _interface_assets(course: dict) -> dict[str, dict]:
     return {str(a["id"]): a for a in data["assets"] if a.get("depicts") == "interface"}
 
 
-def allow(project: Project, course: dict, ids: list[str], mode: str, profile: str | None = None, window: str | None = None,
-          minutes: float | None = None) -> dict:
-    """A person gives the permission to capture, until it expires (0 minutes: until it is revoked). It replaces the one the
-    course had."""
+def allow(project: Project, course: dict | None, ids: list[str], modes: list[str], profile: str | None = None,
+          window: str | None = None, minutes: float | None = None) -> dict:
+    """A person gives the permission to capture, until it expires (0 minutes: until it is revoked): to the whole project
+    (`course` None) or to one course (all its resources or the ones of `ids`), in one or several modes (`all`: every mode of
+    `capture.yaml › modes`). It replaces the one that scope had; a course keeps what the project allows and adds its own."""
     cfg = settings(project)
     _require_enabled(cfg)
     who = identity.current()
     if who is None:
         raise CaptureError(t("capture", "no_identity"))
     allowed_modes = [m for m in (cfg.get("modes") or []) if m in MODES]
-    if mode not in allowed_modes:
-        raise CaptureError(t("capture", "mode_not_allowed", mode=mode, modes=", ".join(allowed_modes) or "—"))
-    if mode == "browser":
-        if not profile:
-            raise CaptureError(t("capture", "browser_needs_profile"))
-        if not ready(project, profile, profile_config(cfg, profile)):
-            raise CaptureError(t("capture", "not_logged_in", name=profile))
-        window = None
-    elif mode == "terminal":  # a shell of its own, in a stage: no window and no profile
-        from coursekit import capture_terminal
+    everything = "all" in modes
+    wanted = allowed_modes if everything else list(dict.fromkeys(modes))
+    if not wanted:
+        raise CaptureError(t("capture", "needs_mode"))
+    for mode in wanted:
+        if mode not in allowed_modes:
+            raise CaptureError(t("capture", "mode_not_allowed", mode=mode, modes=", ".join(allowed_modes) or "—"))
+    entries: dict[str, dict] = {}
+    for mode in wanted:
+        if mode == "browser":  # without --profile: the one the brief names, or the only one there is
+            if profile and not ready(project, profile, profile_config(cfg, profile)):
+                raise CaptureError(t("capture", "not_logged_in", name=profile))
+            entries[mode] = {"profile": profile or None}
+        elif mode == "terminal":  # a shell of its own, in a stage: no window and no profile
+            from coursekit import capture_terminal
 
-        if not capture_terminal.supported():
-            raise CaptureError(t("capture", "terminal_unsupported"))
-        profile = window = None
-    else:
-        if not (window or "").strip():
-            raise CaptureError(t("capture", "desktop_needs_window"))
-        profile = None
-    interface = _interface_assets(course)
-    unknown = [i for i in ids if i not in interface]
-    if unknown:
-        raise CaptureError(t("capture", "not_interface", ids=", ".join(unknown), code=course["code"]))
-    if not ids and not interface:
-        raise CaptureError(t("capture", "no_interface_assets", code=course["code"]))
+            if not capture_terminal.supported():
+                if everything:
+                    continue  # all the modes this machine has
+                raise CaptureError(t("capture", "terminal_unsupported"))
+            entries[mode] = {}
+        else:  # without --window: the one the brief names
+            entries[mode] = {"window": (window or "").strip() or None}
+    if course is not None:
+        interface = _interface_assets(course)
+        unknown = [i for i in ids if i not in interface]
+        if unknown:
+            raise CaptureError(t("capture", "not_interface", ids=", ".join(unknown), code=course["code"]))
+        if not ids and not interface:
+            raise CaptureError(t("capture", "no_interface_assets", code=course["code"]))
+    elif ids:
+        raise CaptureError(t("capture", "ids_need_course"))
     minutes = float(minutes if minutes is not None else cfg.get("grant_minutes") or 0)
     if minutes < 0:
         raise CaptureError(t("capture", "bad_minutes"))
     start = _now()
-    grant = {"code": course["code"], "assets": list(ids) or None, "mode": mode, "profile": profile,
-             "window": window.strip() if window else None, "by": str(who), "granted_at": _stamp(start),
+    scope = course["code"] if course is not None else PROJECT
+    grant = {"scope": scope, "assets": list(ids) or None, "modes": entries, "by": str(who), "granted_at": _stamp(start),
              "expires_at": _stamp(start + dt.timedelta(minutes=minutes)) if minutes else None}
-    _write_json(_grant_file(project, course["code"]), grant)
+    _write_json(_grant_file(project, scope), grant)
     return grant
 
 
@@ -289,13 +301,14 @@ def capturable(course: dict) -> list[str]:
     project = course.get("_project")
     if project is None or not course.get("_dir") or not settings(project).get("enabled"):
         return []
-    grant = active_grant(project, course["code"])
-    if grant is None:
-        return []
-    recipes = MODE_RECIPES.get(str(grant.get("mode")), ())
     _, _, data = mediamod.load_manifest(course["_dir"])
-    return [str(a["id"]) for a in data["assets"] if mediamod.awaiting_recording(a) and a.get("recipe") in recipes
-            and (not grant.get("assets") or str(a["id"]) in grant["assets"])]
+    out = []
+    for asset in data["assets"]:
+        if mediamod.awaiting_recording(asset):
+            recipes = {r for mode in grants(project, course["code"], str(asset["id"])) for r in MODE_RECIPES.get(mode, ())}
+            if asset.get("recipe") in recipes:
+                out.append(str(asset["id"]))
+    return out
 
 
 def mount_stage(project: Project, course: dict, name: str, prepare: list[str]):
@@ -304,8 +317,7 @@ def mount_stage(project: Project, course: dict, name: str, prepare: list[str]):
     from coursekit import capture_stage
 
     _require_enabled(settings(project))
-    grant = active_grant(project, course["code"])
-    if grant is None or grant.get("mode") != "terminal":
+    if active_grant(project, course["code"], mode="terminal") is None:
         raise CaptureError(t("capture", "stage_needs_grant", code=course["code"]))
     try:
         return capture_stage.mount(project, course, name, prepare)
@@ -313,30 +325,59 @@ def mount_stage(project: Project, course: dict, name: str, prepare: list[str]):
         raise CaptureError(str(exc)) from None
 
 
-def revoke(project: Project, code: str) -> bool:
-    path = _grant_file(project, code)
+def revoke(project: Project, code: str | None) -> bool:
+    """Takes back the permission of a course, or of the project (`code` None)."""
+    path = _grant_file(project, code or PROJECT)
     existed = path.exists()
     path.unlink(missing_ok=True)
     return existed
 
 
-def active_grant(project: Project, code: str, asset_id: str | None = None, now: dt.datetime | None = None) -> dict | None:
-    """The permission in force for the course (and the resource, if given); None when there is none or it expired."""
-    grant = _read_json(_grant_file(project, code))
-    if not grant:
-        return None
+def _in_force(grant: dict, now: dt.datetime | None) -> bool:
     if "expires_at" not in grant:
-        return None
-    if grant["expires_at"] is not None:  # None: until it is revoked
-        try:
-            expires = dt.datetime.fromisoformat(grant["expires_at"])
-        except (TypeError, ValueError):
-            return None
-        if (now or _now()) >= expires:
-            return None
-    if asset_id is not None and grant.get("assets") and asset_id not in grant["assets"]:
-        return None
-    return grant
+        return False
+    if grant["expires_at"] is None:  # until it is revoked
+        return True
+    try:
+        return (now or _now()) < dt.datetime.fromisoformat(grant["expires_at"])
+    except (TypeError, ValueError):
+        return False
+
+
+def _modes_of(grant: dict) -> dict[str, dict]:
+    """The modes of a permission (one written before a permission could have several names only its `mode`)."""
+    if isinstance(grant.get("modes"), dict):
+        return grant["modes"]
+    if grant.get("mode") in MODES:
+        return {grant["mode"]: {"profile": grant.get("profile"), "window": grant.get("window")}}
+    return {}
+
+
+def grants(project: Project, code: str, asset_id: str | None = None, now: dt.datetime | None = None) -> dict[str, dict]:
+    """The modes a course (and the resource, if given) may be captured in now, each with what it allows: the permission of
+    the project, extended by the course's own (which wins in a mode both give)."""
+    out: dict[str, dict] = {}
+    for scope in (PROJECT, code):
+        grant = _read_json(_grant_file(project, scope))
+        if not grant or not _in_force(grant, now):
+            continue
+        if asset_id is not None and grant.get("assets") and asset_id not in grant["assets"]:
+            continue
+        for mode, params in _modes_of(grant).items():
+            out[mode] = {"mode": mode, "profile": (params or {}).get("profile"), "window": (params or {}).get("window"),
+                         "scope": "project" if scope == PROJECT else code, "assets": grant.get("assets"),
+                         "by": grant.get("by"), "granted_at": grant.get("granted_at"), "expires_at": grant.get("expires_at")}
+    return out
+
+
+def active_grant(project: Project, code: str, asset_id: str | None = None, now: dt.datetime | None = None,
+                 mode: str | None = None) -> dict | None:
+    """The permission in force in `mode` for the course (and the resource, if given); without `mode`, the first of the
+    modes in force. None when there is none or it expired."""
+    found = grants(project, code, asset_id, now)
+    if mode is not None:
+        return found.get(mode)
+    return next((found[m] for m in MODES if m in found), None)
 
 
 # ── a recording a person provided: covered on the pixels, reviewed and approved ───────────────

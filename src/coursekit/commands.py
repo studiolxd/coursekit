@@ -269,7 +269,7 @@ def cmd_capture(args: argparse.Namespace) -> int:
             if not entries:
                 print(t("capture", "no_profiles"))
             return 0
-        if not args.target:
+        if not args.target and args.action not in ("allow", "revoke"):  # without a course: the permission of the project
             print(t("capture", "needs_target", action=args.action), file=sys.stderr)
             return 2
         if args.action == "login":
@@ -283,15 +283,20 @@ def cmd_capture(args: argparse.Namespace) -> int:
             if not args.mode:
                 print(t("capture", "needs_mode"), file=sys.stderr)
                 return 2
-            course = coursemod.load(project, args.target)
-            statesmod.ensure_active(course)
+            course = None
+            if args.target:
+                course = coursemod.load(project, args.target)
+                statesmod.ensure_active(course)
             grant = capturemod.allow(project, course, args.ids, args.mode, args.profile, args.window, args.minutes)
-            print(t("capture", "allowed", code=grant["code"], mode=grant["mode"], what=grant["profile"] or grant["window"] or "—",
-                    assets=", ".join(grant["assets"] or []) or t("capture", "every_interface_asset"),
-                    until=grant["expires_at"] or t("capture", "no_expiry")))
+            modes = "; ".join(mode + (f" ({params.get('profile') or t('capture', 'open_profile')})" if mode == "browser" else
+                                      f" ({params.get('window') or t('capture', 'open_window')})" if mode == "desktop" else "")
+                              for mode, params in grant["modes"].items())
+            every = t("capture", "every_interface_asset" if course else "every_course")
+            print(t("capture", "allowed", scope=course["code"] if course else t("capture", "scope_project"), modes=modes,
+                    assets=", ".join(grant["assets"] or []) or every, until=grant["expires_at"] or t("capture", "no_expiry")))
         elif args.action == "revoke":
-            done = capturemod.revoke(project, args.target)
-            print(t("capture", "revoked" if done else "revoke_none", code=args.target))
+            done = capturemod.revoke(project, args.target.upper() if args.target else None)
+            print(t("capture", "revoked" if done else "revoke_none", code=args.target or t("capture", "scope_project")))
         else:
             if len(args.ids) != 1:
                 print(t("capture", "needs_one_id", action=args.action), file=sys.stderr)
@@ -1562,7 +1567,7 @@ def register(sub: argparse._SubParsersAction) -> None:
                                       "serve", "replay", "stage"))
     p.add_argument("target", nargs="?", help=t("commands", "help_capture_target"))
     p.add_argument("ids", nargs="*", help=t("commands", "help_capture_ids"))
-    p.add_argument("--mode", choices=capturemod.MODES, help=t("commands", "help_capture_mode"))
+    p.add_argument("--mode", action="append", choices=(*capturemod.MODES, "all"), help=t("commands", "help_capture_mode"))
     p.add_argument("--profile", help=t("commands", "help_capture_profile"))
     p.add_argument("--window", help=t("commands", "help_capture_window"))
     p.add_argument("--minutes", type=float, help=t("commands", "help_capture_minutes"))

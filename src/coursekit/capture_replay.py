@@ -223,7 +223,14 @@ def replay(project, code: str, asset_id: str, backend_factory=None) -> dict:
     """Repeats the steps of the brief of a resource, records its video and leaves the result waiting for a person."""
     cfg = capturemod.settings(project)
     pace = dict(cfg.get("replay") or {})
-    grant = capturemod.active_grant(project, code, asset_id)
+    from coursekit import course as coursemod
+
+    course = coursemod.load(project, code)
+    try:
+        _, _, _, asset = capturemod.find_asset(course, asset_id)
+        grant = sessionmod.chosen_grant(project, course, asset, sessionmod.read_block(course, asset_id))
+    except (capturemod.CaptureError, ToolError) as exc:
+        raise ReplayError(str(exc)) from None
     if grant and grant.get("mode") == "terminal":  # a terminal session is recorded while it happens
         raise ReplayError(t("capture", "terminal_no_replay", code=code, id=asset_id))
     try:

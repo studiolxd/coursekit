@@ -163,7 +163,7 @@ class Session:
 
     def check(self) -> None:
         """Before every action: the permission is still in force and the session of the profile has not expired."""
-        grant = capturemod.active_grant(self.project, self.course["code"], self.asset_id)
+        grant = capturemod.active_grant(self.project, self.course["code"], self.asset_id, mode=self.grant.get("mode"))
         if grant is None:
             raise SessionGone(t("capture", "grant_gone", code=self.course["code"]))
         if self.login_url and self.backend.url().startswith(self.login_url):
@@ -434,7 +434,8 @@ def start(project, code: str, asset_id: str, backend_factory=None, cursor: bool 
         _, _, _, asset = capturemod.find_asset(course, asset_id)
     except capturemod.CaptureError as exc:
         raise ToolError(str(exc)) from None
-    grant = capturemod.active_grant(project, course["code"], asset_id)
+    block = read_block(course, asset_id)
+    grant = chosen_grant(project, course, asset, block)
     recipes = capturemod.MODE_RECIPES.get(grant["mode"], RECIPES) if grant else RECIPES
     if asset.get("recipe") not in recipes:
         raise ToolError(t("capture", "bad_recipe", id=asset_id, recipes=", ".join(recipes)))
@@ -447,14 +448,21 @@ def start(project, code: str, asset_id: str, backend_factory=None, cursor: bool 
     if grant["mode"] == "terminal":
         return _start_terminal(project, cfg, course, asset, asset_id, grant, backend_factory)
     if grant["mode"] == "desktop":
-        return _start_desktop(project, cfg, course, asset, asset_id, grant, backend_factory)
+        window = grant.get("window") or str(block.get("window") or "").strip()
+        if not window:
+            raise ToolError(t("capture", "desktop_needs_window", id=asset_id))
+        return _start_desktop(project, cfg, course, asset, asset_id, {**grant, "window": window}, backend_factory)
+    configured = list(cfg.get("profiles") or {})
+    name = grant.get("profile") or str(block.get("profile") or "").strip() or (configured[0] if len(configured) == 1 else "")
+    if not name:
+        raise ToolError(t("capture", "browser_needs_profile", id=asset_id, known=", ".join(configured) or "—"))
+    grant = {**grant, "profile": name}
     try:
         profile = capturemod.profile_config(cfg, grant["profile"])
     except capturemod.CaptureError as exc:
         raise ToolError(str(exc)) from None
     if not capturemod.ready(project, grant["profile"], profile):
         raise ToolError(t("capture", "not_logged_in", name=grant["profile"]))
-    block = read_block(course, asset_id)
     start_url, domains, server = resolve_start(course, profile, str(block.get("start") or ""))
     profile = {**profile, "allow_domains": [*profile["allow_domains"], *domains]}
     if not capturemod.domain_allowed(domain_of(start_url), profile["allow_domains"]):
@@ -487,6 +495,18 @@ def start(project, code: str, asset_id: str, backend_factory=None, cursor: bool 
             server.shutdown()
         raise
     return session
+
+
+def chosen_grant(project, course: dict, asset: dict, block: dict) -> dict | None:
+    """The permission a session of a resource uses: the mode its capture block says; else a terminal demo is recorded in the
+    terminal, and a resource with one mode in force uses it. None when that mode has no permission in force."""
+    found = capturemod.grants(project, course["code"], str(asset["id"]))
+    mode = str(block.get("mode") or "") or ("terminal" if asset.get("recipe") == "asciinema" else "")
+    if mode:
+        return found.get(mode)
+    if len(found) > 1:
+        raise ToolError(t("capture", "session_needs_mode", id=asset["id"], modes=", ".join(found)))
+    return next(iter(found.values()), None)
 
 
 def resolve_start(course: dict, profile: dict, start: str):
