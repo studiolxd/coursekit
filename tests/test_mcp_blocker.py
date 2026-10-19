@@ -216,3 +216,14 @@ def test_the_body_of_a_script_is_not_a_list_of_programs(tmp_path):
     assert launch.blocked_programs(log) == ["python3", "awk"]
     parts = launch._command_parts("python3 -c \"import os\nprint(os.name)\"; ls")
     assert [p.split()[0] for p in parts] == ["python3", "ls"]
+
+
+def test_a_star_lets_the_media_agent_run_any_command_but_what_is_always_denied(project, tmp_path):  # noqa: F811
+    args = launch.headless_args(launch.Agent("media", "claude", ""), "x", project / "last.txt", "slxd-creator", None, ["npx", "*"], [])
+    allowed = args[args.index("--allowedTools") + 1:args.index("--disallowedTools")]
+    denied = args[args.index("--disallowedTools") + 1:]
+    assert "Bash" in allowed and "Bash(*:*)" not in allowed and "Bash(git push:*)" in denied
+    path = project / "project.yaml"
+    path.write_text(path.read_text(encoding="utf-8") + '\nrules:\n  handoff:\n    media_tools: ["*"]\n', encoding="utf-8")
+    log = write_events(tmp_path / "a.log", [bash("1", "blender -b"), refused("1")])
+    assert launch.permission_blocker(find_project(project), log, "media") is None

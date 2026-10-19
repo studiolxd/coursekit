@@ -51,7 +51,8 @@ handoff:
   media_tools: []              # programs the media agent may run when nobody can approve them (the handoff, `--headless`), besides
                                # `coursekit`, `npx`, Python and those the recipes of the media configuration declare in `needs`
                                # (bin, media); add the rest here, e.g. [blender, gs]. `bash`, `sh` and `node` let the agent run any
-                               # command: add them only if you accept that
+                               # command, and `*` lets it run any program directly: add them only if you accept that (what is
+                               # always denied, such as git push or coursekit approve, stays denied)
 
 # The parts of a content section of an expository course (`approach: expository`), in order: the first principles of
 # instruction, with the learning of adults (the learner sees what a section is for in their work and starts from what they

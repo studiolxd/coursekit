@@ -217,6 +217,8 @@ def blocked_programs(log: Path) -> list[str]:
 def permission_blocker(project: Project, log: Path, role: str) -> str | None:
     """Which programs the session could not run, for the cause of a stop. None when it was not that."""
     allowed = set(media_programs(project)) if role in ("media", "illustration") else set()
+    if "*" in allowed:
+        return None  # it could run any command: what stopped it was something else
     programs = [p for p in blocked_programs(log) if p not in allowed]
     if not programs:
         return None
@@ -263,7 +265,8 @@ def headless_args(agent: Agent, text: str, last_message: Path, mcp_name: str, co
             allowed.append("WebSearch")  # to look for the official video that can stand in for a tutorial of a real application
             allowed.append(f"mcp__{agentsmod.CAPTURE_SERVER}")  # captures of a real application, when a person allowed them
         if agent.role in ("media", "illustration"):
-            allowed += [f"Bash({program}:*)" for program in programs or []]
+            # `*` in rules › handoff › media_tools: any command (what is always denied stays denied: --disallowedTools wins)
+            allowed += ["Bash"] if "*" in (programs or []) else [f"Bash({program}:*)" for program in programs or []]
             allowed += [f"mcp__{key}" for key in connectors or []]
         outside = ["--add-dir", *folders] if folders and agent.role in ("media", "illustration") else []
         return [exe, "-p", text, *with_model, "--permission-mode", "acceptEdits", *outside,
