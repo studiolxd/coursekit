@@ -39,7 +39,7 @@ The package is called `slxd-coursekit`; the command is `coursekit`. To update it
 uv tool upgrade slxd-coursekit
 ```
 
-To install an exact version: `uv tool install slxd-coursekit==0.6.0` (from the repository, name its tag: `uv tool install git+https://github.com/studiolxd/coursekit@v0.2.1`).
+To install an exact version: `uv tool install slxd-coursekit==0.7.0` (from the repository, name its tag: `uv tool install git+https://github.com/studiolxd/coursekit@v0.2.1`).
 
 After upgrading you need to do nothing in your projects: the first coursekit command you run in each project notices that the installed coursekit changed and regenerates the managed files and the agent files before it runs (see [Refreshing generated files](#refreshing-generated-files)). An editable install is refreshed the same way whenever the shipped skills, templates or rules change.
 

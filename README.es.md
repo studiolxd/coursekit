@@ -9,7 +9,7 @@ indistinta.
 
 Paquete `slxd-coursekit`, comando `coursekit`. De Studio LXD.
 
-> En desarrollo inicial (`0.6.0`). Publicado en PyPI como `slxd-coursekit`.
+> En desarrollo inicial (`0.7.0`). Publicado en PyPI como `slxd-coursekit`.
 
 ## Qué hace
 
