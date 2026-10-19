@@ -803,10 +803,28 @@ def redo(course: dict, ids: list[str] | None = None, everything: bool = False, c
     the uploaded path; their script and file stay for the agent to start from. With `clean` they also forget the file, the alt
     text, the transcript, the captions and the tool that made them (the files stay on disk): for what is made again from
     nothing, as a resource that showed an interface that was invented. With `recapture` a resource that shows a real interface
-    also forgets its capture: it waits to be captured again (by a person, or by the media agent when a permission allows it),
-    instead of being composed again from the recording it had."""
+    also forgets its capture and its recordings leave media/recordings/ (to .cache/capture/<CODE>/replaced/<time>/): it waits
+    to be captured again (by a person, or by the media agent when a permission allows it), instead of being composed again
+    from the recording it had."""
     with editing_manifest(course["_dir"]) as data:
-        return _redo(course, data, ids, everything, clean, recapture)
+        chosen = _redo(course, data, ids, everything, clean, recapture)
+        interface = [a["id"] for a in data["assets"] if a["id"] in chosen and a.get("depicts") == "interface"]
+    if recapture and interface:
+        _set_aside_recordings(course, interface)
+    return chosen
+
+
+def _set_aside_recordings(course: dict, ids: list[str]) -> None:
+    """The recordings of these resources out of media/recordings/ (a file there is real material to compose from), kept in
+    the cache of the project in case a person wants them back."""
+    import datetime as dt
+
+    folder = course["_dir"] / "media" / "recordings"
+    target = course["_project"].cache_dir / "capture" / course["code"] / "replaced" / dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+    for asset_id in ids:
+        for path in sorted(folder.glob(f"{asset_id}.*")) + sorted(folder.glob(f"{asset_id}-*.*")):
+            target.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(path), target / path.name)
 
 
 def _redo(course: dict, data: dict, ids: list[str] | None, everything: bool, clean: bool, recapture: bool = False) -> list[str]:

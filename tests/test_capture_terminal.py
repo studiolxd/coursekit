@@ -345,7 +345,14 @@ def test_redo_with_recapture_records_a_captured_resource_again(course, capsys): 
         data["assets"][0].update(status="uploaded", capture={"state": "approved", "by": "Coursekit Handoff"})
     assert main(["media", "redo", "PWD", "U1-S2-M1"]) == 0
     assert [a["id"] for a in handoff.capturable(load())] == []  # composed again from the recording it had
+    recordings = course / "media" / "recordings"
+    recordings.mkdir(parents=True, exist_ok=True)
+    for name in ("U1-S2-M1.cast", "U1-S2-M1-browser.mp4", "U1-S2-M10.cast"):
+        (recordings / name).write_text("x", encoding="utf-8")
     assert main(["media", "redo", "PWD", "U1-S2-M1", "--recapture"]) == 0
     asset = yaml.safe_load((course / "media" / "manifest.yaml").read_text(encoding="utf-8"))["assets"][0]
     assert "capture" not in asset and asset["status"] == "scripted"
+    assert sorted(p.name for p in recordings.iterdir()) == ["U1-S2-M10.cast"]  # never composed again from the old ones
+    kept = list((find_project().cache_dir / "capture" / "PWD" / "replaced").rglob("*.*"))
+    assert sorted(p.name for p in kept) == ["U1-S2-M1-browser.mp4", "U1-S2-M1.cast"]
     assert [a["id"] for a in handoff.capturable(load())] == ["U1-S2-M1"]  # the media agent records it again

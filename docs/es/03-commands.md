@@ -852,7 +852,7 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
 | `--size SIZE` | `ANCHOxALTO` | `fit` (obligatorio) y `render`: el tamaño, p. ej. `1920x1080`. |
 | `--all` | indicador | Solo en `redo`: rehace todos los recursos que usan el tema, no solo los hechos con otros tokens. |
 | `--clean` | indicador | Solo en `redo`: los recursos olvidan además su fichero, texto alternativo, transcripción, subtítulos y la herramienta que los hizo (los ficheros se quedan en disco), para lo que se hace de nuevo desde cero, como un recurso que mostraba una interfaz inventada. |
-| `--recapture` | indicador | Solo en `redo`: un recurso que muestra una interfaz real olvida además su captura, así que se vuelve a grabar (lo graba el agente de media si un permiso de captura lo deja) en lugar de montarse otra vez con la grabación que tenía. |
+| `--recapture` | indicador | Solo en `redo`: un recurso que muestra una interfaz real olvida además su captura y sus grabaciones salen de `media/recordings/` (se guardan en `.cache/capture/<CODE>/replaced/`), así que se vuelve a grabar (lo graba el agente de media si un permiso de captura lo deja) en lugar de montarse otra vez con la grabación que tenía. |
 | `--force` | indicador | Solo en `set`: marca como `produced` o `uploaded` un recurso que usa los tokens del tema aunque los tokens falten o estén escritos a mano (ver más abajo). |
 
 Acciones:
