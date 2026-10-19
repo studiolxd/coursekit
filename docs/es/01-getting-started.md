@@ -39,7 +39,7 @@ El paquete se llama `slxd-coursekit`; el comando es `coursekit`. Para actualizar
 uv tool upgrade slxd-coursekit
 ```
 
-Para instalar una versión exacta: `uv tool install slxd-coursekit==0.5.0` (desde el repositorio, indica su etiqueta: `uv tool install git+https://github.com/studiolxd/coursekit@v0.2.1`).
+Para instalar una versión exacta: `uv tool install slxd-coursekit==0.6.0` (desde el repositorio, indica su etiqueta: `uv tool install git+https://github.com/studiolxd/coursekit@v0.2.1`).
 
 Tras actualizar no tienes que hacer nada en tus proyectos: el primer comando de coursekit que ejecutes en cada proyecto detecta que el coursekit instalado cambió y regenera los ficheros gestionados y los de los agentes antes de ejecutarse (mira [Refrescar los ficheros generados](#refrescar-los-ficheros-generados)). Una instalación editable no necesita actualizarse.
 
