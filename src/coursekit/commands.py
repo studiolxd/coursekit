@@ -297,6 +297,8 @@ def cmd_capture(args: argparse.Namespace) -> int:
         elif args.action == "revoke":
             done = capturemod.revoke(project, args.target.upper() if args.target else None)
             print(t("capture", "revoked" if done else "revoke_none", code=args.target or t("capture", "scope_project")))
+        elif args.action == "review" and not args.ids:  # every capture of the course, on one page
+            print(capturemod.review_all(coursemod.load(project, args.target)).relative_to(project.root).as_posix())
         else:
             if len(args.ids) != 1:
                 print(t("capture", "needs_one_id", action=args.action), file=sys.stderr)
@@ -323,7 +325,7 @@ def cmd_capture(args: argparse.Namespace) -> int:
 
                 statesmod.ensure_active(course)
                 try:
-                    result = capture_replay.replay(project, course["code"], asset_id)
+                    result = capture_replay.replay(project, course["code"], asset_id, part=args.part or "")
                 except capture_replay.ReplayError as exc:
                     raise capturemod.CaptureError(str(exc)) from None
                 for warning in result["warnings"]:
@@ -1575,6 +1577,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--note", help=t("commands", "help_capture_note"))
     p.add_argument("--mask", action="append", help=t("commands", "help_capture_mask"))
     p.add_argument("--prepare", action="append", help=t("commands", "help_capture_prepare"))
+    p.add_argument("--part", help=t("commands", "help_capture_part"))
     p.set_defaults(func=cmd_capture)
 
     p = sub.add_parser("download", help=t("commands", "help_download"))

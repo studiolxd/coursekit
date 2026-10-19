@@ -1148,6 +1148,10 @@ def test_the_handoff_approves_the_captures_and_reports_them(recording, capsys):
     loaded = load_course(find_project(), "PWD")
     assert handoff.captures_to_review(loaded) == [] and [a["id"] for a in handoff._pending_media(loaded)] == ["U1-S2-M1"]
     assert "coursekit capture review PWD U1-S2-M1" in handoff.write_report(loaded).read_text(encoding="utf-8")
+    assert main(["capture", "review", "PWD"]) == 0
+    sheet = find_project().root / capsys.readouterr().out.strip().splitlines()[-1]
+    page = sheet.read_text(encoding="utf-8")
+    assert "U1-S2-M1" in page and "approved by: Coursekit Handoff" in page and 'href="U1-S2-M1/review.html"' in page
 
 
 def test_a_name_read_without_its_accents_is_still_a_name():

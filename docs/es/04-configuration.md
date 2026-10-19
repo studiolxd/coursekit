@@ -399,6 +399,8 @@ Los perfiles de las aplicaciones web, los permisos de [`coursekit capture`](03-c
 | `terminal.width` | `1920` | Píxeles de ancho de las imágenes y del vídeo en los que se dibuja la terminal (el tamaño de la letra se ajusta). El cuadro es siempre 16:9, con la pantalla en su centro sobre su propio fondo. |
 | `terminal.font` | `""` | Ruta de una fuente monoespaciada; vacío: la primera que se encuentre (Menlo en macOS, DejaVu Sans Mono en Linux). |
 | `terminal.idle_limit` | `2` | Segundos: una pausa más larga de la grabación (el modelo pensando entre acciones) se acorta a esto. |
+| `terminal.busy_limit` | `1.5` | Segundos: una espera del programa (solo cambia un indicador o un contador, sin teclear nada) se acelera hasta durar esto, nunca se corta. `0` lo desactiva. |
+| `terminal.busy_cells` | `40` | Celdas que cambian como mucho en un trozo de salida que cuenta como parte de esa espera. |
 | `terminal.folder` | `projects` | Dónde se monta un escenario, dentro de la carpeta personal (un `stage.yaml` puede decir su propia `folder`). |
 | `terminal.setup_timeout` | `600` | Segundos para cada orden del `setup` de un escenario. |
 | `terminal.palette` | clara, de alto contraste | `background`, `foreground` y los 16 colores `ansi` con los que se dibuja la terminal; el reproductor de un `.cast` los recibe también. Un programa que pinta sus propios colores los conserva. |

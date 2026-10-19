@@ -280,3 +280,50 @@ def test_the_handoff_signs_the_scripts_of_what_its_agent_may_capture(course, cap
     lines = []
     handoff._sign_capture_scripts(handoff.Context(find_project(), "PWD", 2, lines.append, lambda: None))
     assert mediascript.state(load(), "U1-S2-M1") == "approved" and "U1-S2-M1" in lines[0]
+
+
+@pytest.mark.skipif(not term.emulator_available(), reason="needs pyte")
+def test_a_wait_of_the_program_is_sped_up_never_cut():
+    spin = [(1.0 + n * 0.1, "\r" + "|/-\\"[n % 4]) for n in range(100)]  # 10 s of a spinner, nothing typed
+    events = [(0.0, "$ go\r\n"), *spin, (11.5, "\r\nDone: the plan has three steps and touches two files.\r\n")]
+    marks = [(5.0, {"kind": "point", "x": 1, "y": 1})]
+    out, moved, end = term.hurry(events, marks, [0.0], 12.0, 60, 10, 1.5, 40)
+    assert len(out) == len(events)  # every frame kept
+    assert out[1][0] == 1.0 and out[-1][0] == pytest.approx(2.5)  # the wait of 10.5 s now lasts 1.5 s
+    assert 1.0 < moved[0][0] < 2.5 and end == pytest.approx(3.0)
+    typing = [(20.0 + n * 0.1, ch) for n, ch in enumerate("hello world")]
+    kept, _, _ = term.hurry(typing, [], [at - 0.05 for at, _ in typing], 22.0, 60, 10, 1.5, 40)
+    assert kept == typing  # what is typed keeps the pace of a person
+
+
+def test_a_chapter_is_a_marker_of_the_cast():
+    recording = term.Cut([(0.0, "a"), (2.0, "b")], [(1.0, {"kind": "chapter", "label": "Plan"})], 3.0)
+    lines = [json.loads(line) for line in term.cast_text(recording, 80, 24, {}).splitlines()[1:]]
+    assert lines == [[0.0, "o", "a"], [1.0, "m", "Plan"], [2.0, "o", "b"], [3.0, "o", ""]]
+
+
+@real
+def test_a_recording_in_parts_keeps_each_part(course, home, capsys):  # noqa: F811
+    block = {"mode": "terminal", "stage": "recipes", "parts": {"first": {"prepare": ["touch one.txt"]},
+                                                               "second": {"prepare": ["touch two.txt"]}}}
+    terminal_course(course, capsys, "asciinema", block)
+    write_stage(course)
+    t = tools()
+    for part, name in (("first", "one.txt"), ("second", "two.txt")):
+        call(t, "session_start", code="PWD", asset_id="U1-S2-M1", part=part)
+        call(t, "type", text="ls")
+        call(t, "key", key="Enter")
+        call(t, "wait_for", text=name, timeout_ms=5000)
+        call(t, "chapter", title=f"The {part} part")
+        call(t, "session_end", notes="")
+    recordings = course / "media" / "recordings"
+    assert '"m", "The first part"' in (recordings / "U1-S2-M1-first.cast").read_text(encoding="utf-8")
+    assert "two.txt" in (recordings / "U1-S2-M1-second.cast").read_text(encoding="utf-8")
+    asset = yaml.safe_load((course / "media" / "manifest.yaml").read_text(encoding="utf-8"))["assets"][0]
+    assert asset["capture"]["parts"] == {"first": "media/recordings/U1-S2-M1-first.cast",
+                                         "second": "media/recordings/U1-S2-M1-second.cast"}
+    from coursekit import capture_session
+
+    written = capture_session.read_block(load(), "U1-S2-M1")
+    assert set(written["parts"]) == {"first", "second"} and written["parts"]["first"]["prepare"] == ["touch one.txt"]
+    assert {"chapter": "The second part"} in written["parts"]["second"]["steps"]

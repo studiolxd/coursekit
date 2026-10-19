@@ -166,7 +166,8 @@ class Terminal:
         self.stream = pyte.Stream(self.screen)
         self.lock = threading.Lock()
         self.events: list[tuple[float, str]] = []  # (seconds from the start, covered output)
-        self.marks: list[tuple[float, dict]] = []  # record start/stop, points
+        self.marks: list[tuple[float, dict]] = []  # record start/stop, points, chapters
+        self.typed: list[float] = []  # when something was sent: the output right after it is its echo, never sped up
         self._decoder = codecs.getincrementaldecoder("utf-8")("replace")
         self._held = ""
         master, slave = pty.openpty()
@@ -219,6 +220,7 @@ class Terminal:
     def send(self, data: str) -> None:
         if self.process.poll() is not None:
             raise ToolError(t("capture", "terminal_ended"))
+        self.typed.append(self.now())
         os.write(self.master, data.encode("utf-8"))
 
     def type(self, text: str, delay_ms: int) -> None:
@@ -445,11 +447,61 @@ def stretches(marks: list[tuple[float, dict]], end: float) -> list[tuple[float, 
     return out or [(0.0, end)]
 
 
+def hurry(events: list[tuple[float, str]], marks: list[tuple[float, dict]], typed: list[float], end: float, cols: int, rows: int,
+          limit: float, cells: int) -> tuple[list[tuple[float, str]], list[tuple[float, dict]], float]:
+    """The waits of a program sped up, never cut: a stretch where only a few cells change (a spinner, a counter, the dots of a
+    model thinking) and nothing was typed plays in `limit` seconds at most, every frame of it kept, faster. Returns the
+    output, the marks and the end on the new times."""
+    import bisect
+
+    import pyte
+
+    if limit <= 0 or not events:
+        return events, marks, end
+    screen = pyte.Screen(cols, rows)
+    stream = pyte.Stream(screen)
+    before = list(screen.display)
+    minor = []
+    for at, data in events:
+        stream.feed(data)
+        now = list(screen.display)
+        changed = sum(1 for a, b in zip(before, now, strict=True) for x, y in zip(a, b, strict=True) if x != y)
+        k = bisect.bisect_right(typed, at)
+        echo = k > 0 and at - typed[k - 1] <= 0.3  # the program writes back what was typed
+        minor.append(changed <= cells and not echo)
+        before = now
+    waits, i = [], 0
+    while i < len(events):
+        if not minor[i]:
+            i += 1
+            continue
+        j = i
+        while j + 1 < len(events) and minor[j + 1]:
+            j += 1
+        start, stop = events[i][0], events[j + 1][0] if j + 1 < len(events) else end  # until something real happens
+        if stop - start > limit:
+            waits.append((start, stop))
+        i = j + 1
+
+    def moved(t: float) -> float:
+        gained = 0.0
+        for start, stop in waits:
+            if t >= stop:
+                gained += (stop - start) - limit
+            elif t > start:
+                return round(start - gained + (t - start) * limit / (stop - start), 4)
+            else:
+                break
+        return round(t - gained, 4)
+
+    return [(moved(at), data) for at, data in events], [(moved(at), mark) for at, mark in marks], moved(end)
+
+
 def cut(events: list[tuple[float, str]], marks: list[tuple[float, dict]], end: float, idle_limit: float) -> Cut:
     """Keeps the recorded stretches: what came before the first one is played at once, what came between two is joined,
     what came after the last one is left out, and every pause longer than `idle_limit` is shortened to it."""
     kept = stretches(marks, end)
-    items = sorted([(at, 0, data) for at, data in events] + [(at, 1, mark) for at, mark in marks if mark["kind"] == "point"],
+    items = sorted([(at, 0, data) for at, data in events] + [(at, 1, mark) for at, mark in marks if mark["kind"] in ("point", "chapter")],
                    key=lambda item: (item[0], item[1]))
     out, points, new, last, index = [], [], 0.0, None, 0
     for at, kind, data in items:
@@ -480,7 +532,9 @@ def cast_text(recording: Cut, cols: int, rows: int, palette: dict, title: str = 
     if title:
         header["title"] = title
     lines = [json.dumps(header, ensure_ascii=False)]
-    lines += [json.dumps([at, "o", data], ensure_ascii=False) for at, data in recording.events]
+    chapters = [(at, 1, mark["label"]) for at, mark in recording.points if mark.get("kind") == "chapter"]
+    lines += [json.dumps([at, "m" if kind else "o", data], ensure_ascii=False)  # "m": a marker, where the player can pause
+              for at, kind, data in sorted([(at, 0, data) for at, data in recording.events] + chapters, key=lambda e: (e[0], e[1]))]
     if recording.events and recording.duration > recording.events[-1][0]:
         lines.append(json.dumps([recording.duration, "o", ""]))  # the last screen holds until the end
     return "\n".join(lines) + "\n"
@@ -614,7 +668,7 @@ class TerminalBackend:
 
 
 def finish(backend: TerminalBackend, asset_id: str, recipe: str, recordings: Path, review: Path, cfg: dict, rules: dict,
-           who, terms: list[str]) -> dict:
+           who, terms: list[str], part: str = "") -> dict:
     """The end of a terminal session: the recording cut and written as the resource needs it (`.cast` for a terminal demo,
     `.mp4` and its events for a video), the review sampled, and what still looks like personal data, as warnings."""
     from coursekit import pii
@@ -622,7 +676,9 @@ def finish(backend: TerminalBackend, asset_id: str, recipe: str, recordings: Pat
     backend.close()
     term, painter = backend.term, backend.painter
     terminal = dict(cfg.get("terminal") or {})
-    recording = cut(term.events, term.marks, term.now(), float(terminal.get("idle_limit") or 2))
+    events, marks, end = hurry(term.events, term.marks, term.typed, term.now(), term.cols, term.rows,
+                               float(terminal.get("busy_limit") or 0), int(terminal.get("busy_cells") or 0))
+    recording = cut(events, marks, end, float(terminal.get("idle_limit") or 2))
     out: dict = {"file": None, "warnings": [], "frames": 0}
     every = max(1.0, recording.duration / 40)
     review.mkdir(parents=True, exist_ok=True)
@@ -632,7 +688,7 @@ def finish(backend: TerminalBackend, asset_id: str, recipe: str, recordings: Pat
             for finding in pii.find(line, {**rules, "names": False}, who, terms):
                 leftovers.add(f"{finding.kind} ({at:.0f} s)")
         if recipe in ("asciinema", "screen-recording"):
-            painter.paint(shot).save(review / f"t{n:04d}.00.png")
+            painter.paint(shot).save(review / f"t{part + '-' if part else ''}{n:04d}.00.png")
             out["frames"] += 1
     out["warnings"] += [t("capture", "terminal_leftover", where=item) for item in sorted(leftovers)]
     recordings.mkdir(parents=True, exist_ok=True)
@@ -653,6 +709,8 @@ def finish(backend: TerminalBackend, asset_id: str, recipe: str, recordings: Pat
         width, height = painter.size
         events = []
         for at, mark in recording.points:
+            if mark.get("kind") != "point":
+                continue
             event = {"t": at, "kind": "point", "fx": round(mark["x"] / width, 4), "fy": round(mark["y"] / height, 4)}
             if mark.get("label"):
                 event["label"] = mark["label"]

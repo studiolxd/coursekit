@@ -39,6 +39,7 @@ from coursekit import mediascript, pii
 from coursekit import redact as redactmod
 from coursekit.i18n import t
 from coursekit.mcpserver import ToolError
+from coursekit.util import slugify
 
 RECIPES = capturemod.MODE_RECIPES["browser"]
 SHAPES = ("rect", "round", "ellipse")  # the mark around what a point shows: a rectangle, a rounded one or an ellipse
@@ -55,8 +56,9 @@ def brief_file(course: dict, asset_id: str) -> Path:
     return course["_dir"] / "media" / "scripts" / f"{asset_id}.md"
 
 
-def read_block(course: dict, asset_id: str) -> dict:
-    """The `capture` block of the brief of a resource ({} when there is none)."""
+def read_block(course: dict, asset_id: str, part: str = "") -> dict:
+    """The `capture` block of the brief of a resource ({} when there is none). With `part`, the block of that part of a
+    recording made in several (`parts: {terminal: {...}, browser: {...}}`) over what the block says for all of them."""
     path = brief_file(course, asset_id)
     match = BLOCK_RE.search(path.read_text(encoding="utf-8")) if path.exists() else None
     if not match:
@@ -67,11 +69,20 @@ def read_block(course: dict, asset_id: str) -> dict:
         raise ToolError(t("capture", "bad_block", path=path.name, error=str(exc).splitlines()[0])) from None
     if match.group("nested") is not None:
         data = data.get("capture") if isinstance(data, dict) else {}
-    return data if isinstance(data, dict) else {}
+    data = data if isinstance(data, dict) else {}
+    if part:
+        parts = data.get("parts") if isinstance(data.get("parts"), dict) else {}
+        own = parts.get(part) if isinstance(parts.get(part), dict) else {}
+        data = {**{k: v for k, v in data.items() if k not in ("parts", "steps")}, **own}
+    return data
 
 
-def write_block(course: dict, asset_id: str, block: dict) -> Path:
-    """Writes the `capture` block of the brief, in place of the one it had (or at the end)."""
+def write_block(course: dict, asset_id: str, block: dict, part: str = "") -> Path:
+    """Writes the `capture` block of the brief, in place of the one it had (or at the end); with `part`, the block of that part."""
+    if part:
+        whole = read_block(course, asset_id)
+        whole.setdefault("parts", {})[part] = block
+        block = whole
     path = brief_file(course, asset_id)
     text = path.read_text(encoding="utf-8") if path.exists() else ""
     body = yaml.safe_dump(block, allow_unicode=True, sort_keys=False, width=120)
@@ -142,6 +153,12 @@ class Session:
     started_at: str = ""
     server: object | None = None  # the local server of the package of the course, when it is what is recorded
     terminal: dict | None = None  # terminal mode: the stage, its folder and what covers its output
+    part: str = ""  # a recording made in several parts (a terminal and a browser): this one
+
+    @property
+    def name(self) -> str:
+        """The name of what this session writes: the resource, or the resource and its part (`U4-S3-M1-terminal`)."""
+        return f"{self.asset_id}-{self.part}" if self.part else self.asset_id
     _scale: float = 1.0  # model pixels → css pixels
 
     # the agent sees the screen at most `max_edge` wide or tall: these are its coordinates
@@ -293,6 +310,14 @@ class Session:
         if hasattr(self.backend, "mark"):  # terminal: the time of the point, for the zoom of the video
             self.backend.mark("point", x=cx, y=cy, label=note.strip(), box=[x0, y0, x1 - x0, y1 - y0], shape=shape, tone=tone)
 
+    def chapter(self, title: str) -> None:
+        """Terminal: a stop of a terminal demo here, named `title` (the player pauses on it: the learner goes on when ready)."""
+        self.check()
+        if not hasattr(self.backend, "mark"):
+            raise ToolError(t("capture", "terminal_only"))
+        self.steps.append({"chapter": title.strip()})
+        self.backend.mark("chapter", label=title.strip())
+
     def read_screen(self) -> str:
         self.check()
         if not hasattr(self.backend, "screen_text"):
@@ -359,12 +384,12 @@ class Session:
     def save_shot(self) -> Path:
         self.check()
         image = self.frame()
-        target = self.course["_dir"] / "media" / "recordings" / f"{self.asset_id}.png"
+        target = self.course["_dir"] / "media" / "recordings" / f"{self.name}.png"
         target.parent.mkdir(parents=True, exist_ok=True)
         image.convert("RGB").save(target)
         sheet = capturemod.review_dir(self.course, self.asset_id)
         sheet.mkdir(parents=True, exist_ok=True)
-        copy = sheet / f"t{len(self.shots):04d}.00.png"
+        copy = sheet / f"t{self.part + '-' if self.part else ''}{len(self.shots):04d}.00.png"
         image.convert("RGB").save(copy)
         self.shots.append(copy)
         self.steps.append({"shot": True})
@@ -387,12 +412,12 @@ class Session:
             else:
                 block = {"mode": "browser", "profile": self.grant.get("profile"), "start": urlsplit(self.start_url).path or "/",
                          "viewport": size, "steps": self.steps}
-            previous = read_block(self.course, self.asset_id)
+            previous = read_block(self.course, self.asset_id, self.part)
             if previous.get("mask"):
                 block["mask"] = previous["mask"]
             if notes.strip():
                 block["notes"] = notes.strip()
-            brief = write_block(self.course, self.asset_id, block)
+            brief = write_block(self.course, self.asset_id, block, self.part)
             findings = {kind: len(values) for kind, values in sorted(self.seen.items())}
             if self.redactor is not None:
                 for kind, n in self.redactor.report.findings.items():
@@ -408,8 +433,9 @@ class Session:
             previous_state = dict(asset.get("capture") or {})
             asset["capture"] = {"state": "captured", "source": "session", "engine": report["engine"], "at": _now(),
                                 "findings": findings, "warnings": self.warnings,
-                                "file": f"media/recordings/{self.asset_id}.png" if self.shots else None,
+                                "file": f"media/recordings/{self.name}.png" if self.shots else None,
                                 "masks": previous_state.get("masks"), "replay": recorded or None}
+            self._keep_parts(asset["capture"], previous_state)
             capturemod.save_capture(self.course, self.asset_id, asset["capture"])
             return {"brief": brief, "findings": findings, "file": asset["capture"]["file"], "review": review,
                     "replay": recorded}
@@ -422,35 +448,43 @@ class Session:
         from coursekit import capture_terminal
 
         info = self.terminal
-        previous = read_block(self.course, self.asset_id)
+        previous = read_block(self.course, self.asset_id, self.part)
         block = {"mode": "terminal", **{k: previous[k] for k in ("stage", "prepare", "terminal") if k in previous},
                  "steps": self.steps}
         if previous.get("mask"):
             block["mask"] = previous["mask"]
         if notes.strip():
             block["notes"] = notes.strip()
-        brief = write_block(self.course, self.asset_id, block)
+        brief = write_block(self.course, self.asset_id, block, self.part)
         _, _, _, asset = capturemod.find_asset(self.course, self.asset_id)
         recipe = str(asset.get("recipe") or "")
         review = capturemod.review_dir(self.course, self.asset_id)
         recordings = self.course["_dir"] / "media" / "recordings"
         if recipe == "screenshot" and not self.shots:
             self.save_shot()  # the screen as it ended
-        out = capture_terminal.finish(self.backend, self.asset_id, recipe, recordings, review, capturemod.settings(self.project),
-                                      self.rules, info["who"], info["terms"])
+        out = capture_terminal.finish(self.backend, self.name, recipe, recordings, review, capturemod.settings(self.project),
+                                      self.rules, info["who"], info["terms"], self.part)
         self.warnings += out["warnings"]
-        main = out["file"] or (self.shots and recordings / f"{self.asset_id}.png") or None
+        main = out["file"] or (self.shots and recordings / f"{self.name}.png") or None
         findings = {kind: len(values) for kind, values in sorted(self.seen.items())}
         if main is None:
             return {"brief": brief, "findings": findings, "file": None}
         report = {"engine": "terminal", "findings": findings, "warnings": self.warnings,
                   "frames": out["frames"] + len(self.shots), "samples": []}
         review_file = capturemod.write_review(self.course, self.asset_id, report)
+        previous_state = dict(asset.get("capture") or {})
         asset["capture"] = {"state": "captured", "source": "session", "engine": "terminal", "at": _now(), "findings": findings,
                             "warnings": self.warnings, "file": main.relative_to(self.course["_dir"]).as_posix(),
-                            "masks": (asset.get("capture") or {}).get("masks"), "replay": None}
+                            "masks": previous_state.get("masks"), "replay": None}
+        self._keep_parts(asset["capture"], previous_state)
         capturemod.save_capture(self.course, self.asset_id, asset["capture"])
         return {"brief": brief, "findings": findings, "file": asset["capture"]["file"], "review": review_file, "replay": False}
+
+
+    def _keep_parts(self, state: dict, previous: dict) -> None:
+        """A recording in parts keeps the file of each part it has: this one is added to those of the other sessions."""
+        if self.part:
+            state["parts"] = {**(previous.get("parts") or {}), self.part: state.get("file")}
 
 
 def _now() -> str:
@@ -459,7 +493,7 @@ def _now() -> str:
 
 # ── starting one ─────────────────────────────────────────────────────────────────────────────
 
-def start(project, code: str, asset_id: str, backend_factory=None, cursor: bool = False) -> Session:
+def start(project, code: str, asset_id: str, backend_factory=None, cursor: bool = False, part: str = "") -> Session:
     cfg = capturemod.settings(project)
     if not cfg.get("enabled"):
         raise ToolError(t("capture", "not_enabled"))
@@ -468,7 +502,8 @@ def start(project, code: str, asset_id: str, backend_factory=None, cursor: bool 
         _, _, _, asset = capturemod.find_asset(course, asset_id)
     except capturemod.CaptureError as exc:
         raise ToolError(str(exc)) from None
-    block = read_block(course, asset_id)
+    part = slugify(part) if part else ""
+    block = read_block(course, asset_id, part)
     grant = chosen_grant(project, course, asset, block)
     recipes = capturemod.MODE_RECIPES.get(grant["mode"], RECIPES) if grant else RECIPES
     if asset.get("recipe") not in recipes:
@@ -480,12 +515,12 @@ def start(project, code: str, asset_id: str, backend_factory=None, cursor: bool 
     if grant is None:
         raise ToolError(t("capture", "no_grant", code=course["code"], id=asset_id))
     if grant["mode"] == "terminal":
-        return _start_terminal(project, cfg, course, asset, asset_id, grant, backend_factory)
+        return _started(_start_terminal(project, cfg, course, asset, asset_id, grant, backend_factory, block), part)
     if grant["mode"] == "desktop":
         window = grant.get("window") or str(block.get("window") or "").strip()
         if not window:
             raise ToolError(t("capture", "desktop_needs_window", id=asset_id))
-        return _start_desktop(project, cfg, course, asset, asset_id, {**grant, "window": window}, backend_factory)
+        return _started(_start_desktop(project, cfg, course, asset, asset_id, {**grant, "window": window}, backend_factory, block), part)
     configured = list(cfg.get("profiles") or {})
     name = grant.get("profile") or str(block.get("profile") or "").strip() or (configured[0] if len(configured) == 1 else "")
     if not name:
@@ -528,6 +563,11 @@ def start(project, code: str, asset_id: str, backend_factory=None, cursor: bool 
         if server:
             server.shutdown()
         raise
+    return _started(session, part)
+
+
+def _started(session: Session, part: str) -> Session:
+    session.part = part
     return session
 
 
@@ -597,9 +637,8 @@ def _redactor(rules: dict, course: dict, who: pii.People, terms: list[str]) -> r
     return redactmod.Redactor(rules, who, terms, read, engine)
 
 
-def _start_desktop(project, cfg, course, asset, asset_id, grant, backend_factory) -> Session:
+def _start_desktop(project, cfg, course, asset, asset_id, grant, backend_factory, block: dict) -> Session:
     """A window of a program: there is no page to clean, so every screen is covered on the pixels and an OCR is required."""
-    block = read_block(course, asset_id)
     rules, who, terms = _rules(cfg, course, asset, block)
     try:
         redactor = _redactor(rules, course, who, terms)
@@ -614,7 +653,7 @@ def _start_desktop(project, cfg, course, asset, asset_id, grant, backend_factory
     return session
 
 
-def _start_terminal(project, cfg, course, asset, asset_id, grant, backend_factory) -> Session:
+def _start_terminal(project, cfg, course, asset, asset_id, grant, backend_factory, block: dict) -> Session:
     """A shell of its own in the stage the brief names: its output covered in the text, its screen drawn."""
     from coursekit import capture_stage
     from coursekit import capture_terminal as termmod
@@ -623,7 +662,6 @@ def _start_terminal(project, cfg, course, asset, asset_id, grant, backend_factor
         raise ToolError(t("capture", "terminal_unsupported"))
     if backend_factory is None and not termmod.emulator_available():
         raise ToolError(t("capture", "terminal_needs_pyte"))
-    block = read_block(course, asset_id)
     if not block.get("stage"):
         raise ToolError(t("capture", "terminal_needs_stage", path=brief_file(course, asset_id).name))
     settings = dict(cfg.get("terminal") or {})
@@ -917,7 +955,7 @@ class Manager:
         def start_tool(args):
             if self.session is not None:
                 raise ToolError(t("capture", "session_running", id=self.session.asset_id))
-            self.session = start(self.project, str(args["code"]), str(args["asset_id"]), self.factory)
+            self.session = start(self.project, str(args["code"]), str(args["asset_id"]), self.factory, part=str(args.get("part") or ""))
             s = self.session
             if s.terminal is not None:
                 notes = [t("capture", "terminal_started", id=s.asset_id, stage=s.terminal["stage"], folder=s.start_url)]
@@ -959,7 +997,12 @@ class Manager:
 
         return [
             Tool("session_start", "Start capturing a resource of a course (needs the permission of a person). Returns the "
-                 "first screenshot.", schema({"code": string, "asset_id": string}, ["code", "asset_id"]), start_tool),
+                 "first screenshot. `part` names one part of a recording made in several (a terminal and a browser): its files "
+                 "are <id>-<part>.*, its settings `parts: {<part>: …}` of the capture block.",
+                 schema({"code": string, "asset_id": string, "part": string}, ["code", "asset_id"]), start_tool),
+            Tool("chapter", "Terminal: a stop of the terminal demo here, with its title (the player pauses on it and the learner "
+                 "goes on when ready): one at the end of each phase the brief names.", schema({"title": string}, ["title"]),
+                 lambda a: [self._guarded(lambda: self._current().chapter(str(a["title"]))) or text("OK")]),
             Tool("screenshot", "The screen now, with personal data replaced.", schema(),
                  lambda a: [image(self._guarded(lambda: self._current().screenshot()))]),
             Tool("read_screen", "Terminal: the text of the screen now, with personal data replaced.", schema(),

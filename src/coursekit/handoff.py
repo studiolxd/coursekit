@@ -534,8 +534,8 @@ def write_report(course: dict, stopped: str | None = None) -> Path | None:
         (t("handoff", "report_recordings"), [f"{a['id']} ({a.get('title', '')}) → media/scripts/{a['id']}.md"
                                              for a in awaiting_recordings(course)]),
         (t("handoff", "report_captures"), [f"{a['id']} ({mediamod.capture_waiting(a)})" for a in captures_to_review(course)]),
-        (t("handoff", "report_captures_approved"), [f"{a['id']} ({a.get('title', '')}) → coursekit capture review {course['code']} "
-                                                    f"{a['id']}" for a in approved_captures(course)]),
+        (t("handoff", "report_captures_approved", code=course["code"]),
+         [f"{a['id']} ({a.get('title', '')}) → coursekit capture review {course['code']} {a['id']}" for a in approved_captures(course)]),
         (t("handoff", "report_videos", path=videosmod.REPORT), [f"{(v.get('channel') or {}).get('name') or '—'} · {v['url']}"
                                                                for v in unchecked_videos(course)]),
     ]
@@ -546,6 +546,8 @@ def write_report(course: dict, stopped: str | None = None) -> Path | None:
         lines += [t("handoff", "report_nothing"), ""]
     if not course.get("_dir"):  # a course that is not on disk (nothing to report into)
         return None
+    if approved_captures(course) and course.get("_project"):
+        capture.review_all(course)  # the page to look at them all at once
     path = course["_dir"] / REPORT
     path.write_text("\n".join(lines), encoding="utf-8", newline="\n")
     return path

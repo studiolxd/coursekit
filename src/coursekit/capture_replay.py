@@ -224,7 +224,7 @@ def run_steps(session, steps: list, pace: dict, record, timeline: Timeline | Non
     return shots
 
 
-def replay(project, code: str, asset_id: str, backend_factory=None) -> dict:
+def replay(project, code: str, asset_id: str, backend_factory=None, part: str = "") -> dict:
     """Repeats the steps of the brief of a resource, records its video and leaves the result waiting for a person."""
     cfg = capturemod.settings(project)
     pace = dict(cfg.get("replay") or {})
@@ -233,18 +233,20 @@ def replay(project, code: str, asset_id: str, backend_factory=None) -> dict:
     course = coursemod.load(project, code)
     try:
         _, _, _, asset = capturemod.find_asset(course, asset_id)
-        grant = sessionmod.chosen_grant(project, course, asset, sessionmod.read_block(course, asset_id))
+        grant = sessionmod.chosen_grant(project, course, asset, sessionmod.read_block(course, asset_id, part))
     except (capturemod.CaptureError, ToolError) as exc:
         raise ReplayError(str(exc)) from None
     if grant and grant.get("mode") == "terminal":  # a terminal session is recorded while it happens
         raise ReplayError(t("capture", "terminal_no_replay", code=code, id=asset_id))
     try:
-        session = sessionmod.start(project, code, asset_id, backend_factory, cursor=bool(pace.get("cursor", True)))
+        session = sessionmod.start(project, code, asset_id, backend_factory, cursor=bool(pace.get("cursor", True)), part=part)
     except ToolError as exc:
         raise ReplayError(str(exc)) from None
     course = session.course
-    steps = sessionmod.read_block(course, asset_id).get("steps") or []
-    shutil.rmtree(capturemod.review_dir(course, asset_id), ignore_errors=True)
+    steps = sessionmod.read_block(course, asset_id, session.part).get("steps") or []
+    review = capturemod.review_dir(course, asset_id)
+    for old in review.glob(f"t{session.part}-*.png" if session.part else "t*.png"):  # this part's frames only
+        old.unlink()
     recordings = course["_dir"] / "media" / "recordings"
     parts: list[Path] = []
     recording = {"on": False}
@@ -256,18 +258,18 @@ def replay(project, code: str, asset_id: str, backend_factory=None) -> dict:
             session.backend.start_recording()
             timeline.start()
         elif not on and recording["on"]:
-            part = recordings / f"{asset_id}.part{len(parts)}.mp4"
+            piece = recordings / f"{session.name}.part{len(parts)}.mp4"
             stopped = time.time()
             recorded = session.backend.stop_recording()
             first = None
             if isinstance(recorded, Path):  # the desktop records a video by itself
-                part.parent.mkdir(parents=True, exist_ok=True)
-                shutil.move(str(recorded), part)
+                piece.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(recorded), piece)
             else:
                 first = next((at for at, data in recorded if data), None)
-                encode(recorded, part, fps)
-            timeline.stop(duration_of(part) or max(0.0, stopped - (timeline.started or stopped)), first)
-            parts.append(part)
+                encode(recorded, piece, fps)
+            timeline.stop(duration_of(piece) or max(0.0, stopped - (timeline.started or stopped)), first)
+            parts.append(piece)
         recording["on"] = on
 
     try:
@@ -281,7 +283,7 @@ def replay(project, code: str, asset_id: str, backend_factory=None) -> dict:
             raise ReplayError(str(exc)) from None
         video = None
         if parts:
-            video = recordings / f"{asset_id}.mp4"
+            video = recordings / f"{session.name}.mp4"
             _join(parts, video)
             parts.clear()
             timeline.write(events_path(video), video)
@@ -320,6 +322,7 @@ def replay(project, code: str, asset_id: str, backend_factory=None) -> dict:
     asset["capture"] = {"state": "captured", "source": "replay", "engine": report["engine"], "at": sessionmod._now(),
                         "findings": findings, "warnings": session.warnings,
                         "file": main.relative_to(course["_dir"]).as_posix() if main else None, "masks": previous.get("masks")}
+    session._keep_parts(asset["capture"], previous)
     capturemod.save_capture(course, asset_id, asset["capture"])
     return {"video": video, "shots": shots, "findings": findings, "warnings": session.warnings, "review": review,
             "events": events_path(video) if video else None}

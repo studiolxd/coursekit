@@ -399,6 +399,8 @@ The profiles of the web applications, the permissions of [`coursekit capture`](0
 | `terminal.width` | `1920` | Pixels wide of the images and the video the terminal is drawn in (the font size follows). The frame is always 16:9, the screen in its middle on its own background. |
 | `terminal.font` | `""` | Path of a monospaced font; empty: the first found (Menlo on macOS, DejaVu Sans Mono on Linux). |
 | `terminal.idle_limit` | `2` | Seconds: a longer pause of the recording (the model thinking between actions) is shortened to this. |
+| `terminal.busy_limit` | `1.5` | Seconds: a wait of the program (only a spinner or a counter changes, nothing typed) is sped up to last this, never cut. `0` turns it off. |
+| `terminal.busy_cells` | `40` | Cells that change at most in a piece of output that counts as part of such a wait. |
 | `terminal.folder` | `projects` | Where a stage is mounted, inside the home folder (a `stage.yaml` can say its own `folder`). |
 | `terminal.setup_timeout` | `600` | Seconds for each command of the `setup` of a stage. |
 | `terminal.palette` | light, high contrast | `background`, `foreground` and the 16 `ansi` colors the terminal is drawn with; the player of a `.cast` gets them too. A program that paints its own colors keeps them. |

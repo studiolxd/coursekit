@@ -37,7 +37,7 @@ cd demo
 coursekit status
 ```
 
-Para trabajar en `coursekit capture`, añade su extra a los dos: `uv sync --group dev --extra capture` (sin él se saltan los tests que necesitan OpenCV, Playwright o Apple Vision; `tests/test_capture_browser.py` maneja el Chrome, Edge o Chromium de la máquina, sin ventana, sobre un panel inventado; el CI los ejecuta en un trabajo propio) y `uv tool install --force --editable ".[capture]"`. `--editable` hace que el comando instalado siga tus cambios. Al terminar: `uv tool uninstall slxd-coursekit`. Si la terminal no encuentra `coursekit` tras instalarlo, ejecuta `uv tool update-shell` y abre una terminal nueva.
+Para trabajar en `coursekit capture`, añade su extra a los dos: `uv sync --group dev --extra capture` (sin él se saltan los tests que necesitan OpenCV, Playwright o Apple Vision; `tests/test_capture_browser.py` maneja el Chrome, Edge o Chromium de la máquina, sin ventana, sobre un panel inventado; el CI los ejecuta en un trabajo propio, con `tests/test_capture_terminal.py`) y `uv tool install --force --editable ".[capture]"`. `--editable` hace que el comando instalado siga tus cambios. Al terminar: `uv tool uninstall slxd-coursekit`. Si la terminal no encuentra `coursekit` tras instalarlo, ejecuta `uv tool update-shell` y abre una terminal nueva.
 
 ### Windows, macOS y Linux
 
@@ -55,7 +55,7 @@ uv run ruff check .
 uv run pytest -q
 ```
 
-Ambas deben pasar; CI ejecuta las dos (más `uv tool install .` y `coursekit --version`) en Linux, macOS y Windows con cada push a `main` y cada pull request. Ruff se configura en `pyproject.toml`: longitud de línea 140, Python 3.12 como objetivo y las reglas `E`, `F`, `I` (imports), `UP` y `B`. `uv run ruff check . --fix` corrige la mayoría de los avisos de orden de imports y de estilo.
+Ambas deben pasar; CI ejecuta las dos (más `uv tool install .` y `coursekit --version`) en Linux, macOS y Windows con cada push a `main` y cada pull request. Un tercer trabajo, `video-types`, comprueba los tipos del TypeScript de los vídeos (`videokit` y la plantilla de Remotion) con la estructura de un proyecto. Los zooms de una grabación están en `videokit/atoms/zoom.ts`, y `templates/remotion/src/zoom.ts` es una copia (un test las mantiene iguales): cambia la primera y cópiala. Ruff se configura en `pyproject.toml`: longitud de línea 140, Python 3.12 como objetivo y las reglas `E`, `F`, `I` (imports), `UP` y `B`. `uv run ruff check . --fix` corrige la mayoría de los avisos de orden de imports y de estilo.
 
 `tests/conftest.py` fija `COURSEKIT_LANG=en` en todos los tests y restaura el entorno después, así que los mensajes en los tests están en inglés. Un test que necesite español lo indica de forma explícita (`monkeypatch.setenv("COURSEKIT_LANG", "es")` o `i18n.use("es")`).
 

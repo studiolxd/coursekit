@@ -128,7 +128,15 @@ What you may do with an `interface` resource, in this order:
    `media/recordings/<id>.cast` for a terminal demo (recipe `asciinema`), `<id>.mp4` and its `<id>.events.json` for a
    video, `<id>.png` for a capture. The application is recorded as it is configured on this machine (its theme, its
    colors, its size of text): never change its theme for a recording. There is no replay: if a take goes wrong, start another session (the stage is mounted
-   again from scratch). Never type a password, a key or a token, and never print the environment.
+   again from scratch). Never type a password, a key or a token, and never print the environment. The waits of a program
+   (a model thinking, a spinner) are sped up by themselves, never cut: do not shorten them by hand. In a terminal demo whose
+   brief names phases (or steps the learner goes through one at a time), call `chapter` with the title of each phase at
+   its end: the player pauses there and the learner goes on when ready.
+
+   **A recording in parts** (a terminal and then a browser, two programs): one session per part, `session_start` with
+   `part: <name>` (`terminal`, `browser`…), each with its settings in `parts: {<name>: {mode: …, stage: …, start: …}}` of
+   the `capture` block (what the block says outside `parts` holds for all). Each part writes `media/recordings/<id>-<part>.*`
+   (its events too); the montage uses one screencast scene per part, each on its own recording.
 4. **Nothing of the above exists yet: do not produce it.** Write the **brief for the person** in
    `courses/<CODE>/media/scripts/<id>.md` and leave the asset waiting:
    `coursekit media set <CODE> <id> --status scripted --recipe screen-recording|screenshot|asciinema --depicts interface`.
@@ -241,7 +249,9 @@ credits.
   package, see step 4.
 - **Interactive terminal demo** — asciinema recording of the script's commands (when it shows a real application, the
   `.cast` of `media/recordings/`, from a person or a terminal capture) and an EMBED
-  package (`media/src/<id>/index.html` with the player and `tokens.css`).
+  package (`media/src/<id>/index.html` with the player and `tokens.css`). When the `.cast` has chapters (its markers),
+  start the player with `pauseOnMarkers: true` and tell the learner, next to it, that it stops at each step and goes on
+  with play.
 - **Video** — a **montage** first (recipe `montage`, `coursekit video`): the video as data in
   `media/scripts/<id>.video.yaml`, scenes one after another, each with its `type`, its `props` and what it `says`; each lasts
   what its voice lasts, in the theme of the course. The order of decision for each scene:

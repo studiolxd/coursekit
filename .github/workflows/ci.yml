@@ -31,4 +31,28 @@ jobs:
       - uses: astral-sh/setup-uv@v10.3.0  # it publishes no short major tag
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg libgl1  # libgl1: what OpenCV needs on Linux
       - run: uv sync --group dev --extra capture
-      - run: uv run pytest -q tests/test_capture.py tests/test_capture_browser.py tests/test_media_checks.py
+      - run: uv run pytest -q tests/test_capture.py tests/test_capture_browser.py tests/test_capture_terminal.py tests/test_media_checks.py
+
+  # The TypeScript of the videos compiles (the tests above render none): the Remotion workspace of a project (the template, with
+  # the library of scenes of the montages in kit/, as `coursekit video` leaves it) type-checked with its own dependencies.
+  video-types:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: a project with its Remotion workspace
+        run: |
+          project="$RUNNER_TEMP/project"
+          mkdir -p "$project/tools" "$project/theme"
+          cp -R src/coursekit/templates/remotion "$project/tools/remotion"
+          cp -R src/coursekit/videokit "$project/tools/remotion/kit"
+          echo '{"color": {}}' > "$project/theme/tokens.json"
+      - name: type-check
+        working-directory: ${{ runner.temp }}/project/tools/remotion
+        run: |
+          npm install --no-audit --no-fund
+          npm install --no-save --no-audit --no-fund @types/react-dom@19
+          echo '{"extends": "./tsconfig.json", "compilerOptions": {"noEmit": true}, "include": ["src", "kit"]}' > tsconfig.check.json
+          npx tsc -p tsconfig.check.json

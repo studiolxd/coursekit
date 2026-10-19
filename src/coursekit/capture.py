@@ -513,6 +513,44 @@ def write_review(course: dict, asset_id: str, report: dict) -> Path:
     return out
 
 
+def review_all(course: dict) -> Path:
+    """One page with every capture of the course, to look at them all at once: what each shows (some of its frames), its
+    state and who approved it (a person, or the handoff with no one looking), what was covered and its warnings."""
+    import html
+
+    _, _, data = mediamod.load_manifest(course["_dir"])
+    folder = course["_project"].cache_dir / "capture" / course["code"]
+    folder.mkdir(parents=True, exist_ok=True)
+    blocks = []
+    for asset in data["assets"]:
+        state = asset.get("capture") or {}
+        if not state.get("state"):
+            continue
+        asset_id = str(asset["id"])
+        frames = sorted(review_dir(course, asset_id).glob("t*.png"))
+        step = max(1, len(frames) // 6)  # at most six frames of each: the sheet of the capture has them all
+        images = "".join(f'<img src="{html.escape(asset_id)}/{html.escape(p.name)}" alt="">' for p in frames[::step][:6])
+        found = ", ".join(f"{kind} {n}" for kind, n in sorted((state.get("findings") or {}).items())) or t("capture", "review_nothing")
+        warnings = "".join(f"<li>{html.escape(str(w))}</li>" for w in state.get("warnings") or [])
+        files = state.get("parts") or ({"": state["file"]} if state.get("file") else {})
+        listed = " · ".join(html.escape(f"{name}: {path}" if name else str(path)) for name, path in files.items())
+        by = state.get("by") or "—"
+        blocks.append(f'<section><h2>{html.escape(asset_id)} — {html.escape(str(asset.get("title") or ""))}</h2>'
+                      f'<p class="state">{html.escape(t("capture", "sheet_state", state=state["state"], by=by))}</p>'
+                      f"<p>{listed}</p><p>{html.escape(t('capture', 'sheet_found', found=found))}</p>"
+                      f'<ul class="warn">{warnings}</ul><div class="frames">{images}</div>'
+                      f'<p><a href="{html.escape(asset_id)}/review.html">{html.escape(t("capture", "sheet_more"))}</a></p></section>')
+    page = (f'<!doctype html><html><head><meta charset="utf-8"><title>{html.escape(course["code"])}</title><style>'
+            "body{font-family:system-ui,sans-serif;margin:24px;background:#fafafa;color:#222}section{margin:0 0 40px}"
+            ".frames{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.frames img{width:100%;border:1px solid #ccc}"
+            ".state{font-weight:600}.warn{color:#a40}</style></head><body>"
+            f"<h1>{html.escape(t('capture', 'sheet_title', code=course['code']))}</h1>"
+            + ("".join(blocks) or f"<p>{html.escape(t('capture', 'sheet_none'))}</p>") + "</body></html>")
+    out = folder / "index.html"
+    out.write_text(page, encoding="utf-8", newline="\n")
+    return out
+
+
 def review(course: dict, asset_id: str) -> Path:
     _, _, _, asset = find_asset(course, asset_id)
     out = review_dir(course, asset_id) / "review.html"

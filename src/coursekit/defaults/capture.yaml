@@ -89,6 +89,8 @@ terminal:
   width: 1920                  # px wide of the images and the video it is drawn in (the font size follows)
   font: ""                     # path of a monospaced font; empty: the first found (Menlo on macOS, DejaVu Sans Mono on Linux)
   idle_limit: 2                # s: a longer pause (the model thinking between actions) is shortened to this
+  busy_limit: 1.5              # s: a wait of the program (only a spinner or a counter changes) is sped up to last this, never cut
+  busy_cells: 40               # cells that change at most in a piece of output that counts as part of such a wait
   folder: projects             # where a stage is mounted, inside the home folder (a stage.yaml can say its own `folder`)
   setup_timeout: 600           # s for each command of the setup of a stage
   palette:                     # the colors it is drawn with (light and of high contrast), and of the player of a .cast

@@ -125,3 +125,8 @@ stage_mounted: {es: "escenario {name} montado en {folder} ({home})", en: "stage 
 stage_home_real: {es: "con la carpeta personal de esta máquina", en: "with the home folder of this machine"}
 stage_home_clean: {es: "con una carpeta personal vacía", en: "with an empty home folder"}
 bad_shape: {es: "«{shape}» no es una forma de marca: {shapes}", en: "«{shape}» is not a shape of mark: {shapes}"}
+sheet_title: {es: "Capturas de {code}", en: "Captures of {code}"}
+sheet_state: {es: "Estado: {state} · aprobada por: {by}", en: "State: {state} · approved by: {by}"}
+sheet_found: {es: "Tapado: {found}", en: "Covered: {found}"}
+sheet_more: {es: "Todos sus fotogramas", en: "All its frames"}
+sheet_none: {es: "Este curso no tiene capturas.", en: "This course has no captures."}

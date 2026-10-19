@@ -37,7 +37,7 @@ cd demo
 coursekit status
 ```
 
-To work on `coursekit capture`, add its extra to both: `uv sync --group dev --extra capture` (without it the tests that need OpenCV, Playwright or Apple Vision are skipped; `tests/test_capture_browser.py` drives the Chrome, Edge or Chromium of the machine, with no window, over an invented panel; CI runs them in a job of their own) and `uv tool install --force --editable ".[capture]"`. `--editable` makes the installed command follow your changes. When you are done: `uv tool uninstall slxd-coursekit`. If the shell does not find `coursekit` after installing, run `uv tool update-shell` and open a new terminal.
+To work on `coursekit capture`, add its extra to both: `uv sync --group dev --extra capture` (without it the tests that need OpenCV, Playwright or Apple Vision are skipped; `tests/test_capture_browser.py` drives the Chrome, Edge or Chromium of the machine, with no window, over an invented panel; CI runs them in a job of their own, with `tests/test_capture_terminal.py`) and `uv tool install --force --editable ".[capture]"`. `--editable` makes the installed command follow your changes. When you are done: `uv tool uninstall slxd-coursekit`. If the shell does not find `coursekit` after installing, run `uv tool update-shell` and open a new terminal.
 
 ### Windows, macOS and Linux
 
@@ -55,7 +55,7 @@ uv run ruff check .
 uv run pytest -q
 ```
 
-Both must pass; CI runs both (plus `uv tool install .` and `coursekit --version`) on Linux, macOS and Windows for every push to `main` and every pull request. Ruff is configured in `pyproject.toml`: line length 140, target Python 3.12, rules `E`, `F`, `I` (imports), `UP` and `B`. `uv run ruff check . --fix` fixes most import-order and style findings.
+Both must pass; CI runs both (plus `uv tool install .` and `coursekit --version`) on Linux, macOS and Windows for every push to `main` and every pull request. A third job, `video-types`, type-checks the TypeScript of the videos (`videokit` and the Remotion template) in a project layout. The zooms of a recording live in `videokit/atoms/zoom.ts`, and `templates/remotion/src/zoom.ts` is a copy (a test keeps them equal): change the first and copy it. Ruff is configured in `pyproject.toml`: line length 140, target Python 3.12, rules `E`, `F`, `I` (imports), `UP` and `B`. `uv run ruff check . --fix` fixes most import-order and style findings.
 
 `tests/conftest.py` sets `COURSEKIT_LANG=en` for every test and restores the environment afterwards, so messages in tests are in English. A test that needs Spanish says so explicitly (`monkeypatch.setenv("COURSEKIT_LANG", "es")` or `i18n.use("es")`).
 
