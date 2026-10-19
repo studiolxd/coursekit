@@ -143,3 +143,6 @@ live_transitions_intro:
   en: "How one scene gives way to the next, in the style of the project (config/video.yaml › transition). A script picks each scene's with `transition:`; with auto, coursekit picks it from the two scenes."
 live_transition: {es: Transición, en: Transition}
 live_direction: {es: Dirección, en: Direction}
+zooms_scene: {es: "la escena tiene {n} zooms: uno como mucho, y solo para un detalle que no se lee a pantalla completa", en: "the scene has {n} zooms: one at most, and only for a detail that does not read at full size"}
+zooms_close: {es: "un zoom justo después de otro (menos de {gap} s entre ellos): deja respirar la grabación o quita uno", en: "a zoom right after another (less than {gap} s between them): let the recording breathe or drop one"}
+zooms_many: {es: "{n} zooms en {minutes} min de grabación (más de {max} por minuto): guárdalos para los detalles", en: "{n} zooms in {minutes} min of recording (more than {max} a minute): keep them for the details"}

@@ -62,6 +62,8 @@ export type Style = {
   text?: Record<string, TextRole>;
   /** The reference size of each role (the package's): a size of the project scales every text of that role in proportion. */
   textBase?: Record<string, number>;
+  /** The zooms of a screen recording (config/video.yaml › screencast). */
+  screencast?: Partial<{ scale: number; ease: number; lead: number; min_hold: number; margin: number; mark: boolean }>;
 };
 
 export type TextRole = { family?: string | null; size?: number | null; weight?: number | null; style?: "normal" | "italic" | null;

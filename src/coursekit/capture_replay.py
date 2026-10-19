@@ -62,13 +62,18 @@ class Timeline:
         self.offset += duration
         self.started, self._part = None, []
 
-    def note(self, kind: str, x: float, y: float, label: str = "") -> None:
+    def note(self, kind: str, x: float, y: float, label: str = "", spec: dict | None = None) -> None:
         if self.started is None:
             return  # not recording
         w, h = self.viewport
         event = {"t": time.time() - self.started, "kind": kind, "fx": round(x / w, 4), "fy": round(y / h, 4)}
         if label:
             event["label"] = label
+        box = (spec or {}).get("box") or {}
+        if box.get("width") and box.get("height"):  # the whole of what it shows, around where it is found now
+            bw, bh = float(box["width"]), float(box["height"])
+            event.update(box=[round((x - bw / 2) / w, 4), round((y - bh / 2) / h, 4), round(bw / w, 4), round(bh / h, 4)],
+                         shape=(spec or {}).get("shape") or "round", tone=(spec or {}).get("tone") or "light")
         self._part.append(event)
 
     def write(self, path: Path, video: Path) -> None:
@@ -188,7 +193,7 @@ def run_steps(session, steps: list, pace: dict, record, timeline: Timeline | Non
                 backend.type_slowly(str(spec.get("value", "")), delay)
         elif kind == "point":  # a place of the screen, marked without touching it, for a zoom of the video
             spec = step if isinstance(step, dict) else {"label": str(step)}
-            timeline.note("point", *_point(session, spec, n), _label(spec))
+            timeline.note("point", *_point(session, spec, n), _label(spec), spec)
         elif kind == "move":
             backend.glide(*_point(session, step, n), move_ms)
         elif kind == "drag":

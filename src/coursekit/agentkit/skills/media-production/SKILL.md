@@ -81,7 +81,11 @@ What you may do with an `interface` resource, in this order:
    voice of the course, captions, zooms, highlights, the cursor of the recording; nothing of the screen is redrawn), with
    the `Screencast` component of `tools/remotion/src/Screencast.tsx`: its zooms follow what the narration names (`focus` with
    the `word` said and the `event` of `media/recordings/<id>.events.json`, or `fx`/`fy`), with the words of the narration
-   (`<audio>.words.json`, written by `coursekit subtitles`); never guess a coordinate when there is an event; for an
+   (`<audio>.words.json`, written by `coursekit subtitles`); never guess a coordinate when there is an event. **A zoom is
+   for a detail** that does not read at full size (a word, an indicator, one line of a change, a single field): never to go
+   with every sentence, at most one per scene, and none when what matters is the whole screen or the narration only
+   describes what happens; how calm it is and how close it goes come from `coursekit config video` › `screencast`, and
+   `coursekit video check` warns of zooms too many or too close; for an
    **image**, the recipe `screenshot` (crop it and mark it with numbers, frames or arrows; never redraw it); for a **GIF**, cut
    and convert the recording with ffmpeg; for a **terminal demo**, the recipe `asciinema` (the person's `.cast` in the EMBED
    package of the player; never retype or rerecord it). Record it with the recipe and `--depicts interface`. When the project captures
@@ -95,7 +99,9 @@ What you may do with an `interface` resource, in this order:
    block with where it starts (`start: /path`; for a resource that shows the course itself, the profile `course` and
    `start: unit:N`, its package or its review link) and what must always be hidden (`mask: [{selector: ...}, {text: ...}]`). Then
    `session_start` with the code and the id, follow the steps of the brief looking at each `screenshot` (use `zoom` to read
-   small text; `point`, with a `note`, on each thing the narration will name, so the video can zoom there), `save_shot` when the screen is the one the resource needs (for a video, `record_start` and `record_stop`
+   small text; `mark`, with a `note`, on the whole box of a detail the narration will name and the shape that fits it
+   (`rect`, `round` or `ellipse`): the video zooms only as close as that box fits and draws the mark around all of it; only
+   for a detail, as above, and never `point` alone for something larger than a word), `save_shot` when the screen is the one the resource needs (for a video, `record_start` and `record_stop`
    around the steps it shows), and `session_end`. The personal data on screen is already replaced with invented data: never
    try to undo it, never log in or type a password or a code, never leave the application. If a tool says that the
    permission or the session is gone, stop and tell the person what to run. The capture then waits for a person
@@ -116,7 +122,8 @@ What you may do with an `interface` resource, in this order:
    handoff coursekit signs the script itself (and again when a session starts): do not wait for a person. Try it with `coursekit capture stage <CODE> <name>` (it mounts it from
    scratch and says where). Then `session_start`: read the screen with `read_screen` (the image with `screenshot` only
    when the look matters), `type` and `key` as a person would, `wait_for` the text that says a program answered (a model
-   can take a while), `point_text` on what the narration names, `save_shot` for a capture, `record_start` and
+   can take a while), `point_text` on a detail the narration names (the box of its text, or with `until` the lines from it
+   to the one with that other text, and the `shape` of its mark; only for a detail), `save_shot` for a capture, `record_start` and
    `record_stop` around what the resource shows (without them, the whole session), and `session_end`: it writes
    `media/recordings/<id>.cast` for a terminal demo (recipe `asciinema`), `<id>.mp4` and its `<id>.events.json` for a
    video, `<id>.png` for a capture. The application is recorded as it is configured on this machine (its theme, its

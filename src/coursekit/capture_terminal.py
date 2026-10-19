@@ -333,7 +333,10 @@ class Painter:
         self.cell_w = self.font.getlength("M")
         ascent, descent = self.font.getmetrics()
         self.cell_h = ascent + descent
-        self.size = (round(2 * self.pad + cols * self.cell_w), round(2 * self.pad + rows * self.cell_h))
+        content = (round(2 * self.pad + cols * self.cell_w), round(2 * self.pad + rows * self.cell_h))
+        # a frame of 16:9 (the one of a video), the screen in its middle on its own background: no bands when it is shown
+        self.size = (max(content[0], round(content[1] * 16 / 9)), max(content[1], round(content[0] * 9 / 16)))
+        self.offset = ((self.size[0] - content[0]) / 2 + self.pad, (self.size[1] - content[1]) / 2 + self.pad)
         self.background = _rgb(palette.get("background"), (255, 255, 255))
         self.foreground = _rgb(palette.get("foreground"), (0, 0, 0))
         colors = list(palette.get("ansi") or [])
@@ -367,7 +370,7 @@ class Painter:
         return self._glyphs[ch]
 
     def cell_box(self, x: int, y: int) -> tuple[float, float, float, float]:
-        left, top = self.pad + x * self.cell_w, self.pad + y * self.cell_h
+        left, top = self.offset[0] + x * self.cell_w, self.offset[1] + y * self.cell_h
         return left, top, left + self.cell_w, top + self.cell_h
 
     def paint(self, shot: Snapshot) -> Image.Image:
@@ -564,8 +567,8 @@ class TerminalBackend:
         raise ToolError(t("capture", "terminal_no_navigate"))
 
     def cell_at(self, x: float, y: float) -> tuple[int, int]:
-        col = int((x - self.painter.pad) // self.painter.cell_w)
-        row = int((y - self.painter.pad) // self.painter.cell_h)
+        col = int((x - self.painter.offset[0]) // self.painter.cell_w)
+        row = int((y - self.painter.offset[1]) // self.painter.cell_h)
         return max(0, min(self.term.cols - 1, col)), max(0, min(self.term.rows - 1, row))
 
     def target_at(self, x: float, y: float) -> dict:
@@ -574,14 +577,28 @@ class TerminalBackend:
         words = [m for m in re.finditer(r"\S+", line) if m.start() <= col < m.end()]
         return {"cell": [row, col], **({"text": words[0].group(0)[:80]} if words else {})}
 
-    def find_text(self, text: str) -> tuple[float, float] | None:
-        """The centre of the first place the text is on screen (in the pixels of the screenshot)."""
-        for row, line in enumerate(self.term.lines()):
-            col = line.find(text)
-            if col != -1:
-                left, top, _, bottom = self.painter.cell_box(col, row)
-                return left + len(text) * self.painter.cell_w / 2, (top + bottom) / 2
-        return None
+    def find_box(self, text: str, until: str = "") -> tuple[float, float, float, float, str] | None:
+        """The box of the first place the text is on screen (in the pixels of the screenshot) or, with `until`, of the lines from
+        it to the first one after it that has `until` (from the first letter of any of them to the last), and the tone of its
+        background: `dark` or `light`."""
+        lines = self.term.lines()
+        start = next(((row, line.find(text)) for row, line in enumerate(lines) if text and text in line), None)
+        if start is None:
+            return None
+        row, col = start
+        cells = [(row, col, col + len(text))]
+        if until:
+            end = next((r for r in range(row, len(lines)) if until in lines[r]), None)
+            if end is None:
+                return None
+            cells = [(r, len(lines[r]) - len(lines[r].lstrip()), len(lines[r].rstrip())) for r in range(row, end + 1)
+                     if lines[r].strip()]
+        left, top, _, _ = self.painter.cell_box(min(c[1] for c in cells), cells[0][0])
+        _, _, right, bottom = self.painter.cell_box(max(c[2] for c in cells) - 1, cells[-1][0])
+        shot = self.term.snapshot()
+        grounds = [self.painter._colors(shot.cells[r][c], False)[1] for r, a, b in cells for c in range(a, b)]
+        light = sum(0.2126 * r + 0.7152 * g + 0.0722 * b for r, g, b in grounds) / max(1, len(grounds))
+        return left, top, right, bottom, "dark" if light < 128 else "light"
 
     def mark(self, kind: str, **data) -> None:
         self.term.mark(kind, **data)
@@ -639,6 +656,10 @@ def finish(backend: TerminalBackend, asset_id: str, recipe: str, recordings: Pat
             event = {"t": at, "kind": "point", "fx": round(mark["x"] / width, 4), "fy": round(mark["y"] / height, 4)}
             if mark.get("label"):
                 event["label"] = mark["label"]
+            if mark.get("box"):  # the whole of what it shows: the zoom keeps it in the frame and marks it
+                x, y, w, h = mark["box"]
+                event.update(box=[round(x / width, 4), round(y / height, 4), round(w / width, 4), round(h / height, 4)],
+                             shape=mark.get("shape") or "round", tone=mark.get("tone") or "light")
             events.append(event)
         data = {"video": video.name, "width": width, "height": height, "duration": recording.duration, "events": events}
         capture_replay.events_path(video).write_text(json.dumps(data, ensure_ascii=False, indent=1) + "\n", encoding="utf-8",

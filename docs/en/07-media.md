@@ -729,7 +729,7 @@ tools/remotion/
 
 ### The Screencast component
 
-`Screencast` is the composition of a tutorial over a real recording (recipe `screen-recording`): the recording is not redrawn, and its zooms are computed from data, not baked into the video, so a zoom is changed by changing a number and rendering again. It uses the events of the recording (`media/recordings/<id>.events.json`, written by `coursekit capture replay` or by a terminal session) and the words of the narration (`<audio>.words.json`, written by `coursekit subtitles` or by the ElevenLabs voice). The zoom follows what the narration names, not every click: a focus enters when its words are said, holds until the end of the sentence (or `hold` seconds) and goes back to the whole screen; two focuses close in time move from one to the other without zooming out. Without focuses, the clicks close in time and space are joined into one sustained zoom. Scaling around a point inside the frame always covers the whole frame, so the edges never show.
+`Screencast` is the composition of a tutorial over a real recording (recipe `screen-recording`): the recording is not redrawn, and its zooms are computed from data, not baked into the video, so a zoom is changed by changing a number and rendering again. It uses the events of the recording (`media/recordings/<id>.events.json`, written by `coursekit capture replay` or by a terminal session) and the words of the narration (`<audio>.words.json`, written by `coursekit subtitles` or by the ElevenLabs voice). A zoom is for a detail that does not read at full size (a word, an indicator, one line of a change), not for every sentence or every click: a focus starts going in a moment before its words are said (`lead`), stays at least `min_hold` seconds or until the end of its sentence (or `hold` seconds), and goes back to the whole screen; two focuses close in time move from one to the other without zooming out. When the event (or the focus) has the box of what it shows (`box`: left, top, width and height as fractions of the screen, which `mark` and `point_text` of a capture session write), the zoom goes only as close as that box fits with `margin` around it, places it in the middle of the frame as far as the edges of the screen allow (so the start of a line is never cut off), and draws a mark around all of it: a rectangle (`rect`), a rounded one (`round`) or an ellipse wide enough to hold it (`ellipse`), with a line that keeps its width at any zoom and a tone that reads on its background (white with a dark halo on a dark one, the accent ink with a light halo on a light one; the event says which, `tone`). Without a box it zooms on its point and draws no mark. The numbers come from `config/video.yaml › screencast` ([`video`](04-configuration.md#video-the-style-of-the-videos-made-as-a-montage)); `coursekit video check` warns of more than one zoom in a scene, of zooms too close and of too many a minute. Without focuses, the clicks close in time and space are joined into one sustained zoom. The edges of the screen never show.
 
 ```tsx
 import { Screencast } from "../Screencast";
@@ -737,16 +737,16 @@ import events from "../../../../courses/PWD/media/recordings/U1-S2-M1.events.jso
 import words from "../../../../courses/PWD/media/files/u1-s2-m1.words.json";
 
 <Screencast src={staticFile("U1-S2-M1.mp4")} events={events} words={words}
-  focus={[{ word: "minimum length", event: "the minimum length" }, { word: "save", event: "Save", hold: 1.5 }]} ring />
+  focus={[{ word: "minimum length", event: "the minimum length" }]} zooming={{ scale: 1.4 }} />
 ```
 
 | Prop | Meaning |
 |---|---|
 | `src` | The recording. |
 | `events`, `words` | The two files above. |
-| `focus` | The zooms: `word` (the words of the narration it enters with, the first time they are said after the previous focus) or `at` (a second); where: `event` (the label or the note of an event) or `fx`/`fy` (fractions of the screen); `scale` and `hold`. A focus whose words are not said makes no zoom. |
+| `focus` | The zooms: `word` (the words of the narration it enters with, the first time they are said after the previous focus) or `at` (a second); where: `event` (the label or the note of an event), `box` (fractions of the screen) or `fx`/`fy`; `shape` of its mark; `scale` (at most) and `hold`. A focus whose words are not said makes no zoom. |
 | `auto` | Zoom on the groups of clicks when there is no focus (default `true`). |
-| `startFrom`, `scale`, `ring` | Second of the recording it starts from; how close the zoom goes (default 1.8); a ring on the point of each focus. |
+| `startFrom`, `zooming`, `ring` | Second of the recording it starts from; the values of `config/video.yaml › screencast` (`scale`, `ease`, `lead`, `minHold`, `margin`, `mark`); the mark around what each focus shows when its box is known (default `true`). |
 
 ## Tools required per type
 

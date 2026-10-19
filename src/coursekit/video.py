@@ -338,6 +338,40 @@ def check(course: dict, asset_id: str) -> list[Finding]:
             for prop, text in _texts_on_screen(props, spec, labels=False):
                 if not mediaaccess.said(text, says, numbers):
                     found.append(Finding("warning", "NOT_SAID", where, t("video", "not_said", prop=prop, text=text)))
+    return found + _check_zooms(course, asset_id, [s for s in items if isinstance(s, dict)])
+
+
+def _check_zooms(course: dict, asset_id: str, items: list[dict]) -> list[Finding]:
+    """The zooms of the screen recordings, kept for details: one a scene at most, not too many a minute, not one after another
+    (the minute and the gaps are known once the scenes are voiced)."""
+    cfg = screencast_setting(course)
+    record = _voice_record(course, asset_id)
+    pad = float(cfg.get("pad_seconds") or 0)
+    found, zooms, seconds, last = [], 0, 0.0, None  # last: how long ago the previous scene with a zoom ended its zoom
+    for scene in items:
+        if scene.get("type") != "screencast":
+            last = None
+            continue
+        sid = _text(scene.get("id"))
+        focus = (scene.get("props") or {}).get("focus") or []
+        focus = focus if isinstance(focus, list) else []
+        if len(focus) > 1:
+            found.append(Finding("warning", "ZOOMS_SCENE", sid, t("video", "zooms_scene", n=len(focus))))
+        voiced = record.get(sid) or {}
+        length = float(voiced.get("seconds") or 0) + pad if voiced else None
+        if length is not None:
+            seconds += length
+        zooms += len(focus)
+        if focus and last is not None and last < float(cfg.get("min_gap") or 0):
+            found.append(Finding("warning", "ZOOMS_CLOSE", sid, t("video", "zooms_close", gap=cfg.get("min_gap"))))
+        if focus:
+            last = max(0.0, length - float(cfg.get("min_hold") or 0)) if length is not None else None
+        elif last is not None and length is not None:
+            last += length
+    allowed = float(cfg.get("max_per_minute") or 0)
+    if seconds and allowed and zooms > allowed * seconds / 60:
+        found.append(Finding("warning", "ZOOMS_MANY", "scenes", t("video", "zooms_many", n=zooms, minutes=round(seconds / 60, 1),
+                                                                   max=cfg.get("max_per_minute"))))
     return found
 
 
@@ -569,7 +603,14 @@ def _look(course: dict) -> dict:
             "veil": {"color": str(veil.get("color") or "background"),
                      "opacity": min(1.0, max(0.0, float(opacity))) if isinstance(opacity, (int, float)) else 0.82},
             "shapes": _numbers(look.get("shapes"), ("radius", "border"), ("shadow",)),
-            "weights": _weights(course, look), "fonts": found_fonts, "text": text, "textBase": base}
+            "weights": _weights(course, look), "fonts": found_fonts, "text": text, "textBase": base,
+            "screencast": screencast_setting(course)}
+
+
+def screencast_setting(course: dict) -> dict:
+    """The zooms of a screen recording (config/video.yaml › screencast, over the package's)."""
+    own = style(course).get("screencast")
+    return dict(own) if isinstance(own, dict) else {}
 
 
 TEXT_KEYS = ("family", "size", "weight", "style", "transform", "tracking", "leading", "color", "numeric", "measure")
@@ -807,7 +848,8 @@ def resolve(course: dict, asset_id: str) -> dict:
         if says:
             if sid not in record or not (folder / f"{sid}.mp3").exists():
                 raise VideoError(t("video", "voice_pending", scene=sid, code=course["code"], id=asset_id))
-            seconds = float(record[sid]["seconds"]) + pad + float(scene.get("hold") or 0)  # `hold`: it stays a while after it is said
+            air = float(screencast_setting(course).get("pad_seconds", pad)) if scene.get("type") == "screencast" else pad  # to look
+            seconds = float(record[sid]["seconds"]) + air + float(scene.get("hold") or 0)  # `hold`: it stays a while after it is said
             audio, words = f"files/{asset_id}/{sid}.mp3", _words(folder / f"{sid}.words.json")
         else:
             seconds, audio, words = float(scene.get("duration") or 3), None, []

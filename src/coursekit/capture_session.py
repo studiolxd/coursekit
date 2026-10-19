@@ -41,6 +41,7 @@ from coursekit.i18n import t
 from coursekit.mcpserver import ToolError
 
 RECIPES = capturemod.MODE_RECIPES["browser"]
+SHAPES = ("rect", "round", "ellipse")  # the mark around what a point shows: a rectangle, a rounded one or an ellipse
 
 
 class SessionGone(ToolError):
@@ -251,13 +252,46 @@ class Session:
         if hasattr(self.backend, "mark"):  # terminal: the time of the point, for the zoom of the video
             self.backend.mark("point", x=cx, y=cy, label=note.strip())
 
-    def point_text(self, text: str, note: str = "") -> None:
-        """Terminal: marks the first place a text is on screen, as `point` does."""
+    def mark(self, x: float, y: float, width: float, height: float, note: str = "", shape: str = "round") -> None:
+        """Marks the box of what the narration will show (its left, top, width and height in the screenshot): the video zooms
+        only as close as it fits, keeps it whole and draws a mark of that shape around it, in the tone of its background."""
         self.check()
-        found = self.backend.find_text(text) if hasattr(self.backend, "find_text") else None
+        x0, y0 = self._to_css(x, y)
+        x1, y1 = self._to_css(x + max(1.0, width), y + max(1.0, height))
+        self._mark_box(x0, y0, x1, y1, note, shape, self._tone(x0, y0, x1, y1))
+
+    def point_text(self, text: str, note: str = "", until: str = "", shape: str = "round") -> None:
+        """Terminal: marks the box of a text on screen or, with `until`, of the lines from it to the one that has `until`."""
+        self.check()
+        found = self.backend.find_box(text, until) if hasattr(self.backend, "find_box") else None
         if found is None:
-            raise ToolError(t("capture", "terminal_text_not_found", text=text))
-        self.point(found[0] / self._scale, found[1] / self._scale, note or text)
+            raise ToolError(t("capture", "terminal_text_not_found", text=until or text))
+        x0, y0, x1, y1, tone = found
+        self._mark_box(x0, y0, x1, y1, note or text, shape, tone)
+
+    def _tone(self, x0: float, y0: float, x1: float, y1: float) -> str:
+        """`dark` or `light`: the background of a box of the screen, so its mark is drawn in a tone that reads on it."""
+        image = self.frame().convert("L")
+        factor = image.width / self.backend.viewport[0]
+        part = image.crop((round(x0 * factor), round(y0 * factor), max(round(x0 * factor) + 1, round(x1 * factor)),
+                           max(round(y0 * factor) + 1, round(y1 * factor))))
+        values = list(part.getdata())
+        return "dark" if sum(values) / max(1, len(values)) < 128 else "light"
+
+    def _mark_box(self, x0: float, y0: float, x1: float, y1: float, note: str, shape: str, tone: str) -> None:
+        if shape not in SHAPES:
+            raise ToolError(t("capture", "bad_shape", shape=shape, shapes=", ".join(SHAPES)))
+        cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+        step = {"x": round(cx), "y": round(cy), "box": {"width": round(x1 - x0), "height": round(y1 - y0)}, "shape": shape,
+                "tone": tone}
+        target = self.backend.target_at(cx, cy)
+        if target:
+            step["target"] = target
+        if note.strip():
+            step["note"] = note.strip()
+        self.steps.append({"point": step})
+        if hasattr(self.backend, "mark"):  # terminal: the time of the point, for the zoom of the video
+            self.backend.mark("point", x=cx, y=cy, label=note.strip(), box=[x0, y0, x1 - x0, y1 - y0], shape=shape, tone=tone)
 
     def read_screen(self) -> str:
         self.check()
@@ -932,9 +966,18 @@ class Manager:
                  lambda a: [text(self._guarded(lambda: self._current().read_screen()))]),
             Tool("wait_for", "Terminal: wait until a text is on screen (at most timeout_ms, default 30000; the answer of a "
                  "program can take a while).", schema({"text": string, "timeout_ms": num}, ["text"]), wait_for_tool),
-            Tool("point_text", "Terminal: mark the first place a text is on screen, where the video should zoom when the "
-                 "narration names it.", schema({"text": string, "note": string}, ["text"]),
-                 lambda a: [self._guarded(lambda: self._current().point_text(str(a["text"]), str(a.get("note") or "")))
+            Tool("point_text", "Terminal: mark a detail the narration names, by its text: the box of that text, or with `until` "
+                 "the lines from it to the one with that other text; `shape` rect, round or ellipse. Only for a detail that does not "
+                 "read at full size.", schema({"text": string, "note": string, "until": string, "shape": string}, ["text"]),
+                 lambda a: [self._guarded(lambda: self._current().point_text(str(a["text"]), str(a.get("note") or ""),
+                                                                             str(a.get("until") or ""), str(a.get("shape") or "round")))
+                            or text("OK")]),
+            Tool("mark", "Mark the whole box of a detail the narration names (left, top, width and height in the last screenshot) "
+                 "and the shape of its mark: rect, round or ellipse. The video zooms only as close as it fits and draws the mark in "
+                 "a tone that reads on it. Only for a detail that does not read at full size.",
+                 schema({**xy, "width": num, "height": num, "note": string, "shape": string}, ["x", "y", "width", "height"]),
+                 lambda a: [self._guarded(lambda: self._current().mark(a["x"], a["y"], a["width"], a["height"],
+                                                                       str(a.get("note") or ""), str(a.get("shape") or "round")))
                             or text("OK")]),
             Tool("zoom", "A closer look at a region of the last screenshot (its coordinates).",
                  schema({**xy, "width": num, "height": num}, ["x", "y", "width", "height"]),

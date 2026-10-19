@@ -578,3 +578,22 @@ def test_export_leaves_each_piece_apart_and_the_timeline(voiced, course, monkeyp
     assert props["mode"] == {"layer": "length-1"}
     assert "timeline.fcpxml" in [p.name for p in folder.iterdir()]
     assert (folder / "captions.srt").read_text(encoding="utf-8").startswith("1\n")
+
+
+def test_the_zooms_of_a_recording_are_kept_for_the_details(course):  # noqa: F811
+    recording = course / "media" / "recordings" / "U1-S2-M1.mp4"
+    recording.parent.mkdir(parents=True, exist_ok=True)
+    recording.write_bytes(b"")
+    scenes = [{"id": f"s{n}", "type": "screencast", "says": "Pulsamos el botón y sale el resultado.",
+               "props": {"recording": "recordings/U1-S2-M1.mp4", "focus": [{"word": "botón", "event": "Botón"}] * (2 if n == 1 else 1)}}
+              for n in range(1, 5)]
+    loaded = montage(course, {"version": 1, "scenes": scenes})
+    codes = [f.code for f in video.check(loaded, "U1-S2-M1")]
+    assert codes.count("ZOOMS_SCENE") == 1 and "ZOOMS_CLOSE" not in codes  # the minute and the gaps wait for the voice
+    folder = video.voice_dir(loaded, "U1-S2-M1")
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "voice.json").write_text(json.dumps({f"s{n}": {"seconds": 3.0} for n in range(1, 5)}), encoding="utf-8")
+    codes = [f.code for f in video.check(loaded, "U1-S2-M1")]
+    assert "ZOOMS_CLOSE" in codes and "ZOOMS_MANY" in codes
+    settings = video.screencast_setting(loaded)
+    assert settings["scale"] == 1.4 and settings["pad_seconds"] == 1.0 and video._look(loaded)["screencast"] == settings

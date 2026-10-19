@@ -1,51 +1,71 @@
 import React from "react";
 import { AbsoluteFill, Easing, OffthreadVideo, staticFile, useCurrentFrame, useVideoConfig, Img } from "remotion";
-import { useColor } from "../theme";
+import { useColor, useTheme } from "../theme";
 import { useSceneTime, whenSaid } from "../timing";
 
 // A real screen recording with zooms computed from data (never baked into the video). It uses the events of the recording
-// (`coursekit capture replay` writes recordings/<id>.events.json: when and where each click and each point happened) and the
-// words of the narration of its scene. A focus enters when its words are said, holds until the end of the sentence (or `hold`
-// seconds) and goes back to the whole screen; two focuses close in time move from one to the other without zooming out.
-// Without focuses, the clicks close in time and space are joined into one sustained zoom.
+// (recordings/<id>.events.json: when and where each click and each point happened, and, when it is known, the box of what a
+// point shows, its shape and the tone of its background) and the words of the narration of its scene.
+// A zoom is for a detail: a focus starts going in a moment before its words are said (`lead`), stays at least `min_hold`
+// seconds or until the end of its sentence, and goes back to the whole screen; two focuses close in time move from one to the
+// other without zooming out. With the box of what it shows it goes only as close as the box fits (with `margin` around it),
+// keeps the box whole in the frame (never centred on a point that leaves its start outside) and draws a mark around it, in a
+// tone that reads on its background; without a box it zooms on the point and draws no mark. The numbers come from
+// config/video.yaml › screencast. Without focuses, the clicks close in time and space are joined into one sustained zoom.
 
-export type ScreenEvent = { t: number; kind: "click" | "point"; fx: number; fy: number; label?: string };
-export type Focus = { word?: string; at?: number; event?: string; fx?: number; fy?: number; scale?: number; hold?: number };
-type Span = { from: number; to: number; fx: number; fy: number; scale: number };
+/** A box as fractions of the screen: left, top, width, height. */
+export type Box = [number, number, number, number];
+export type Shape = "rect" | "round" | "ellipse";
+export type ScreenEvent = { t: number; kind: "click" | "point"; fx: number; fy: number; label?: string; box?: Box; shape?: Shape;
+  tone?: "light" | "dark" };
+export type Focus = { word?: string; at?: number; event?: string; fx?: number; fy?: number; box?: Box; shape?: Shape; scale?: number;
+  hold?: number };
+export type Zooming = { scale: number; ease: number; lead: number; min_hold: number; margin: number; mark: boolean };
+type Span = { from: number; to: number; cx: number; cy: number; s: number; box?: Box; shape: Shape; tone?: "light" | "dark" };
 
-const EASE = 0.5;
+const ZOOMING: Zooming = { scale: 1.4, ease: 1.2, lead: 0.4, min_hold: 3.5, margin: 0.06, mark: true };  // config/video.yaml's
 const IMAGE = /\.(svg|png|jpe?g|webp)$/i;  // a still of a screen (the example of the gallery): zoomed the same way
 const JOIN = 0.8;
+const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 const normal = (text: string) =>
-  text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9ñ]+/g, " ").trim();
+  text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9ñ]+/g, " ").trim();
 
-const spansFromFocus = (focus: Focus[], events: ScreenEvent[], words: { w: string; start: number; end: number }[], scale: number,
-  offset: number): Span[] => {
+/** How close a zoom goes: at most `max`, and only as close as its box fits with the margin around it. */
+export const closeness = (box: Box | undefined, max: number, margin: number) =>
+  box ? clamp(Math.min(max, (1 - 2 * margin) / Math.max(box[2], 1e-3), (1 - 2 * margin) / Math.max(box[3], 1e-3)), 1, max) : max;
+
+/** Where the zoomed screen goes: the centre of what it shows in the middle of the frame, as long as no edge of the screen shows. */
+export const framing = (s: number, cx: number, cy: number) => ({ tx: clamp(0.5 - cx * s, 1 - s, 0), ty: clamp(0.5 - cy * s, 1 - s, 0) });
+
+export const spansFromFocus = (focus: Focus[], events: ScreenEvent[], words: { w: string; start: number; end: number }[],
+  z: Zooming, offset: number): Span[] => {
   const spans: Span[] = [];
   let after = -1;
   for (const f of focus) {
-    const from = f.at ?? (f.word ? whenSaid(words, f.word, after) : null);
-    if (from == null) continue;
+    const said = f.at ?? (f.word ? whenSaid(words, f.word, after) : null);
+    if (said == null) continue;  // a word that is not said: no zoom (better none than a wrong one)
     const target = f.event ? events.find((e) => normal(e.label ?? "") === normal(f.event!)) : undefined;
-    const fx = f.fx ?? target?.fx;
-    const fy = f.fy ?? target?.fy;
-    if (fx == null || fy == null) continue;
-    const end = words.find((w) => w.start >= from && /[.!?…:;]$/.test(w.w.trim()));
-    spans.push({ from: from + offset, to: from + offset + (f.hold ?? Math.max(1.5, (end ? end.end : from + 2.5) - from)), fx, fy,
-      scale: f.scale ?? scale });
-    after = from + 0.01;
+    const box = f.box ?? target?.box;
+    const cx = box ? box[0] + box[2] / 2 : f.fx ?? target?.fx;
+    const cy = box ? box[1] + box[3] / 2 : f.fy ?? target?.fy;
+    if (cx == null || cy == null) continue;
+    const end = words.find((w) => w.start >= said && /[.!?…:;]$/.test(w.w.trim()));
+    const hold = f.hold ?? Math.max(z.min_hold, (end ? end.end : said) - said);
+    spans.push({ from: said + offset - (f.at != null ? 0 : z.lead), to: said + offset + hold, cx, cy,
+      s: closeness(box, f.scale ?? z.scale, z.margin), box, shape: f.shape ?? target?.shape ?? "round", tone: target?.tone });
+    after = said + 0.01;
   }
   return spans;
 };
 
-const spansFromClicks = (events: ScreenEvent[], scale: number): Span[] => {
+const spansFromClicks = (events: ScreenEvent[], z: Zooming): Span[] => {
   const clicks = events.filter((e) => e.kind === "click").sort((a, b) => a.t - b.t);
   const spans: Span[] = [];
   let group: ScreenEvent[] = [];
   const close = () => {
     if (!group.length) return;
-    spans.push({ from: Math.max(0, group[0].t - 0.4), to: group[group.length - 1].t + 1.4,
-      fx: group.reduce((s, e) => s + e.fx, 0) / group.length, fy: group.reduce((s, e) => s + e.fy, 0) / group.length, scale });
+    spans.push({ from: Math.max(0, group[0].t - z.lead), to: group[group.length - 1].t + z.min_hold, s: z.scale, shape: "round",
+      cx: group.reduce((s, e) => s + e.fx, 0) / group.length, cy: group.reduce((s, e) => s + e.fy, 0) / group.length });
     group = [];
   };
   for (const e of clicks) {
@@ -57,51 +77,74 @@ const spansFromClicks = (events: ScreenEvent[], scale: number): Span[] => {
   return spans;
 };
 
-const zoomAt = (spans: Span[], t: number) => {
-  const ease = Easing.inOut(Easing.cubic);
+/** The zoom at a second: how close, where, the span it shows (for its mark) and how far in it is (0 to 1). */
+export const zoomAt = (spans: Span[], t: number, ease: number): { s: number; cx: number; cy: number; span?: Span; k: number } => {
+  const curve = Easing.inOut(Easing.cubic);
   for (let i = 0; i < spans.length; i++) {
     const sp = spans[i];
     const prev = spans[i - 1];
     const next = spans[i + 1];
     const joinedIn = prev && sp.from - prev.to < JOIN;
     const joinedOut = next && next.from - sp.to < JOIN;
-    if (t < sp.from - (joinedIn ? 0 : EASE) || t > sp.to + (joinedOut ? 0 : EASE)) continue;
-    if (joinedIn && t < sp.from + EASE) {
-      const k = ease(Math.min(1, (t - prev.to) / Math.max(0.01, sp.from + EASE - prev.to)));
-      return { s: prev.scale + (sp.scale - prev.scale) * k, fx: prev.fx + (sp.fx - prev.fx) * k, fy: prev.fy + (sp.fy - prev.fy) * k };
+    if (t < sp.from - (joinedIn ? 0 : ease) || t > sp.to + (joinedOut ? 0 : ease)) continue;
+    if (joinedIn && t < sp.from + ease) {
+      const k = curve(Math.min(1, (t - prev.to) / Math.max(0.01, sp.from + ease - prev.to)));
+      return { s: prev.s + (sp.s - prev.s) * k, cx: prev.cx + (sp.cx - prev.cx) * k, cy: prev.cy + (sp.cy - prev.cy) * k,
+        span: k > 0.5 ? sp : prev, k: Math.abs(2 * k - 1) };
     }
-    if (!joinedIn && t < sp.from) return { s: 1 + (sp.scale - 1) * ease((t - (sp.from - EASE)) / EASE), fx: sp.fx, fy: sp.fy };
-    if (!joinedOut && t > sp.to) return { s: sp.scale - (sp.scale - 1) * ease((t - sp.to) / EASE), fx: sp.fx, fy: sp.fy };
+    if (!joinedIn && t < sp.from) {
+      const k = curve((t - (sp.from - ease)) / ease);
+      return { s: 1 + (sp.s - 1) * k, cx: sp.cx, cy: sp.cy, span: sp, k };
+    }
+    if (!joinedOut && t > sp.to) {
+      const k = 1 - curve((t - sp.to) / ease);
+      return { s: 1 + (sp.s - 1) * k, cx: sp.cx, cy: sp.cy, span: sp, k };
+    }
     if (joinedOut && t > sp.to) continue;
-    return { s: sp.scale, fx: sp.fx, fy: sp.fy };
+    return { s: sp.s, cx: sp.cx, cy: sp.cy, span: sp, k: 1 };
   }
-  return { s: 1, fx: 0.5, fy: 0.5 };
+  return { s: 1, cx: 0.5, cy: 0.5, k: 0 };
+};
+
+/** The mark around what a focus shows: its shape, a line that keeps its width whatever the zoom, in a tone of its background. */
+const MarkAround: React.FC<{ span: Span; s: number; k: number; ink: string }> = ({ span, s, k, ink }) => {
+  const [x, y, w, h] = span.box!;
+  const grow = span.shape === "ellipse" ? 1.42 : 1;  // an ellipse wide enough to hold the whole box
+  const pad = 0.006;
+  const width = w * grow + 2 * pad;
+  const height = h * grow + 2 * pad;
+  const dark = span.tone === "dark";
+  return (
+    <div style={{ position: "absolute", left: `${(x + w / 2 - width / 2) * 100}%`, top: `${(y + h / 2 - height / 2) * 100}%`,
+      width: `${width * 100}%`, height: `${height * 100}%`, boxSizing: "border-box", opacity: k,
+      border: `${3 / s}px solid ${dark ? "#ffffff" : ink}`,
+      boxShadow: `0 0 0 ${2 / s}px ${dark ? "rgba(0,0,0,0.55)" : "rgba(255,255,255,0.8)"}`,
+      borderRadius: span.shape === "ellipse" ? "50%" : span.shape === "rect" ? `${4 / s}px` : `${14 / s}px` }} />
+  );
 };
 
 export const ScreenRecording: React.FC<{ src: string; events?: ScreenEvent[]; focus?: Focus[]; startFrom?: number;
-  scale?: number; ring?: boolean }> = ({ src, events = [], focus, startFrom = 0, scale = 1.8, ring = false }) => {
+  scale?: number; ring?: boolean }> = ({ src, events = [], focus, startFrom = 0, scale, ring = false }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const { words } = useSceneTime();
   const color = useColor();
+  const z: Zooming = { ...ZOOMING, ...(useTheme().style?.screencast ?? {}), ...(scale ? { scale } : {}) };
   const t = frame / fps + startFrom;
   const spans = React.useMemo(
-    () => (focus?.length ? spansFromFocus(focus, events, words, scale, startFrom) : spansFromClicks(events, scale)),
-    [focus, events, words, scale, startFrom],
+    () => (focus?.length ? spansFromFocus(focus, events, words, z, startFrom) : spansFromClicks(events, z)),
+    [focus, events, words, z.scale, z.lead, z.min_hold, z.margin, startFrom],
   );
-  const { s, fx, fy } = zoomAt(spans, t);
-  const origin = `${(Math.min(1, Math.max(0, fx)) * 100).toFixed(3)}% ${(Math.min(1, Math.max(0, fy)) * 100).toFixed(3)}%`;
+  const { s, cx, cy, span, k } = zoomAt(spans, t, z.ease);
+  const { tx, ty } = framing(s, cx, cy);
   return (
     <AbsoluteFill style={{ background: color("background"), overflow: "hidden" }}>
-      <AbsoluteFill style={{ transform: `scale(${s})`, transformOrigin: origin }}>
+      <AbsoluteFill style={{ transform: `translate(${tx * 100}%, ${ty * 100}%) scale(${s})`, transformOrigin: "0 0" }}>
         {IMAGE.test(src)
           ? <Img src={/^https?:/.test(src) ? src : staticFile(src)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           : <OffthreadVideo src={/^https?:/.test(src) ? src : staticFile(src)} startFrom={Math.round(startFrom * fps)} muted
               style={{ width: "100%", height: "100%" }} />}
-        {ring && s > 1.05 ? (
-          <div style={{ position: "absolute", left: `${fx * 100}%`, top: `${fy * 100}%`, width: 64, height: 64, marginLeft: -32,
-            marginTop: -32, borderRadius: "50%", border: `4px solid ${color("accent-ink")}`, opacity: Math.min(1, (s - 1) / (scale - 1)) }} />
-        ) : null}
+        {ring && z.mark && span?.box && s > 1.02 ? <MarkAround span={span} s={s} k={k} ink={color("accent-ink")} /> : null}
       </AbsoluteFill>
     </AbsoluteFill>
   );

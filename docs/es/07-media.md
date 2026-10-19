@@ -730,7 +730,7 @@ tools/remotion/
 
 ### El componente Screencast
 
-`Screencast` es la composición de un tutorial sobre una grabación real (receta `screen-recording`): la grabación no se redibuja, y sus zooms se calculan a partir de datos, no van cocidos en el vídeo, así que un zoom se cambia cambiando un número y volviendo a renderizar. Usa los eventos de la grabación (`media/recordings/<id>.events.json`, que escribe `coursekit capture replay` o una sesión de terminal) y las palabras de la locución (`<audio>.words.json`, que escriben `coursekit subtitles` o la voz de ElevenLabs). El zoom sigue a lo que nombra la locución, no a cada clic: un foco entra cuando se dicen sus palabras, se mantiene hasta el final de la frase (o `hold` segundos) y vuelve a la pantalla entera; dos focos cercanos en el tiempo pasan de uno a otro sin alejarse. Sin focos, los clics cercanos en el tiempo y en la pantalla se unen en un solo zoom sostenido. Escalar alrededor de un punto dentro del encuadre siempre lo cubre entero, así que nunca se ven los bordes.
+`Screencast` es la composición de un tutorial sobre una grabación real (receta `screen-recording`): la grabación no se redibuja, y sus zooms se calculan a partir de datos, no van cocidos en el vídeo, así que un zoom se cambia cambiando un número y volviendo a renderizar. Usa los eventos de la grabación (`media/recordings/<id>.events.json`, que escribe `coursekit capture replay` o una sesión de terminal) y las palabras de la locución (`<audio>.words.json`, que escriben `coursekit subtitles` o la voz de ElevenLabs). Un zoom es para un detalle que no se lee a pantalla completa (una palabra, un indicador, una línea de un cambio), no para cada frase ni cada clic: un foco empieza a acercarse un momento antes de que se digan sus palabras (`lead`), se queda al menos `min_hold` segundos o hasta el final de su frase (o `hold` segundos), y vuelve a la pantalla entera; dos focos cercanos en el tiempo pasan de uno a otro sin alejarse. Cuando el evento (o el foco) tiene la caja de lo que enseña (`box`: izquierda, arriba, ancho y alto en fracciones de la pantalla, que escriben `mark` y `point_text` de una sesión de captura), el zoom se acerca solo hasta donde cabe esa caja con `margin` alrededor, la coloca en el centro del cuadro hasta donde lo permiten los bordes de la pantalla (así nunca se corta el principio de una línea) y dibuja una marca alrededor de toda ella: un rectángulo (`rect`), uno redondeado (`round`) o una elipse lo bastante ancha para contenerla (`ellipse`), con un trazo que mantiene su grosor con cualquier zoom y un tono que se lee sobre su fondo (blanco con un halo oscuro sobre uno oscuro, la tinta del acento con un halo claro sobre uno claro; lo dice el evento, `tone`). Sin caja, hace zoom sobre su punto y no dibuja marca. Los números salen de `config/video.yaml › screencast` ([`video`](04-configuration.md#video-el-estilo-de-los-vídeos-hechos-como-montaje)); `coursekit video check` avisa de más de un zoom en una escena, de zooms demasiado seguidos y de demasiados por minuto. Sin focos, los clics cercanos en el tiempo y en la pantalla se unen en un solo zoom sostenido. Nunca se ven los bordes de la pantalla.
 
 ```tsx
 import { Screencast } from "../Screencast";
@@ -738,16 +738,16 @@ import events from "../../../../courses/PWD/media/recordings/U1-S2-M1.events.jso
 import words from "../../../../courses/PWD/media/files/u1-s2-m1.words.json";
 
 <Screencast src={staticFile("U1-S2-M1.mp4")} events={events} words={words}
-  focus={[{ word: "longitud mínima", event: "la longitud mínima" }, { word: "guardar", event: "Guardar", hold: 1.5 }]} ring />
+  focus={[{ word: "longitud mínima", event: "la longitud mínima" }]} zooming={{ scale: 1.4 }} />
 ```
 
 | Prop | Significado |
 |---|---|
 | `src` | La grabación. |
 | `events`, `words` | Los dos ficheros de arriba. |
-| `focus` | Los zooms: `word` (las palabras de la locución con las que entra, la primera vez que se dicen tras el foco anterior) o `at` (un segundo); dónde: `event` (la etiqueta o la nota de un evento) o `fx`/`fy` (fracciones de la pantalla); `scale` y `hold`. Un foco cuyas palabras no se dicen no hace zoom. |
+| `focus` | Los zooms: `word` (las palabras de la locución con las que entra, la primera vez que se dicen tras el foco anterior) o `at` (un segundo); dónde: `event` (la etiqueta o la nota de un evento), `box` (fracciones de la pantalla) o `fx`/`fy`; `shape` de su marca; `scale` (como mucho) y `hold`. Un foco cuyas palabras no se dicen no hace zoom. |
 | `auto` | Zoom sobre los grupos de clics cuando no hay focos (por defecto `true`). |
-| `startFrom`, `scale`, `ring` | Segundo de la grabación desde el que empieza; cuánto se acerca el zoom (por defecto 1,8); un anillo en el punto de cada foco. |
+| `startFrom`, `zooming`, `ring` | Segundo de la grabación desde el que empieza; los valores de `config/video.yaml › screencast` (`scale`, `ease`, `lead`, `minHold`, `margin`, `mark`); la marca alrededor de lo que enseña cada foco cuando se conoce su caja (por defecto `true`). |
 
 ## Herramientas necesarias por tipo
 

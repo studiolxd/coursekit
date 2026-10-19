@@ -221,12 +221,23 @@ def test_a_terminal_video_is_drawn_with_the_places_its_narration_names(course, h
     call(t, "key", key="Enter")
     call(t, "wait_for", text="recipes.json", timeout_ms=5000)
     call(t, "point_text", text="recipes.json", note="the data")
+    call(t, "type", text="printf '\\x6fne\\ntwo longer line\\nthr\\x65e\\n'")  # the command line does not hold them
+    call(t, "key", key="Enter")
+    call(t, "wait_for", text="three", timeout_ms=5000)
+    call(t, "point_text", text="one", until="three", note="the block", shape="rect")
+    with pytest.raises(term.ToolError, match="not a shape"):
+        call(t, "point_text", text="one", shape="star")
     call(t, "session_end", notes="")
     recordings = course / "media" / "recordings"
     assert (recordings / "U1-S2-M1.mp4").stat().st_size > 0
     events = json.loads((recordings / "U1-S2-M1.events.json").read_text(encoding="utf-8"))
     assert events["video"] == "U1-S2-M1.mp4" and events["events"][0]["label"] == "the data"
     assert 0 < events["events"][0]["fx"] < 1 and 0 < events["events"][0]["fy"] < 1
+    word, block = events["events"]
+    assert word["shape"] == "round" and word["tone"] == "light"  # the light palette of capture.yaml › terminal
+    x, y, w, h = block["box"]
+    assert block["shape"] == "rect" and w > word["box"][2] and h > 2 * word["box"][3]  # three lines, as wide as the longest
+    assert 0 <= x and x + w <= 1 and 0 <= y and y + h <= 1
 
 
 @real

@@ -126,3 +126,18 @@ scenes: {}
 # The frame of a new video, and the air after the narration of each scene.
 format: {width: 1920, height: 1080, fps: 30}
 pad_seconds: 0.5
+
+# The zooms of a screen recording (the `screencast` scene). A zoom is for a detail that does not read at full size (a word, an
+# indicator, one line of a change), never to go with every sentence: a focus with the box of what it shows (`box`, the events
+# of the recording give it) goes only as close as that box fits, keeps it whole in the frame and draws a mark around it in a
+# tone that reads on its background; without a box it zooms on its point and draws no mark.
+screencast:
+  scale: 1.4                   # how close a zoom goes at most (1 is the whole screen)
+  ease: 1.2                    # s a zoom takes to go in and out
+  lead: 0.4                    # s it starts going in before its words are said, so the eye is there when they are
+  min_hold: 3.5                # s a zoom stays at least (else until the end of the sentence that names it)
+  margin: 0.06                 # share of the frame left around the box of a focus
+  pad_seconds: 1.0             # s the recording goes on after the narration of a screencast scene (instead of pad_seconds)
+  mark: true                   # a mark around what a focus shows, when its box is known
+  max_per_minute: 2            # `coursekit video check` warns above this many zooms a minute of recording
+  min_gap: 4                   # s between the end of a zoom and the next one (closer, a warning)
