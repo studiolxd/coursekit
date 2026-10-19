@@ -300,7 +300,20 @@ def _language_from_env_file() -> None:
         os.environ["COURSEKIT_LANG"] = value
 
 
+def _utf8_output() -> None:
+    """The output in UTF-8 wherever it goes: a console or a pipe of Windows defaults to its code page (cp1252), which cannot
+    write the marks of the messages (✔ ✘ › —) and would stop the command."""
+    for stream in (sys.stdout, sys.stderr):
+        encoding = (getattr(stream, "encoding", None) or "").lower().replace("-", "")
+        if encoding != "utf8" and hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(encoding="utf-8", errors="replace")
+            except (OSError, ValueError):
+                pass
+
+
 def main(argv: list[str] | None = None) -> int:
+    _utf8_output()
     _language_from_env_file()
     parser = build_parser()
     args = parser.parse_args(argv)
