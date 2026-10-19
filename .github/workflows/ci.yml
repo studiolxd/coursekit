@@ -48,7 +48,8 @@ jobs:
           mkdir -p "$project/tools" "$project/theme"
           cp -R src/coursekit/templates/remotion "$project/tools/remotion"
           cp -R src/coursekit/videokit "$project/tools/remotion/kit"
-          echo '{"color": {}}' > "$project/theme/tokens.json"
+          # tokens with the keys the template reads (a project derives its own with /define-theme)
+          echo '{"color": {"background": "#ffffff", "accent": "#0b5cad", "text": "#1f2328", "text-muted": "#57606a"}, "font": {"family": "sans-serif"}}' > "$project/theme/tokens.json"
       - name: type-check
         working-directory: ${{ runner.temp }}/project/tools/remotion
         run: |
