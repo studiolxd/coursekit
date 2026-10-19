@@ -152,7 +152,15 @@ A placeholder reserves the place of an image, video or other resource until it i
 > **Specifications:** 1280x720 px, alt text required.
 ```
 
-The four fields are mandatory. The `<type>` is one of nine resource types, written with the word of the course language (in English: `Image`, `Video`, `Animated GIF`, `Infographic`, `Diagram`, `Interactive simulation`, `Interactive terminal demo`, `Audio`, `Job aid`; the Spanish words are in the table below). Each type also has an id (`image`, `video`, `animated_gif`, `infographic`, `diagram`, `simulation`, `terminal_demo`, `audio`, `job_aid`) used in the configuration and the manifest. A **job aid** (a checklist or a quick guide the learner downloads as a PDF) has, after the four fields, its text in Markdown on lines that also start with `>` (`> ## Check`, `> - [ ] …` for a checkbox, `> 1. …`); its words do not count, and `verify` fails when it has none (see [Job aids](07-media.md#job-aids)). Production is explained in [07-media.md](07-media.md).
+The four fields are mandatory. The `<type>` is one of eleven resource types, written with the word of the course language (in English: `Image`, `Illustration`, `Icon`, `Video`, `Animated GIF`, `Infographic`, `Diagram`, `Interactive simulation`, `Interactive terminal demo`, `Audio`, `Job aid`; the Spanish words are in the table below). Each type also has an id (`image`, `illustration`, `icon`, `video`, `animated_gif`, `infographic`, `diagram`, `simulation`, `terminal_demo`, `audio`, `job_aid`) used in the configuration and the manifest. A **job aid** (a checklist or a quick guide the learner downloads as a PDF) has, after the four fields, its text in Markdown on lines that also start with `>` (`> ## Check`, `> - [ ] …` for a checkbox, `> 1. …`); its words do not count, and `verify` fails when it has none (see [Job aids](07-media.md#job-aids)). Production is explained in [07-media.md](07-media.md).
+
+**Visual support.** Every section is seen, not only read. Before writing one, the writer asks what would support its idea: an `Image` that conveys the concept (a real scene, a place, an object, never a generic one), a capture of the application when the section talks about a real screen, an `Illustration` in the line of the reference illustrations of the brand, an `Icon` made large (one idea in one sign), or an infographic, a diagram or a video. The introduction and the summary always carry one; a content section with an infographic, a diagram or a video needs no more; a content section left without one says why, with a comment where it would have gone:
+
+```markdown
+<!-- NO IMAGE: the accordion already lays the three ideas out -->
+```
+
+(in a Spanish course, `<!-- SIN IMAGEN: … -->`). Interactives do not count. `coursekit verify` checks it (`content.visual_types`, `visual_sections` and `visual_decision`, see [Rules and real numbers](#rules-and-real-numbers)); the AI review judges whether each one carries its idea.
 
 ### What counts as a word
 
@@ -167,6 +175,8 @@ Some words of the format are written in the language of the course, but the conf
 | Id | Spanish content | English content |
 |---|---|---|
 | `image` | `Imagen` | `Image` |
+| `illustration` | `Ilustración` | `Illustration` |
+| `icon` | `Icono` | `Icon` |
 | `video` | `Vídeo` | `Video` |
 | `animated_gif` | `GIF animado` | `Animated GIF` |
 | `infographic` | `Infografía` | `Infographic` |
@@ -729,7 +739,8 @@ The numbers are the package defaults (`src/coursekit/defaults/rules.yaml`). A pr
 | Interactive minimum | Distinct interactive directives per `content` section: `max(min_interactive_per_content_section, ceil(hours × interactive_per_hour))` | 4 per hour, at least 1 (0.6 h needs 3) | error |
 | Placeholders | At least `ceil(unit hours × placeholders_per_hour)` in the unit | 2.5 per hour (1 h needs 3) | error |
 | Placeholder types | At least `min(min_placeholder_types, placeholders required)` different types | 4 (1 h needs 3) | error |
-| Placeholder form | Known type (a word of the course language) and the four fields present | 8 types | error |
+| Placeholder form | Known type (a word of the course language) and the four fields present | 11 types | error |
+| Visual support | An introduction and a summary carry a visual resource; a content section carries one or a `<!-- NO IMAGE: reason -->` | `visual_sections: [intro, summary]`, `visual_decision: true` | error |
 | Directives | Known name, closed, not nested | — | error |
 | Question objective | Every question directive has the objective key (`objective:` / `objetivo:`) | — | warning |
 | Common errors | Every error of `design/misconceptions.yaml` of the unit's objectives is in a distractor (`‹id›`) or a decision (`error:`); every id exists; no right option carries one | — | error (a distractor or a decision that loses points without one: warning) |

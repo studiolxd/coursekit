@@ -150,7 +150,7 @@ def test_a_placeholder_type_of_the_other_language_is_reported_with_the_valid_one
     capsys.readouterr()
     assert main(["verify", "EN1", "--no-update"]) == 1
     out = capsys.readouterr().out
-    assert "unknown or not allowed placeholder type 'Infografía' (use: Image, Video, Animated GIF, Infographic" in out
+    assert "unknown or not allowed placeholder type 'Infografía' (use: Image, Illustration, Icon, Video, Animated GIF, Infographic" in out
 
 
 def test_the_manifest_keeps_the_type_id_in_both_languages(course, tmp_path, monkeypatch, capsys):  # noqa: F811

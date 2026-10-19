@@ -110,8 +110,21 @@ final summary under "Design out of date" so that a person decides.
   (they come out as checkboxes), at most one page. It is the procedure of the section summed up for the moment of doing it:
   short sentences in the imperative, no explanation of why (that is in the course), the same terms as the content. It does
   not count as words of the section. `coursekit verify` fails when it has no text.
-- Media placeholders where an asset really adds something, with all their fields and
-  accessibility; verify gives the minimum per unit (by hours) and of types. **A resource that shows the screen of a real
+- **The visual support of every section.** Before you write a section, ask how the learner would *see* its idea, not only
+  read it, and pick what supports it best:
+  - an `{{t_image}}` that conveys the concept: a real scene, a place, an object that says the idea (never a generic one, a
+    person at a laptop): it comes from licensed stock or is generated;
+  - a **capture of the application** (also an `{{t_image}}`), when the section talks about a real screen (see below);
+  - an `{{t_illustration}}` of the concept, in the line of the reference illustrations of the brand;
+  - an `{{t_icon}}`: one idea in one sign (a padlock, a checklist, a shield), made large and placed as an image;
+  - or something that explains: an infographic, a diagram, a video.
+  The introduction and the summary always carry one. A content section with an infographic, a diagram or a video needs no
+  more. A content section left without one says why, where it would have gone: `<!-- {{t_no_visual}}: reason -->` (for
+  example, the interactive already lays the ideas out). Interactives do not count: they are something else. Never one for its
+  own sake: one or two per section, each next to the paragraph it supports, and its description names the idea of that
+  paragraph, so the media agent can make it. `coursekit verify` checks it (the visual resources: {{visual_types}}).
+- Media placeholders with all their fields and accessibility; verify gives the minimum per unit (by hours) and of types.
+  **A resource that shows the screen of a real
   application (a tutorial, a capture, a menu) comes from real material**: in "how it is made" say that it is a recording or
   capture of the real application that a person provides (or a video of an official channel), never a drawing, animation or
   recreation of its interface. Diagrams, infographics and scenes of ideas can be drawn.

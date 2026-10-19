@@ -152,7 +152,15 @@ Un recurso multimedia reserva el sitio de una imagen, un vídeo u otro recurso h
 > **Especificaciones:** 1280x720 px, texto alternativo obligatorio.
 ```
 
-Los cuatro campos son obligatorios. El `<tipo>` es uno de nueve tipos de recurso, escrito con la palabra del idioma del curso (en español: `Imagen`, `Vídeo`, `GIF animado`, `Infografía`, `Esquema/Diagrama`, `Simulación interactiva`, `Demo interactiva en terminal`, `Audio`, `Ayuda de trabajo`; las palabras en inglés están en la tabla siguiente). Cada tipo tiene además un id (`image`, `video`, `animated_gif`, `infographic`, `diagram`, `simulation`, `terminal_demo`, `audio`, `job_aid`) que se usa en la configuración y en el manifiesto. Una **ayuda de trabajo** (una lista de comprobación o una guía rápida que el alumno descarga en PDF) lleva, después de los cuatro campos, su texto en Markdown en líneas que también empiezan por `>` (`> ## Comprueba`, `> - [ ] …` para una casilla, `> 1. …`); sus palabras no cuentan, y `verify` falla cuando no tiene texto (ver [Ayudas de trabajo](07-media.md#ayudas-de-trabajo)). La producción se explica en [07-media.md](07-media.md).
+Los cuatro campos son obligatorios. El `<tipo>` es uno de once tipos de recurso, escrito con la palabra del idioma del curso (en español: `Imagen`, `Ilustración`, `Icono`, `Vídeo`, `GIF animado`, `Infografía`, `Esquema/Diagrama`, `Simulación interactiva`, `Demo interactiva en terminal`, `Audio`, `Ayuda de trabajo`; las palabras en inglés están en la tabla siguiente). Cada tipo tiene además un id (`image`, `illustration`, `icon`, `video`, `animated_gif`, `infographic`, `diagram`, `simulation`, `terminal_demo`, `audio`, `job_aid`) que se usa en la configuración y en el manifiesto. Una **ayuda de trabajo** (una lista de comprobación o una guía rápida que el alumno descarga en PDF) lleva, después de los cuatro campos, su texto en Markdown en líneas que también empiezan por `>` (`> ## Comprueba`, `> - [ ] …` para una casilla, `> 1. …`); sus palabras no cuentan, y `verify` falla cuando no tiene texto (ver [Ayudas de trabajo](07-media.md#ayudas-de-trabajo)). La producción se explica en [07-media.md](07-media.md).
+
+**Apoyo visual.** Cada apartado se ve, no solo se lee. Antes de escribirlo, quien redacta se pregunta qué apoyaría su idea: una `Imagen` que transmita el concepto (una escena real, un lugar, un objeto, nunca uno genérico), una captura de la aplicación cuando el apartado habla de una pantalla real, una `Ilustración` en la línea de las ilustraciones de referencia de la marca, un `Icono` en grande (una idea en un signo), o una infografía, un esquema o un vídeo. La introducción y el resumen llevan siempre uno; un apartado de contenido con una infografía, un esquema o un vídeo no necesita más; un apartado de contenido que se queda sin ninguno dice por qué, con un comentario donde habría ido:
+
+```markdown
+<!-- SIN IMAGEN: el acordeón ya ordena las tres ideas -->
+```
+
+(en un curso en inglés, `<!-- NO IMAGE: … -->`). Las interactividades no cuentan. `coursekit verify` lo comprueba (`content.visual_types`, `visual_sections` y `visual_decision`, mira [Reglas y cifras reales](#reglas-y-cifras-reales)); la revisión con IA juzga si cada uno lleva su idea.
 
 ### Qué cuenta como palabra
 
@@ -167,6 +175,8 @@ Algunas palabras del formato se escriben en el idioma del curso, pero la configu
 | Id | Contenido en inglés | Contenido en español |
 |---|---|---|
 | `image` | `Image` | `Imagen` |
+| `illustration` | `Illustration` | `Ilustración` |
+| `icon` | `Icon` | `Icono` |
 | `video` | `Video` | `Vídeo` |
 | `animated_gif` | `Animated GIF` | `GIF animado` |
 | `infographic` | `Infographic` | `Infografía` |
@@ -735,7 +745,8 @@ Las cifras son los valores por defecto del paquete (`src/coursekit/defaults/rule
 | Mínimo de interactivas | Directivas interactivas distintas por apartado `content`: `max(min_interactive_per_content_section, ceil(horas × interactive_per_hour))` | 4 por hora, al menos 1 (0,6 h exige 3) | error |
 | Recursos multimedia | Al menos `ceil(horas de la unidad × placeholders_per_hour)` en la unidad | 2,5 por hora (1 h exige 3) | error |
 | Tipos de recurso | Al menos `min(min_placeholder_types, recursos exigidos)` tipos distintos | 4 (1 h exige 3) | error |
-| Forma del recurso | Tipo conocido (una palabra del idioma del curso) y los cuatro campos presentes | 8 tipos | error |
+| Forma del recurso | Tipo conocido (una palabra del idioma del curso) y los cuatro campos presentes | 11 tipos | error |
+| Apoyo visual | La introducción y el resumen llevan un recurso visual; un apartado de contenido lleva uno o un `<!-- SIN IMAGEN: motivo -->` | `visual_sections: [intro, summary]`, `visual_decision: true` | error |
 | Directivas | Nombre conocido, cerrada y sin anidar | — | error |
 | Objetivo de la pregunta | Toda directiva de pregunta lleva la clave de objetivo (`objetivo:` / `objective:`) | — | aviso |
 | Errores típicos | Cada error de `design/misconceptions.yaml` de los objetivos de la unidad está en un distractor (`‹id›`) o una decisión (`error:`); cada id existe; ninguna opción correcta lleva uno | — | error (un distractor o una decisión que resta puntos sin él: aviso) |

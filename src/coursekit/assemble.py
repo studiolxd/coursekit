@@ -86,7 +86,7 @@ KV_RE = re.compile(r"^([a-zà-ÿ][a-zà-ÿ-]*):\s*(.*)$")
 
 # The brick each resource type becomes once it is produced (the type ids are those of `lang/<language>.yaml › media_types`).
 MEDIA_KIND = {
-    "image": "image", "infographic": "image", "diagram": "image", "animated_gif": "image",
+    "image": "image", "illustration": "image", "icon": "image", "infographic": "image", "diagram": "image", "animated_gif": "image",
     "video": "video", "audio": "audio", "simulation": "embed", "terminal_demo": "embed", "job_aid": "attachment",
 }
 PANEL_BRICKS = ("ACCORDION", "TABS", "CAROUSEL", "TIMELINE", "FLASHCARD_CAROUSEL", "FLASHCARD_GALLERY")

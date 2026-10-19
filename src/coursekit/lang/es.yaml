@@ -42,6 +42,8 @@ vague_verbs: [comprender, conocer, saber, entender, aprender, familiarizarse, ap
 # Resource types of the media placeholders: the id (configuration, manifest) -> what is written in the content.
 media_types:
   image: Imagen
+  illustration: Ilustración
+  icon: Icono
   video: Vídeo
   animated_gif: GIF animado
   infographic: Infografía
@@ -225,6 +227,7 @@ player:
 # Personas y empresas inventadas para `coursekit capture`: lo que sustituye en pantalla a los datos reales de una aplicación,
 # y los nombres y apellidos que ayudan a encontrar el nombre de una persona en una captura (se usan las listas de todos los
 # idiomas para encontrarlos). Los nombres van aparte para mujeres y hombres, para que el inventado conserve el género del real.
+no_visual: SIN IMAGEN                # <!-- SIN IMAGEN: motivo -->: un apartado que se queda sin recurso visual, y por qué
 locale: es_ES.UTF-8                    # the locale of a terminal capture (LANG)
 capture_people:
   women: [Lucía, María, Paula, Laura, Carmen, Ana, Sara, Marta, Elena, Isabel, Cristina, Raquel, Silvia, Patricia,

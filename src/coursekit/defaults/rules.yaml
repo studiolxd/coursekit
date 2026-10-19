@@ -165,6 +165,15 @@ content:
   chunk_max_words: 250                 # cognitive load: the most words of prose the learner reads in a row, without a heading, a
                                        # directive, a medium, a highlight (`>`), a list or a table (a blank line does not break
                                        # it). `verify` warns, except in an imported course (0: not checked)
-  placeholder_types: [image, video, animated_gif, infographic, diagram, simulation, terminal_demo, audio, job_aid]
+  placeholder_types: [image, illustration, icon, video, animated_gif, infographic, diagram, simulation, terminal_demo, audio, job_aid]
+  # Visual support of the sections: the resources a learner sees that carry the idea (a photo that conveys the concept, a
+  # capture of the application, an illustration, a large icon, an infographic, a diagram, a video...). Interactive directives
+  # do not count: they are something else. `visual_sections`: the kinds of section that always carry at least one (an
+  # introduction and a summary are read best with an image). `visual_decision`: every content section carries one, or says
+  # why it does not with `<!-- NO IMAGE: reason -->` (the word of the course language: `lang/<code>.yaml › no_visual`), so the
+  # writer always asks whether a section would read better with one; a section with an infographic or a diagram needs no more.
+  visual_types: [image, illustration, icon, infographic, diagram, animated_gif, video, terminal_demo]
+  visual_sections: [intro, summary]
+  visual_decision: true
   # Directives and their creator bricks: config/directives.yaml
   allowed_symbols: "★✔✘·—‹›"

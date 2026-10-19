@@ -42,6 +42,8 @@ def no_misconceptions(request, monkeypatch):
         data = real(name)
         if name == "rules":
             data.setdefault("misconceptions", {})["per_objective"] = 0
+            data.setdefault("content", {})["visual_sections"] = []  # the sample units predate it: tested in test_visuals
+            data["content"]["visual_decision"] = False
         return data
 
     monkeypatch.setattr(config, "package_defaults", defaults)

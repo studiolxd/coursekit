@@ -80,6 +80,24 @@ class Syntax:
         return self.media_types.get(written.strip().casefold())
 
 
+def check_visuals(sec, spec: dict, rules: dict, syntax, tokens: dict, label: str, report, shortfall) -> None:
+    """The visual support of a section: an introduction or a summary always carries a visual resource; a content section
+    carries one or says why not (`<!-- NO IMAGE: reason -->`), so the writer always asks whether it would read better with one."""
+    kinds = set(rules.get("visual_types") or [])
+    visual = [ph for ph in sec.placeholders if (syntax.media_type(ph.kind) or ph.kind) in kinds]
+    if visual or not kinds:
+        return
+    if spec["kind"] in (rules.get("visual_sections") or []):
+        shortfall(t("verify", "visual_required", label=label))
+    elif spec["kind"] == "content" and rules.get("visual_decision"):
+        marker = re.compile(rf"<!--\s*{re.escape(str(tokens.get('no_visual') or 'NO IMAGE'))}\b\s*:?\s*(.*?)\s*-->", re.I)
+        reasons = [m.group(1) for line in sec.lines for m in marker.finditer(line)]
+        if not reasons:
+            shortfall(t("verify", "visual_undecided", label=label, marker=tokens.get("no_visual") or "NO IMAGE"))
+        elif not any(r.strip() for r in reasons):
+            report.error(t("verify", "visual_no_reason", label=label, marker=tokens.get("no_visual") or "NO IMAGE"))
+
+
 @dataclass
 class Placeholder:
     kind: str
@@ -692,6 +710,7 @@ def verify_unit(course: dict, unit: dict) -> Report:
         elif rules.get("word_margin_max") is not None and sec.words > minimum * (1 + float(rules["word_margin_max"])):
             report.warn(t("verify", "words_above_margin", label=label, words=fmt(sec.words), minimum=fmt(minimum),
                           margin=round(float(rules["word_margin_max"]) * 100)))
+        check_visuals(sec, spec, rules, syntax, tokens, label, report, shortfall)
         if spec["kind"] == "content":
             tags = [line for line in sec.lines if syntax.objective_tag.match(line)]
             if not tags:

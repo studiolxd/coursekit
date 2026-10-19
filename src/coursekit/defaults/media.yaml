@@ -99,6 +99,17 @@ types:
     - {id: agent-svg, needs: none, how: "Illustration drawn by the agent as SVG with the theme colours and exported to PNG (creator does not take SVG as an image); portraits of characters as flat busts"}
     - {id: creator-stock, needs: {mcp: search_stock_images}, how: "Licensed stock from creator (Pexels, Pixabay, Unsplash, Freepik) + import_stock_image"}
     - {id: screenshot, needs: none, shows: interface, how: "A real capture of the application that a person provides (media/recordings/<id>.png): the agent only crops it and marks it (numbers, frames, arrows) and never redraws it. Without the capture the asset stays scripted with a brief of what to capture (media/scripts/<id>.md)"}
+  # an illustration of a concept of the content, in the line of the reference illustrations of the brand (theme/branding/style/)
+  illustration:
+    - {id: magnific-stock, needs: {env: MAGNIFIC_API_KEY, path: theme/branding/illustration-sources.json}, how: "An illustration of the illustration sources of the brand, recoloured to it (coursekit media stock); nothing that fits: go on with the next option"}
+    - {id: magnific-mcp, needs: {mcp: images_generate}, how: "Generated in the style of the reference illustrations of the brand (theme/branding/style/), with Claude's Magnific connector"}
+    - {id: magnific-api, needs: {env: MAGNIFIC_API_KEY}, how: "Generated in the style of the reference illustrations of the brand, with the Magnific API"}
+    - {id: agent-svg, needs: none, how: "Drawn by the agent as SVG in the style of the reference illustrations and the theme colours, exported to PNG"}
+  # an icon of the brand made large and placed as an image: one idea in one sign (a padlock, a shield, a checklist)
+  icon:
+    - {id: brand-icon, needs: none, how: "An icon of the icon library of the brand (theme/branding/, the guide for icons), large, in the theme colours, on a soft shape of the accent, exported to PNG"}
+    - {id: creator-icons, needs: {mcp: search_stock_icons}, how: "An icon of the catalogue of creator (search_stock_icons) in the line of the brand, made large the same way"}
+    - {id: agent-svg, needs: none, how: "Drawn by the agent with the rules of the guide for icons (grid, stroke, corners), made large the same way"}
   infographic:
     - {id: agent-svg, needs: none, how: "SVG written by the agent with the theme tokens (coursekit theme show); icons with search_stock_icons"}
     - {id: magnific-api, needs: {env: MAGNIFIC_API_KEY}, how: "Generated supporting illustration"}
@@ -188,7 +199,7 @@ depicts:
 # Types whose production uses the tokens of the theme (theme/tokens.json, or the course's own): `coursekit media plan`
 # warns when the tokens are missing or were not derived from the theme of the platform (`/define-theme`), and
 # `coursekit media set --status produced` refuses (unless --force) and remembers which tokens the asset was made with.
-uses_theme: [infographic, diagram, animated_gif, simulation, video, terminal_demo, job_aid]
+uses_theme: [illustration, icon, infographic, diagram, animated_gif, simulation, video, terminal_demo, job_aid]
 
 # Resources are validated in the assembled course (preview), not one by one.
 statuses: [pending, scripted, produced, uploaded]

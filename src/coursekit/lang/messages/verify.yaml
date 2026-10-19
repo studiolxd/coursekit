@@ -135,4 +135,6 @@ bank_repeats_practice:
 activity_type_not_written:
   es: "la actividad «{title}» del diseño es de tipo {type}, pero su sección ({n}) no tiene ninguna de sus directivas ({directives})"
   en: "the activity \"{title}\" of the design is of type {type}, but its section ({n}) has none of its directives ({directives})"
-
+visual_required: {es: "{label}: una introducción o un resumen lleva siempre un recurso visual (una imagen que transmita la idea, una ilustración, un icono, una infografía…)", en: "{label}: an introduction or a summary always carries a visual resource (an image that conveys the idea, an illustration, an icon, an infographic…)"}
+visual_undecided: {es: "{label}: no tiene ningún recurso visual ni dice por qué: añade el que lo apoye (una imagen que transmita el concepto, una captura de la aplicación, una ilustración, un icono grande) o explica por qué no con <!-- {marker}: motivo -->", en: "{label}: it has no visual resource and does not say why: add the one that supports it (an image that conveys the concept, a capture of the application, an illustration, a large icon) or say why not with <!-- {marker}: reason -->"}
+visual_no_reason: {es: "{label}: <!-- {marker} --> sin motivo: di por qué el apartado no se apoya en ningún recurso visual", en: "{label}: <!-- {marker} --> with no reason: say why the section is not supported by any visual resource"}

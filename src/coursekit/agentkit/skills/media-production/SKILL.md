@@ -199,8 +199,8 @@ credits.
   person (`search_stock_images`). Alt text describes the person briefly («Retrato ilustrado de Marta, responsable de proyecto»).
   Once uploaded (step 4), the assembly puts it in the dialogue as the avatar of the character.
 - **Image** — first decide what it is, from its description and the text around it:
-  - **Decorative**: it sets the scene and explains nothing (the header of a unit, people at work, a place, a generic
-    object). Search the licensed catalog first (`search_stock_images` + `import_stock_image`): no credits. Take a result only
+  - **Decorative**: it explains nothing but conveys the concept of its paragraph (a place, people at work, an object that
+    says the idea; never a generic picture that could go anywhere). Search the licensed catalog first (`search_stock_images` + `import_stock_image`): no credits. Take a result only
     if it fits the visual style of the course (`visual.style`) and the other images of the unit (one stock photograph
     among illustrations stands out), shows nothing that contradicts the text and, when it shows people, varied people. If
     nothing fits, generate it as a necessary one.
@@ -222,6 +222,14 @@ credits.
   - The portraits of characters and the images of the simulations are never decorative: they follow their own rules
     (above, and the style sheet of the simulations).
   Record in the manifest the recipe actually used (`creator-stock` or the generator).
+- **Illustration (`illustration`)** — a concept illustration, in the line of the reference illustrations of the brand
+  (`theme/branding/style/`): the illustration sources of the brand first (`coursekit media stock <CODE> <id> --find`, as a
+  concept illustration of the image above), else generated in that style with the previews as reference, else drawn as
+  SVG with the theme colours and exported to PNG. It tells the idea its description names; never a generic picture.
+- **Icon (`icon`)** — one idea in one sign, large: the icon of the library of the brand that says it (also under other
+  names), or one of the catalogue of creator (`search_stock_icons`) in the line of the brand, or one you draw with the rules
+  of the guide for icons (above). Place it large, centred, in the theme colours, on a soft shape of the accent with room
+  around it, and export it as PNG (`media/src/<id>.svg` as the source); the alt text says the idea, not "icon of".
 - **Infographic, Diagram** — SVG written by you, with the colours and fonts of `tokens.json`,
   real text in {{language_name}}, `<title>` and `<desc>` for accessibility, readable at 1280 px.
   If the learner should keep it, also a PDF (`media set --download`). With the creator backend the
