@@ -817,7 +817,7 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
                 [--alt ALT] [--transcript TRANSCRIPT] [--subtitles-path SUBTITLES_PATH]
                 [--made-with MADE_WITH] [--download DOWNLOAD] [--download-title DOWNLOAD_TITLE]
                 [--download-asset-path DOWNLOAD_ASSET_PATH] [--depicts {interface,concept}] [--unit UNIT] [--set POINT=X,Y] [--force]
-                [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all] [--clean] [--find FIND] [--take TAKE] [--color COLOR] [--size SIZE] [--fix] [--frames FRAMES] [--batch]
+                [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all] [--clean] [--recapture] [--find FIND] [--take TAKE] [--color COLOR] [--size SIZE] [--fix] [--frames FRAMES] [--batch]
                 {extract,plan,providers,set,upload,redo,embed,fit,render,narrate,optimize,adopt,check,sheet,transcript,stock,anchors} [code] [id] [more ...]
 ```
 
@@ -852,6 +852,7 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
 | `--size SIZE` | `WIDTHxHEIGHT` | `fit` (required) and `render`: the size, e.g. `1920x1080`. |
 | `--all` | flag | `redo` only: redo every asset that uses the theme, not only those made with other tokens. |
 | `--clean` | flag | `redo` only: the assets also forget their file, alt text, transcript, captions and the tool that made them (the files stay on disk), for what is made again from nothing, such as a resource that showed an invented interface. |
+| `--recapture` | flag | `redo` only: a resource that shows a real interface also forgets its capture, so it is recorded again (by the media agent when a permission to capture allows it) instead of being composed again from the recording it had. |
 | `--force` | flag | `set` only: mark an asset that uses the theme tokens as `produced` or `uploaded` even though the tokens are missing or were written by hand (see below). |
 
 Actions:

@@ -796,17 +796,20 @@ def adopt(course: dict, asset_id: str, source: str, alt: str | None = None) -> s
 STALE = ("file", "alt", "transcript", "subtitles_path", "made_with")
 
 
-def redo(course: dict, ids: list[str] | None = None, everything: bool = False, clean: bool = False) -> list[str]:
+def redo(course: dict, ids: list[str] | None = None, everything: bool = False, clean: bool = False,
+         recapture: bool = False) -> list[str]:
     """Marks assets to be produced again: the ones named, else those that use the theme and were made with other tokens than the
     current ones (every one that uses the theme with `everything`). They go back to `scripted`, forgetting the fingerprint and
     the uploaded path; their script and file stay for the agent to start from. With `clean` they also forget the file, the alt
     text, the transcript, the captions and the tool that made them (the files stay on disk): for what is made again from
-    nothing, as a resource that showed an interface that was invented."""
+    nothing, as a resource that showed an interface that was invented. With `recapture` a resource that shows a real interface
+    also forgets its capture: it waits to be captured again (by a person, or by the media agent when a permission allows it),
+    instead of being composed again from the recording it had."""
     with editing_manifest(course["_dir"]) as data:
-        return _redo(course, data, ids, everything, clean)
+        return _redo(course, data, ids, everything, clean, recapture)
 
 
-def _redo(course: dict, data: dict, ids: list[str] | None, everything: bool, clean: bool) -> list[str]:
+def _redo(course: dict, data: dict, ids: list[str] | None, everything: bool, clean: bool, recapture: bool = False) -> list[str]:
     cfg = config(course=course)
     found = thememod.status(course["_project"], course)
     current = thememod.fingerprint(found.tokens) if found.tokens else None
@@ -833,6 +836,8 @@ def _redo(course: dict, data: dict, ids: list[str] | None, everything: bool, cle
                     download["asset_path"] = None
             for download in asset.get("downloads") or []:
                 download["asset_path"] = None
+            if recapture and asset.get("depicts") == "interface":
+                asset.pop("capture", None)  # the recording on disk is replaced by the next one
             chosen.append(asset["id"])
     return chosen
 

@@ -1077,7 +1077,7 @@ def cmd_media(args: argparse.Namespace) -> int:
         return 0
     if args.action == "redo":
         statesmod.ensure_active(course)
-        chosen = mediamod.redo(course, [args.id, *args.more] if args.id else None, args.all, args.clean)
+        chosen = mediamod.redo(course, [args.id, *args.more] if args.id else None, args.all, args.clean, args.recapture)
         print(t("commands", "media_redo", assets=", ".join(chosen)) if chosen else t("commands", "media_redo_none"))
         _mirror(course["_project"], course["code"])
         return 0
@@ -1545,6 +1545,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--force", action="store_true", help=t("commands", "help_media_force"))
     p.add_argument("--all", action="store_true", help=t("commands", "help_media_all"))
     p.add_argument("--clean", action="store_true", help=t("commands", "help_media_clean"))
+    p.add_argument("--recapture", action="store_true", help=t("commands", "help_media_recapture"))
     p.add_argument("--size", help=t("commands", "help_media_size"))
     p.add_argument("--fix", action="store_true", help=t("commands", "help_media_fix"))
     p.add_argument("--frames", type=int, help=t("commands", "help_media_frames"))

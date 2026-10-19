@@ -335,3 +335,17 @@ def test_a_recording_in_parts_keeps_each_part(course, home, capsys):  # noqa: F8
     written = capture_session.read_block(load(), "U1-S2-M1")
     assert set(written["parts"]) == {"first", "second"} and written["parts"]["first"]["prepare"] == ["touch one.txt"]
     assert {"chapter": "The second part"} in written["parts"]["second"]["steps"]
+
+
+def test_redo_with_recapture_records_a_captured_resource_again(course, capsys):  # noqa: F811
+    from coursekit import handoff, media
+
+    terminal_course(course, capsys, "asciinema")
+    with media.editing_manifest(course) as data:
+        data["assets"][0].update(status="uploaded", capture={"state": "approved", "by": "Coursekit Handoff"})
+    assert main(["media", "redo", "PWD", "U1-S2-M1"]) == 0
+    assert [a["id"] for a in handoff.capturable(load())] == []  # composed again from the recording it had
+    assert main(["media", "redo", "PWD", "U1-S2-M1", "--recapture"]) == 0
+    asset = yaml.safe_load((course / "media" / "manifest.yaml").read_text(encoding="utf-8"))["assets"][0]
+    assert "capture" not in asset and asset["status"] == "scripted"
+    assert [a["id"] for a in handoff.capturable(load())] == ["U1-S2-M1"]  # the media agent records it again
