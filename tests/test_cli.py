@@ -23,7 +23,7 @@ def test_the_output_is_utf8_even_where_the_system_writes_cp1252(monkeypatch):
     from coursekit import cli
 
     raw = io.BytesIO()
-    stream = io.TextIOWrapper(raw, encoding="cp1252")
+    stream = io.TextIOWrapper(raw, encoding="cp1252", newline="\n")  # the same line ends on every system
     monkeypatch.setattr(sys, "stdout", stream)
     cli._utf8_output()
     print("✔ ok › done")

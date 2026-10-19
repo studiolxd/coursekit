@@ -139,10 +139,11 @@ def test_a_grant_of_zero_minutes_lasts_until_it_is_revoked(course, browser, caps
     assert capture.active_grant(project, "PWD") is None
 
 
-def test_the_project_grant_covers_every_course_and_a_course_grant_extends_it(course, browser, capsys):  # noqa: F811
-    from coursekit import capture_session
+def test_the_project_grant_covers_every_course_and_a_course_grant_extends_it(course, browser, capsys, monkeypatch):  # noqa: F811
+    from coursekit import capture_session, capture_terminal
     from coursekit import course as coursemod
 
+    monkeypatch.setattr(capture_terminal, "supported", lambda: True)  # the permission needs no pseudo-terminal (Windows)
     configure(course.parent.parent, modes=["browser", "desktop", "terminal"], grant_minutes=0)
     interface_asset(course, capsys)
     assert main(["capture", "allow", "U1-S2-M1", "--mode", "desktop"]) == 1  # a resource needs its course
@@ -166,7 +167,7 @@ def test_the_project_grant_covers_every_course_and_a_course_grant_extends_it(cou
     assert "permission to capture of the whole project taken back" in capsys.readouterr().out
     assert capture.grants(project, "PWD") == {}
     assert main(["capture", "allow", "--mode", "all"]) == 0
-    assert set(capture.grants(project, "PWD")) == {"browser", "desktop", "terminal"} - (set() if os.name == "posix" else {"terminal"})
+    assert set(capture.grants(project, "PWD")) == {"browser", "desktop", "terminal"}
 
 
 def test_a_grant_of_one_mode_written_before_is_still_read(course, browser, capsys):  # noqa: F811

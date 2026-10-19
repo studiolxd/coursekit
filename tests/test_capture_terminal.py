@@ -15,6 +15,14 @@ from tests.test_assemble import course  # noqa: F401 — the approved sample cou
 from tests.test_capture import no_script_gate  # noqa: F401 — the script gate is tested elsewhere
 from tests.test_media import prepare_asset
 
+
+@pytest.fixture(autouse=True)
+def terminal_mode(monkeypatch):
+    """The permissions, the stages and the plan need no pseudo-terminal: on Windows the mode is taken as there (the sessions
+    that run one are skipped there, `real`)."""
+    monkeypatch.setattr(term, "supported", lambda: True)
+
+
 real = pytest.mark.skipif(not (term.supported() and term.emulator_available() and term.find_font() and shutil.which("bash")),
                           reason="needs a pseudo-terminal, pyte, a monospaced font and bash")
 
