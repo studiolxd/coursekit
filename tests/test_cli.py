@@ -29,3 +29,21 @@ def test_the_output_is_utf8_even_where_the_system_writes_cp1252(monkeypatch):
     print("✔ ok › done")
     sys.stdout.flush()
     assert raw.getvalue().decode("utf-8") == "✔ ok › done\n"
+
+
+@pytest.mark.parametrize("language", ["en", "es"])
+def test_every_help_can_be_shown(language, monkeypatch):
+    import argparse
+
+    from coursekit.cli import build_parser
+
+    monkeypatch.setenv("COURSEKIT_LANG", language)
+
+    def walk(parser):
+        parser.format_help()  # raises if a help text has a stray %
+        for action in parser._actions:
+            if isinstance(action, argparse._SubParsersAction):
+                for sub in action.choices.values():
+                    walk(sub)
+
+    walk(build_parser())

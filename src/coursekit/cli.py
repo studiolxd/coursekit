@@ -284,7 +284,23 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_uninstall)
 
     commands.register(sub)
+    _escape_percent(parser)
     return parser
+
+
+def _escape_percent(parser: argparse.ArgumentParser) -> None:
+    """argparse formats every help text with `%`: a `%` of a message («in %») would break `--help`, so it is written `%%`."""
+    import re
+
+    for action in parser._actions:
+        if action.help and action.help is not argparse.SUPPRESS:
+            action.help = re.sub(r"%(?![(%])", "%%", action.help)
+        if isinstance(action, argparse._SubParsersAction):
+            for choice in action._choices_actions:
+                if choice.help:
+                    choice.help = re.sub(r"%(?![(%])", "%%", choice.help)
+            for sub in dict.fromkeys(action.choices.values()):
+                _escape_percent(sub)
 
 
 def _language_from_env_file() -> None:
