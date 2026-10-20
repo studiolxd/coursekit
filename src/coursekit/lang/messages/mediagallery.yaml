@@ -1,0 +1,37 @@
+# `coursekit media gallery`: the page with every media resource of a course, and its local server.
+title: {es: "Recursos multimedia de {code}", en: "Media resources of {code}"}
+summary: {es: "{total} recursos · {done} con fichero · {pending} pendientes", en: "{total} resources · {done} with a file · {pending} pending"}
+shown: {es: "visibles", en: "shown"}
+all_units: {es: "Todas las unidades", en: "All units"}
+all_types: {es: "Todos los tipos", en: "All types"}
+all_states: {es: "Todos los estados", en: "All states"}
+unit_option: {es: "Unidad {unit} — {unit_title}", en: "Unit {unit} — {unit_title}"}
+search: {es: "Buscar en títulos y textos", en: "Search titles and texts"}
+done: {es: "Hecho", en: "Done"}
+pending: {es: "Pendiente", en: "Pending"}
+where: {es: "Unidad {unit}. {unit_title} · Apartado {section}. {section_title}", en: "Unit {unit}. {unit_title} · Section {section}. {section_title}"}
+no_place: {es: "Sin unidad ni apartado", en: "No unit or section"}
+placeholder_line: {es: "marcador en content.md, línea {line}", en: "placeholder in content.md, line {line}"}
+pending_box: {es: "Pendiente: todavía no hay fichero", en: "Pending: there is no file yet"}
+stale: {es: "Pendiente de rehacer: lo que se ve es la versión anterior", en: "To be redone: what you see is the previous version"}
+missing_file: {es: "Falta el fichero que dice el manifiesto", en: "The file the manifest names is missing"}
+empty: {es: "El curso no tiene recursos en media/manifest.yaml (ejecuta coursekit media extract).", en: "The course has no resources in media/manifest.yaml (run coursekit media extract)."}
+description: {es: "Descripción", en: "Description"}
+how: {es: "Cómo se elabora", en: "How it is made"}
+specs: {es: "Especificaciones", en: "Specifications"}
+alt: {es: "Texto alternativo", en: "Alternative text"}
+script: {es: "Guion", en: "Script"}
+video_script: {es: "Guion del vídeo (escenas y locución)", en: "Video script (scenes and narration)"}
+scenes: {es: "Escenas del vídeo", en: "Video scenes"}
+transcript: {es: "Transcripción", en: "Transcript"}
+audio_description: {es: "Audiodescripción", en: "Audio description"}
+subtitles: {es: "Subtítulos", en: "Subtitles"}
+session: {es: "Texto de la sesión grabada", en: "Text of the recorded session"}
+body: {es: "Texto del recurso", en: "Text of the resource"}
+points: {es: "Puntos señalados", en: "Marked points"}
+capture: {es: "Captura", en: "Capture"}
+capture_state: {es: "Estado: {state} · quién: {by} · motor: {engine}", en: "State: {state} · by: {by} · engine: {engine}"}
+serving: {es: "galería de recursos en {url}", en: "resource gallery at {url}"}
+watching: {es: "vigilando el curso: la página se actualiza sola al cambiar algo (Ctrl+C para pararla)", en: "watching the course: the page updates by itself when something changes (Ctrl+C to stop)"}
+updated: {es: "actualizada a las {time}", en: "updated at {time}"}
+written: {es: "galería de recursos en {path}", en: "resource gallery at {path}"}

@@ -817,13 +817,13 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
                 [--alt ALT] [--transcript TRANSCRIPT] [--subtitles-path SUBTITLES_PATH]
                 [--made-with MADE_WITH] [--download DOWNLOAD] [--download-title DOWNLOAD_TITLE]
                 [--download-asset-path DOWNLOAD_ASSET_PATH] [--depicts {interface,concept}] [--unit UNIT] [--set POINT=X,Y] [--force]
-                [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all] [--clean] [--recapture] [--find FIND] [--take TAKE] [--color COLOR] [--size SIZE] [--fix] [--frames FRAMES] [--batch]
-                {extract,plan,providers,set,upload,redo,embed,fit,render,narrate,optimize,adopt,check,sheet,transcript,stock,anchors} [code] [id] [more ...]
+                [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all] [--clean] [--recapture] [--find FIND] [--take TAKE] [--color COLOR] [--serve] [--port PORT] [--no-open] [--size SIZE] [--fix] [--frames FRAMES] [--batch]
+                {extract,plan,providers,set,upload,redo,embed,fit,render,narrate,optimize,adopt,check,sheet,transcript,stock,anchors,gallery} [code] [id] [more ...]
 ```
 
 | Argument | Values / default | Meaning |
 |---|---|---|
-| `action` | `extract`, `plan`, `providers`, `set`, `upload`, `redo`, `embed`, `fit`, `render`, `narrate`, `optimize`, `adopt`, `check`, `sheet`, `transcript`, `stock`, `anchors` | See below. |
+| `action` | `extract`, `plan`, `providers`, `set`, `upload`, `redo`, `embed`, `fit`, `render`, `narrate`, `optimize`, `adopt`, `check`, `sheet`, `transcript`, `stock`, `anchors`, `gallery` | See below. |
 | `code` | course code or folder | Required by every action except `providers` (exit code 2 without it). |
 | `id` | asset id such as `U1-S2-M1` | Required by `set` (exit code 2 without it). |
 | `--status STATUS` | `pending`, `scripted`, `produced`, `uploaded` | New status of the asset (checked against `coursekit config media`). |
@@ -849,6 +849,9 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
 | `--find FIND` | text, in English | `stock` only: search the illustration sources of the brand. |
 | `--take TAKE` | resource id | `stock` only: take that illustration as the SVG of the asset, recoloured to the brand. |
 | `--color COLOR` | default `media › stock › color` (`black`) | `stock` only: the colour the search filters by. |
+| `--serve` | flag | `gallery` only: serve the page on 127.0.0.1 until Ctrl+C and build it again when the course changes, instead of writing it once. |
+| `--port PORT` | number, default 8767 | `gallery --serve`: the port (another free one if it is taken). |
+| `--no-open` | flag | `gallery --serve`: do not open the browser. |
 | `--size SIZE` | `WIDTHxHEIGHT` | `fit` (required) and `render`: the size, e.g. `1920x1080`. |
 | `--all` | flag | `redo` only: redo every asset that uses the theme, not only those made with other tokens. |
 | `--clean` | flag | `redo` only: the assets also forget their file, alt text, transcript, captions and the tool that made them (the files stay on disk), for what is made again from nothing, such as a resource that showed an invented interface. |
@@ -875,6 +878,7 @@ Actions:
 - `stock`: an illustration of the illustration sources of the brand ([Illustration sources](07-media.md#illustration-sources)) for the asset `id`. With `--find`, the illustrations of those sources that match the terms and come as SVG (`media › stock › color` filters them; `black`, the line versions): one line each, with its resource id, title, author, licence and the address of its preview. With `--take`, downloads that one as SVG, recolours it (its dark colours to the role `media › stock › ink` of the tokens, the text; its light ones to `paper`, the background) into `media/files/<id>.svg`, and records in the manifest `recipe: magnific-stock` and `source` (provider, resource, author, address and licence); it does not mark it produced: make its PNG with `render` and mark it with `set`. A colour version is refused when the filter is `black` (take the line one). It needs `MAGNIFIC_API_KEY` and the sources (`coursekit brand`); exit code 2 without `id`, `--find` or `--take`, 1 when the API fails.
 - `transcript`: from the scenes described in `media/scripts/<id>.scenes.yaml`, writes the accessible transcript of the video `id` (scene by scene, the minute, what is seen and what is said) in `<file>.transcript.txt` and a WebVTT track of descriptions in `<file>.descriptions.vtt`, and makes that transcript the one of the asset (what the assembly puts in the course). See [Accessibility of videos](07-media.md#accessibility-of-videos).
 - `redo`: marks assets to be produced again and prints their ids. With one or more ids (`redo CODE U1-S3-M1 U1-S5-M4`), those; without them, the produced or uploaded assets of the types that use the theme (`uses_theme`) whose fingerprint differs from the current tokens (all of them with `--all`). They go back to `scripted` and forget their fingerprint and uploaded path; their script and file stay. Then `/produce-media` (or `coursekit handoff`) produces them again. See [Change the theme after producing the media](07-media.md#change-the-theme-after-producing-the-media). Refused while the course is on hold.
+- `gallery`: one page with every resource of the manifest, grouped by unit and section: `.cache/media/<CODE>/resources/index.html` (it opens from the disk, with relative links). Each card shows the produced file in place (image, video with its captions and audio description, audio, PDF) or, for terminal demos and simulations, the same embedded player the learner gets (`media/src/<id>/`); a resource with no file yet is shown as pending (and one that is to be redone shows its previous file, marked), and so is one whose file the manifest names but is missing. With the card goes what coursekit holds about it: where it goes (unit and section titles, and the line of its placeholder in `content.md`), its description, how it is made, specifications, alternative text, script (`media/scripts/<id>.md`, `.video.yaml`, `.scenes.yaml`), transcript, captions, text of the recorded session, the points marked and the state of its capture. The page filters by unit, type and state and searches the texts. With `--serve` a local server (it serves only that folder and `media/` and `content/` of the course, with Range requests for audio and video) watches the manifest and the folders of the course, and the page reloads itself within a second when something changes, keeping the filters.
 
 The types that use the theme tokens are listed in `media.yaml › uses_theme` (by default `infographic`, `diagram`, `animated_gif`, `simulation`, `video` and `terminal_demo`). For them:
 

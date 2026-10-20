@@ -432,3 +432,6 @@ catalog_unchanged: {es: "{path} sin cambios ({courses} cursos, {units} unidades)
 help_media_find: {es: "stock: busca en las fuentes de ilustraciones de la marca (en inglés)", en: "stock: search the illustration sources of the brand (in English)"}
 help_media_take: {es: "stock: toma esta ilustración (su id) como el SVG del recurso, recoloreada a la marca", en: "stock: take this illustration (its id) as the SVG of the asset, recoloured to the brand"}
 help_media_color: {es: "stock: filtra por color (por defecto media › stock › color: black, las versiones de línea)", en: "stock: filter by colour (default media › stock › color: black, the line versions)"}
+help_media_serve: {es: "gallery: la galería en el navegador, que se actualiza sola al cambiar el curso (servidor local hasta Ctrl+C)", en: "gallery: the gallery in the browser, which updates by itself when the course changes (a local server until Ctrl+C)"}
+help_media_port: {es: "puerto de la galería de recursos (por defecto 8767; si está ocupado, otro libre)", en: "port of the resource gallery (default 8767; if it is taken, a free one)"}
+help_media_no_open: {es: "no abrir el navegador", en: "do not open the browser"}

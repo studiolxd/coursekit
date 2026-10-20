@@ -115,7 +115,12 @@ final summary under "Design out of date" so that a person decides.
   - an `{{t_image}}` that conveys the concept: a real scene, a place, an object that says the idea (never a generic one, a
     person at a laptop): it comes from licensed stock or is generated;
   - a **capture of the application** (also an `{{t_image}}`), when the section talks about a real screen (see below);
-  - an `{{t_illustration}}` of the concept, in the line of the reference illustrations of the brand;
+  - an `{{t_illustration}}` of the concept, in the line of the reference illustrations of the brand. **One idea per
+    illustration, and its description defines everything that appears**: who (a person, or none) and each symbol, with what
+    each one represents (a magnifying glass: the review; a padlock: the limit). The media agent draws that and nothing else,
+    so leave no room for it to invent: do not write "some symbols" or "a few elements", name them, and do not stack several
+    scenes or more symbols than the idea of the paragraph needs. Do not ask for facial expressions (the people of the
+    illustration may have no face): express it with posture;
   - an `{{t_icon}}`: one idea in one sign (a padlock, a checklist, a shield), made large and placed as an image;
   - or something that explains: an infographic, a diagram, a video.
   The introduction and the summary always carry one. A content section with an infographic, a diagram or a video needs no

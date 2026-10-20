@@ -817,13 +817,13 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
                 [--alt ALT] [--transcript TRANSCRIPT] [--subtitles-path SUBTITLES_PATH]
                 [--made-with MADE_WITH] [--download DOWNLOAD] [--download-title DOWNLOAD_TITLE]
                 [--download-asset-path DOWNLOAD_ASSET_PATH] [--depicts {interface,concept}] [--unit UNIT] [--set POINT=X,Y] [--force]
-                [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all] [--clean] [--recapture] [--find FIND] [--take TAKE] [--color COLOR] [--size SIZE] [--fix] [--frames FRAMES] [--batch]
-                {extract,plan,providers,set,upload,redo,embed,fit,render,narrate,optimize,adopt,check,sheet,transcript,stock,anchors} [code] [id] [more ...]
+                [--url URL] [--content-type CONTENT_TYPE] [--method METHOD] [--all] [--clean] [--recapture] [--find FIND] [--take TAKE] [--color COLOR] [--serve] [--port PORT] [--no-open] [--size SIZE] [--fix] [--frames FRAMES] [--batch]
+                {extract,plan,providers,set,upload,redo,embed,fit,render,narrate,optimize,adopt,check,sheet,transcript,stock,anchors,gallery} [code] [id] [more ...]
 ```
 
 | Argumento | Valores / por defecto | Significado |
 |---|---|---|
-| `action` | `extract`, `plan`, `providers`, `set`, `upload`, `redo`, `embed`, `fit`, `render`, `narrate`, `optimize`, `adopt`, `check`, `sheet`, `transcript`, `stock`, `anchors` | Ver más abajo. |
+| `action` | `extract`, `plan`, `providers`, `set`, `upload`, `redo`, `embed`, `fit`, `render`, `narrate`, `optimize`, `adopt`, `check`, `sheet`, `transcript`, `stock`, `anchors`, `gallery` | Ver más abajo. |
 | `code` | código o carpeta del curso | Obligatorio en todas las acciones salvo `providers` (código de salida 2 si falta). |
 | `id` | id de recurso como `U1-S2-M1` | Obligatorio en `set` (código de salida 2 si falta). |
 | `--status STATUS` | `pending`, `scripted`, `produced`, `uploaded` | Nuevo estado del recurso (se comprueba con `coursekit config media`). |
@@ -849,6 +849,9 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
 | `--find FIND` | texto, en inglés | Solo `stock`: busca en las fuentes de ilustraciones de la marca. |
 | `--take TAKE` | id del recurso | Solo `stock`: toma esa ilustración como el SVG del recurso, recoloreada a la marca. |
 | `--color COLOR` | por defecto `media › stock › color` (`black`) | Solo `stock`: el color por el que filtra la búsqueda. |
+| `--serve` | flag | Solo `gallery`: sirve la página en 127.0.0.1 hasta Ctrl+C y la construye de nuevo cuando cambia el curso, en lugar de escribirla una vez. |
+| `--port PORT` | número, por defecto 8767 | `gallery --serve`: el puerto (otro libre si está ocupado). |
+| `--no-open` | flag | `gallery --serve`: no abrir el navegador. |
 | `--size SIZE` | `ANCHOxALTO` | `fit` (obligatorio) y `render`: el tamaño, p. ej. `1920x1080`. |
 | `--all` | indicador | Solo en `redo`: rehace todos los recursos que usan el tema, no solo los hechos con otros tokens. |
 | `--clean` | indicador | Solo en `redo`: los recursos olvidan además su fichero, texto alternativo, transcripción, subtítulos y la herramienta que los hizo (los ficheros se quedan en disco), para lo que se hace de nuevo desde cero, como un recurso que mostraba una interfaz inventada. |
@@ -875,6 +878,7 @@ Acciones:
 - `stock`: una ilustración de las fuentes de ilustraciones de la marca ([Fuentes de ilustraciones](07-media.md#fuentes-de-ilustraciones)) para el recurso `id`. Con `--find`, las ilustraciones de esas fuentes que coinciden con los términos y se pueden descargar en SVG (`media › stock › color` las filtra; `black`, las versiones de línea): una línea por cada una, con su id de recurso, título, autor, licencia y la dirección de su vista previa. Con `--take`, descarga esa en SVG, la recolorea (sus colores oscuros al rol `media › stock › ink` de los tokens, el texto; los claros a `paper`, el fondo) en `media/files/<id>.svg` y anota en el manifiesto `recipe: magnific-stock` y `source` (proveedor, recurso, autor, dirección y licencia); no la marca como producida: haz su PNG con `render` y márcala con `set`. Una versión a color se rechaza cuando el filtro es `black` (toma la de línea). Necesita `MAGNIFIC_API_KEY` y las fuentes (`coursekit brand`); código de salida 2 sin `id`, `--find` o `--take`, 1 cuando falla la API.
 - `transcript`: a partir de las escenas descritas en `media/scripts/<id>.scenes.yaml`, escribe la transcripción accesible del vídeo `id` (escena a escena, el minuto, lo que se ve y lo que se dice) en `<fichero>.transcript.txt` y una pista WebVTT de descripciones en `<fichero>.descriptions.vtt`, y hace de esa transcripción la del recurso (la que el montaje lleva al curso). Mira [Accesibilidad de los vídeos](07-media.md#accesibilidad-de-los-vídeos).
 - `redo`: marca recursos para producirlos de nuevo e imprime sus ids. Con uno o más ids (`redo CODE U1-S3-M1 U1-S5-M4`), esos; sin ellos, los recursos producidos o subidos de los tipos que usan el tema (`uses_theme`) cuya huella difiere de los tokens actuales (todos con `--all`). Vuelven a `scripted` y olvidan su huella y su ruta subida; su guion y su fichero se conservan. Después `/produce-media` (o `coursekit handoff`) los produce otra vez. Mira [Cambiar el theme después de producir el multimedia](07-media.md#cambiar-el-theme-después-de-producir-el-multimedia). Se niega mientras el curso está en pausa.
+- `gallery`: una página con todos los recursos del manifiesto, agrupados por unidad y apartado: `.cache/media/<CODE>/resources/index.html` (se abre desde el disco, con enlaces relativos). Cada tarjeta muestra el fichero producido en su sitio (imagen, vídeo con sus subtítulos y su audiodescripción, audio, PDF) o, en las demos de terminal y las simulaciones, el mismo reproductor embebido que recibe el alumno (`media/src/<id>/`); un recurso que aún no tiene fichero sale como pendiente (y el que hay que rehacer enseña su fichero anterior, marcado), igual que el que el manifiesto nombra pero cuyo fichero falta. Con la tarjeta va lo que coursekit sabe de él: dónde va (los títulos de la unidad y del apartado, y la línea de su marcador en `content.md`), su descripción, cómo se elabora, las especificaciones, el texto alternativo, el guion (`media/scripts/<id>.md`, `.video.yaml`, `.scenes.yaml`), la transcripción, los subtítulos, el texto de la sesión grabada, los puntos marcados y el estado de su captura. La página filtra por unidad, tipo y estado y busca en los textos. Con `--serve`, un servidor local (solo sirve esa carpeta y `media/` y `content/` del curso, con peticiones Range para audio y vídeo) vigila el manifiesto y las carpetas del curso, y la página se recarga sola en un segundo cuando algo cambia, conservando los filtros.
 
 Los tipos que usan los tokens del tema figuran en `media.yaml › uses_theme` (por defecto `infographic`, `diagram`, `animated_gif`, `simulation`, `video` y `terminal_demo`). Para ellos:
 

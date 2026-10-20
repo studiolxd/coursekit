@@ -233,9 +233,14 @@ credits.
     (above, and the style sheet of the simulations).
   Record in the manifest the recipe actually used (`creator-stock` or the generator).
 - **Illustration (`illustration`)** — a concept illustration, in the line of the reference illustrations of the brand
-  (`theme/branding/style/`): the illustration sources of the brand first (`coursekit media stock <CODE> <id> --find`, as a
-  concept illustration of the image above), else generated in that style with the previews as reference, else drawn as
-  SVG with the theme colours and exported to PNG. It tells the idea its description names; never a generic picture.
+  (`theme/branding/style/`): the illustration sources of the brand **always first** (`coursekit media stock <CODE> <id>
+  --find "<terms in English>"`, as a concept illustration of the image above): search with at least two different sets of
+  terms (the idea and its main symbol) and look at the previews before deciding. Generating is the exception: only when
+  nothing fits or what you found does not match the description (the symbols it names, one idea); then generate in that
+  style with the previews as reference, else draw as SVG with the theme colours and export to PNG. Say in your report, for
+  each illustration, whether it was taken or generated and, if generated, what you searched and why you discarded it. The
+  description defines what appears (people and symbols): draw that and nothing else, no extra accessories or objects. It
+  tells the idea its description names; never a generic picture.
 - **Icon (`icon`)** — one idea in one sign, large: the icon of the library of the brand that says it (also under other
   names), or one of the catalogue of creator (`search_stock_icons`) in the line of the brand, or one you draw with the rules
   of the guide for icons (above). Place it large, centred, in the theme colours, on a soft shape of the accent with room
@@ -302,6 +307,10 @@ credits.
 After producing audios and videos, `coursekit media check <CODE>`: loudness, captions too fast to read and what is on screen
 and not said (the limits are those of `media › checks`). Fix what it reports (`--fix` for the loudness; split the captions or
 shorten the text; say what is missing or describe it with `shows`) and run it again until it passes.
+
+At the end, `coursekit media gallery <CODE>` writes the page with every resource of the course (each one in place, with where
+it goes and how it was made): look at it to check that each resource says what its description asks and that none is
+missing, and tell the person in your report that they can see them all with `coursekit media gallery <CODE> --serve`.
 - **Interactive simulation** — self-contained package in `media/src/<id>/` (`index.html` + JS
   without external dependencies) that imports `tokens.css`; keyboard, `aria-*`, visible focus,
   no emojis, text in {{language_name}}, works from `file://`.

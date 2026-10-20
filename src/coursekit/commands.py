@@ -39,6 +39,7 @@ from coursekit import handoff as handoffmod
 from coursekit import importer as importermod
 from coursekit import init as initmod
 from coursekit import media as mediamod
+from coursekit import mediagallery as mediagallerymod
 from coursekit import publish as publishmod
 from coursekit import research as researchmod
 from coursekit import setup as setupmod
@@ -1011,6 +1012,11 @@ def cmd_media(args: argparse.Namespace) -> int:
             print(t("commands", "error_line", text=exc), file=sys.stderr)
             return 1
         return 0
+    if args.action == "gallery":
+        if args.serve:  # the page in the browser, rebuilt when the course changes, until Ctrl+C
+            return mediagallerymod.serve(course, lambda: coursemod.load(project, args.code), args.port, not args.no_open)
+        print(t("mediagallery", "written", path=mediagallerymod.build(course).relative_to(project.root).as_posix()))
+        return 0
     if args.action == "stock":
         if not args.id or not (args.find or args.take):
             print(t("illustrations", "stock_needs"), file=sys.stderr)
@@ -1529,7 +1535,7 @@ def register(sub: argparse._SubParsersAction) -> None:
 
     p = sub.add_parser("media", help=t("commands", "help_media"))
     p.add_argument("action", choices=("extract", "plan", "providers", "set", "upload", "redo", "embed", "fit", "render", "narrate",
-                                      "optimize", "adopt", "check", "sheet", "transcript", "stock", "anchors"))
+                                      "optimize", "adopt", "check", "sheet", "transcript", "stock", "anchors", "gallery"))
     p.add_argument("code", nargs="?")
     p.add_argument("id", nargs="?")
     p.add_argument("more", nargs="*", help=t("commands", "help_media_more"))
@@ -1553,6 +1559,9 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--find", help=t("commands", "help_media_find"))
     p.add_argument("--take", type=int, help=t("commands", "help_media_take"))
     p.add_argument("--color", help=t("commands", "help_media_color"))
+    p.add_argument("--serve", action="store_true", help=t("commands", "help_media_serve"))
+    p.add_argument("--port", type=int, default=8767, help=t("commands", "help_media_port"))
+    p.add_argument("--no-open", action="store_true", help=t("commands", "help_media_no_open"))
     p.set_defaults(func=cmd_media)
 
     p = sub.add_parser("video", help=t("commands", "help_video"))
