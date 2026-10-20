@@ -522,7 +522,9 @@ def start(project, code: str, asset_id: str, backend_factory=None, cursor: bool 
             raise ToolError(t("capture", "desktop_needs_window", id=asset_id))
         return _started(_start_desktop(project, cfg, course, asset, asset_id, {**grant, "window": window}, backend_factory, block), part)
     configured = list(cfg.get("profiles") or {})
-    name = grant.get("profile") or str(block.get("profile") or "").strip() or (configured[0] if len(configured) == 1 else "")
+    staged = str(block.get("stage") or "").strip()  # a site of a stage of the course: served here, nothing to log into
+    name = capturemod.COURSE_PROFILE if staged else (grant.get("profile") or str(block.get("profile") or "").strip()
+                                                     or (configured[0] if len(configured) == 1 else ""))
     if not name:
         raise ToolError(t("capture", "browser_needs_profile", id=asset_id, known=", ".join(configured) or "—"))
     grant = {**grant, "profile": name}
@@ -532,7 +534,8 @@ def start(project, code: str, asset_id: str, backend_factory=None, cursor: bool 
         raise ToolError(str(exc)) from None
     if not capturemod.ready(project, grant["profile"], profile):
         raise ToolError(t("capture", "not_logged_in", name=grant["profile"]))
-    start_url, domains, server = resolve_start(course, profile, str(block.get("start") or ""))
+    start_url, domains, server = (serve_stage(project, course, block) if staged
+                                  else resolve_start(course, profile, str(block.get("start") or "")))
     profile = {**profile, "allow_domains": [*profile["allow_domains"], *domains]}
     if not capturemod.domain_allowed(domain_of(start_url), profile["allow_domains"]):
         if server:
@@ -581,6 +584,19 @@ def chosen_grant(project, course: dict, asset: dict, block: dict) -> dict | None
     if len(found) > 1:
         raise ToolError(t("capture", "session_needs_mode", id=asset["id"], modes=", ".join(found)))
     return next(iter(found.values()), None)
+
+
+def serve_stage(project, course: dict, block: dict):
+    """A site of a stage of the course (a web written with invented data, `stage:` in the block of a browser session): mounted
+    from scratch with its setup and the `prepare` of the block, and served on this machine while the session lasts."""
+    from coursekit import capture_stage
+
+    try:
+        workspace = capture_stage.mount(project, course, str(block["stage"]), [str(c) for c in block.get("prepare") or []])
+    except capture_stage.StageError as exc:
+        raise ToolError(str(exc)) from None
+    server = serve_folder(workspace.folder)
+    return f"http://127.0.0.1:{server.server_address[1]}/{str(block.get('start') or '').lstrip('/')}", ["127.0.0.1"], server
 
 
 def resolve_start(course: dict, profile: dict, start: str):

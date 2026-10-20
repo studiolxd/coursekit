@@ -136,7 +136,9 @@ What you may do with an `interface` resource, in this order:
    **A recording in parts** (a terminal and then a browser, two programs): one session per part, `session_start` with
    `part: <name>` (`terminal`, `browser`…), each with its settings in `parts: {<name>: {mode: …, stage: …, start: …}}` of
    the `capture` block (what the block says outside `parts` holds for all). Each part writes `media/recordings/<id>-<part>.*`
-   (its events too); the montage uses one screencast scene per part, each on its own recording.
+   (its events too); the montage uses one screencast scene per part, each on its own recording. A web page of a stage (the
+   site the terminal part builds) is recorded in a browser part with `stage: <name>` in its block (and its `prepare`):
+   coursekit mounts it and serves it on this machine for the session, with no profile and no server to start by hand.
 4. **Nothing of the above exists yet: do not produce it.** Write the **brief for the person** in
    `courses/<CODE>/media/scripts/<id>.md` and leave the asset waiting:
    `coursekit media set <CODE> <id> --status scripted --recipe screen-recording|screenshot|asciinema --depicts interface`.

@@ -374,3 +374,24 @@ def test_a_fault_of_a_tool_is_told_to_the_agent_and_the_server_goes_on():
     server = Server("t", "0", [Tool("broken", "", schema(), broken)])
     answer = server.handle({"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "broken", "arguments": {}}})
     assert answer["result"]["isError"] and "ValueError: lines of different lengths" in answer["result"]["content"][0]["text"]
+
+
+def test_a_browser_session_of_a_stage_serves_its_site_here(course, home, capsys):  # noqa: F811
+    import urllib.request
+
+    from coursekit import capture_session
+    from tests.test_capture import FakeBrowser
+
+    terminal_course(course, capsys, "screenshot", {"mode": "browser", "stage": "recipes", "start": "/recipes.json",
+                                                   "prepare": ["echo changed > note.txt"]})
+    assert main(["capture", "allow", "--mode", "browser"]) == 0
+    write_stage(course)
+    manager = capture_session.Manager(find_project(), FakeBrowser)
+    tools_ = {tool.name: tool for tool in manager.tools()}
+    tools_["session_start"].run({"code": "PWD", "asset_id": "U1-S2-M1"})
+    url = manager.session.backend.current
+    assert url.startswith("http://127.0.0.1:") and url.endswith("/recipes.json")
+    with urllib.request.urlopen(url) as page:  # the stage, served while the session lasts
+        assert "Lemon chicken" in page.read().decode("utf-8")
+    assert (home / "projects" / "recipes" / "note.txt").exists()  # with the prepare of the block
+    manager.session.close()
