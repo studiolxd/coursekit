@@ -310,7 +310,8 @@ Before an audio or a video goes to the course, `coursekit media check CODE` look
 
 An image that a `:::labelled-graphic` names, or the background of a simulation with hotspots that have an `area`, has
 **points**: `coursekit media extract` lists them in the manifest (`points`), so the media agent draws the image with room for
-them. Once the image is produced, [`coursekit media anchors CODE ID`](03-commands.md#coursekit-media) draws on it a numbered
+them, as a base for the points rather than an infographic (the parts with short labels; their meaning is in the
+points). Once the image is produced, [`coursekit media anchors CODE ID`](03-commands.md#coursekit-media) draws on it a numbered
 crosshair where each point goes, taken from the content (the `position` of the point, the centre of the `area` of the
 hotspot), and records them (`anchors`). The crosshairs **stay in the final image**: whoever reviews it sees where each point
 will be and can ask to move it. The image and the content always agree, because the crosshairs are drawn from the content:

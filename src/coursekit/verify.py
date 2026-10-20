@@ -473,8 +473,9 @@ def check_stretches(course: dict, label: str, lines: list[str], report: Report) 
 
 
 def check_anchors(course: dict, unit: dict, report: Report) -> None:
-    """The images with points of the unit: every point has a position, and the crosshairs drawn on a produced image are the
-    ones the content says (`coursekit media anchors`)."""
+    """The images with points of the unit: every point has a position, the crosshairs drawn on a produced image are the
+    ones the content says (`coursekit media anchors`), and a `:::labelled-graphic` names the placeholder of its own section (there
+    it shows the image; one declared in another section would also show alone where it is declared)."""
     from coursekit import anchors as anchorsmod
 
     manifest = course["_dir"] / "media" / "manifest.yaml"
@@ -482,6 +483,17 @@ def check_anchors(course: dict, unit: dict, report: Report) -> None:
         return
     assets = [a for a in (yaml.safe_load(manifest.read_text(encoding="utf-8")) or {}).get("assets") or []
               if a.get("status") != "orphaned"]
+    by_title = {str(a.get("title") or ""): a for a in assets}
+    graphics = anchorsmod.graphic_points(course, unit)
+    if graphics:
+        syntax = Syntax.for_tokens(coursemod.tokens(course))
+        text = (coursemod.unit_dir(course["_dir"], unit["n"]) / "content.md").read_text(encoding="utf-8")
+        heads = [(i, int(m.group(1))) for i, line in enumerate(text.splitlines(), 1) if (m := syntax.section.match(line))]
+        for title, points in graphics.items():
+            asset = by_title.get(title)
+            section = next((n for i, n in reversed(heads) if i < points[0].line), None) if points else None
+            if asset and section is not None and not str(asset["id"]).startswith(f"U{unit['n']}-S{section}-"):
+                report.warn(t("anchors", "graphic_elsewhere", line=points[0].line, asset=asset["id"]))
     here = anchorsmod.points_of(course, assets, [unit])
     if not here:
         return

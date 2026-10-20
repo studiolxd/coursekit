@@ -185,7 +185,9 @@ credits.
 
 - **An image with points** (`points` in the manifest: the points of a `:::labelled-graphic` that names it, or the hotspots
   with an `area` of a simulation on that background) — draw it so that what each point names is clearly visible and has room
-  for its marker. Once it is produced, `coursekit media anchors <CODE> <id>` draws a numbered crosshair on the image where each
+  for its marker. It is a base for the points, not an infographic: the parts recognisable, each with a short label at most,
+  and no explanatory text (what each part means is in its point). If its description asks for sentences on the image, draw
+  only their labels and say so in your report. Once it is produced, `coursekit media anchors <CODE> <id>` draws a numbered crosshair on the image where each
   point goes, from the content, and records them: they stay in the final image, so whoever reviews it sees where each point
   will be. A point without a position: look at the image and give it one, `--set "<point>=x,y"` (in % of the image, from the
   top left corner), which writes it in the content too. Check that every crosshair falls on what its point names; if not, move

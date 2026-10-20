@@ -310,7 +310,8 @@ Antes de que un audio o un vídeo vaya al curso, `coursekit media check CODE` re
 
 Una imagen que nombra un `:::labelled-graphic`, o el fondo de una simulación con zonas activas que tienen `area`, tiene
 **puntos**: `coursekit media extract` los anota en el manifiesto (`points`), así que el agente de multimedia dibuja la imagen
-dejándoles sitio. Con la imagen producida, [`coursekit media anchors CODE ID`](03-commands.md#coursekit-media) dibuja en ella
+dejándoles sitio, como base para los puntos y no como infografía (las partes con rótulos cortos; lo que significan está
+en los puntos). Con la imagen producida, [`coursekit media anchors CODE ID`](03-commands.md#coursekit-media) dibuja en ella
 una cruceta numerada donde va cada punto, tomada del contenido (la `posición` del punto, el centro del `area` de la zona) y las
 anota (`anchors`). Las crucetas **se quedan en la imagen final**: quien la revisa ve dónde irá cada punto y puede pedir
 moverlo. La imagen y el contenido coinciden siempre, porque las crucetas se dibujan desde el contenido:

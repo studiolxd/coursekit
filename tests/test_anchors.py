@@ -109,3 +109,31 @@ scenes:
     points = anchors.hotspot_points(loaded, loaded["units"][0])
     (spots,) = points.values()
     assert [(p.label, p.at, p.kind) for p in spots] == [("La nota", (65.0, 25.0), "hotspot"), ("El teclado", (30.0, 70.0), "hotspot")]
+
+
+def test_the_image_of_a_labelled_graphic_does_not_also_go_alone():
+    from coursekit.assemble import fold_labelled_images
+
+    image = {"type": "IMAGE", "data": {}, "meta": {"placeholder": "infographic", "title": "Anatomía"}}
+    other = {"type": "IMAGE", "data": {}, "meta": {"placeholder": "image", "title": "Otra"}}
+    pending = {"type": "NOTE", "data": {}, "meta": {"placeholder": "infographic", "title": "Anatomía"}}
+    graphic = {"type": "LABELLED_GRAPHIC", "data": {}, "meta": {"directive": "labelled-graphic", "image": "Anatomía"}}
+    assert fold_labelled_images([image, graphic, other]) == [graphic, other]
+    assert fold_labelled_images([pending, graphic]) == [pending, graphic]  # not produced: its note stays
+    branch = {"type": "CONDITIONAL", "data": {"branches": [{"condition": "x", "bricks": [image, graphic]}], "else": [image]},
+              "meta": {}}
+    folded = fold_labelled_images([branch])[0]["data"]
+    assert folded["branches"][0]["bricks"] == [graphic] and folded["else"] == []
+    assert fold_labelled_images([image, other]) == [image, other]
+
+
+def test_verify_warns_when_a_graphic_names_the_placeholder_of_another_section(course, capsys):  # noqa: F811
+    asset_id, content = setup_graphic(course)
+    capsys.readouterr()
+    main(["verify", "PWD", "--unit", "1"])
+    assert "declared in another section" not in capsys.readouterr().out
+    text = content.read_text(encoding="utf-8").replace(GRAPHIC.strip() + "\n\n", "", 1)
+    head = next(line for line in text.splitlines() if line.startswith("## Apartado 3"))
+    content.write_text(text.replace(head, head + "\n\n" + GRAPHIC.strip(), 1), encoding="utf-8")
+    main(["verify", "PWD", "--unit", "1"])
+    assert f"the graphic with points uses {asset_id}, declared in another section" in capsys.readouterr().out

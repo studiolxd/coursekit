@@ -321,6 +321,8 @@ def directive_brick(name: str, body: list[str], ctx: dict) -> dict:
     values, rest = key_values(body)
     syntax.check_keys(values)
     meta = {"directive": name}
+    if brick_type == "LABELLED_GRAPHIC":
+        meta["image"] = values.get(syntax.key("image"), "")
     if values.get(syntax.key("objective")):
         meta["objective"] = values[syntax.key("objective")]
 
@@ -715,6 +717,25 @@ def conditions(brick: dict) -> list[str]:
     return [str(branch.get("condition") or "") for branch in brick["data"].get("branches") or []]
 
 
+def fold_labelled_images(bricks: list[dict]) -> list[dict]:
+    """The image a `:::labelled-graphic` of the section names is shown by it: its placeholder only declares the resource, so the
+    produced image does not also go alone (a pending one keeps its note)."""
+    named = {b["meta"].get("image") for b in walk(bricks) if b["type"] == "LABELLED_GRAPHIC"}
+
+    def keep(items: list[dict]) -> list[dict]:
+        kept = []
+        for brick in items:
+            if brick["meta"].get("placeholder") and brick["type"] != "NOTE" and brick["meta"].get("title") in named:
+                continue
+            if brick["type"] == "CONDITIONAL":
+                brick["data"]["branches"] = [{**b, "bricks": keep(b["bricks"])} for b in brick["data"]["branches"]]
+                brick["data"]["else"] = keep(brick["data"]["else"])
+            kept.append(brick)
+        return kept
+
+    return keep(bricks) if named else bricks
+
+
 def walk(bricks: list[dict]):
     """The bricks, and those inside the branches of the adaptive blocks."""
     for brick in bricks:
@@ -800,7 +821,7 @@ def build_plan(course: dict, unit: dict, assets: dict[str, dict] | None = None,
                 continue
             key = f"U{unit['n']}-S{n}"
             lessons.append({"key": key, "type": "content", "title": spec["title"], "kind": spec["kind"],
-                            "slxd_node_id": spec.get("slxd_id"), "bricks": parse_blocks(lines, ctx, key)})
+                            "slxd_node_id": spec.get("slxd_id"), "bricks": fold_labelled_images(parse_blocks(lines, ctx, key))})
         if placement == "unit":
             lessons += assessment_lessons(course, unit, ctx, fmt)
 

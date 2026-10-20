@@ -104,6 +104,13 @@ final summary under "Design out of date" so that a person decides.
 - **Points on an image** (`:::labelled-graphic`, the `area` of a hotspot): you do not see the image, so a point's `{{k_position}}`
   is a first guess or nothing; the media agent places it on the image (`coursekit media anchors --set`) and the crosshairs drawn
   on the image show where it went. Name each point after what it points at in the image.
+  **An image is either seen or explored, never both.** Declare the placeholder of a `:::labelled-graphic` in the same
+  section, right before it: the graphic shows the image, which does not also go alone. Its image is a base, not an
+  infographic: its description asks for the shape and the parts, each with a label of one or two words at most, never a
+  sentence; what each part means lives in its point, and every point says something the image does not. A labelled-graphic
+  suits a real object whose parts the learner discovers (a screen of the application, a file, a device). When the idea is
+  understood at a glance (a comparison, a process, a list of parts), it is an infographic or a diagram on its own, and the
+  section takes another interactive; never the same content as a table, an image and points.
 - **Job aids** (`{{t_job_aid}}`, the ones the design gives the unit in `proposal-notes.md`): a checklist or a quick guide
   the learner downloads to use at work, in the section where the procedure is taught. After the four fields, its text in
   Markdown on lines that also start with `>`: a `##` heading per block, steps as a numbered list, checks as `- [ ]` items

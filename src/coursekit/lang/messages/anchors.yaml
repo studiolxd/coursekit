@@ -32,6 +32,9 @@ render_again:
 point_without_position:
   es: "content.md:{line}: el punto «{label}» de {asset} no tiene posición: el agente de multimedia se la da mirando la imagen (coursekit media anchors --set)"
   en: "content.md:{line}: the point «{label}» of {asset} has no position: the media agent gives it one looking at the image (coursekit media anchors --set)"
+graphic_elsewhere:
+  es: "content.md:{line}: el gráfico con puntos usa {asset}, declarado en otro apartado: allí sale la imagen sola y aquí otra vez; declara su ficha en este apartado, justo antes del gráfico"
+  en: "content.md:{line}: the graphic with points uses {asset}, declared in another section: there the image shows alone and here again; declare its placeholder in this section, right before the graphic"
 out_of_date:
   es: "{asset}: las crucetas de la imagen no son las del contenido (se movió o se añadió un punto): coursekit media anchors {code} {asset}"
   en: "{asset}: the crosshairs of the image are not the ones of the content (a point moved or was added): coursekit media anchors {code} {asset}"
