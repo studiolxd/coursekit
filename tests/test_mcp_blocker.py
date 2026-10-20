@@ -122,7 +122,7 @@ def test_without_a_known_cause_the_agent_words_are_shown(project, monkeypatch, c
     fake.skip["new-course"] = 1
     monkeypatch.setattr(launch, "execute", talks)
     assert main(["handoff", "Contraseñas seguras", "1", "--code", "PWD"]) == 1
-    assert "The agent said: Nothing was created because the server answered 500." in capsys.readouterr().err
+    assert "The agent said:\n    Nothing was created because the server answered 500." in capsys.readouterr().err
 
 
 def test_resuming_designs_again_when_the_matrix_was_never_created(project, monkeypatch, capsys):  # noqa: F811

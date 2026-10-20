@@ -84,8 +84,11 @@ cause_line:
   es: "  Causa: {text}"
   en: "  Cause: {text}"
 agent_said_line:
-  es: "  El agente dijo: {text}"
-  en: "  The agent said: {text}"
+  es: "  El agente dijo:{text}"
+  en: "  The agent said:{text}"
+also_blocked_line:
+  es: "  Además, {text} (puede no ser lo que lo ha parado: lo dice el agente arriba)"
+  en: "  Also, {text} (it may not be what stopped it: the agent says what did, above)"
 media_not_uploaded:
   es: "{code}: quedan recursos multimedia sin subir a creator tras los intentos: {assets}"
   en: "{code}: media assets are still not uploaded to creator after the attempts: {assets}"

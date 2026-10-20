@@ -76,6 +76,11 @@ class Server:
                 return {"content": tool.run(dict(params.get("arguments") or {})), "isError": False}
             except ToolError as exc:
                 return {"content": [text(str(exc))], "isError": True}
+            except Exception as exc:  # noqa: BLE001 — a fault of the tool is told to the agent, never a server that dies
+                import traceback
+
+                traceback.print_exc(file=sys.stderr)  # the AI tool keeps the log of the server
+                return {"content": [text(f"internal error of {tool.name}: {type(exc).__name__}: {exc}")], "isError": True}
         raise _RpcError(-32601, f"method not found: {method}")
 
     def serve(self, stdin: IO[str] = sys.stdin, stdout: IO[str] = sys.stdout) -> None:

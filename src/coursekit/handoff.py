@@ -156,10 +156,15 @@ def _unit(ctx: Context, role: str, n: int, note: str = "") -> launch.UnitResult:
 def _why(ctx: Context, log: Path | None, summary: str, role: str = "") -> str:
     """The cause of an agent that did not do its job: what its session log says about creator (not authorized, not allowed) or about
     the programs it could not run, and what the agent itself said at the end (it is the one that knows when the cause is another)."""
-    blocker = (launch.mcp_blocker(ctx.project, log) or launch.permission_blocker(ctx.project, log, role)) if log else None
-    text = " ".join(summary.split())[:700]
-    said = "\n" + t("handoff", "agent_said_line", text=text) if text else ""
-    return ("\n" + t("handoff", "cause_line", text=blocker) if blocker else "") + said
+    unreachable = launch.mcp_blocker(ctx.project, log) if log else None  # creator not reachable: that is the cause
+    blocked = launch.permission_blocker(ctx.project, log, role) if log and not unreachable else None
+    lines = [line.rstrip() for line in summary.strip().splitlines() if line.strip()]
+    said = "\n" + t("handoff", "agent_said_line", text="".join(f"\n    {line}" for line in lines)) if lines else ""
+    if unreachable or (blocked and not said):
+        return "\n" + t("handoff", "cause_line", text=unreachable or blocked) + said
+    if blocked:  # a program it could not run may not be what stopped it: the agent says what it is
+        return said + "\n" + t("handoff", "also_blocked_line", text=blocked)
+    return said
 
 
 def _cannot(ctx: Context, log: Path | None, role: str) -> bool:

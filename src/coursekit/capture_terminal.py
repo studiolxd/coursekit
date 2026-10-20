@@ -22,6 +22,7 @@ from __future__ import annotations
 import codecs
 import hashlib
 import io
+import itertools
 import json
 import os
 import re
@@ -465,7 +466,8 @@ def hurry(events: list[tuple[float, str]], marks: list[tuple[float, dict]], type
     for at, data in events:
         stream.feed(data)
         now = list(screen.display)
-        changed = sum(1 for a, b in zip(before, now, strict=True) for x, y in zip(a, b, strict=True) if x != y)
+        # a wide character (an emoji, a CJK letter) fills two cells and one character: lines of different lengths
+        changed = sum(1 for a, b in zip(before, now, strict=True) for x, y in itertools.zip_longest(a, b) if x != y)
         k = bisect.bisect_right(typed, at)
         echo = k > 0 and at - typed[k - 1] <= 0.3  # the program writes back what was typed
         minor.append(changed <= cells and not echo)

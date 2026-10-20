@@ -356,3 +356,21 @@ def test_redo_with_recapture_records_a_captured_resource_again(course, capsys): 
     kept = list((find_project().cache_dir / "capture" / "PWD" / "replaced").rglob("*.*"))
     assert sorted(p.name for p in kept) == ["U1-S2-M1-browser.mp4", "U1-S2-M1.cast"]
     assert [a["id"] for a in handoff.capturable(load())] == ["U1-S2-M1"]  # the media agent records it again
+
+
+@pytest.mark.skipif(not term.emulator_available(), reason="needs pyte")
+def test_a_wide_character_on_screen_does_not_stop_the_recording():
+    events = [(0.0, "$ go\r\n"), (0.5, "\u2705 all tests pass \u754c\r\n"), *[(1.0 + n * 0.1, "\r" + "|/"[n % 2]) for n in range(40)]]
+    out, _, _ = term.hurry(events, [], [0.0], 6.0, 40, 5, 1.5, 40)
+    assert len(out) == len(events)
+
+
+def test_a_fault_of_a_tool_is_told_to_the_agent_and_the_server_goes_on():
+    from coursekit.mcpserver import Server, Tool, schema
+
+    def broken(args):
+        raise ValueError("lines of different lengths")
+
+    server = Server("t", "0", [Tool("broken", "", schema(), broken)])
+    answer = server.handle({"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "broken", "arguments": {}}})
+    assert answer["result"]["isError"] and "ValueError: lines of different lengths" in answer["result"]["content"][0]["text"]
