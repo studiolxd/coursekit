@@ -89,7 +89,7 @@ def _texts(course: dict, asset: dict) -> list[tuple[str, str]]:
         ("description", str(asset.get("description") or "")),
         ("how", str(asset.get("how") or "")),
         ("specs", str(asset.get("specs") or "")),
-        ("alt", str(asset.get("alt") or "")),
+        ("alt", t("mediagallery", "decorative") if asset.get("decorative") else str(asset.get("alt") or "")),
         ("script", _read(media / "scripts" / f"{asset_id}.md")),
         ("video_script", _read(media / "scripts" / f"{asset_id}.video.yaml")),
         ("scenes", _read(media / "scripts" / f"{asset_id}.scenes.yaml")),

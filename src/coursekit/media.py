@@ -81,6 +81,7 @@ def options_for(kind: str, cfg: dict, root: Path | None = None) -> list[dict]:
 
 
 DEPICTS = ("interface", "concept")
+DECORATIVE_TYPES = ("image", "illustration")  # the types an image that only decorates can be
 
 
 def depicts_rules(cfg: dict) -> tuple[list[str], list[str]]:
@@ -907,6 +908,13 @@ def _set_asset(course: dict, data: dict, asset_id: str, **values) -> str:
             raise MediaError(t("media", "interface_generated", asset=asset_id, recipe=recipe or "-", allowed=", ".join(real)))
     if values.get("depicts"):
         asset["depicts"] = values["depicts"]
+    if values.get("decorative") is not None:
+        if values["decorative"] and asset["type"] not in DECORATIVE_TYPES:
+            raise MediaError(t("media", "decorative_type", asset=asset_id, type=asset["type"], types=", ".join(DECORATIVE_TYPES)))
+        if values["decorative"]:
+            asset["decorative"] = True  # no alternative text and no caption: screen readers skip it
+        else:
+            asset.pop("decorative", None)
     unit_n = values.get("unit")
     if unit_n is not None and values.get("asset_path") is None:
         raise MediaError(t("media", "unit_needs_asset_path"))

@@ -202,6 +202,7 @@ The keys of the `key: value` lines inside directives, and the few words some of 
 | Position of a point | `position:` | `posición:` |
 | Title of `note` | `title:` | `título:` |
 | Objective of a question | `objective:` | `objetivo:` |
+| Shuffle the options of a question (`single-choice`, `multi-select`, `sorting-groups`) | `shuffle: yes` · `shuffle: no` | `barajar: sí` · `barajar: no` |
 | Value of `true-false` | `true` · `false` | `verdadero` · `falso` |
 | Mode of a `pasapalabra` item | `(starts)` · `(contains)` | `(empieza)` · `(contiene)` |
 
@@ -356,16 +357,22 @@ feedback-incorrect: Review the section on length.
 | `order-words` | One `- full sentence` per sentence |
 | `short-answer` | `answers: a \| b \| c` |
 
-Each key goes on one line. The key names inside directives (`question:`, `answer:`, `answers:`, `feedback-correct:`, `feedback-incorrect:`, `feedback:`, `title:`, `image:`, `position:`) and the objective key (`objective:`) are the ones of the content language shown here; a Spanish course writes `pregunta:`, `respuesta:`, `objetivo:`… (see [Resource types and directive keys by language](#resource-types-and-directive-keys-by-language)). Mixing languages is an error.
+Each key goes on one line. The key names inside directives (`question:`, `answer:`, `answers:`, `feedback-correct:`, `feedback-incorrect:`, `feedback:`, `title:`, `image:`, `position:`, `shuffle:`) and the objective key (`objective:`) are the ones of the content language shown here; a Spanish course writes `pregunta:`, `respuesta:`, `objetivo:`… (see [Resource types and directive keys by language](#resource-types-and-directive-keys-by-language)). Mixing languages is an error.
+
+The options of a `single-choice`, a `multi-select` or a `sorting-groups` are shown in a different order to each learner, in the practice and in the tests (`delivery › shuffle_options`, see [Configuration](04-configuration.md)). A question that must keep its order (a scale from less to more, options that only read well in sequence) says so with `shuffle: no`; one that must be shuffled when the course does not, with `shuffle: yes`. The key goes only in those three directives (in another one it is an error) and takes the words of the course language.
 
 `question:` is required, but `verify` only warns when `objective:` is missing. A question without `question:`, a `multi-select` with no `- [x]`, a `match` with no `::` pair or a `short-answer` without `answers:` passes `verify` and is published empty or broken, so check them by hand. `objective:` takes a unit objective id (`U1.1`); its value is not validated. Every question should also carry feedback (`feedback-correct:`, `feedback-incorrect:` or `feedback:`); that is an editorial rule that `verify` does not check.
+
+The text the learner reads names the objectives by what they say, never by their id: the introduction lists "Break a project down into small tasks", not "U6.1 — Break a project down…". The ids go only in the objective tags, the `objective:` key of the questions, the simulations and the comments; `verify` gives an error for an id anywhere else in `content.md`.
 
 What `verify` cannot check, the writer follows and the review checks (skills `content-writing` and `content-review`):
 
 - Only the interface, the rule or the product as it is in the version the course teaches: never what it used to be ("it has been removed", "it used to be called"), unless the change is what the objective teaches.
+- A glossary goes as `:::flashcard-gallery` (cards in a grid), never as the carousel `:::flashcards`; when its definitions do not fit in a card (over `content.card_max_words`), the whole glossary goes as `:::accordion` (`verify` warns of a card too long).
+- A list whose items each have a title and a description is never a list: two items go as `:::tabs`, more as `:::accordion`, one `#### Title` per item. A process (steps in order) always goes as `:::carousel`, one slide per step, never as a numbered list; a job aid keeps its numbered steps (`verify` warns when it finds one of these lists).
 - A `sorting` or `order-words` question has only one defensible order, and its correct feedback says why.
 - The test bank puts the learner in new situations, not those of the practice (`verify` warns when a bank question shares too many words with a practice question, `rules › content.bank_practice_overlap`).
-- The incorrect feedback also explains the right answer (the calculation, the reason), because whoever fails reads it too; the text before an activity does not give the answer; a `fill-in-the-blank` accepts the synonyms a learner would write and never asks for a name the content made up.
+- Every feedback is pedagogical: the correct one says why the answer is right, the incorrect one why the choice is wrong and why the right answer is right (the calculation, the reason), because whoever fails reads it too; "Correct" or "Review section 2" alone is not feedback. It names the options by their content ("the right answer is the one that says…"), never by their position or letter, nor with "both", "all of the above" or "none of the above" (`verify` gives an error for the positional ones); the text before an activity does not give the answer; a `fill-in-the-blank` accepts the synonyms a learner would write and never asks for a name the content made up.
 - Each learning activity keeps the type the design gives it (`verify` warns when its section has none of the directives of `directives › activity_types`; a `hotspot_analysis` is a scenario with `hotspots`, not a multi-select).
 - When the design is out of date (it contradicts the brief, the notes, `decisions.md` or the real interface), the writer follows it, marks the spot with `<!-- VERIFICAR -->` and lists it in its summary under "Design out of date" for a person to decide; it never writes around it.
 - The specifications of a media placeholder respect the style guide of the media (`theme/branding/media-style.md`), which the writer reads before describing a resource.
@@ -435,7 +442,7 @@ of its own, so that every section does not end with the same line.
 The writing also follows rules of **cognitive load**: runs of prose of at most `content.chunk_max_words` words, split by ideas
 (a heading that names the idea, a directive that orders the content; never a list put there only to break the text), one
 idea per paragraph, headings that say the idea, the key term in bold when it is defined, the same term for the same thing,
-the terms before the procedure that uses them, procedures as numbered steps, nothing decorative, the text that explains a
+the terms before the procedure that uses them, processes as a `:::carousel`, a slide per step, nothing decorative, the text that explains a
 medium next to it, and in a video the voice does not read what is on screen. Some learning activities bring back an
 objective of an earlier unit (spaced practice). `coursekit verify` checks only the runs of prose; the review checks the
 rest with its criterion of pedagogy. In an imported course the cycle and the runs are not applied to the client's text: the
@@ -751,10 +758,13 @@ The numbers are the package defaults (`src/coursekit/defaults/rules.yaml`). A pr
 | New situations in the test | No question of the bank shares `bank_practice_overlap` or more of its words with a practice question of `content.md` | 0.5 | warning |
 | Consequence of an error | In a simulation, a decision with `error` does not lead straight to a `good` ending, nor go where a right decision of its scene goes with no points, changes of state or feedback | — | warning |
 | Reflection | The summary section (the last one without it) has at least `reflections_per_unit` `:::reflection` | 1 | warning |
+| Long cards | A card of `:::flashcard-gallery` or `:::flashcards` whose back goes over `content.card_max_words`: it does not fit, and a glossary with long definitions goes as `:::accordion` | 35 words | warning |
+| Lists | In `content.md`, outside directives, a numbered list of two or more items: it is a process, laid out as `:::carousel` (a slide per step). And a bulleted list of two or more items where every item has a title and a description (`**Title.** text`, or a short title ended by a full stop or a colon and a longer description): it is laid out as `:::tabs` with two items and as `:::accordion` with more | — | warning |
 | Runs of prose | Per section, each run of prose longer than `content.chunk_max_words` without a heading, a directive, a medium, a highlight, a list or a table; not in an imported course | 250 words | warning |
 | Readability | Per section, the share of sentences longer than `readability.long_sentence_words` and the readability index of the language (Szigriszt-Pazos in Spanish, Flesch in English), by the audience `readability.audience`; a section with fewer than `readability.min_sentences` sentences of prose is not measured | general audience: 30 words, at most 20 % long, index 55 | warning |
 | Inclusive language | `rules › inclusive_language`: with `neutral`, the words of `lang/<code>.yaml › inclusive` that name people in the generic masculine (one warning per word, with its lines and the neutral alternative) and the forms with a slash or an @; with `split`, the slashes. Code, comments and addresses are left out | `neutral` | warning |
 | Questions of a bank | With `delivery › assessment › format` `aiken`, `gift`, `moodle-xml` or `qti`, every question directive of `assessment.md` is a type the format takes (aiken: `single-choice`; gift and moodle-xml: also `multi-select`, `true-false`, `match`, `sorting-groups`, `short-answer`, `fill-in-the-blank`; moodle-xml and qti: also `sorting`), and in gift a `fill-in-the-blank` has a single blank. See [Where the tests go](08-assembly-and-delivery.md#where-the-tests-go) | `platform`: not checked | error |
+| Positional feedback | In the directives of `directives › shuffled_options`, a line of feedback that names an option by its position or letter ("the correct answer is the third one", "the first two", "option b", "all of the above"): the platform may shuffle the options and it would point at another one. An ordinal counts only next to a word such as answer, correct or option, so "the first time" passes | `single-choice`, `multi-select`, `true-false`, `match`, `sorting`, `sorting-groups`, `order-words` | error |
 | Crosshairs | Each point of a `labelled-graphic` has a `position` (warning), its placeholder is in the same section (warning), and the crosshairs drawn on a produced image are the ones the content says (`coursekit media anchors`) | — | error (a point without a position: warning) |
 | Symbols | No emoji or pictograph outside `allowed_symbols` | `★ ✔ ✘ · — ‹ ›` | error |
 | Assembly | The Markdown converts to bricks (same parse as `assemble plan`). With the html backend it also reports a directive it cannot render | — | error |

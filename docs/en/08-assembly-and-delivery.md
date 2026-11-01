@@ -157,7 +157,7 @@ Each bank format takes some question types: `verify` refuses the others in `asse
 | `fill-in-the-blank` | ✘ | ✔ (one blank per question) | ✔ (`cloze`, several blanks) | ✔ |
 | `sorting`, `order-words` | ✘ | ✘ | `sorting` ✔ (core `ordering` type, Moodle 4.4 or later), `order-words` ✘ | `sorting` ✔, `order-words` ✘ |
 
-The table is what coursekit asks for; creator's export may leave out more (images in GIFT, a type a format cannot carry) and lists it in the `warnings` of `get_export_status`, which the delivery agent shows. What each file coursekit writes keeps: the text of the question, its options, the right answers and the feedback (right, wrong and general; Aiken has no feedback), with the HTML of the texts (plain text in Aiken). Each question is named after its activity and position, with its objective (`U1-E1.1-q3 · U1.2`). The id of the common error a distractor represents is never written. GIFT and Moodle XML put each activity in its own category (`<CODE>/U1 E1.1 <title>`); Aiken has none, so it is one file per activity. Pass marks, attempts and weights are not part of these formats: they are set on the quiz of the LMS.
+The table is what coursekit asks for; creator's export may leave out more (images in GIFT, a type a format cannot carry) and lists it in the `warnings` of `get_export_status`, which the delivery agent shows. What each file coursekit writes keeps: the text of the question, its options, the right answers and the feedback (right, wrong and general; Aiken has no feedback), with the HTML of the texts (plain text in Aiken). Each question is named after its activity and position, with its objective (`U1-E1.1-q3 · U1.2`). The id of the common error a distractor represents is never written. Moodle XML says whether the options of each question are shuffled (`shuffleanswers`, from `delivery › shuffle_options › assessment` or the `shuffle:` of the question; a matching always); GIFT and Aiken cannot, and the quiz of Moodle decides. Moodle XML says whether the options of each question are shuffled (`shuffleanswers`, from `delivery › shuffle_options › assessment` or the `shuffle:` of the question; a matching always); GIFT and Aiken cannot, and the quiz of Moodle decides. GIFT and Moodle XML put each activity in its own category (`<CODE>/U1 E1.1 <title>`); Aiken has none, so it is one file per activity. Pass marks, attempts and weights are not part of these formats: they are set on the quiz of the LMS.
 
 ### Simulations in creator
 
@@ -270,7 +270,7 @@ The page is built with progressive enhancement. The lessons (one per section of 
 
 | Directive or Markdown | Brick | In the package |
 |---|---|---|
-| Paragraphs, `###`–`######`, lists, tables, code fences | `TEXT`, `HEADING`, `LIST`, `TABLE`, `CODE` | Text, headings (level 3 to 6; the lesson title is the level 2), lists, tables in a scrollable box, code blocks. The language of the fence is used if creator knows it (`bash`, `python`, `yaml`…; `powershell`, `pwsh`, `cmd` and `terminal` become `bash`); a `text` or unlabelled block made only of commands becomes `bash`, and any other uses creator's automatic detection, because creator has no plain-text language (when it adds `plaintext`, `shell`, `powershell`, `diff`, `dockerfile` and `http`, list them in `rules › assembly › code_languages`: [Configuration](04-configuration.md)) |
+| Paragraphs, `###`–`######`, lists, tables, code fences | `TEXT`, `HEADING`, `LIST`, `TABLE`, `CODE` | Text, headings (level 3 to 6; the lesson title is the level 2), lists, tables in a scrollable box, code blocks. Every block says its language, never creator's automatic detection: the language of the fence or its alias if creator has it (`bash`, `python`, `yaml`, `powershell`, `diff`…); `shell` ("Terminal") for a `text` or unlabelled block that is a terminal session or only commands, and for `console`, `terminal` and `cmd`; `plaintext` for any other text and for a language creator lacks (see `rules › assembly › code_languages` in [Configuration](04-configuration.md)) |
 | `note`, `highlight`, plain blockquote, `quote` | `NOTE`, `HIGHLIGHT`, `QUOTE` | A note with a title, a highlighted block, a quote with its attribution |
 | `accordion` | `ACCORDION` | Native `details` elements (they work without JavaScript) |
 | `tabs` | `TABS` | Tab list with arrow, Home and End keys; every panel is in the markup |
@@ -286,10 +286,10 @@ The page is built with progressive enhancement. The lessons (one per section of 
 | Audio placeholder (produced) | `AUDIO` | Audio with controls and the transcript |
 | Simulation and terminal demo placeholder (produced) | `EMBED` | An `iframe` of the package folder (`media/<id>/index.html`) |
 | Download of an asset, job aid | `ATTACHMENT` | A download link |
-| `single-choice`, `multi-select`, `true-false` | `SINGLE_CHOICE`, `MULTI_SELECT`, `TRUE_FALSE` | Radio buttons or checkboxes; true-false offers True and False |
+| `single-choice`, `multi-select`, `true-false` | `SINGLE_CHOICE`, `MULTI_SELECT`, `TRUE_FALSE` | Radio buttons or checkboxes, in a new order on every try when the plan shuffles them (`delivery › shuffle_options`); true-false offers True and False |
 | `sorting` | `SORTING` | The items shuffled, with move up and move down buttons |
 | `match` | `MATCH` | One drop-down per term on the left, with the terms on the right shuffled |
-| `sorting-groups` | `SORTING_GROUPS` | One drop-down per item with the categories |
+| `sorting-groups` | `SORTING_GROUPS` | One drop-down per item with the categories; the items shuffled when the plan says so |
 | `fill-in-the-blank` | `FILL_IN_THE_BLANK` | A text box in each blank of the sentence (`{a/b}` accepts several answers) |
 | `order-words` | `ORDER_WORDS` | Word buttons that are clicked into the sentence in order, one line per sentence |
 | `short-answer` | `SHORT_ANSWER` | A text box compared with the accepted answers |
@@ -431,7 +431,8 @@ These are gaps of the authoring platform, not of coursekit. The pipeline works a
 
 - **Theme.** Creator does not publish through MCP which fields of the theme each block accepts, their type, their default or what they paint, and `update_theme` does not say which fields it discarded or why. After importing a theme, look at the result in creator.
 - **Embeds in the shared view.** An EMBED (a simulation, a terminal demo) can show blank in the shared view of a content, because the platform refuses to frame it (`X-Frame-Options: DENY`). In the learner's view and in the exported package it works.
-- **Code block.** It has no plain-text option (its automatic detection can label output wrongly) and long lines are cut. Inline code, code blocks inside tabs or accordions, and long alternative texts are not handled well either.
+- **Fields of one line.** The options of a question (`single-choice`, `multi-select`, `sorting`, `order-words`, the two sides of a `match`, the items and groups of a `sorting-groups`), the lines of a `dialog` and the titles of panels, slides, hotspots and timeline events take one paragraph with bold, italic, subscript and superscript only. The plan sends them without inline code, links or line breaks (their text stays) and the question without links, so creator accepts them; `assemble plan` and `verify` warn of each field changed.
+- **Code block.** Long lines are cut (coursekit never leaves a block to its automatic detection: it always sends a language of its list, see `assembly.code_languages` in [Configuration](04-configuration.md)). Inline code, code blocks inside tabs or accordions, and long alternative texts are not handled well either.
 - **Flashcards.** Some theme fields leave the front face blank, and the "Flip" label shows under the card.
 - **Theme fonts.** A font of the theme may not load in the player (CORS).
 - **Adaptive blocks (`:::if`).** Creator has the `CONDITIONAL` brick, but coursekit still assembles the neutral branch (`:::else`) and `plan` warns, until the learner's player shows the branches. Simulations do report their state, score and every decision to the SCORM of the content (the `slxd-embed` protocol, see [Simulations in creator](#simulations-in-creator)).

@@ -80,22 +80,27 @@ final summary under "Design out of date" so that a person decides.
     same closing line in every section.
 - By section `kind`:
   - `intro`: present the unit from the problem of the work it solves (in an expository course with *problem* in the cycle;
-    else its professional use), the objectives and how to study it. With *activation* in the cycle, two or three sentences that connect with what
+    else its professional use), the objectives and how to study it. The objectives are written as the learner reads them,
+    without their ids ("Break a project down into small tasks", never "U6.1 — Break a project down…"): the ids go only in
+    the objective tags and the objective key of the questions (`coursekit verify` fails otherwise). With *activation* in the cycle, two or three sentences that connect with what
     the learner already does or with the previous unit. It does not grow for that: the activation takes the place of the
     general presentation, within the hours of the section.
   - `content`: develop **its** objectives (`sections[].objectives`) and close with one
     `*[{{t_objective}} UN.M — Verb]*` tag per objective covered, one per line. Include distinct
     interactive directives in proportion to its hours (verify tells you how many). **Only the
     directives of the registry** (`coursekit config directives`) are valid; choose each by its
-    `use` for the kind of content (equivalent alternatives → tabs; sequence → timeline;
+    `use` for the kind of content (equivalent alternatives → tabs; a process or procedure → carousel; chronology → timeline;
     equivalent items one by one → carousel; secondary detail → accordion; parts of a diagram →
-    labelled-graphic…). Integrate the learning activities of its objectives with question
+    labelled-graphic…). A list whose items each have a title and a description ("**Menu planner.** Add a page where…")
+    is never a list: two items go as `:::tabs`, more as `:::accordion`, one `#### Title` per item; a process, as
+    `:::carousel` (`coursekit verify` warns). Integrate the learning activities of its objectives with question
     directives (a learning activity with `section` in `activities.learning` goes in that section). **Each activity
     keeps its type**: write it with a directive of its type (`coursekit config directives` › `activity_types`; a
     `hotspot_analysis` is a scenario with `hotspots`, not a multi-select). `coursekit verify` warns when it is not.
   - `activities`: the unit's learning activities (`activities.learning`) with question
     directives, each with `{{t_question_key}}` and feedback that points back to the section.
-  - `summary`: key ideas, glossary (`:::accordion` or `:::flashcards`), a closing `:::reflection` (at least
+  - `summary`: key ideas, glossary (`:::flashcard-gallery`, cards in a grid, never the carousel `:::flashcards`; when
+    a definition does not fit in a card, over {{card_max_words}} words, the whole glossary as `:::accordion`), a closing `:::reflection` (at least
     {{reflections_per_unit}}: two or three open questions for the learner to look back on what they did or decided in the
     unit, what they would do differently and how they will apply it in their own work; never a quiz in disguise) and the
     link with the next unit. In an expository course with *integration* in the cycle, the reflection is the integration
@@ -157,6 +162,12 @@ final summary under "Design out of date" so that a person decides.
     of a practice activity of the content (`coursekit verify` warns when they share too many words).
   - The **explanation of the right answer is also seen by whoever fails**: the incorrect feedback explains why the right
     answer is right (the calculation, the reason), not only which section to review.
+  - **Every feedback teaches**: the correct feedback says why the answer is right, the incorrect one why that choice is
+    wrong and why the right one is right. "Correct", "Not quite" or "Review section 2" alone is not feedback.
+  - **The feedback names the options by their content, never by their position or letter**: the platform (Moodle,
+    creator) may shuffle them, and "the right answer is the third one" would point at another. Write "the right answer is
+    the one that says…", never "the first", "the last two", "option b", and never "both", "all of the above" or "none of
+    the above". `coursekit verify` fails on a positional feedback.
   - The **text before an activity does not give the answer** (no example, hint or highlight that solves it).
   - A `fill-in-the-blank` accepts the **synonyms** the learner may write (`{a/b}`) and never asks for a name the content
     made up (a character, a file, a company of the example): only for what the learner has learnt.
@@ -181,7 +192,7 @@ The learner's working memory is small: the text spends it on understanding, not 
 
 - **Segments:** at most {{chunk_max_words}} words of prose in a row without a heading, a directive, a medium, a highlight,
   a list or a table (a blank line does not break it; `coursekit verify` warns). Split by ideas: a `###` heading that names
-  the next idea, a directive that orders the content (steps → timeline, alternatives → tabs). Never a list or a highlight
+  the next idea, a directive that orders the content (a process → carousel, alternatives → tabs). Never a list or a highlight
   put there only to break the text.
 - **One idea per paragraph**, and the paragraph starts with it.
 - **Signals:** headings say the idea, not the topic ("A long password resists more than a complex one", not "Length").
@@ -190,7 +201,9 @@ The learner's working memory is small: the text spends it on understanding, not 
 - **The concrete first:** the case or the example, then the principle that explains it.
 - **One term for each thing:** the same name in the whole unit (no synonyms for style), the one of the glossary and of the
   interface.
-- **Steps:** a procedure is a numbered list, one action per step; a long one is grouped in phases with their title.
+- **Steps:** a process or procedure always goes as `:::carousel`, one slide per step (`#### <step>`), one action per step;
+  a long one is grouped in phases, a slide each. Never a numbered list in the text (`coursekit verify` warns); a job aid
+  keeps its numbered steps.
 - **Terms before the procedure:** the terms a procedure uses are defined before it, not halfway through.
 - **Nothing decorative:** no anecdote or medium that does not explain; the text that explains a medium goes next to it.
 - **Video and audio:** the voice does not read the text that is on screen; the screen shows what the voice explains.

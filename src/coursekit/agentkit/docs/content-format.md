@@ -56,9 +56,9 @@ Internal structure (anything else fails at assembly):
 
 | Directive | Internal structure |
 |---|---|
-| `accordion`, `tabs`, `carousel` | one `#### Title` per panel, tab or slide + Markdown text |
+| `accordion`, `tabs`, `carousel` | one `#### Title` per panel, tab or slide + Markdown text. A list whose items each have a title and a description is written as `tabs` (two items) or `accordion` (more), and a process (steps in order) as `carousel`, one slide per step: never as a list |
 | `timeline` | `#### <date> — <title>` per milestone (without " — ", all of it is the title) + text |
-| `flashcards`, `flashcard-gallery` | `#### Front` + text of the back |
+| `flashcards`, `flashcard-gallery` | `#### Front` + text of the back (at most {{card_max_words}} words). A glossary is a `flashcard-gallery`, never `flashcards`; with longer definitions, an `accordion` |
 | `labelled-graphic` | `{{k_image}}: <exact title of the placeholder, as in `media/manifest.yaml`>` + `#### Point` + text; optional `{{k_position}}: x,y` (0–100) under each point. The placeholder goes in the same section, right before: the graphic shows the image (it does not also go alone) |
 | `dialog` | `**Character:** line`, one per line |
 | `carousel-quotes` | one quote per paragraph, with `— author` on its last line |
@@ -212,19 +212,30 @@ The directives with `role: question`: `single-choice`, `multi-select`, `true-fal
 - [ ] <distractor> ‹<error id>›
 - [x] <correct answer>
 - [ ] <distractor> ‹<error id>›
-{{k_feedback_correct}}: <why it is right>
-{{k_feedback_incorrect}}: <which section to review>
+{{k_feedback_correct}}: <why it is right, naming the answer by its content>
+{{k_feedback_incorrect}}: <why the choice is wrong and the right one is right; which section to review>
 :::
 ```
 
+- The options and items of a question are one line of plain text with bold or italic at most: inline code, links and line
+  breaks do not reach the learner in creator (they go as plain text). When the option is a command, write it in the
+  question or the feedback, or name it in words.
 - `single-choice` (exactly one `- [x]`) and `multi-select`: options `- [x]` / `- [ ]`. Each distractor ends with the id
   of the common error it represents, between `‹ ›` (`design/misconceptions.yaml`); the learner does not see it.
 - `match`: lines `- term :: definition`. `sorting`: list in the right order. `order-words`:
   `- full sentence` per sentence. `sorting-groups`: `#### Category` + list of items.
   `true-false`: `{{k_answer}}: {{w_true}}|{{w_false}}`. `fill-in-the-blank`: blanks in `{{k_question}}:` as
   `{{{k_answer}}}` (several accepted: `{a/b}`). `short-answer`: `{{k_answers}}: a | b | c`.
+- The options of `single-choice`, `multi-select` and `sorting-groups` are shown in a different order to each learner
+  (`delivery › shuffle_options`). A question that must keep its order (a scale, a sequence) carries
+  `{{k_shuffle}}: {{w_no}}`; never write the options counting on their order.
 - Common keys: `{{t_question_key}}`, `{{k_question}}:`, `{{k_feedback_correct}}:`, `{{k_feedback_incorrect}}:`,
   `{{k_feedback}}:`. Each key on one line. Every question carries `{{t_question_key}}` and feedback.
+- The feedback explains: the correct one why the answer is right, the incorrect one why the choice is wrong and why the
+  right answer is right (then, which section to review). A bare "Correct" or "Review section 2" is not feedback.
+- The feedback names an option by its content ("the right answer is the one that says…"), never by its position or letter
+  ("the third one", "the first two", "option b") nor with "both", "all of the above" or "none of the above": the platform
+  may shuffle the options. `coursekit verify` fails on it.
 
 ## 4. Media placeholders
 

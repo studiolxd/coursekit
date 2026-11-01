@@ -203,4 +203,7 @@ def add_questions(course: dict, version: str, url: str | None = None) -> str:
         "files": [{"file": p.name, "sha256": sha256_file(p)} for p in files],
     })
     names = ", ".join(p.name for p in files)
-    return t("questionbank", "written", format=fmt, files=names) + "\n" + _close(course, ry, data, version, names, warning)
+    written = t("questionbank", "written", format=fmt, files=names)
+    if coursemod.shuffle_questions(course):  # the order of the questions is a setting of the quiz of the LMS, not of the bank
+        written += "\n" + t("questionbank", "shuffle_in_lms")
+    return written + "\n" + _close(course, ry, data, version, names, warning)

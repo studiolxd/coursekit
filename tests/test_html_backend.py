@@ -470,3 +470,31 @@ def test_the_tests_apart_are_one_more_package(html_course, capsys):
     assert main(["delivery", "add", "PWD", "--unit", "2", "--version", "1.0", "--file",
                  str(html_course / "delivery" / "PWD-U02-v1.0-scorm12.zip")]) == 0
     assert "pending for v1.0: 1" in capsys.readouterr().out
+
+
+def test_the_player_shuffles_the_options_the_plan_says():
+    options = [{"content": "<p>Larga</p>", "isCorrect": True}, {"content": "<p>Corta</p>", "isCorrect": False}]
+    shuffled = lesson_html([brick("SINGLE_CHOICE", {"content": {"question": "<p>¿Cuál?</p>"}, "items": options,
+                                                    "properties": {"shuffleOptions": True}})])
+    kept = lesson_html([brick("MULTI_SELECT", {"content": {"question": "<p>¿Cuáles?</p>"}, "items": options,
+                                               "properties": {"shuffleOptions": False}})])
+    assert '<div class="ck-opts" data-shuffle="1">' in shuffled and "data-shuffle" not in kept
+
+
+def test_a_test_that_shuffles_its_questions_tells_the_player():
+    entry = {"key": "U1-E1.1", "type": "evaluation", "title": "T", "bricks": [],
+             "quiz": {"passingGrade": 50, "maxAttempts": 2, "courseWeight": 1, "shuffleQuestions": True}}
+    assert "&quot;shuffleQuestions&quot;: true" in render.lesson(entry, UI)
+
+
+def test_a_decorative_image_has_an_empty_alt_and_no_caption():
+    from coursekit import assemble
+
+    asset = {"id": "U1-IMG-01", "asset_path": "media/u1-img-01.png", "status": "uploaded", "alt": "A desk", "decorative": True}
+    image = assemble.placeholder_brick("illustration", {"title": "A desk"}, asset, "Media")
+    assert image["data"] == {"properties": {"imagePath": "media/u1-img-01.png", "imageAlt": ""}}
+    html = lesson_html([image])
+    assert 'alt=""' in html and "<figcaption>" not in html
+    asset["decorative"] = False
+    image = assemble.placeholder_brick("image", {"title": "A desk"}, asset, "Media")
+    assert image["data"]["properties"]["imageAlt"] == "A desk" and "<figcaption>" in lesson_html([image])

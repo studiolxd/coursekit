@@ -208,6 +208,12 @@ def html_text(tag: str, value: str, extra: str = "") -> str:
     return f'<{tag} format="html"{extra}><text>{cdata(value)}</text></{tag}>'
 
 
+def shuffle_answers(data: dict) -> str:
+    """The shuffling of the plan (`delivery › shuffle_options` or the key of the question); a matching is always shuffled."""
+    shuffle = (data.get("properties") or {}).get("shuffleOptions", True)
+    return f"<shuffleanswers>{'true' if shuffle else 'false'}</shuffleanswers>"
+
+
 def moodle_question(q: Question) -> str:
     content, data = q.data["content"], q.data
     kinds = {"SINGLE_CHOICE": "multichoice", "MULTI_SELECT": "multichoice", "TRUE_FALSE": "truefalse", "MATCH": "matching",
@@ -227,7 +233,7 @@ def moodle_question(q: Question) -> str:
         single = q.kind == "SINGLE_CHOICE"
         good = sum(1 for i in data["items"] if i["isCorrect"])
         bad = len(data["items"]) - good
-        parts += [f"<single>{'true' if single else 'false'}</single>", "<shuffleanswers>true</shuffleanswers>",
+        parts += [f"<single>{'true' if single else 'false'}</single>", shuffle_answers(data),
                   "<answernumbering>abc</answernumbering>", html_text("correctfeedback", right),
                   html_text("partiallycorrectfeedback", wrong), html_text("incorrectfeedback", wrong)]
         for item in data["items"]:
@@ -242,7 +248,8 @@ def moodle_question(q: Question) -> str:
     elif q.kind in ("MATCH", "SORTING_GROUPS"):
         pairs = [(i["left"], i["right"]) for i in data["items"]] if q.kind == "MATCH" else \
             [(i["content"], next(g["label"] for g in data["groups"] if g["id"] == i["groupId"])) for i in data["items"]]
-        parts += ["<shuffleanswers>true</shuffleanswers>", html_text("correctfeedback", right),
+        parts += [shuffle_answers(data) if q.kind == "SORTING_GROUPS" else "<shuffleanswers>true</shuffleanswers>",
+                  html_text("correctfeedback", right),
                   html_text("partiallycorrectfeedback", wrong), html_text("incorrectfeedback", wrong)]
         parts += [f'<subquestion format="html"><text>{cdata(a)}</text><answer><text>{xml_escape(plain(b))}</text></answer></subquestion>'
                   for a, b in pairs]

@@ -83,6 +83,11 @@ activity_types:
   hotspot_analysis: [scenario]          # the learner finds what is wrong in the scene: `hotspots`
   guided_simulation: [scenario, conversation]
 
+# The question directives whose options or items a platform may shuffle (Moodle, creator): their feedback never names an
+# option by its position or a letter ("the third one", "option b", "all of the above"), since after shuffling it would point
+# at another one. `coursekit verify` reports it as an error (the words it looks for: `lang/<code>.yaml › positional_feedback`).
+shuffled_options: [single-choice, multi-select, true-false, match, sorting, sorting-groups, order-words]
+
 # Common e-learning components that are NOT creator bricks, and what to use instead.
 component_equivalents:
   stepper: carousel (or timeline for a temporal sequence)

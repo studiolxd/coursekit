@@ -138,3 +138,19 @@ activity_type_not_written:
 visual_required: {es: "{label}: una introducción o un resumen lleva siempre un recurso visual (una imagen que transmita la idea, una ilustración, un icono, una infografía…)", en: "{label}: an introduction or a summary always carries a visual resource (an image that conveys the idea, an illustration, an icon, an infographic…)"}
 visual_undecided: {es: "{label}: no tiene ningún recurso visual ni dice por qué: añade el que lo apoye (una imagen que transmita el concepto, una captura de la aplicación, una ilustración, un icono grande) o explica por qué no con <!-- {marker}: motivo -->", en: "{label}: it has no visual resource and does not say why: add the one that supports it (an image that conveys the concept, a capture of the application, an illustration, a large icon) or say why not with <!-- {marker}: reason -->"}
 visual_no_reason: {es: "{label}: <!-- {marker} --> sin motivo: di por qué el apartado no se apoya en ningún recurso visual", en: "{label}: <!-- {marker} --> with no reason: say why the section is not supported by any visual resource"}
+positional_feedback:
+  es: "{file}:{line}: el feedback de :::{name} nombra una opción por su posición o su letra («{words}»): la plataforma puede barajar las opciones y señalaría otra; nombra su contenido («la respuesta correcta es la que dice que…») y explica por qué es correcta o no"
+  en: "{file}:{line}: the feedback of :::{name} names an option by its position or letter (\"{words}\"): the platform may shuffle the options and it would point at another one; name its content (\"the right answer is the one that says…\") and explain why it is right or wrong"
+assembly_warning: {es: "ensamblado: {warning}", en: "assembly: {warning}"}
+objective_id_in_text:
+  es: "{file}:{line}: el texto que lee el alumno nombra un objetivo por su identificador ({id}): escribe el objetivo sin él («Descomponer un proyecto…», no «U6.1 — Descomponer un proyecto…»); los identificadores van solo en las etiquetas de objetivo y en la clave de las preguntas"
+  en: "{file}:{line}: the text the learner reads names an objective by its id ({id}): write the objective without it (\"Break a project down…\", not \"U6.1 — Break a project down…\"); the ids go only in the objective tags and the key of the questions"
+titled_list:
+  es: "{file}:{line}: una lista de {count} elementos con título y descripción va maquetada como :::{directive} (pestañas con dos elementos, acordeón con más): un panel por elemento, con su título en «#### Título»"
+  en: "{file}:{line}: a list of {count} items with a title and a description is laid out as :::{directive} (tabs with two items, an accordion with more): one panel per item, its title in \"#### Title\""
+process_list:
+  es: "{file}:{line}: una lista numerada de {count} pasos es un proceso: va como :::carousel, una diapositiva por paso (#### Paso), no como lista"
+  en: "{file}:{line}: a numbered list of {count} steps is a process: it goes as :::carousel, one slide per step (#### Step), not as a list"
+card_too_long:
+  es: "{file}:{line}: en :::{name}, el reverso de {cards} pasa de {limit} palabras y no cabe en una tarjeta: un glosario con definiciones largas va como :::accordion"
+  en: "{file}:{line}: in :::{name}, the back of {cards} goes over {limit} words and does not fit in a card: a glossary with long definitions goes as :::accordion"

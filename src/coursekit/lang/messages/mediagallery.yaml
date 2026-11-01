@@ -20,6 +20,7 @@ description: {es: "Descripción", en: "Description"}
 how: {es: "Cómo se elabora", en: "How it is made"}
 specs: {es: "Especificaciones", en: "Specifications"}
 alt: {es: "Texto alternativo", en: "Alternative text"}
+decorative: {es: "Ninguno: es decorativa (sin pie; los lectores de pantalla la saltan)", en: "None: it is decorative (no caption; screen readers skip it)"}
 script: {es: "Guion", en: "Script"}
 video_script: {es: "Guion del vídeo (escenas y locución)", en: "Video script (scenes and narration)"}
 scenes: {es: "Escenas del vídeo", en: "Video scenes"}

@@ -45,7 +45,8 @@ def test_plan_bricks(course, capsys):
     assert "Recurso multimedia — Infografía: Anatomía de una contraseña" in note["data"]["content"]["title"]
     assert "<strong>Descripción:</strong>" in note["data"]["content"]["content"]
     evaluation = plan["lessons"][3]
-    assert evaluation["type"] == "evaluation" and evaluation["quiz"] == {"passingGrade": 50, "maxAttempts": 2, "courseWeight": 1}
+    assert evaluation["type"] == "evaluation"
+    assert evaluation["quiz"] == {"passingGrade": 50, "maxAttempts": 2, "courseWeight": 1, "shuffleQuestions": True}
 
 
 def test_apply_cycle(course, capsys):
@@ -163,42 +164,108 @@ def test_panel_directive_without_panels_is_an_error(course, capsys):
     assert ":::accordion has no panels" in capsys.readouterr().out
 
 
-def test_the_language_of_a_code_block_for_creator():
+def test_the_language_of_a_code_block_for_creator_is_never_auto():
     from coursekit.assemble import code_language
 
     assert code_language("bash", ["ls"]) == "bash" and code_language("yaml", ["a: 1"]) == "yaml"
-    assert code_language("powershell", ["Get-Date"]) == "bash" and code_language("pwsh", ["x"]) == "bash"
-    assert code_language("text", ["/assemble PWD"]) == "bash"
-    assert code_language("text", ["coursekit status PWD", "", "git status"]) == "bash"
-    assert code_language("", ["$ pwd"]) == "bash"
-    assert code_language("text", ["ok      .env", "coursekit 0.1.0"]) == "auto"  # an output, not only commands
-    assert code_language("text", ["Estado: delivered"]) == "auto"
-    assert code_language("text", []) == "auto"
-
-
-def test_the_languages_creator_adds_are_used_once_they_are_listed():
-    from coursekit.assemble import code_language
-
-    new = ["plaintext", "shell", "powershell", "diff", "dockerfile", "http"]
-    assert code_language("text", ["Estado: delivered"], new) == "plaintext" and code_language("", ["ok  .env"], new) == "plaintext"
-    assert code_language("text", ["/assemble PWD"], new) == "shell" and code_language("console", ["x"], new) == "shell"
-    assert code_language("terminal", ["x"], new) == "shell" and code_language("shell", ["x"], new) == "shell"
-    assert code_language("powershell", ["x"], new) == "powershell" and code_language("pwsh", ["x"], new) == "powershell"
-    assert code_language("diff", ["+a"], new) == "diff" and code_language("patch", ["+a"], new) == "diff"
-    assert code_language("dockerfile", ["FROM x"], new) == "dockerfile" and code_language("http", ["GET /"], new) == "http"
-    assert code_language("bash", ["ls"], new) == "bash"
-    # not listed yet: creator would reject them
-    assert code_language("diff", ["+a"]) == "auto" and code_language("http", ["GET /"]) == "auto"
-    assert code_language("console", ["x"]) == "bash" and code_language("text", ["Estado: x"]) == "auto"
+    assert code_language("powershell", ["Get-Date"]) == "powershell" and code_language("pwsh", ["x"]) == "powershell"
+    assert code_language("text", ["/assemble PWD"]) == "shell" and code_language("console", ["x"]) == "shell"
+    assert code_language("text", ["coursekit status PWD", "", "git status"]) == "shell"
+    assert code_language("", ["$ pwd"]) == "shell" and code_language("terminal", ["x"]) == "shell"
+    assert code_language("text", ["ok      .env", "coursekit 0.1.0"]) == "plaintext"  # an output, not only commands
+    assert code_language("text", ["Estado: delivered"]) == "plaintext" and code_language("text", []) == "plaintext"
+    assert code_language("diff", ["+a"]) == "diff" and code_language("patch", ["+a"]) == "diff"
+    assert code_language("dockerfile", ["FROM x"]) == "dockerfile" and code_language("http", ["GET /"]) == "http"
+    assert code_language("TS", ["let a = 1"]) == "typescript" and code_language("jsx", ["<A />"]) == "javascript"
+    assert code_language("toml", ["a = 1"]) == "plaintext" and code_language("mermaid", ["graph TD"]) == "plaintext"
+    assert code_language("toml", ["a = 1"], ["toml"]) == "toml"  # a language creator adds later (rules › assembly)
 
 
 def test_a_terminal_session_is_shell_and_an_output_is_plain_text():
     from coursekit.assemble import code_language
 
-    new = ["plaintext", "shell", "powershell", "diff", "dockerfile", "http"]
-    assert code_language("text", ["daniel@mac ~ % pwd", "/Users/daniel"], new) == "shell"
-    assert code_language("text", ["ana@portatil-ana ~ %"], new) == "shell"
-    assert code_language("text", [r"PS C:\Users\ana> coursekit", "coursekit : error"], new) == "shell"
-    assert code_language("text", ["$ pwd", "/home/ana"], new) == "shell"
-    assert code_language("text", ["daniel@mac ~ % pwd"]) == "bash"  # creator without `shell`
-    assert code_language("text", ["Estado: delivered", "Montaje: backend creator"], new) == "plaintext"
+    assert code_language("text", ["daniel@mac ~ % pwd", "/Users/daniel"]) == "shell"
+    assert code_language("text", ["ana@portatil-ana ~ %"]) == "shell"
+    assert code_language("text", [r"PS C:\Users\ana> coursekit", "coursekit : error"]) == "shell"
+    assert code_language("text", ["$ pwd", "/home/ana"]) == "shell"
+    assert code_language("text", ["Estado: delivered", "Montaje: backend creator"]) == "plaintext"
+
+
+def test_the_plan_fits_the_text_to_the_single_line_fields_of_creator():
+    from coursekit import assemble
+
+    question = {"type": "SINGLE_CHOICE", "data": {
+        "content": {"question": assemble.inline("Which command shows `git status`? See [docs](https://example.com)"),
+                    "feedback_correct": assemble.inline("`git status` lists the changes")},
+        "items": [{"content": assemble.inline("Run `git status` **now**"), "isCorrect": True},
+                  {"content": assemble.inline("Run *nothing*"), "isCorrect": False}]}}
+    adaptive = {"type": "CONDITIONAL", "data": {"branches": [{"condition": "x", "bricks": [
+        {"type": "MATCH", "data": {"items": [{"left": assemble.inline("`ls`"), "right": assemble.inline("lists files")}]}}]}],
+        "else": []}}
+    warnings = assemble.creator_fields([question, adaptive], "u1-s1")
+    data = question["data"]
+    assert data["items"][0]["content"] == "<p>Run git status <strong>now</strong></p>"
+    assert data["items"][1]["content"] == "<p>Run <em>nothing</em></p>"
+    assert data["content"]["question"] == "<p>Which command shows <code>git status</code>? See docs</p>"
+    assert "<code>git status</code>" in data["content"]["feedback_correct"]
+    assert adaptive["data"]["branches"][0]["bricks"][0]["data"]["items"][0]["left"] == "<p>ls</p>"
+    assert len(warnings) == 3 and all(w.startswith("u1-s1: ") for w in warnings)
+    assert any("SINGLE_CHOICE › items[].content" in w and "Run git status now" in w for w in warnings)
+    assert assemble.creator_fields([question], "u1-s1") == []
+
+
+def choice_shuffle(course_dir) -> list[bool]:
+    from coursekit import assemble
+    from coursekit import course as coursemod
+    from coursekit.project import find_project
+
+    data = coursemod.load(find_project(course_dir), "PWD")
+    plan, errors, _ = assemble.build_plan(data, data["units"][0])
+    assert not errors
+    return [b["data"]["properties"]["shuffleOptions"] for lesson in plan["lessons"] for b in lesson["bricks"]
+            if b["type"] == "SINGLE_CHOICE"]
+
+
+def test_the_options_are_shuffled_in_the_practice_and_the_tests_unless_the_course_or_the_question_says_no(course):
+    assert choice_shuffle(course) == [True, True]  # the practice of section 2, the test
+    data_path = course / "course.yaml"
+    data = yaml.safe_load(data_path.read_text(encoding="utf-8"))
+    data["delivery"] = {"shuffle_options": {"assessment": False}}
+    data_path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    assert choice_shuffle(course) == [True, False]
+    content = course / "content" / "unit-01" / "content.md"
+    content.write_text(CONTENT.replace("objetivo: U1.2\n", "objetivo: U1.2\nbarajar: no\n", 1), encoding="utf-8")
+    assert choice_shuffle(course) == [False, False]
+    assessment = course / "content" / "unit-01" / "assessment.md"
+    assessment.write_text(ASSESSMENT.replace("objetivo: U1.1\n", "objetivo: U1.1\nbarajar: sí\n", 1), encoding="utf-8")
+    assert choice_shuffle(course) == [False, True]
+
+
+def test_the_shuffle_key_takes_yes_or_no_and_only_goes_in_questions_with_options():
+    from coursekit import assemble
+    from coursekit import course as coursemod
+
+    ctx = assemble.context({"language": "es", "units": []}, assets={})
+    ctx["registry"] = {"single-choice": {"brick": "SINGLE_CHOICE", "role": "question"},
+                       "true-false": {"brick": "TRUE_FALSE", "role": "question"}}
+    options = ["pregunta: ¿Cuál?", "- [x] Larga", "- [ ] Corta"]
+    assert assemble.directive_brick("single-choice", ["barajar: Si", *options], ctx)["data"]["properties"]["shuffleOptions"]
+    with pytest.raises(assemble.PlanError, match="'barajar:' lleva 'sí' o 'no'|'barajar:' takes 'sí' or 'no'"):
+        assemble.directive_brick("single-choice", ["barajar: quizá", *options], ctx)
+    with pytest.raises(assemble.PlanError, match="single-choice"):
+        assemble.directive_brick("true-false", ["barajar: no", "pregunta: ¿Sí?", "respuesta: verdadero"], ctx)
+    assert coursemod.tokens({"language": "en"})["directive_keys"]["shuffle"] == "shuffle"
+
+
+def test_the_questions_of_a_test_are_shuffled_unless_the_course_says_no(course, capsys):
+    def quiz():
+        assert main(["assemble", "plan", "PWD", "--unit", "1"]) == 0
+        plan = json.loads((course / "assembly" / "unit-01.plan.json").read_text(encoding="utf-8"))
+        return next(lesson["quiz"] for lesson in plan["lessons"] if lesson["type"] == "evaluation")
+
+    assert quiz()["shuffleQuestions"] is True
+    data_path = course / "course.yaml"
+    data = yaml.safe_load(data_path.read_text(encoding="utf-8"))
+    data["delivery"] = {"shuffle_questions": False}
+    data_path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    assert quiz()["shuffleQuestions"] is False

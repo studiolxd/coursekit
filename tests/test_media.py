@@ -71,6 +71,14 @@ def test_bad_status_and_unknown_asset(course, capsys):  # noqa: F811
     assert main(["media", "set", "PWD", "X", "--status", "produced"]) == 1
 
 
+def test_only_an_image_or_an_illustration_can_be_decorative(course, capsys):  # noqa: F811
+    assert main(["media", "extract", "PWD"]) == 0
+    capsys.readouterr()
+    assert main(["media", "set", "PWD", "U1-S2-M1", "--decorative"]) == 1  # an infographic explains
+    assert "cannot be decorative" in capsys.readouterr().err
+    assert "decorative" not in manifest(course)[0]
+
+
 def test_voice_choice(course, monkeypatch, capsys):  # noqa: F811
     for key in ("ELEVENLABS_API_KEY", "AZURE_SPEECH_KEY", "AZURE_SPEECH_REGION", "GOOGLE_TTS_API_KEY", "GEMINI_API_KEY", "PIPER_VOICE"):
         monkeypatch.delenv(key, raising=False)

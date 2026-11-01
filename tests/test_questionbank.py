@@ -91,7 +91,7 @@ def test_separate_tests_go_in_a_package_of_their_own(course):  # noqa: F811
     tests = plan(course, 2)
     assert [lesson["key"] for lesson in tests["lessons"]] == ["U1-E1.1"]
     assert tests["content_title"] == "Contraseñas seguras. Evaluación" and tests["score_source"] == "quiz" and "reporting" not in tests
-    assert tests["lessons"][0]["quiz"] == {"passingGrade": 50, "maxAttempts": 2, "courseWeight": 1}
+    assert tests["lessons"][0]["quiz"] == {"passingGrade": 50, "maxAttempts": 2, "courseWeight": 1, "shuffleQuestions": True}
     assert main(["assemble", "link", "PWD", "--unit", "2", "--content-id", "c-tests"]) == 0
     data = yaml.safe_load((course / "course.yaml").read_text(encoding="utf-8"))
     assert data["assessment_unit"]["content_id"] == "c-tests" and len(data["units"]) == 1
@@ -172,6 +172,21 @@ def test_moodle_xml_bank(course):  # noqa: F811
     assert [a.get("fraction") for a in single.findall("answer")] == ["0", "100"]
     assert [a.get("fraction") for a in root[2].findall("answer")] == ["50", "50", "-100"]
     assert "{1:SHORTANSWER:=14~=catorce}" in root[5].find("questiontext/text").text
+    assert single.find("shuffleanswers").text == "true"  # delivery › shuffle_options › assessment
+
+
+def test_a_bank_reminds_to_shuffle_the_questions_in_the_lms(course, capsys):  # noqa: F811
+    set_assessment(course, fmt="gift", bank=BANK.split(":::sorting")[0])
+    assert main(["delivery", "questions", "PWD", "--version", "1.0"]) == 0
+    assert "the bank cannot carry the order of the questions" in capsys.readouterr().out
+
+
+def test_moodle_xml_keeps_the_order_of_a_question_that_says_no_shuffle(course):  # noqa: F811
+    bank = BANK.split(":::sorting")[0].replace("objetivo: U1.1\n", "objetivo: U1.1\nbarajar: no\n", 1)
+    set_assessment(course, fmt="moodle-xml", bank=bank)
+    assert main(["delivery", "questions", "PWD", "--version", "1.0"]) == 0
+    root = ET.parse(course / "delivery" / "PWD-questions-v1.0.xml").getroot()
+    assert [q.find("shuffleanswers").text for q in root if q.get("type") == "multichoice"] == ["false", "true"]
 
 
 def test_aiken_takes_single_choice_only(course, capsys):  # noqa: F811

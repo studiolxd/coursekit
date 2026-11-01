@@ -63,12 +63,24 @@ directive_keys:
   image: image
   position: position
   title: title
+  shuffle: shuffle
 # ... and the words some of them take.
 directive_words:
   "true": "true"
   "false": "false"
   starts: starts
   contains: contains
+  "yes": "yes"
+  "no": "no"
+
+# Feedback that names an option by its place or letter (`coursekit verify`, in the directives of `directives › shuffled_options`):
+# a line of feedback is an error when it matches `always`, or `ordinal` followed by the end of the sentence or one of the
+# words of `follows`, with `context` somewhere in the line (which leaves out "the first time you log in").
+positional_feedback:
+  ordinal: '\bthe\s+(?:(?:first|last)\s+(?:two|three|four)|first|second|third|fourth|fifth|last)(?:\s+(?:one|ones|two|three))?\b'
+  context: '\b(?:answers?|correct|options?|choices?)\b'
+  follows: [and, or, nor, is, are, was, were, not, also, because, option, options, answer, answers, choice, choices]
+  always: '\b(?:options?|choices?)\s+[a-e](?=\s*(?:[,.;:)]|and\b|$))|\b(?:all|none|both)\s+of\s+the\s+above\b'
 
 # The sample of the job aids (`coursekit theme sample`): generic text to look at the template of the theme.
 job_aid_sample:

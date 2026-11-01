@@ -96,11 +96,33 @@ links.forEach((link, i) => link.addEventListener("click", (event) => {
 // `weight` questions and counts with its grade).
 const inLesson = (lesson) => simulations.filter((sim) => sim.scored && lesson.contains(document.querySelector(`.ck-sim[data-sim="${sim.id}"]`)));
 const hasTest = lessons.some((lesson) => lesson.dataset.type === "evaluation");
+// The questions of a test that shuffles them (`shuffleQuestions`) take each other's places, in a new order each time it is opened;
+// the rest of the lesson (instructions, simulations) stays where it is, and the numbers follow the order the learner sees.
+function shuffleQuestions(lesson) {
+  const nodes = Array.from(lesson.querySelectorAll(".ck-q")).filter((q) => !q.parentElement.closest(".ck-q"));
+  if (nodes.length < 2) return;
+  const slots = nodes.map((q) => {
+    const mark = document.createComment("q");
+    q.before(mark);
+    return mark;
+  });
+  const order = nodes.slice();
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  order.forEach((q, i) => {
+    slots[i].replaceWith(q);
+    q.setAttribute("aria-label", format(ui.question, { n: i + 1 }));
+  });
+}
+
 lessons.forEach((lesson) => {
+  const quiz = JSON.parse(lesson.dataset.quiz || "{}");
+  if (lesson.dataset.type === "evaluation" && quiz.shuffleQuestions) shuffleQuestions(lesson);
   const questions = Array.from(lesson.querySelectorAll(".ck-q")).map((q) => initQuestion(q, ui)).filter(Boolean);
   if (lesson.dataset.type !== "evaluation") return;
   const scoredSims = inLesson(lesson);
-  const quiz = JSON.parse(lesson.dataset.quiz || "{}");
   const actions = lesson.querySelector(".ck-quiz-actions");
   const report = document.createElement("p");
   report.className = "ck-quiz-report";

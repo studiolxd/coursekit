@@ -23,6 +23,13 @@ function shuffle(list) {
 
 const letters = (n) => String.fromCharCode(97 + n);
 
+// The options of a list marked `data-shuffle` in a new order on every try; what is reported keeps the order they were written in.
+function reorder(list) {
+  if (!list || list.dataset.shuffle !== "1") return;
+  if (!list._items) list._items = Array.from(list.children);
+  shuffle(list._items).forEach((item) => list.appendChild(item));
+}
+
 // Each type: setup(q, ui) once, reset(q) for another try, answered(q), grade(q), lock(q, locked), mark(q), response(q).
 const TYPES = {
   single: choiceType(),
@@ -106,6 +113,7 @@ const TYPES = {
       this.reset(q);
     },
     reset(q) {
+      reorder(q.querySelector(".ck-group-items"));
       q._rows.forEach((row) => {
         row._select.innerHTML = "";
         row._select.appendChild(el("option", { value: "" }, q._ui.select));
@@ -184,10 +192,20 @@ const TYPES = {
   },
 };
 
+// The inputs of a choice in the order they were written in (their number in `value`), whatever order the learner sees them in;
+// true-false (values true and false) is never shuffled.
+const written = (q) => {
+  const inputs = Array.from(q.querySelectorAll("input"));
+  return inputs.every((input) => /^\d+$/.test(input.value)) ? inputs.sort((x, y) => Number(x.value) - Number(y.value)) : inputs;
+};
+
 function choiceType() {
   return {
-    setup() {},
+    setup(q) {
+      reorder(q.querySelector(".ck-opts"));
+    },
     reset(q) {
+      reorder(q.querySelector(".ck-opts"));
       q.querySelectorAll("input").forEach((input) => { input.checked = false; input.disabled = false; });
       q.querySelectorAll(".ck-opt").forEach((label) => label.classList.remove("is-right", "is-wrong"));
     },
@@ -203,8 +221,8 @@ function choiceType() {
       });
     },
     // the positions of the options chosen (the tracker writes them as the standard asks)
-    choices: (q) => Array.from(q.querySelectorAll("input")).map((input, i) => (input.checked ? i : -1)).filter((i) => i >= 0),
-    response: (q) => Array.from(q.querySelectorAll("input")).map((input, i) => (input.checked ? letters(i) : "")).join(""),
+    choices: (q) => written(q).map((input, i) => (input.checked ? i : -1)).filter((i) => i >= 0),
+    response: (q) => written(q).map((input, i) => (input.checked ? letters(i) : "")).join(""),
   };
 }
 

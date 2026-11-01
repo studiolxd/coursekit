@@ -103,6 +103,33 @@ def test_bank_question_that_repeats_a_practice_situation():
     assert report.warnings == []
 
 
+@pytest.mark.parametrize(("language", "line", "wrong"), [
+    ("es", "feedback-correcto: La respuesta correcta es la tercera.", True),
+    ("es", "feedback-incorrecto: Las correctas son la primera y la segunda.", True),
+    ("es", "feedback-incorrecto: Las opciones a y c no protegen la cuenta.", True),
+    ("es", "feedback: Ninguna de las anteriores protege la cuenta.", True),
+    ("es", "feedback-incorrecto: Las tres primeras son correctas; la cuarta reutiliza la clave.", True),
+    ("es", "feedback-correcto: La respuesta correcta es la que dice que una frase larga resiste más.", False),
+    ("es", "feedback-correcto: Correcto: la primera vez que entras te pide cambiarla.", False),
+    ("en", "feedback-correct: The correct answer is the third one.", True),
+    ("en", "feedback-incorrect: Options b and c reuse the password.", True),
+    ("en", "feedback: None of the above protects the account.", True),
+    ("en", "feedback-correct: Right: the first time you log in it asks you to change it.", False),
+])
+def test_feedback_never_names_an_option_by_its_position(language, line, wrong):
+    tokens = coursemod.tokens({"language": language})
+    rules = {"shuffled_options": ["single-choice"]}
+    question = (7, "single-choice", ["- [x] A long phrase", "- [ ] A short word ‹short›", line])
+    report = verify.Report()
+    verify.check_positional_feedback(verify.Path("content.md"), [question], rules, tokens, report)
+    assert bool(report.errors) == wrong
+    if wrong:
+        assert "content.md:10" in report.errors[0]
+    report = verify.Report()
+    verify.check_positional_feedback(verify.Path("content.md"), [(7, "short-answer", [line])], rules, tokens, report)
+    assert report.errors == []
+
+
 def test_headless_summary_takes_the_last_summary_block(tmp_path):
     log = tmp_path / "run.log"
     events = [
@@ -165,3 +192,67 @@ def test_guide_quotes_every_indication_of_the_notes(tmp_path):
     assert mediastyle.missing_notes(guide) == ["Never use the mascot"]
     (tmp_path / "notes.md").unlink()
     assert mediastyle.missing_notes(guide) == []
+
+
+def test_the_text_of_the_learner_never_names_an_objective_by_its_id():
+    syntax = verify.Syntax.for_tokens(coursemod.tokens({"language": "es"}))
+    rules = {"simulation_directives": ["scenario"]}
+    text = """## Apartado 1 — Introducción y objetivos
+
+Al terminar la unidad podrás:
+
+- U6.1 — Descomponer un proyecto en encargos pequeños.
+- Gestionar el contexto de una sesión larga.
+
+<!-- objetivos: U6.1, U6.2 -->
+*[Objetivo U6.1 — Descomponer]*
+
+:::single-choice
+objetivo: U6.2
+pregunta: ¿Qué haces?
+- [x] Compactar
+:::
+
+:::scenario
+objective: [U6.1, U6.2]
+:::
+"""
+    report = verify.Report()
+    verify.check_objective_ids(verify.Path("content.md"), text, rules, syntax, report)
+    assert len(report.errors) == 1 and "content.md:5" in report.errors[0] and "U6.1" in report.errors[0]
+
+
+def test_a_list_of_titled_items_is_laid_out_as_tabs_or_an_accordion_and_a_process_as_a_carousel():
+    two = """Dos proyectos para practicar:
+
+- El planificador de menús. Añadir a la web de recetas una página donde eliges una receta para cada comida.
+
+- El programa de fotos. Terminar la lista del programa que ordena las fotos por fecha, desde el primer encargo.
+"""
+    three = "\n".join(f"{n}. **Paso {n}.** Abre el gestor de contraseñas y crea una entrada nueva." for n in (1, 2, 3))
+    plain = "- Abre el gestor.\n- Crea una entrada.\n- 1234: la contraseña más usada de todas las que se filtran cada año."
+    report = verify.Report()
+    verify.check_lists(verify.Path("content.md"), two + "\n" + "Texto.\n\n" + three + "\n\nOtro.\n\n" + plain, report)
+    assert len(report.warnings) == 2
+    assert "content.md:3" in report.warnings[0] and ":::tabs" in report.warnings[0]
+    assert ":::carousel" in report.warnings[1]  # numbered: a process
+    report = verify.Report()
+    verify.check_lists(verify.Path("content.md"), ":::tabs\n" + two + ":::\n", report)
+    assert report.warnings == []
+
+
+def test_a_list_of_more_than_two_titled_items_is_an_accordion():
+    items = "\n".join(f"- **Proyecto {n}.** Una web de recetas con una página para cada comida de la semana." for n in (1, 2, 3))
+    report = verify.Report()
+    verify.check_lists(verify.Path("content.md"), items, report)
+    assert len(report.warnings) == 1 and ":::accordion" in report.warnings[0]
+
+
+def test_a_card_that_does_not_fit_asks_for_an_accordion():
+    long = " ".join(["palabra"] * 40)
+    cards = [(3, "flashcard-gallery", ["#### Gestor", "Programa que guarda las claves.", "#### Frase", long]),
+             (9, "accordion", ["#### Frase", long])]
+    report = verify.Report()
+    verify.check_card_lengths(verify.Path("content.md"), cards, {"card_max_words": 35}, report)
+    assert len(report.warnings) == 1 and "content.md:3" in report.warnings[0] and "Frase" in report.warnings[0]
+    assert "Gestor" not in report.warnings[0] and ":::accordion" in report.warnings[0]

@@ -138,7 +138,21 @@ def rules(course: dict | None = None, project: Project | None = None) -> dict:
     content["simulation_directives"] = by_role("simulation")
     content["component_equivalents"] = registry.get("component_equivalents") or {}
     content["activity_types"] = registry.get("activity_types") or {}
+    content["shuffled_options"] = registry.get("shuffled_options") or []
     return cfg
+
+
+def shuffle_options(course: dict) -> dict[str, bool]:
+    """Whether the options of the questions are shuffled, in the practice of the content and in the tests
+    (`delivery › shuffle_options`)."""
+    cfg = config.effective("delivery", course.get("_project"), course).value.get("shuffle_options") or {}
+    return {kind: bool(cfg.get(kind, True)) for kind in ("practice", "assessment")}
+
+
+
+def shuffle_questions(course: dict) -> bool:
+    """Whether the questions of each test are shown in a different order to each learner (`delivery › shuffle_questions`)."""
+    return bool(config.effective("delivery", course.get("_project"), course).value.get("shuffle_questions", True))
 
 
 ASSESSMENT_PLACEMENTS = ("unit", "separate")

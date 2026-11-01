@@ -53,6 +53,7 @@ The files of the media of a course are in `courses/PWD/media/`: `manifest.yaml`,
 | `note` | Why `extract` sent the asset back to `pending` |
 | `recipe`, `made_with` | The option used and the tool or model that produced the asset (`--recipe`, `--made-with`) |
 | `file`, `alt`, `transcript`, `subtitles_path` | The produced file and its alternative text, transcript and captions (`--file`, `--alt`, `--transcript`, `--subtitles-path`) |
+| `decorative` | An image or illustration that only decorates: no alternative text and no caption (`--decorative`; see [Decorative images](#decorative-images)) |
 | `asset_path` | The path of the asset in the platform once uploaded (`--asset-path`), in the content of its unit |
 | `uploads` | Creator: the paths of the copies uploaded to the content of other units (`--unit N --asset-path`), by content id |
 | `dialogue_units` | A portrait: the units whose dialogues show it |
@@ -140,6 +141,10 @@ terminal: {cols: 120, rows: 34}
 ```
 
 A ```` ```yaml ```` block whose only key is `capture:` is read the same way. In the handoff, the scripts of what its media agent may capture are signed before it starts. The session is recorded as it goes and its output covered in the text (see [`coursekit capture`](03-commands.md#coursekit-capture)); `session_end` leaves the `.cast` of a terminal demo (shown with the player, the text can be copied), the `.mp4` of a video with the places the narration names (for the zooms of [The Screencast component](#the-screencast-component)) or the `.png` of a capture. It is drawn with the program's own colors, on the palette of `capture.yaml › terminal`. `coursekit capture stage CODE NAME` mounts a stage to look at it or try it. A web page of a stage (the site the terminal part of a recording builds) is recorded in a browser session whose `capture` block (or part) says `stage: NAME`: coursekit mounts the stage with its `prepare` and serves it on this machine (`127.0.0.1`) while the session lasts, so it needs no profile and no server started by hand; `start` is the path to open.
+
+### Decorative images
+
+An `image` or an `illustration` that only decorates (it sets the scene and gives no information that the text does not give) has no alternative text and no caption: the media agent marks it with `coursekit media set CODE <id> --decorative` instead of `--alt`. The assembly then sends it with an empty alternative text and no caption: creator takes `imageAlt: ""` as decorative, and the html backend writes `alt=""` with no `figcaption`, so screen readers skip it. Any image that explains something (a diagram, an infographic, a capture, the image of a labelled graphic, a portrait or a scene of a simulation) is never decorative: it keeps its alternative text and its caption. `--no-decorative` removes the mark; other types are refused. The gallery of the resources shows the mark in place of the alternative text.
 
 ### Statuses
 

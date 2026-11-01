@@ -90,7 +90,9 @@ sections the course needs, and justify it.
    that give evidence of all of them. Instrument according to the Bloom level (the validator
    requires it: questionnaire up to *apply*; case study up to *evaluate*; portfolio/rubric for
    *create*). Delivery of the tests: {{assessment_delivery}}. With a question-bank format, design each test with the
-   question types it takes, and a scored simulation when an objective needs more than those. Grading: give each assessment activity its `peso` (weight in the unit's score; 1 when the tests count
+   question types it takes, and a scored simulation when an objective needs more than those. When an activity describes its
+   feedback, it is pedagogical: why the answer is right or wrong, naming the options by their content, never by their
+   position or letter ("the third one", "option b", "all of the above"): the platform may shuffle them. Grading: give each assessment activity its `peso` (weight in the unit's score; 1 when the tests count
    the same), `notaAprobado` and `intentosMax` (0 = unlimited) in `design_matrix_ae_create` / `_ae_update`; what you
    leave empty takes `design.grading` of `course.yaml` (`passing_score`, `attempts`) and weight 1 when assembling. **What
    the project sets is not yours to change:** the pass mark and the attempts of `course.yaml › design.grading` and the

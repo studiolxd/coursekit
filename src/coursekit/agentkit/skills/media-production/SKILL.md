@@ -215,7 +215,7 @@ credits.
     says the idea; never a generic picture that could go anywhere). Search the licensed catalog first (`search_stock_images` + `import_stock_image`): no credits. Take a result only
     if it fits the visual style of the course (`visual.style`) and the other images of the unit (one stock photograph
     among illustrations stands out), shows nothing that contradicts the text and, when it shows people, varied people. If
-    nothing fits, generate it as a necessary one.
+    nothing fits, generate it as a necessary one. Record it with `--decorative`: no alt text and no caption.
   - **Necessary**: it shows something specific of the content. The style guide says how each kind of illustration looks;
     the script of the resource says which kind it is (the guide of a course can add kinds):
     - a **concept illustration** goes with a concept of the content and reinforces it. When the brand has illustration
@@ -319,7 +319,10 @@ missing, and tell the person in your report that they can see them all with `cou
 
 Produced files go to `media/files/<id>.<ext>` and become `produced`
 (`coursekit media set <CODE> <id> --status produced --recipe <option> --file media/files/… --alt "…"`).
-Alt text is mandatory for images and captions for every video.
+Alt text is mandatory for images and captions for every video, except a decorative image or illustration (one that
+sets the scene and gives no information the text does not give): record it with `--decorative` instead of `--alt`; the
+assembly sends it with an empty alt text and no caption, so screen readers skip it. Diagrams, infographics, captures, the
+image of a labelled graphic, portraits and the images of the simulations are never decorative.
 
 ## 3.1 Simulations (decision-based courses)
 

@@ -14,3 +14,6 @@ no_questions:
 written:
   es: "banco de preguntas ({format}): {files}"
   en: "question bank ({format}): {files}"
+shuffle_in_lms:
+  es: "el banco no puede llevar el orden de las preguntas: en el cuestionario del LMS activa que se barajen (en Moodle, «Barajar» en la página de preguntas del cuestionario)"
+  en: "the bank cannot carry the order of the questions: in the quiz of the LMS turn on shuffling (in Moodle, \"Shuffle\" in the questions page of the quiz)"

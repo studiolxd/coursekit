@@ -7,7 +7,8 @@ Per unit (content.md + assessment.md):
   - objective tag in every content section; every unit objective covered;
   - distinct interactive directives per content section, by hours;
   - multimedia placeholders per unit hour: count, distinct types, required fields;
-  - directives well formed (known name, closed, not nested); questions carry an objective;
+  - directives well formed (known name, closed, not nested); questions carry an objective; the feedback of a question
+    whose options may be shuffled never names one by its place or letter;
   - no emojis or pictographs outside the allowed symbols;
   - simulations (:::scenario, :::conversation): their YAML, every path (no dead ends, every scene reachable, endings with
     debriefing), unique ids in the course; adaptive blocks (:::if / :::else) read variables of earlier simulations;
@@ -213,6 +214,85 @@ def check_bank_format(course: dict, path: Path, directives, rules: dict, report:
             report.error(t("verify", "bank_gift_blanks", file=path.name, line=line))
 
 
+OBJECTIVE_ID_RE = re.compile(r"\bU\d+\.\d+\b")
+
+
+def check_objective_ids(path: Path, text: str, rules: dict, syntax: Syntax, report: Report) -> None:
+    """The text the learner reads names the objectives by what they say, never by their id ("U6.1 — Break a project
+    down…"): the ids go only in the objective tags, the objective key of the questions, the simulations and the comments."""
+    simulations = set(rules.get("simulation_directives") or ())
+    keys = (syntax.question_key, "objective:", "objectives:")
+    in_code, directive = False, None
+    lines = HTML_COMMENT_RE.sub(lambda m: "\n" * m.group(0).count("\n"), text).splitlines()
+    for i, line in enumerate(lines, 1):
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            in_code = not in_code
+            continue
+        if in_code:
+            continue
+        opened = DIRECTIVE_OPEN_RE.match(line)
+        if opened:
+            directive = opened.group(1)
+            continue
+        if DIRECTIVE_CLOSE_RE.match(line):
+            directive = None
+            continue
+        if directive in simulations or syntax.objective_tag.match(stripped) or stripped.startswith(keys):
+            continue
+        m = OBJECTIVE_ID_RE.search(stripped)
+        if m:
+            report.error(t("verify", "objective_id_in_text", file=path.name, line=i, id=m.group(0)))
+
+
+LIST_LINE_RE = re.compile(r"^(?:([-*])|\d+[.)])\s+(.+)$")
+BOLD_LEAD_RE = re.compile(r"^\*\*([^*]+?)\*\*[.:]?\s+(\S.*)$")
+PLAIN_LEAD_RE = re.compile(r"^([A-ZÁÉÍÓÚÑ¿¡][^.:!?]{1,60})[.:]\s+(\S.*)$")
+
+
+def titled_item(item: str, bullet: bool) -> bool:
+    """A list item made of a title and its description: "**Menu planner.** Add a page…", or in a bulleted list "Menu
+    planner. Add a page where you choose…" (a short title, a longer description)."""
+    m = BOLD_LEAD_RE.match(item)
+    if m:
+        return len(m.group(2).split()) >= 4
+    m = PLAIN_LEAD_RE.match(item) if bullet else None
+    return bool(m) and len(m.group(1).split()) <= 6 and len(m.group(2).split()) >= 6
+
+
+def check_lists(path: Path, text: str, report: Report) -> None:
+    """How the lists of the text are laid out: a numbered list is a process, which goes as a carousel (a slide per step); a list
+    whose every item has a title and a description, as tabs (two items) or an accordion (more), each item a panel with its
+    title."""
+    in_code, in_directive = False, False
+    lines = HTML_COMMENT_RE.sub(lambda m: "\n" * m.group(0).count("\n"), text).splitlines()
+    blocks: list[list[tuple[int, str, bool]]] = []
+    current: list[tuple[int, str, bool]] = []
+    for i, line in enumerate(lines, 1):
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            in_code = not in_code
+        if DIRECTIVE_OPEN_RE.match(line):
+            in_directive = True
+        elif DIRECTIVE_CLOSE_RE.match(line):
+            in_directive = False
+        m = LIST_LINE_RE.match(line) if not (in_code or in_directive) else None
+        if m:
+            current.append((i, m.group(2).strip(), bool(m.group(1))))
+        elif stripped or in_code or in_directive:
+            if current:
+                blocks.append(current)
+            current = []
+    if current:
+        blocks.append(current)
+    for block in blocks:
+        if len(block) >= 2 and not any(bullet for _, _, bullet in block):
+            report.warn(t("verify", "process_list", file=path.name, line=block[0][0], count=len(block)))
+        elif len(block) >= 2 and all(titled_item(item, bullet) for _, item, bullet in block):
+            report.warn(t("verify", "titled_list", file=path.name, line=block[0][0], count=len(block),
+                          directive="tabs" if len(block) == 2 else "accordion"))
+
+
 def check_pictographs(path: Path, text: str, allowed: str, report: Report) -> None:
     for i, line in enumerate(text.splitlines(), 1):
         found = {ch for ch in PICTOGRAPH_RE.findall(line) if ch not in allowed}
@@ -267,6 +347,41 @@ def check_questions(path: Path, directives, rules: dict, syntax: Syntax, report:
     return count
 
 
+def check_positional_feedback(path: Path, directives, rules: dict, tokens: dict, report: Report) -> None:
+    """Feedback that names an option by its place or letter ("the third one", "option b", "all of the above") in a question
+    whose options the platform may shuffle (`directives › shuffled_options`): after shuffling it points at another one."""
+    words = tokens.get("positional_feedback") or {}
+    shuffled = set(rules.get("shuffled_options") or ())
+    if not words or not shuffled:
+        return
+    ordinal, context, always = (re.compile(words[k], re.I) for k in ("ordinal", "context", "always"))
+    follows = {str(w).casefold() for w in words.get("follows") or ()}
+    keys = tokens["directive_keys"]
+    feedback = tuple(f"{keys[k]}:" for k in ("feedback", "feedback_correct", "feedback_incorrect") if k in keys)
+
+    def positional(text: str) -> re.Match | None:
+        if not context.search(text):
+            return None
+        for m in ordinal.finditer(text):
+            after = re.match(r"\s*(\w*)", text[m.end():]).group(1)
+            if not after or after.casefold() in follows:  # "la tercera." / "la primera y la segunda", not "la primera vez"
+                return m
+        return None
+
+    for line_no, name, body in directives:
+        if name not in shuffled:
+            continue
+        for offset, line in enumerate(body, 1):
+            key = next((k for k in feedback if line.strip().startswith(k)), None)
+            if key is None:
+                continue
+            text = line.strip()[len(key):]
+            m = always.search(text) or positional(text)
+            if m:
+                report.error(t("verify", "positional_feedback", file=path.name, line=line_no + offset, name=name,
+                               words=m.group(0)))
+
+
 def question_situation(body: list[str], tokens: dict, syntax: Syntax) -> str:
     """What a question puts in front of the learner: its question and its options, without the feedback, the objective and
     the ids of the common errors."""
@@ -304,6 +419,31 @@ def check_bank_overlap(course: dict, practice: list, bank: list, rules: dict, sy
             if share >= limit:
                 report.warn(t("verify", "bank_repeats_practice", line=line, line_practice=practice_line, share=round(share * 100)))
                 break
+
+
+CARD_DIRECTIVES = ("flashcards", "flashcard-gallery")
+
+
+def check_card_lengths(path: Path, directives, rules: dict, report: Report) -> None:
+    """A card whose back is longer than `content.card_max_words` does not fit: a glossary with long definitions goes as an
+    accordion."""
+    limit = int(rules.get("card_max_words") or 0)
+    if not limit:
+        return
+    for line_no, name, body in directives:
+        if name not in CARD_DIRECTIVES:
+            continue
+        backs: dict[str, int] = {}
+        front = None
+        for line in body:
+            if line.startswith("#### "):
+                front = line[5:].strip()
+                backs[front] = 0
+            elif front is not None:
+                backs[front] += len(re.findall(r"\w+", HTML_COMMENT_RE.sub("", line)))
+        long = [f for f, words in backs.items() if words > limit]
+        if long:
+            report.warn(t("verify", "card_too_long", file=path.name, line=line_no, name=name, cards=", ".join(long), limit=limit))
 
 
 def check_activity_types(unit: dict, by_n: dict, activities_n: int | None, rules: dict, report: Report) -> None:
@@ -646,6 +786,8 @@ def verify_unit(course: dict, unit: dict) -> Report:
 
     text = content_path.read_text(encoding="utf-8")
     check_pictographs(content_path, text, rules["allowed_symbols"], report)
+    check_objective_ids(content_path, text, rules, syntax, report)
+    check_lists(content_path, text, report)
     forbidden = all_rules.get("forbidden") or {}
     registry = videosmod.by_key(course["_dir"])
     check_forbidden(content_path.name, text.splitlines(), forbidden, report, registry)
@@ -761,7 +903,9 @@ def verify_unit(course: dict, unit: dict) -> Report:
 
     quiet = list(parse_directives(Path("content.md"), text.splitlines(), rules, Report()))
     check_activity_types(unit, by_n, activities, rules, report)
+    check_card_lengths(content_path, quiet, rules, report)
     content_questions = check_questions(content_path, quiet, rules, syntax, report)
+    check_positional_feedback(content_path, quiet, rules, tokens, report)
     sims = course_simulations(course, rules)
     adaptive = check_adaptive(content_path, text.splitlines(), unit["n"], sims, report)
 
@@ -776,6 +920,7 @@ def verify_unit(course: dict, unit: dict) -> Report:
         directives = list(parse_directives(assessment_path, a_text.splitlines(), rules, report))
         assessment_directives = directives
         questions = check_questions(assessment_path, directives, rules, syntax, report)
+        check_positional_feedback(assessment_path, directives, rules, tokens, report)
         check_bank_overlap(course, quiet, directives, rules, syntax, report)
         check_bank_format(course, assessment_path, directives, rules, report)
         passing = float(((course.get("design") or {}).get("grading") or {}).get("passing_score") or 50)
@@ -827,9 +972,12 @@ def verify_unit(course: dict, unit: dict) -> Report:
     backend = coursemod.backend(course) if course.get("_project") else None
     checks = list(BACKEND_CHECKS)
     if backend == "creator":
-        from coursekit.assemble import check_unit
+        from coursekit.assemble import check_unit_fields
 
-        checks.append(check_unit)
+        errors, fitted = check_unit_fields(course, unit)
+        checks.append(lambda _course, _unit: errors)
+        for text in fitted:
+            report.warn(t("verify", "assembly_warning", warning=text))
     elif backend == "html":
         from coursekit.htmlkit.build import check_unit as check_html_unit
 

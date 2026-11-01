@@ -57,6 +57,8 @@ exported as a package.
 - Html backend, or aiken: `coursekit delivery questions <CODE> --version X.Y` writes the bank itself (gift and moodle-xml: one file with a
   category per activity; aiken: one file per activity) and records it.
 If a question type does not fit, the unit has to be fixed (`/write-unit`): never edit the bank by hand.
+A bank cannot carry the order of the questions: when `delivery questions` reminds of it, tell the person to turn on the
+shuffling of the questions in the quiz of the LMS (in Moodle, "Shuffle" in the questions page of the quiz).
 
 ## At the end
 

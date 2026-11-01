@@ -89,7 +89,8 @@ def test_the_quiz_takes_its_weight_pass_mark_and_attempts_from_the_design(course
     assert main(["assemble", "plan", "PWD", "--unit", "1"]) == 0
     plan = json.loads((course / "assembly" / "unit-01.plan.json").read_text(encoding="utf-8"))
     quiz = next(lesson["quiz"] for lesson in plan["lessons"] if lesson["type"] == "evaluation")
-    assert quiz == {"passingGrade": 70, "maxAttempts": 0, "courseWeight": 3}  # 0 attempts: unlimited, as in creator
+    # 0 attempts: unlimited, as in creator
+    assert quiz == {"passingGrade": 70, "maxAttempts": 0, "courseWeight": 3, "shuffleQuestions": True}
 
 
 def test_the_quiz_falls_back_to_the_course_grading_when_the_design_gives_nothing(course, capsys):  # noqa: F811
@@ -98,7 +99,7 @@ def test_the_quiz_falls_back_to_the_course_grading_when_the_design_gives_nothing
     assert main(["assemble", "plan", "PWD", "--unit", "1"]) == 0
     plan = json.loads((course / "assembly" / "unit-01.plan.json").read_text(encoding="utf-8"))
     quiz = next(lesson["quiz"] for lesson in plan["lessons"] if lesson["type"] == "evaluation")
-    assert quiz == {"passingGrade": 50, "maxAttempts": 2, "courseWeight": 1}
+    assert quiz == {"passingGrade": 50, "maxAttempts": 2, "courseWeight": 1, "shuffleQuestions": True}
 
 
 def test_a_change_only_in_the_grading_of_a_test_is_a_diff(course, capsys):  # noqa: F811
@@ -127,7 +128,8 @@ def test_a_change_only_in_the_grading_of_a_test_is_a_diff(course, capsys):  # no
     assert main(["assemble", "diff", "PWD", "--unit", "1"]) == 0
     lessons = {lesson["key"]: lesson for lesson in json.loads(capsys.readouterr().out)["lessons"]}
     assert lessons["U1-E1.1"]["action"] == "update"
-    assert lessons["U1-E1.1"]["ops"] == [{"op": "update_quiz", "quiz": {"passingGrade": 80, "maxAttempts": 2, "courseWeight": 1}}]
+    quiz = {"passingGrade": 80, "maxAttempts": 2, "courseWeight": 1, "shuffleQuestions": True}
+    assert lessons["U1-E1.1"]["ops"] == [{"op": "update_quiz", "quiz": quiz}]
     assert lessons["U1-S1"]["action"] == "unchanged"
 
 

@@ -63,12 +63,24 @@ directive_keys:
   image: imagen
   position: posición
   title: título
+  shuffle: barajar
 # ... and the words some of them take.
 directive_words:
   "true": verdadero
   "false": falso
   starts: empieza
   contains: contiene
+  "yes": sí
+  "no": "no"
+
+# Feedback that names an option by its place or letter (`coursekit verify`, in the directives of `directives › shuffled_options`):
+# a line of feedback is an error when it matches `always`, or `ordinal` followed by the end of the sentence or one of the
+# words of `follows`, with `context` somewhere in the line (which leaves out "la primera vez que entras").
+positional_feedback:
+  ordinal: '\b(?:la|las|el|los)\s+(?:(?:dos|tres|cuatro)\s+)?(?:primer[oa]s?|segund[oa]s?|tercer[oa]s?|cuart[oa]s?|quint[oa]s?|[uú]ltim[oa]s?)\b'
+  context: '\b(?:respuestas?|correct[oa]s?|opci[oó]n|opciones)\b'
+  follows: [y, e, o, u, ni, es, son, era, eran, no, también, tampoco, porque, opción, opciones, respuesta, respuestas]
+  always: '\bopci(?:[oó]n|ones)\s+[a-e](?=\s*(?:[,.;:)]|y\b|$))|\b(?:todas|ninguna)\s+de\s+las\s+anteriores\b|\btodas\s+las\s+anteriores\b'
 
 # The sample of the job aids (`coursekit theme sample`): generic text to look at the template of the theme.
 job_aid_sample:

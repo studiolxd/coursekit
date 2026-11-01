@@ -213,7 +213,9 @@ def caption_of(brick: dict) -> str:
 
 
 def image(brick: dict, ctx: Ctx) -> str:
-    alt = prop(brick, "imageAlt") or re.sub(r"<[^>]+>", "", inline(content(brick)))
+    alt = prop(brick, "imageAlt", None)
+    if alt is None:  # "" is a decorative image: screen readers skip it
+        alt = re.sub(r"<[^>]+>", "", inline(content(brick)))
     return f'<figure class="ck-media"><img src="{a(prop(brick, "imagePath"))}" alt="{a(alt)}" loading="lazy">{caption_of(brick)}</figure>'
 
 
@@ -270,13 +272,19 @@ def question(kind: str, brick: dict, ctx: Ctx, body: str, label: bool = False) -
             f'<div class="ck-q-actions"></div>{feedback(brick)}</{tag}>')
 
 
+def shuffle_attr(brick: dict) -> str:
+    """The options the player shows in another order to each learner (`shuffleOptions` of the plan)."""
+    return ' data-shuffle="1"' if prop(brick, "shuffleOptions", False) else ""
+
+
 def choice(brick: dict, ctx: Ctx, multiple: bool) -> str:
     uid = f"{ctx.lesson}-c{ctx.questions + 1}"
     kind = "radio" if not multiple else "checkbox"
     rows = "".join(
         f'<label class="ck-opt"><input type="{kind}" name="{a(uid)}" value="{n}" data-correct="{1 if i.get("isCorrect") else 0}">'
         f'<span>{inline(i.get("content"))}</span></label>' for n, i in enumerate(items(brick)))
-    return question("multi" if multiple else "single", brick, ctx, f'<div class="ck-opts">{rows}</div>', label=True)
+    return question("multi" if multiple else "single", brick, ctx, f'<div class="ck-opts"{shuffle_attr(brick)}>{rows}</div>',
+                    label=True)
 
 
 def single_choice(brick: dict, ctx: Ctx) -> str:
@@ -312,7 +320,8 @@ def sorting_groups(brick: dict, ctx: Ctx) -> str:
     groups = brick["data"].get("groups") or []
     labels = "".join(f'<li data-group="{a(g["id"])}">{inline(g.get("label"))}</li>' for g in groups)
     rows = "".join(f'<li data-group="{a(i.get("groupId"))}">{inline(i.get("content"))}</li>' for i in items(brick))
-    return question("groups", brick, ctx, f'<ul class="ck-group-labels">{labels}</ul><ul class="ck-group-items">{rows}</ul>')
+    body = f'<ul class="ck-group-labels">{labels}</ul><ul class="ck-group-items"{shuffle_attr(brick)}>{rows}</ul>'
+    return question("groups", brick, ctx, body)
 
 
 def fill_in_the_blank(brick: dict, ctx: Ctx) -> str:
@@ -488,7 +497,7 @@ def lesson(entry: dict, ui: dict[str, str]) -> str:
     ctx = Ctx(ui, entry["key"], entry["type"] == "evaluation")
     body = "".join(RENDERERS[b["type"]](b, ctx) for b in entry["bricks"])
     quiz = entry.get("quiz") or {}
-    settings = json.dumps({key: quiz.get(key) for key in ("passingGrade", "maxAttempts", "courseWeight")})
+    settings = json.dumps({key: quiz.get(key) for key in ("passingGrade", "maxAttempts", "courseWeight", "shuffleQuestions")})
     attrs = f' data-quiz="{a(settings)}"' if ctx.evaluation else ""
     footer = '<div class="ck-quiz-actions"></div>' if ctx.evaluation else ""
     return (f'<section class="ck-lesson" id="{a(entry["key"])}" data-lesson="{a(entry["key"])}" data-type="{entry["type"]}"{attrs}>'

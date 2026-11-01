@@ -134,11 +134,11 @@ update:
                                #   propose  the handoff runs it before the AI review and writes reviews/unit-NN-currency.md only
                                #   apply    the handoff runs it and writes the plain-fact changes that have an official source
 
-# Assembly in creator: its code block takes only the languages of its `codeLanguage` list (`get_brick_type_schema` CODE). When it
-# adds some, list them here and coursekit uses them: `plaintext` for the blocks that show output, `shell` ("Terminal") for those
-# made of commands and for `console`/`terminal` fences, `powershell` for PowerShell, `diff`, `dockerfile`, `http`.
+# Assembly in creator: every code block says its language, one of the `codeLanguage` list of creator (`get_brick_type_schema`
+# CODE), never `auto`: `plaintext` for output and conversations, `shell` ("Terminal") for sessions and commands, a language
+# creator lacks (toml, ini...) as `plaintext`. coursekit knows creator's list; when creator adds a language, list it here.
 assembly:
-  code_languages: []           # e.g. [plaintext, shell, powershell, diff, dockerfile, http]
+  code_languages: []           # e.g. [toml]
 
 # What must not appear in the content of a course: `coursekit verify` reports each occurrence as an error. Empty by default.
 # A course sets its own in course.yaml › rules › forbidden (a list replaces this one).
@@ -163,6 +163,9 @@ content:
                                        # situation: the test has to be a new one. `verify` warns (0: not checked)
   reflections_per_unit: 1              # :::reflection in the summary section (or the last one): the learner looks back at what
                                        # they did and how they will apply it (warning only; 0: not checked)
+  card_max_words: 35                   # the most words of the back of a card (:::flashcard-gallery, :::flashcards): a longer
+                                       # definition does not fit in a card, and the glossary goes as an :::accordion; `verify`
+                                       # warns (0: not checked)
   chunk_max_words: 250                 # cognitive load: the most words of prose the learner reads in a row, without a heading, a
                                        # directive, a medium, a highlight (`>`), a list or a table (a blank line does not break
                                        # it). `verify` warns, except in an imported course (0: not checked)

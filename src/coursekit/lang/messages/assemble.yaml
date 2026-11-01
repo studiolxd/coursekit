@@ -86,3 +86,12 @@ simulation_not_uploaded:
 simulation_note:
   es: "Simulación pendiente de montar ({asset})."
   en: "Simulation still to be assembled ({asset})."
+field_fitted:
+  es: "{where}: {type} › {field} no admite código en línea, enlaces ni saltos de línea en creator; va como texto: «{text}»"
+  en: "{where}: {type} › {field} takes no inline code, links or line breaks in creator; it goes as text: \"{text}\""
+shuffle_value:
+  es: ":::{name}: '{key}:' lleva '{yes}' o '{no}'"
+  en: ":::{name}: '{key}:' takes '{yes}' or '{no}'"
+shuffle_not_here:
+  es: ":::{name} no tiene opciones que barajar: '{key}:' solo va en {directives}"
+  en: ":::{name} has no options to shuffle: '{key}:' only goes in {directives}"

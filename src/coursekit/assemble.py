@@ -40,19 +40,22 @@ from coursekit.states import history_entry
 from coursekit.util import character_asset_id, edit_yaml, load_yaml, save_yaml
 
 MD = MarkdownIt("commonmark").enable("table")
+# The languages of creator's code block (`codeLanguage` of `get_brick_type_schema` CODE), without `auto`: a block always says its
+# language, since guessing goes wrong with short code and with what is not code. `plaintext` is what is not code (the output of a
+# program, a conversation: no colours, no label) and `shell` ("Terminal") a session with prompts or a run of commands.
 CODE_LANGUAGES = {
-    "javascript", "typescript", "python", "html", "css", "java", "go", "rust", "sql", "json", "yaml",
-    "bash", "c", "cpp", "csharp", "php", "ruby", "swift", "kotlin", "markdown", "xml",
+    "plaintext", "javascript", "typescript", "python", "html", "css", "java", "go", "rust", "sql", "json", "yaml", "bash", "c",
+    "cpp", "csharp", "php", "ruby", "swift", "kotlin", "markdown", "xml", "shell", "powershell", "diff", "dockerfile", "http",
 }
-LANGUAGE_ALIASES = {"js": "javascript", "ts": "typescript", "py": "python", "sh": "bash", "zsh": "bash", "yml": "yaml",
-                    "c++": "cpp", "cs": "csharp", "md": "markdown", "cmd": "bash", "bat": "bash", "patch": "diff",
-                    "docker": "dockerfile"}
-# Languages that, when creator has them (`rules › assembly › code_languages`), replace a nearby one: the fence may name them or one
-# of their aliases; without them the second is used.
-LANGUAGE_UPGRADES = {"shell": ("bash", ("shell", "console", "terminal", "shell-session")),
-                     "powershell": ("bash", ("powershell", "pwsh", "ps1"))}
-# A fence with no language, or `text`, holds the output of a program or a conversation, or commands. Creator takes plain text
-# only if it lists `plaintext`; otherwise it guesses (`auto`), which is bad with short code.
+LANGUAGE_ALIASES = {
+    "js": "javascript", "jsx": "javascript", "mjs": "javascript", "node": "javascript", "ts": "typescript", "tsx": "typescript",
+    "py": "python", "python3": "python", "htm": "html", "svg": "xml", "jsonc": "json", "json5": "json", "yml": "yaml",
+    "sh": "bash", "zsh": "bash", "fish": "bash", "c++": "cpp", "cc": "cpp", "cxx": "cpp", "hpp": "cpp", "h": "c", "cs": "csharp",
+    "c#": "csharp", "rb": "ruby", "kt": "kotlin", "golang": "go", "rs": "rust", "md": "markdown", "postgresql": "sql",
+    "mysql": "sql", "sqlite": "sql", "console": "shell", "terminal": "shell", "shell-session": "shell", "cmd": "shell",
+    "bat": "shell", "ps1": "powershell", "pwsh": "powershell", "patch": "diff", "docker": "dockerfile",
+}
+# A fence with no language, or `text`, holds the output of a program or a conversation, or commands.
 TEXT_FENCES = {"", "text", "txt", "plain", "plaintext", "output"}
 COMMAND_PROGRAMS = "coursekit|git|uv|cd|ls|pwd|mkdir|claude|opencode|codex|npm|npx|curl|irm|brew|echo|export|source"
 PROMPT_LINE = re.compile(r"^(\S+@\S+\s.*[%$#]|PS [A-Za-z]:\\.*>|\$)(\s|$)")  # `ana@mac ~ % pwd`, `PS C:\Users\ana>`, `$ pwd`
@@ -60,22 +63,20 @@ COMMAND_LINE = re.compile(rf"(\$ |/[a-z][\w-]*(\s|$)|({COMMAND_PROGRAMS})\b)")
 
 
 def code_language(fence: str, code: list[str], extra: list[str] | tuple[str, ...] = ()) -> str:
-    """The `codeLanguage` of a code block. `extra` are the languages creator has added to its list. The language of the fence if
-    creator knows it; a `text` block that is a terminal session (it has prompts) or only commands is `shell` (`bash` without it);
-    other text is `plaintext` (`auto` without it)."""
+    """The `codeLanguage` of a code block, always one of creator's list (never `auto`). `extra` are languages creator has added
+    after this list (`rules › assembly › code_languages`). The language of the fence or its alias when creator knows it; a
+    `text` block that is a terminal session (it has prompts) or only commands is `shell`; any other text, and a language creator
+    does not have (`toml`, `ini`), is `plaintext`."""
     known = CODE_LANGUAGES | set(extra)
-    for language, (fallback, names) in LANGUAGE_UPGRADES.items():
-        if fence in names:
-            return language if language in known else fallback
-    lang = LANGUAGE_ALIASES.get(fence, fence)
-    if lang in known:
+    fence = fence.strip().lower()
+    lang = fence if fence in known else LANGUAGE_ALIASES.get(fence, fence)
+    if lang in known and lang != "plaintext":
         return lang
     lines = [line.strip() for line in code if line.strip()]
-    terminal = "shell" if "shell" in known else "bash"
     session = any(PROMPT_LINE.match(line) for line in lines) or all(COMMAND_LINE.match(line) for line in lines)
-    if lang in TEXT_FENCES and lines and session:
-        return terminal
-    return "plaintext" if "plaintext" in known else "auto"
+    if fence in TEXT_FENCES and lines and session:
+        return "shell"
+    return "plaintext"
 
 DIRECTIVE_OPEN_RE = re.compile(r"^:::([a-z][a-z-]*)\s*$")
 DIRECTIVE_CLOSE_RE = re.compile(r"^:::\s*$")
@@ -140,6 +141,75 @@ def html(md_text: str) -> str:
 
 def inline(md_text: str) -> str:
     return f"<p>{MD.renderInline(md_text.strip())}</p>"
+
+
+# The text fields of each brick that creator takes with less than full format (get_brick_type_schema › richText). Single
+# line: one paragraph with bold, italic, subscript and superscript only (inline code, links and line breaks are rejected).
+# Reduced: no links (nor lists or code blocks, which `inline` never makes). As the catalog of `synced_with_creator`
+# (defaults/directives.yaml): update it with the registry.
+SINGLE_LINE_FIELDS = {
+    "ACCORDION": ("items[].title",), "TABS": ("items[].title",),
+    "CAROUSEL": ("content.cover_title", "content.summary_title", "items[].title"), "CAROUSEL_QUOTES": ("items[].author",),
+    "LABELLED_GRAPHIC": ("items[].title",), "TIMELINE": ("items[].title",), "DIALOG": ("items[].content",),
+    "SINGLE_CHOICE": ("items[].content",), "MULTI_SELECT": ("items[].content",), "SORTING": ("items[].content",),
+    "MATCH": ("items[].left", "items[].right"), "SORTING_GROUPS": ("items[].content", "groups[].label"),
+    "ORDER_WORDS": ("items[].content",), "NOTE": ("content.title",), "HEADING": ("content.content",),
+    "ATTACHMENT": ("content.title",),
+}
+REDUCED_FIELDS = {
+    "SINGLE_CHOICE": ("content.question",), "MULTI_SELECT": ("content.question",), "TRUE_FALSE": ("content.question",),
+    "SHORT_ANSWER": ("content.question",), "SORTING_GROUPS": ("groups[].placeholder",),
+    "PASAPALABRA": ("content.feedback_general",), "TRIVIAL": ("content.feedback_correct", "items[].content"),
+    "WORD_SEARCH": ("content.feedback_general",), "WORDLE": ("content.feedback_correct", "content.feedback_incorrect"),
+    "HANGMAN": ("content.feedback_correct", "content.feedback_incorrect"),
+}
+SINGLE_LINE_TAGS = ("p", "strong", "em", "sub", "sup")
+TAG_RE = re.compile(r"<(/?)([a-zA-Z][a-zA-Z0-9]*)\b[^>]*?(/?)>")
+IMG_ALT_RE = re.compile(r"""<img\b[^>]*?\balt=(["'])(.*?)\1[^>]*>""")
+
+
+def single_line(value: str) -> str:
+    """A text for a single-line field of creator: the tags it takes stay, the rest leave their text (`<code>x</code>` is x,
+    a link its text, an image its alternative text) and a line break is a space."""
+    value = IMG_ALT_RE.sub(lambda m: m.group(2), value)
+    value = re.sub(r"<br\s*/?>\s*", " ", value).replace("\n", " ")
+    return TAG_RE.sub(lambda m: m.group(0) if m.group(2).lower() in SINGLE_LINE_TAGS else "", value)
+
+
+def without_links(value: str) -> str:
+    return re.sub(r"</?a\b[^>]*>", "", value)
+
+
+def field_values(data: dict, path: str):
+    """(container, key) of each value of a field written as in richText (`items[].content`, `content.title`)."""
+    head, _, key = path.rpartition(".")
+    if head.endswith("[]"):
+        containers = [c for c in data.get(head[:-2]) or [] if isinstance(c, dict)]
+    else:
+        containers = [data.get(head)] if isinstance(data.get(head), dict) else []
+    for container in containers:
+        if isinstance(container.get(key), str):
+            yield container, key
+
+
+def creator_fields(bricks: list[dict], where: str) -> list[str]:
+    """Fit the text of the bricks to the fields of creator that do not take full format (inline code, links), so the plan is
+    applied as it is; one warning per field changed."""
+    warnings = []
+    for brick in bricks:
+        if brick.get("type") == "CONDITIONAL":
+            warnings += creator_fields(branch_bricks(brick), where)
+            continue
+        data = brick.get("data") or {}
+        for fields, fit in ((SINGLE_LINE_FIELDS, single_line), (REDUCED_FIELDS, without_links)):
+            for path in fields.get(brick.get("type"), ()):
+                for container, key in field_values(data, path):
+                    fitted = fit(container[key])
+                    if fitted != container[key]:
+                        warnings.append(t("assemble", "field_fitted", where=where, type=brick["type"], field=path,
+                                          text=TAG_RE.sub("", fitted)[:80]))
+                        container[key] = fitted
+    return warnings
 
 
 def strip_comments(text: str) -> str:
@@ -325,6 +395,7 @@ def directive_brick(name: str, body: list[str], ctx: dict) -> dict:
         meta["image"] = values.get(syntax.key("image"), "")
     if values.get(syntax.key("objective")):
         meta["objective"] = values[syntax.key("objective")]
+    shuffle = shuffled(name, brick_type, values, ctx)
 
     if brick_type in ("ACCORDION", "TABS", "CAROUSEL"):
         items = [{"title": inline(text), "content": html(c)} for text, c in panels(body)]
@@ -464,7 +535,33 @@ def directive_brick(name: str, body: list[str], ctx: dict) -> dict:
         raise PlanError(t("assemble", "not_supported", name=name, brick=brick_type))
     if brick_type in PANEL_BRICKS and not data["items"]:
         raise PlanError(t("assemble", "no_panels", name=name))
+    if shuffle is not None:
+        data.setdefault("properties", {})["shuffleOptions"] = shuffle
     return {"type": brick_type, "data": data, "meta": meta}
+
+
+SHUFFLED_BRICKS = ("SINGLE_CHOICE", "MULTI_SELECT", "SORTING_GROUPS")  # the questions whose options may be shown in another order
+
+
+def shuffled(name: str, brick_type: str, values: dict[str, str], ctx: dict) -> bool | None:
+    """Whether the options of a question are shuffled: its key `shuffle: yes|no`, else the rule of the course for the practice
+    or the tests (`delivery › shuffle_options`). None for a brick that has no options to shuffle."""
+    syntax: Syntax = ctx["syntax"]
+    written = values.get(syntax.key("shuffle"))
+    if brick_type not in SHUFFLED_BRICKS:
+        if written is not None:
+            raise PlanError(t("assemble", "shuffle_not_here", name=name, key=syntax.key("shuffle"),
+                              directives=", ".join(n for n, d in ctx["registry"].items() if d.get("brick") in SHUFFLED_BRICKS)))
+        return None
+    if written is None:
+        return ctx["shuffle"]["assessment" if ctx.get("in_test") else "practice"]
+    plain = unicodedata.normalize("NFKD", written.strip().casefold()).encode("ascii", "ignore").decode()
+    words = {unicodedata.normalize("NFKD", syntax.word(w).casefold()).encode("ascii", "ignore").decode(): w == "yes"
+             for w in ("yes", "no")}
+    if plain not in words:
+        raise PlanError(t("assemble", "shuffle_value", name=name, key=syntax.key("shuffle"), yes=syntax.word("yes"),
+                          no=syntax.word("no")))
+    return words[plain]
 
 
 # ── Section parsing ──────────────────────────────────────────────────────────
@@ -518,6 +615,8 @@ def placeholder_brick(kind: str, fields: dict, asset: dict | None, label: str, w
         caption = inline(title)
         if media == "image" and not svg_as_image and str(asset.get("file") or "").lower().endswith(".svg"):
             media = "embed"  # creator does not take SVG as an image: it goes up as an EMBED package (`coursekit media embed`)
+        if media == "image" and asset.get("decorative"):  # an empty alternative text is how creator and html know it decorates
+            return {"type": "IMAGE", "data": {"properties": {"imagePath": asset["asset_path"], "imageAlt": ""}}, "meta": meta}
         if media == "image":
             return {"type": "IMAGE", "data": {"properties": {"imagePath": asset["asset_path"], "imageAlt": asset.get("alt")},
                                               "content": {"content": caption}}, "meta": meta}
@@ -691,7 +790,8 @@ def manifest_assets(course: dict) -> dict[str, dict]:
 
 def quiz_settings(course: dict, unit: dict, number: str, title: str) -> dict:
     """Settings of the quiz of an assessment activity: the ones the design gives it (weight, pass mark, attempts), else the
-    course's `design.grading` (weight 1). The activity is the one with that title, else the one in that position of the unit."""
+    course's `design.grading` (weight 1); and whether its questions are shuffled (`delivery › shuffle_questions`).
+    The activity is the one with that title, else the one in that position of the unit."""
     items = (unit.get("activities") or {}).get("assessment") or []
     found = next((a for a in items if (a.get("title") or "").strip() == title.strip()), None)
     if found is None:
@@ -704,7 +804,8 @@ def quiz_settings(course: dict, unit: dict, number: str, title: str) -> dict:
 
     return {"passingGrade": pick(found.get("passing_score"), grading.get("passing_score")),
             "maxAttempts": pick(found.get("max_attempts"), grading.get("attempts")),
-            "courseWeight": pick(found.get("weight"), 1)}
+            "courseWeight": pick(found.get("weight"), 1),
+            "shuffleQuestions": coursemod.shuffle_questions(course)}
 
 
 def branch_bricks(brick: dict) -> list[dict]:
@@ -789,6 +890,8 @@ def context(course: dict, assets: dict[str, dict] | None = None) -> dict:
         "assets": assets,
         "media_by_title": {a.get("title"): a for a in assets.values()},
         "code_languages": (coursemod.rules(course=course).get("assembly") or {}).get("code_languages") or [],
+        "shuffle": coursemod.shuffle_options(course) if course.get("_dir") else {"practice": True, "assessment": True},
+        "in_test": False,  # parsing an assessment.md (its questions take the shuffling of the tests)
         "errors": [],
         "warnings": [],
     }
@@ -865,7 +968,11 @@ def assessment_lessons(course: dict, unit: dict, ctx: dict, fmt: str = "platform
         bank = parts.get(syntax.t["assessment_bank"], []) if fmt == "platform" or questions else []
         body = bank if questions else parts.get(syntax.t["assessment_instructions"], []) + [""] + played + [""] + bank
         key = f"U{unit['n']}-E{m.group(1)}"
-        bricks = parse_blocks(body, ctx, key)
+        ctx["in_test"] = True
+        try:
+            bricks = parse_blocks(body, ctx, key)
+        finally:
+            ctx["in_test"] = False
         if questions and not bricks:
             continue
         if fmt != "platform" and not questions and not any(b["type"] == "SIMULATION" for b in walk(bricks)):
@@ -905,6 +1012,8 @@ def write_plan(course: dict, unit: dict) -> tuple[dict | None, list[str], list[s
     plan, errors, warnings = build_plan(course, unit)
     if errors:
         return None, errors, warnings, {}
+    for lesson in plan["lessons"]:
+        warnings += creator_fields(lesson["bricks"], lesson["key"])
     plan_path, _ = paths(course["_dir"], unit["n"])
     write_json(plan_path, plan)
     counts: dict[str, int] = {}
@@ -1083,5 +1192,11 @@ def link(course: dict, unit: dict, content_id: str | None = None, preview: str |
 
 def check_unit(course: dict, unit: dict) -> list[str]:
     """For `coursekit verify`: the content must convert to bricks (same parse as the plan)."""
-    _, errors, _ = build_plan(course, unit)
-    return errors
+    return check_unit_fields(course, unit)[0]
+
+
+def check_unit_fields(course: dict, unit: dict) -> tuple[list[str], list[str]]:
+    """For `coursekit verify`: the errors of the conversion to bricks, and the texts the plan fits to the fields of creator."""
+    plan, errors, _ = build_plan(course, unit)
+    warnings = [w for lesson in plan["lessons"] for w in creator_fields(lesson["bricks"], lesson["key"])] if plan else []
+    return errors, warnings

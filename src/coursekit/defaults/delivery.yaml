@@ -20,6 +20,19 @@ assessment:
                                    # multi-select, true-false, match, sorting-groups, short-answer, fill-in-the-blank; qti: those
                                    # and sorting; moodle-xml also sorting, as the ordering type of Moodle 4.4 or later), and
                                    # `coursekit verify` refuses the others in assessment.md
+# Whether the options of the questions are shown in a different order to each learner, in the practice of the content and in
+# the tests. It applies to single-choice, multi-select and sorting-groups (the other types: sorting and order-words are always
+# shuffled, true-false never). A course may set its own in course.yaml › delivery › shuffle_options, and a question its own
+# with the key `shuffle: yes|no` (in the words of the course language). creator: the shuffleOptions of the brick; html: the
+# player; moodle-xml: the shuffleanswers of the question (gift and aiken cannot say it: the quiz of Moodle decides).
+shuffle_options:
+  practice: true
+  assessment: true
+# Whether the questions of each test are shown in a different order to each learner (and on each attempt). creator: the
+# shuffleQuestions of the quiz of the lesson; html: the player. A question bank (aiken, gift, moodle-xml, qti) cannot carry it:
+# the order is a setting of the quiz of the LMS (in Moodle, "Shuffle" in the page of the questions of the quiz), and
+# `coursekit delivery questions` reminds of it. A course may set its own in course.yaml › delivery › shuffle_questions.
+shuffle_questions: true
 # Review of the course by the client before delivering (`coursekit client`). With required: true,
 # `deliver` is refused until the client approves (or the review is skipped with a reason). A course can
 # override it in its course.yaml.

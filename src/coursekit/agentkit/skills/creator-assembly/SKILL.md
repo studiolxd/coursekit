@@ -77,7 +77,8 @@ the contents follow a theme that was changed and imported again.
 - `update`: apply the ops in order (`update_brick`, `delete_brick`, `add_brick` with `position`,
   `update_lesson` for `rename_lesson`, `update_quiz_settings` for `update_quiz`).
 - Assessment lessons: `update_quiz_settings` with the plan's `quiz` as its `config` (`passingGrade`,
-  `maxAttempts`, where 0 is unlimited, and `courseWeight`, the weight of the quiz among the quizzes of the unit).
+  `maxAttempts`, where 0 is unlimited, `courseWeight`, the weight of the quiz among the quizzes of the unit, and
+  `shuffleQuestions`, whether each learner sees its questions in another order).
 - `delete`: **ask the person** before `delete_lesson`.
 - EMBED packages built by coursekit (simulations, wrapped SVG) carry `slxd-embed.json`, creator's manifest: creator reads it
   when the folder is written in the brick and fills `properties.embedPackage` (`capabilities`: `complete`, `resize`,
