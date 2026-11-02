@@ -379,6 +379,7 @@ def test_a_fault_of_a_tool_is_told_to_the_agent_and_the_server_goes_on():
     assert answer["result"]["isError"] and "ValueError: lines of different lengths" in answer["result"]["content"][0]["text"]
 
 
+@pytest.mark.skipif(not term.supported(), reason="a stage runs its commands in bash: macOS and Linux")
 def test_a_browser_session_of_a_stage_serves_its_site_here(course, home, capsys):  # noqa: F811
     import urllib.request
 

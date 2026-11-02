@@ -22,6 +22,7 @@ qué no está hecho está en el estado del [README](README.es.md#estado). Las ve
 - Un átomo `Icon` para los vídeos (un icono del juego del proyecto pintado con un color del tema), y `marker: icon` en las escenas `list` y `split` (y la molécula `BulletList`), cada elemento con su icono.
 - `coursekit media report CODE`: cuánto se ve de cada unidad (apartados con un visual producido, visuales por tipo producidos, pendientes y planificados); `media plan` y el informe del handoff lo resumen.
 - La importación de eXeLearning conserva las imágenes de una galería en su orden, una por párrafo, sin los enlaces a los ficheros de dentro del paquete que se rompían en el curso.
+- Un escenario de captura se rechaza en Windows con un mensaje claro (sus comandos se ejecutan en bash); fallaba con un error oscuro.
 
 ## 0.8.0 — 2026-11-02
 

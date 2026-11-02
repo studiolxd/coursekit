@@ -176,6 +176,8 @@ def _run(command: str, folder: Path, env: dict[str, str], timeout: int) -> None:
 
 def mount(project: Project, course: dict, name: str, prepare: list[str] | None = None) -> Workspace:
     """Mounts the stage from scratch: its files in `<home>/<folder>/<name>`, its setup and the prepare of the resource."""
+    if os.name != "posix":  # its commands run in bash, as on macOS and Linux (on Windows `bash` is often that of WSL)
+        raise StageError(t("capture", "stage_unsupported"))
     cfg = capturemod.settings(project)
     terminal = dict(cfg.get("terminal") or {})
     spec = load(course, name)

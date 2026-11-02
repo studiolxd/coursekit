@@ -22,6 +22,7 @@ status of the [README](README.md#status). Versions are published on PyPI as `slx
 - An `Icon` atom for the videos (an icon of the set of the project painted in a colour of the theme), and `marker: icon` in the `list` and `split` scenes (and the `BulletList` molecule), each item with its icon.
 - `coursekit media report CODE`: how much of each unit is seen (sections with a visual produced, visuals by type produced, pending and planned); `media plan` and the report of the handoff sum it up.
 - The import of eXeLearning keeps the images of a gallery in their order, one per paragraph, without the links to the files inside the package that broke in the course.
+- A stage of a capture is refused on Windows with a clear message (its commands run in bash); it was failing with an obscure error.
 
 ## 0.8.0 — 2026-11-02
 
