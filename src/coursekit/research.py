@@ -22,6 +22,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass
 from html.parser import HTMLParser
 from pathlib import Path
+from typing import cast
 
 from coursekit import config, http
 from coursekit import course as coursemod
@@ -102,7 +103,7 @@ def country(cfg: dict, language: str) -> str | None:
 def _call(req: urllib.request.Request, name: str) -> dict:
     """The JSON a provider answers, retrying on 429 and 5xx. The key never reaches a message."""
     try:
-        return json.loads(http.request(req, timeout=60, retry_waits=RETRY_WAIT, retry_status=RETRY_STATUS).body.decode("utf-8"))
+        return cast(dict, json.loads(http.request(req, timeout=60, retry_waits=RETRY_WAIT, retry_status=RETRY_STATUS).body.decode("utf-8")))
     except http.HttpError as exc:
         if exc.status in (401, 403):
             raise ResearchError(t("research", "key_rejected", name=name, key=KEYS[name], status=exc.status)) from None
@@ -192,11 +193,12 @@ def prefer(results: list[Result], domains: list[str]) -> list[Result]:
 
 
 class _Head(HTMLParser):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
-        self.lang, self.alternates, self.title, self._in_title = "", {}, "", False
+        self.lang, self.title, self._in_title = "", "", False
+        self.alternates: dict[str, str] = {}
 
-    def handle_starttag(self, tag, attrs):
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         a = {k: v or "" for k, v in attrs}
         if tag == "html" and a.get("lang"):
             self.lang = a["lang"]
@@ -204,10 +206,10 @@ class _Head(HTMLParser):
             self.alternates[a["hreflang"].lower()] = a["href"]
         self._in_title = tag == "title"
 
-    def handle_endtag(self, tag):
+    def handle_endtag(self, tag: str) -> None:
         self._in_title = False
 
-    def handle_data(self, data):
+    def handle_data(self, data: str) -> None:
         if self._in_title:
             self.title += data
 
@@ -312,7 +314,7 @@ def localize(result: Result, language: str, where: str | None, rules: list[dict]
 
 
 def log_path(course: dict) -> Path:
-    return course["_dir"] / LOG
+    return cast(Path, course["_dir"] / LOG)
 
 
 def searches(course: dict) -> int:
@@ -377,7 +379,12 @@ def search(course: dict, query: str, fact: bool = False) -> Found:
         with ThreadPoolExecutor(max_workers=len(shown)) as pool:
             shown = list(pool.map(lambda r: localize(r, language, where, rules), shown))
         seen: set[str] = set()  # a translation can be a candidate the provider already gave
-        shown = [r for r in shown if not (r.url in seen or seen.add(r.url))]
+        unique = []
+        for r in shown:
+            if r.url not in seen:
+                seen.add(r.url)
+                unique.append(r)
+        shown = unique
     _write_log(course, name, query, fact, shown)
     done += 1
     warning = ""

@@ -9,6 +9,7 @@ import json
 import re
 import urllib.parse
 from pathlib import Path
+from typing import Any
 
 from coursekit import http
 
@@ -33,7 +34,7 @@ def base_of(url: str) -> str:
     return urllib.parse.urlunsplit((parts.scheme, parts.netloc, path, "", ""))
 
 
-def _json(url: str):
+def _json(url: str) -> Any:
     body = get(url)
     if body is None:
         return None
@@ -121,7 +122,7 @@ def download(base: str, folder: Path) -> dict:
     folder.mkdir(parents=True, exist_ok=True)
     readme = [f"# Storybook — {base}", ""]
     links: set[str] = set()
-    written = {"docs": 0, "components": 0, "files": [], "manifests": bool(docs or components)}
+    written: dict[str, Any] = {"docs": 0, "components": 0, "files": [], "manifests": bool(docs or components)}
     if docs:
         readme += ["## Documentation", ""]
         for page in sorted(docs.values(), key=lambda p: str(p.get("title") or "")):
@@ -153,12 +154,12 @@ def download(base: str, folder: Path) -> dict:
     if not (docs or components) and entries:  # an older Storybook: only what its index says
         readme += ["## Entries", ""] + sorted({f"- {e.get('title')}" for e in entries.values() if isinstance(e, dict)}) + [""]
     for url in sorted(links):
-        body = get(url)
-        if body is None:
+        raw = get(url)
+        if raw is None:
             continue
         target = folder / "files" / urllib.parse.urlsplit(url).path.lstrip("/")
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(body)
+        target.write_bytes(raw)
         written["files"].append(target)
     if written["files"]:
         readme += ["## Files", ""] + [f"- `{p.relative_to(folder).as_posix()}`" for p in written["files"]] + [""]

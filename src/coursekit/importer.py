@@ -13,8 +13,10 @@ import csv
 import re
 import shutil
 import unicodedata
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import cast
 
 import yaml
 
@@ -91,14 +93,15 @@ def _plan_of(folder: Path) -> CoursePlan:
         plan.units.sort(key=lambda u: u.path.name.casefold())
         plan.notes.append(t("importer", "order_by_name"))
     else:
-        duplicated = sorted({n for n in numbers if numbers.count(n) > 1})
+        known = cast("list[int]", numbers)  # none is None in this branch
+        duplicated = sorted({n for n in known if known.count(n) > 1})
         for n in duplicated:
             names = ", ".join(u.path.name for u in plan.units if u.number == n)
             plan.duplicates.append(t("importer", "duplicate_unit", number=n, names=names))
         plan.units.sort(key=lambda u: (u.number, u.path.name.casefold()))
-        expected = list(range(1, len(set(numbers)) + 1))
-        if sorted(set(numbers)) != expected:
-            plan.notes.append(t("importer", "numbers_gap", numbers=", ".join(str(n) for n in sorted(set(numbers)))))
+        expected = list(range(1, len(set(known)) + 1))
+        if sorted(set(known)) != expected:
+            plan.notes.append(t("importer", "numbers_gap", numbers=", ".join(str(n) for n in sorted(set(known)))))
     return plan
 
 
@@ -156,9 +159,9 @@ def read_table(path: Path) -> dict[str, dict]:
     for row in body:
         if len(row) <= max(i for i in (columns["folder"], columns["hours"]) if i is not None):
             continue
-        key = row[columns["folder"]].casefold()
+        key = row[cast(int, columns["folder"])].casefold()  # both columns are known here
         title = row[columns["title"]] if columns["title"] is not None and columns["title"] < len(row) else ""
-        table[key] = {"hours": _number(row[columns["hours"]]), "title": title}
+        table[key] = {"hours": _number(row[cast(int, columns["hours"])]), "title": title}
     return table
 
 
@@ -257,9 +260,10 @@ def page_for(section: dict, pages: list[tuple[str, int]], intro: re.Pattern, sum
 
 # ── Import ─────────────────────────────────────────────────────────────────────────────────────
 
-def import_course(project: Project, item: CoursePlan, log=print) -> Path:
+def import_course(project: Project, item: CoursePlan, log: Callable[[str], object] = print) -> Path:
     """Creates the course, copies its packages to the brief in the order of its units and converts them."""
-    folder = new.create(project, item.title, item.hours, code=item.code, origin="import")
+    # the caller skips the courses with problems, and a course without hours has one
+    folder = new.create(project, item.title, cast(float, item.hours), code=item.code, origin="import")
     sources = folder / "brief" / "sources"
     for index, unit in enumerate(item.units, 1):
         shutil.copy2(unit.path, sources / f"{index:02d}-{unit.path.name}")

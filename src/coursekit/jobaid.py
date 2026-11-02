@@ -15,6 +15,7 @@ from coursekit import course as coursemod
 from coursekit import theme as thememod
 from coursekit.i18n import t
 from coursekit.media import tools as mediatools
+from coursekit.project import Project
 
 NAME = "job-aid.html"
 DEFAULT = Path(__file__).parent / "templates" / "media" / NAME
@@ -30,18 +31,18 @@ class JobAidError(Exception):
     pass
 
 
-def own_template(project, course: dict | None = None) -> Path | None:
+def own_template(project: Project, course: dict | None = None) -> Path | None:
     """The template of the course (courses/<CODE>/theme/templates/), else of the project (theme/templates/); None when
     neither has one and the default of coursekit is used."""
     folders = ([course["_dir"] / "theme" / "templates"] if course else []) + [project.theme_dir / "templates"]
     return next((folder / NAME for folder in folders if (folder / NAME).is_file()), None)
 
 
-def template(project, course: dict | None = None) -> Path:
+def template(project: Project, course: dict | None = None) -> Path:
     return own_template(project, course) or DEFAULT
 
 
-def style_css(project, course: dict | None, families: list[str]) -> tuple[str, list[str]]:
+def style_css(project: Project, course: dict | None, families: list[str]) -> tuple[str, list[str]]:
     """The style of the job aids (`media › job_aid › text` and `shapes`) as CSS variables for the template (`--ja-<role>-<key>`,
     `--ja-<shape>`), and the warnings: a family that is not one of the fonts of the brand is left out."""
     cfg = configmod.effective("media", project, course).value.get("job_aid") or {}
@@ -83,7 +84,7 @@ def style_css(project, course: dict | None, families: list[str]) -> tuple[str, l
     return (":root {\n" + "\n".join(lines) + "\n}") if lines else "", warnings
 
 
-def page(project, course: dict | None = None) -> str:
+def page(project: Project, course: dict | None = None) -> str:
     """The page of the job aids (`media › job_aid`), as CSS writes it: "A4 portrait"."""
     cfg = configmod.effective("media", project, course).value.get("job_aid") or {}
     size, orientation = str(cfg.get("page") or "A4"), str(cfg.get("orientation") or "portrait")
@@ -98,7 +99,7 @@ def body_html(body: str) -> str:
 
     out = html(body)
 
-    def checklist(m: re.Match) -> str:
+    def checklist(m: re.Match[str]) -> str:
         items = re.findall(r"<li>(.*?)</li>", m.group(1), re.S)
         if not items or not all(CHECKBOX.match(item.strip()) for item in items):
             return m.group(0)
@@ -107,7 +108,7 @@ def body_html(body: str) -> str:
     return re.sub(r"<ul>(.*?)</ul>", checklist, out, flags=re.S)
 
 
-def page_html(project, course: dict | None, title: str, subtitle: str, body: str, language: str) -> tuple[str, list[str]]:
+def page_html(project: Project, course: dict | None, title: str, subtitle: str, body: str, language: str) -> tuple[str, list[str]]:
     """The page of a job aid: its template with the theme, the fonts and the style of the job aids, and the text; and the
     warnings of the style."""
     from coursekit import brand
@@ -131,7 +132,7 @@ def page_html(project, course: dict | None, title: str, subtitle: str, body: str
     return html, warnings
 
 
-def render(project, course: dict | None, title: str, subtitle: str, body: str, language: str,
+def render(project: Project, course: dict | None, title: str, subtitle: str, body: str, language: str,
            out: Path) -> tuple[Path, list[str]]:
     """The PDF of a job aid, and the warnings of its style."""
     if not body.strip():
@@ -157,7 +158,7 @@ def render_asset(course: dict, asset: dict) -> tuple[Path, list[str]]:
                   coursemod.language(course), out)
 
 
-def sample(project, course: dict | None = None) -> tuple[Path, list[str]]:
+def sample(project: Project, course: dict | None = None) -> tuple[Path, list[str]]:
     """A job aid with sample text, in theme/branding/samples/job-aid.pdf (of the course with its own theme): to look at the
     template while the theme is adjusted."""
     from coursekit import lang

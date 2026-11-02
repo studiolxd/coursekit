@@ -18,6 +18,7 @@ import html as htmllib
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import cast
 from xml.sax.saxutils import escape as xml_escape
 
 from coursekit import assemble as assemblemod
@@ -180,14 +181,14 @@ def gift_question(q: Question) -> str:
         answers = [f"={gift_text(plain(a))} -> {gift_text(plain(b))}" for a, b in pairs]
         return f"{title}{question} {{\n" + "\n".join(answers) + f"\n{gift_general(content)}}}"
     if q.kind == "SHORT_ANSWER":
-        answers = " ".join(f"={gift_text(i['text'])}" for i in data["items"])
-        return f"{title}{question} {{{answers}{right}{gift_general(content)}}}"
+        accepted = " ".join(f"={gift_text(i['text'])}" for i in data["items"])
+        return f"{title}{question} {{{accepted}{right}{gift_general(content)}}}"
     if q.kind == "FILL_IN_THE_BLANK":
         raw = unwrap(content["question"])
-        m = BLANK.search(raw)
-        answers = " ".join(f"={gift_text(a.strip())}" for a in m.group(1).split("/"))
+        m = cast("re.Match[str]", BLANK.search(raw))  # problems() lets through only a question with one blank
+        accepted = " ".join(f"={gift_text(a.strip())}" for a in m.group(1).split("/"))
         before, after = gift_escape(raw[: m.start()]), gift_escape(raw[m.end():])
-        return f"{title}[html]{before}{{{answers}{right}{gift_general(content)}}}{after}"
+        return f"{title}[html]{before}{{{accepted}{right}{gift_general(content)}}}{after}"
     raise BankError(t("questionbank", "type_not_allowed", name=q.name, kind=DIRECTIVES[q.kind], format="gift", allowed=""))
 
 

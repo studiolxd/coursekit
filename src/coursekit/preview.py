@@ -18,6 +18,7 @@ from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from importlib import resources
 from pathlib import Path
+from typing import Any, cast
 from urllib.parse import unquote, urlsplit
 
 from coursekit import course as coursemod
@@ -36,7 +37,7 @@ PANEL_TEXTS = ("panel_title", "unit", "standard", "status", "completion", "succe
 
 
 def units_dir(course: dict) -> Path:
-    return course["_dir"] / "assembly" / "html"
+    return cast(Path, course["_dir"] / "assembly" / "html")
 
 
 def unit_dir(course: dict, n: int) -> Path:
@@ -65,9 +66,9 @@ def page(course: dict, units: list[dict], first: int) -> str:
             .replace("__CONFIG__", data))
 
 
-def handler_for(course: dict, units: list[dict], first: int):
+def handler_for(course: dict, units: list[dict], first: int) -> type[SimpleHTTPRequestHandler]:
     class Handler(SimpleHTTPRequestHandler):
-        def log_message(self, format, *args):  # noqa: A002 - the signature of the standard library
+        def log_message(self, format: str, *args: Any) -> None:  # noqa: A002 - the signature of the standard library
             pass
 
         def _send(self, body: bytes, kind: str, status: HTTPStatus = HTTPStatus.OK) -> None:
@@ -99,10 +100,10 @@ def handler_for(course: dict, units: list[dict], first: int):
             except (BrokenPipeError, ConnectionResetError):
                 pass  # the browser stopped wanting it (a reload, a media element that moved on)
 
-        def do_HEAD(self):  # noqa: N802
+        def do_HEAD(self) -> None:  # noqa: N802
             self.do_GET()
 
-        def do_GET(self):  # noqa: N802
+        def do_GET(self) -> None:  # noqa: N802
             path = unquote(urlsplit(self.path).path)
             if path == "/favicon.ico":
                 self._send(b"", "image/x-icon", HTTPStatus.NO_CONTENT)
@@ -115,8 +116,8 @@ def handler_for(course: dict, units: list[dict], first: int):
                 self._send(body, "text/javascript; charset=utf-8")
                 return
             if path == "/__ck/stamps":
-                body = json.dumps({str(u["n"]): stamp(course, u["n"]) for u in units})
-                self._send(body.encode("utf-8"), "application/json")
+                stamps = json.dumps({str(u["n"]): stamp(course, u["n"]) for u in units})
+                self._send(stamps.encode("utf-8"), "application/json")
                 return
             parts = path.strip("/").split("/", 2)
             if len(parts) >= 2 and parts[0] == "unit" and parts[1].isdigit():

@@ -21,6 +21,7 @@ import json
 import subprocess
 from collections.abc import Callable
 from pathlib import Path
+from typing import cast
 
 from coursekit import course as coursemod
 from coursekit import identity, localdesign
@@ -30,6 +31,7 @@ from coursekit.errors import CoursekitError
 from coursekit.fingerprint import changed_since_review
 from coursekit.i18n import t
 from coursekit.lang import format_number
+from coursekit.project import Project
 from coursekit.states import WRITING_PHASE, derive_course_status, history_entry, now, set_unit_status
 from coursekit.sync import sync
 from coursekit.util import edit_yaml, save_yaml, sha256_file
@@ -96,9 +98,9 @@ def approve_design(course: dict, confirm: Confirm, do_commit: bool = True, who: 
     if validation_path.exists():
         findings = json.loads(validation_path.read_text(encoding="utf-8"))
         findings = findings.get("hallazgos", findings) if isinstance(findings, dict) else findings
-        errors = [h for h in findings if h.get("severidad") == "error"]
-        if errors:
-            raise ApprovalError(t("approve", "design_errors", count=len(errors)))
+        design_errors = [h for h in findings if h.get("severidad") == "error"]
+        if design_errors:
+            raise ApprovalError(t("approve", "design_errors", count=len(design_errors)))
     decision_based = (course.get("design") or {}).get("approach") == "decision-based"
     if decision_based:  # the story bible is signed with the design
         _, problems = storymod.load(course)
@@ -110,7 +112,8 @@ def approve_design(course: dict, confirm: Confirm, do_commit: bool = True, who: 
     check = sync(course, check_only=True)
     # the common errors of each objective are signed with the design
     per_objective = int((coursemod.rules(course).get("misconceptions") or {}).get("per_objective") or 0)
-    objectives = {str(o.get("id")): u.get("n") for u in check.units for o in u.get("objectives") or [] if isinstance(o, dict)}
+    objectives = cast("dict[str, int]",
+                      {str(o.get("id")): u.get("n") for u in check.units for o in u.get("objectives") or [] if isinstance(o, dict)})
     errors, problems = misconmod.load(course, objectives, per_objective)
     if problems:
         raise ApprovalError(t("approve", "misconceptions_problems", problems="\n  ".join(problems)))
@@ -219,7 +222,7 @@ def _notes_left_out(guide: Path) -> str:
     return t("approve", "media_style_notes_missing", count=len(missing), notes="\n".join(f"  · {n}" for n in missing)) + "\n"
 
 
-def _gallery_first(project, code: str | None) -> str:
+def _gallery_first(project: Project, code: str | None) -> str:
     """The reminder before signing a guide: look first at how the videos come out with the brand, in the gallery."""
     from coursekit import video
 
@@ -231,7 +234,7 @@ def _gallery_first(project, code: str | None) -> str:
     return t("approve", "media_style_no_gallery", command=command)
 
 
-def approve_project_media_style(project, confirm: Confirm, do_commit: bool = True, who: identity.Identity | None = None) -> str:
+def approve_project_media_style(project: Project, confirm: Confirm, do_commit: bool = True, who: identity.Identity | None = None) -> str:
     """The sign-off of the style guide of the project (theme/branding/media-style.md), once for every course that uses it (a
     course with its own guide signs that one). Recorded in project.yaml › approvals with its fingerprint; signed again when it
     changes."""

@@ -9,8 +9,9 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from html import escape
+from typing import cast
 
 from coursekit.htmlkit.sanitize import clean, unwrap
 
@@ -74,7 +75,7 @@ def text(brick: dict, ctx: Ctx) -> str:
 
 
 def heading(brick: dict, ctx: Ctx) -> str:
-    level = min(6, max(3, int(prop(brick, "level", 3) or 3)))
+    level = min(6, max(3, int(cast("int | str", prop(brick, "level", 3) or 3))))
     return f"<h{level} class=\"ck-heading\">{inline(content(brick))}</h{level}>"
 
 
@@ -342,7 +343,7 @@ def fill_in_the_blank(brick: dict, ctx: Ctx) -> str:
 
 
 def order_words(brick: dict, ctx: Ctx) -> str:
-    lines: dict[str, list[str]] = {line["id"]: [] for line in brick["data"].get("lines") or []}
+    lines: dict[str | None, list[str]] = {line["id"]: [] for line in brick["data"].get("lines") or []}
     for i in items(brick):
         lines.setdefault(i.get("lineId"), []).append(inline(i.get("content")))
     rows = "".join('<ul class="ck-words">' + "".join(f"<li>{w}</li>" for w in words) + "</ul>" for words in lines.values())
@@ -350,7 +351,7 @@ def order_words(brick: dict, ctx: Ctx) -> str:
 
 
 def short_answer(brick: dict, ctx: Ctx) -> str:
-    answers = [i.get("text") for i in items(brick) if i.get("text")]
+    answers = [cast("str", i.get("text")) for i in items(brick) if i.get("text")]
     body = (f'<label class="ck-short-label"><span class="ck-visually-hidden">{a(ctx.say("type_answer"))}</span>'
             f'<input type="text" class="ck-short" data-answers="{a("|".join(answers))}" autocomplete="off" spellcheck="false"></label>'
             f'<span class="ck-key" hidden>{a(" / ".join(answers))}</span>')
@@ -371,7 +372,7 @@ def _clean_screen(value: object, key: str = "") -> object:
 
 def _clean_simulation(data: dict) -> dict:
     """The data of a simulation for the player, with every text sanitised like the rest of the page."""
-    out = json.loads(json.dumps(data))
+    out: dict = json.loads(json.dumps(data))
     out["title"] = inline(out.get("title"))
     if out.get("screen"):
         out["screen"] = _clean_screen(out["screen"])
@@ -391,18 +392,18 @@ def _clean_simulation(data: dict) -> dict:
     return out
 
 
-def _clean_mechanics(scene: dict, inline_fn, block_fn) -> None:
+def _clean_mechanics(scene: dict, inline_fn: Callable[[str], str], block_fn: Callable[[str], str]) -> None:
     """The texts of the mechanics of a scene (symptoms, clues, the items of an inbox, the options of an allocation)."""
     if isinstance(scene.get("symptoms"), list):
         scene["symptoms"] = [inline_fn(str(s)) for s in scene["symptoms"]]
     for clue in scene.get("clues") or []:
         if isinstance(clue, dict):
             clue["label"], clue["text"] = inline_fn(str(clue.get("label") or "")), block_fn(str(clue.get("text") or ""))
-    inbox = scene.get("inbox") if isinstance(scene.get("inbox"), dict) else {}
+    inbox = cast("dict", scene.get("inbox") if isinstance(scene.get("inbox"), dict) else {})
     for item in inbox.get("items") or []:
         if isinstance(item, dict):
             item["text"] = inline_fn(str(item.get("text") or ""))
-    allocation = scene.get("allocation") if isinstance(scene.get("allocation"), dict) else {}
+    allocation = cast("dict", scene.get("allocation") if isinstance(scene.get("allocation"), dict) else {})
     for option in allocation.get("options") or []:
         if isinstance(option, dict):
             option["label"] = inline_fn(str(option.get("label") or ""))
@@ -453,7 +454,7 @@ def game(brick: dict, ctx: Ctx) -> str:
     elif brick["type"] == "PASAPALABRA":
         for i in rows:
             i["definition"], i["answer"] = inline(i.get("definition")), a(i.get("answer"))
-        mode = {"starts": ctx.say("game_starts"), "contains": ctx.say("game_contains")}
+        mode: dict[str | None, str] = {"starts": ctx.say("game_starts"), "contains": ctx.say("game_contains")}
         static = "".join(f"<li><strong>{a(i.get('letter'))}</strong> ({a(mode.get(i.get('mode'), ''))}) "
                          f"{i['definition']}: {i['answer']}</li>" for i in rows)
     else:
@@ -482,7 +483,7 @@ RENDERERS: dict[str, Callable[[dict, Ctx], str]] = {
 
 def unsupported_bricks(plan: dict) -> list[str]:
     """The bricks of the plan this backend cannot render yet: `lesson key: BRICK`."""
-    def walk(bricks: list[dict]):
+    def walk(bricks: list[dict]) -> Iterator[dict]:
         for brick in bricks:
             yield brick
             if brick["type"] == "CONDITIONAL":

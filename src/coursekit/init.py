@@ -21,6 +21,7 @@ import sys
 from dataclasses import dataclass, field
 from importlib import resources
 from pathlib import Path
+from typing import TextIO
 
 import yaml
 
@@ -199,7 +200,7 @@ def create(root: Path, answers: Answers, git: bool = True) -> Report:
         raise FileExistsError(t("init", "already_exists", path=root / PROJECT_FILE))
     values = answers.values()
     report = Report()
-    state = {"files": {}}
+    state: dict[str, dict] = {"files": {}}
     for folder in FOLDERS:
         (root / folder).mkdir(parents=True, exist_ok=True)
     for template, target in SEED.items():
@@ -254,7 +255,7 @@ def update(root: Path) -> Report:
     return report
 
 
-def pending_lines(stream=None) -> list[str]:
+def pending_lines(stream: TextIO | None = None) -> list[str]:
     """The lines already waiting on the input, which is what a multi-line paste leaves behind after the first one. It never waits
     for more; if the input cannot be inspected (no terminal, an unusual one) there are none."""
     stream = stream or sys.stdin
@@ -264,8 +265,8 @@ def pending_lines(stream=None) -> list[str]:
             import msvcrt
 
             text = ""
-            while msvcrt.kbhit():
-                text += msvcrt.getwch()
+            while msvcrt.kbhit():  # type: ignore[attr-defined]  # Windows-only API; the os.name check does not narrow for mypy
+                text += msvcrt.getwch()  # type: ignore[attr-defined]  # Windows-only API
             lines = [part for part in text.replace("\r", "\n").split("\n")]
         else:
             import select

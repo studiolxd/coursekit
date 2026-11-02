@@ -20,9 +20,10 @@ import subprocess
 import sys
 import tempfile
 import threading
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import cast
 
 from coursekit import assemble as assemblemod
 from coursekit import course as coursemod
@@ -121,7 +122,7 @@ def missing_files(folder: Path) -> list[str]:
 
 # ── the scenario: what to play ───────────────────────────────────────────────────────────────
 
-def _walk_bricks(bricks: list[dict]):
+def _walk_bricks(bricks: list[dict]) -> Iterator[dict]:
     for brick in bricks:
         yield brick
         if brick.get("type") == "CONDITIONAL":
@@ -134,7 +135,7 @@ def decision_steps(sim: simmod.Simulation, path: dict) -> list | None:
     cannot be found."""
     scenes = sim.data.get("scenes") or {}
     env = dict(sim.data.get("state") or {})
-    steps: list[int | None] = []
+    steps: list[int | dict[str, int] | None] = []
     for sid, label in path["steps"]:
         scene = scenes.get(sid) or {}
         if label is None:
@@ -143,7 +144,7 @@ def decision_steps(sim: simmod.Simulation, path: dict) -> list | None:
         if label.startswith("task:") and simmod.task_of(scene):
             k = int(label.split(":", 1)[1])
             steps.append({"task": k})
-            env = {**env, str(simmod.task_of(scene)[1].get("store")): k}
+            env = {**env, str(cast("tuple[str, dict]", simmod.task_of(scene))[1].get("store")): k}  # checked above
             continue
         found = None
         for i, decision in enumerate(simmod._decisions(scene)):
@@ -240,7 +241,7 @@ def run_browser(data: dict, say: Say) -> dict:
         result = subprocess.run([node, "check.mjs", str(scenario_file)], cwd=workspace, capture_output=True, text=True,
                                 encoding="utf-8", check=False, timeout=900)
     try:
-        observed = json.loads(result.stdout or "{}")
+        observed: dict = json.loads(result.stdout or "{}")
     except json.JSONDecodeError:
         observed = {"ok": False, "error": (result.stderr or result.stdout).strip()[:500]}
     if not observed.get("ok"):

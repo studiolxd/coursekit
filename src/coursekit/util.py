@@ -11,8 +11,10 @@ import sys
 import threading
 import time
 import unicodedata
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Any
 
 import yaml
 from ruamel.yaml import YAML
@@ -37,18 +39,18 @@ def roundtrip_yaml() -> YAML:
     return ry
 
 
-def edit_yaml(path: Path):
+def edit_yaml(path: Path) -> tuple[YAML, Any]:
     """Context-free helper: load a YAML file for round-trip editing. Returns (yaml, data)."""
     ry = roundtrip_yaml()
     return ry, ry.load(path.read_text(encoding="utf-8"))
 
 
-def save_yaml(ry: YAML, data, path: Path) -> None:
+def save_yaml(ry: YAML, data: Any, path: Path) -> None:
     with path.open("w", encoding="utf-8", newline="\n") as fh:
         ry.dump(data, fh)
 
 
-def save_yaml_atomic(ry: YAML, data, path: Path) -> None:
+def save_yaml_atomic(ry: YAML, data: Any, path: Path) -> None:
     """Like save_yaml, but whoever reads the file meanwhile sees the old one or the new one, never half of it."""
     buffer = io.StringIO()
     ry.dump(data, buffer)
@@ -74,7 +76,7 @@ _held_guard = threading.Lock()
 
 
 @contextmanager
-def file_lock(path: Path, timeout: float = 120):
+def file_lock(path: Path, timeout: float = 120) -> Iterator[None]:
     """An exclusive lock between processes (agents in parallel) on a lock file next to what it protects. Reentrant in the same
     thread; the system frees it if the process dies. LockTimeout when another process keeps it longer than `timeout`."""
     key = str(path.resolve())

@@ -21,7 +21,9 @@ import datetime as dt
 import hashlib
 import json
 import os
+from collections.abc import Callable
 from pathlib import Path
+from typing import cast
 
 from coursekit import course as coursemod
 from coursekit import http
@@ -41,7 +43,7 @@ class BatchError(CoursekitError):
 # ── the queue ────────────────────────────────────────────────────────────────────────────────
 
 def queue_path(course: dict) -> Path:
-    return course["_dir"] / "media" / "tts-batch.yaml"
+    return cast(Path, course["_dir"] / "media" / "tts-batch.yaml")
 
 
 def load(course: dict) -> dict:
@@ -150,17 +152,17 @@ class Api:
         if not url:
             raise BatchError(t("ttsbatch", "upload_failed"))
         _, body = self._call(url, data, {"X-Goog-Upload-Command": "upload, finalize", "X-Goog-Upload-Offset": "0"})
-        return json.loads(body)["file"]["name"]
+        return cast(str, json.loads(body)["file"]["name"])
 
     def create(self, model: str, file_name: str, name: str) -> dict:
         _, body = self._call(f"{mediatools.GEMINI_API}/models/{model}:batchGenerateContent",
                              json.dumps({"batch": {"display_name": name, "input_config": {"file_name": file_name}}}).encode(),
                              {"Content-Type": "application/json"})
-        return json.loads(body)
+        return cast(dict, json.loads(body))
 
     def get(self, job: str) -> dict:
         _, body = self._call(f"{mediatools.GEMINI_API}/{job}", method="GET")
-        return json.loads(body)
+        return cast(dict, json.loads(body))
 
     def download(self, file_name: str) -> bytes:
         _, body = self._call(f"{DOWNLOAD}/{file_name}:download?alt=media", method="GET")
@@ -169,7 +171,7 @@ class Api:
 
 def _batch(answer: dict) -> dict:
     """The batch of an answer of the API: the answer itself, or its `metadata` (it comes as an operation)."""
-    return answer.get("metadata") if isinstance(answer.get("metadata"), dict) and "state" in answer["metadata"] else answer
+    return cast(dict, answer.get("metadata") if isinstance(answer.get("metadata"), dict) and "state" in answer["metadata"] else answer)
 
 
 def _state(answer: dict) -> str:
@@ -228,7 +230,7 @@ def status(course: dict, api: Api | None = None) -> dict:
     return {"state": data["state"], "job": data["job"], "stats": {k: int(v) for k, v in stats.items() if str(v).isdigit()}}
 
 
-def _finish(course: dict, item: dict, pcm: bytes, rate: int, say) -> None:
+def _finish(course: dict, item: dict, pcm: bytes, rate: int, say: Callable[[str], object]) -> None:
     """Writes the narration and finishes what it was for."""
     root = course["_project"].root
     out = root / item["out"]
@@ -249,7 +251,7 @@ def _finish(course: dict, item: dict, pcm: bytes, rate: int, say) -> None:
     say(t("ttsbatch", "written", path=item["out"]))
 
 
-def collect(course: dict, api: Api | None = None, say=print) -> dict:
+def collect(course: dict, api: Api | None = None, say: Callable[[str], object] = print) -> dict:
     """Downloads the results of a finished job, writes each narration and leaves in the queue what failed."""
     data = load(course)
     if not data.get("job"):
@@ -278,7 +280,7 @@ def collect(course: dict, api: Api | None = None, say=print) -> dict:
             if not all(p and p.get("response") for p in pieces):
                 error = next((p.get("error") for p in pieces if p and p.get("error")), None) or state
                 raise BatchError(str(error.get("message") if isinstance(error, dict) else error))
-            audio = [mediatools.gemini_audio(p["response"]) for p in pieces]
+            audio = [mediatools.gemini_audio(cast(dict, p)["response"]) for p in pieces]  # all present: checked above
             _finish(course, item, b"".join(a[0] for a in audio), audio[0][1], say)
             item["state"] = "done"
             done += 1

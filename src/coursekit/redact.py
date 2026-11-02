@@ -19,9 +19,10 @@ import subprocess
 import sys
 import tempfile
 from collections import Counter
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 from PIL import Image, ImageDraw, ImageFilter
 
@@ -247,16 +248,16 @@ def text_boxes(lines: list[Line], rules: dict, who: pii.People, terms: list[str]
     return boxes
 
 
-def _face_detector():
+def _face_detector() -> tuple[Any, Any] | None:
     try:
         import cv2
     except ImportError:
         return None
-    cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
+    cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")  # type: ignore[attr-defined]  # cv2.data is missing from the OpenCV stubs
     return None if cascade.empty() else (cv2, cascade)
 
 
-def face_boxes(image: Image.Image, detector) -> list[Box]:
+def face_boxes(image: Image.Image, detector: tuple[Any, Any]) -> list[Box]:
     import numpy as np
 
     cv2, cascade = detector
@@ -351,7 +352,7 @@ def redact_video(source: Path, target: Path, redactor: Redactor, fps: float, rev
     probe.release()
     every = max(1, round(rate / max(0.1, fps)))
 
-    def frames():
+    def frames() -> Iterator[Image.Image]:
         video = cv2.VideoCapture(str(source))
         try:
             while True:
@@ -388,7 +389,8 @@ def redact_video(source: Path, target: Path, redactor: Redactor, fps: float, rev
             covered = cover(image, readings[before] + readings[after], redactor.style, redactor.margin)
             frame = cv2.cvtColor(np.array(covered), cv2.COLOR_RGB2BGR)
             if writer is None:
-                writer = cv2.VideoWriter(str(silent), cv2.VideoWriter_fourcc(*"MJPG"), rate, (frame.shape[1], frame.shape[0]))
+                fourcc = cv2.VideoWriter_fourcc(*"MJPG")  # type: ignore[attr-defined]  # missing from the OpenCV stubs
+                writer = cv2.VideoWriter(str(silent), fourcc, rate, (frame.shape[1], frame.shape[0]))
             writer.write(frame)
         if writer is not None:
             writer.release()

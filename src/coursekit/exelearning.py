@@ -21,6 +21,7 @@ import zipfile
 from dataclasses import dataclass, field
 from html.parser import HTMLParser
 from pathlib import Path
+from typing import cast
 
 from coursekit import lang as langmod
 from coursekit.i18n import t
@@ -127,7 +128,7 @@ def read(path: Path) -> Package:
             raise ExeError(t("exelearning", "broken_xml", file=path.name, error=exc)) from exc
     package = Package(path=path)
     package.names = {posixpath.basename(n).lower(): n for n in names if not n.endswith("/")}
-    package.refs = {e.get("reference"): e for e in root.iter(NS + "instance") if e.get("reference")}
+    package.refs = {cast("str", e.get("reference")): e for e in root.iter(NS + "instance") if e.get("reference")}
     data = _pairs(root.find(NS + "dictionary"))
     package.title = _value(data.get("_title")).strip()
     package.language = _value(data.get("_lang")).strip()
@@ -181,22 +182,22 @@ class _Parser(HTMLParser):
         self.root = Dom("root")
         self.stack = [self.root]
 
-    def handle_starttag(self, tag, attrs):
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         node = Dom(tag, {k: v or "" for k, v in attrs})
         self.stack[-1].children.append(node)
         if tag not in VOID:
             self.stack.append(node)
 
-    def handle_startendtag(self, tag, attrs):
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         self.stack[-1].children.append(Dom(tag, {k: v or "" for k, v in attrs}))
 
-    def handle_endtag(self, tag):
+    def handle_endtag(self, tag: str) -> None:
         for i in range(len(self.stack) - 1, 0, -1):
             if self.stack[i].tag == tag:
                 del self.stack[i:]
                 return
 
-    def handle_data(self, data):
+    def handle_data(self, data: str) -> None:
         self.stack[-1].children.append(data)
 
 
@@ -434,7 +435,7 @@ class _Markup:
                 items.append(("", [child]))
         self.depth += 1
         try:
-            parts = []
+            parts: list[str] = []
             provisional = 0
             for title, body in items:
                 text = "\n\n".join(self.flow(body))
@@ -598,7 +599,7 @@ class Converter(_Markup):
         for question in package.items(idev.data.get("questions")):
             q = _pairs(question.find(NS + "dictionary"))
 
-            def text(key: str, q=q) -> str:
+            def text(key: str, q: dict[str, ET.Element] = q) -> str:
                 raw = _html_of(package, q.get(key))
                 self.source_words += words_of(plain(parse_html(raw)))
                 return squash(self.html_to_md(raw).replace("\n", " "))
@@ -740,10 +741,10 @@ def convert(path: Path, media_dir: Path, media_rel: str, rules: list[dict], lang
             out.pop()
             conv.report.empty_pages.append(page.title)
 
-    walk(package.root, 0)
+    walk(cast(Page, package.root), 0)  # read() always sets the root
     text = "\n\n".join(x for x in out if x).strip() + "\n"
     report = conv.report
-    wanted = {}
+    wanted: dict[str, int] = {}
     for w in conv.source_words:
         wanted[w] = wanted.get(w, 0) + 1
     bare = _bare(text)
@@ -762,7 +763,7 @@ def convert(path: Path, media_dir: Path, media_rel: str, rules: list[dict], lang
 
 def summary_notes(report: Report) -> list[tuple[str, dict]]:
     """What a person should look at, as keys of the messages of the brief."""
-    notes = []
+    notes: list[tuple[str, dict]] = []
     if report.missing_words:
         notes.append(("exe_missing_words", {"count": len(report.missing_words)}))
     if report.unmapped:

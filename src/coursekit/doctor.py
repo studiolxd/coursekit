@@ -8,8 +8,10 @@ import json
 import os
 import shutil
 import sys
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import cast
 
 from coursekit import __version__, config, extras, identity, store, updatecheck
 from coursekit import agents as agentsmod
@@ -41,7 +43,7 @@ class Section:
 
 def _read_json(path: Path) -> dict:
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        return cast(dict, json.loads(path.read_text(encoding="utf-8")))
     except (OSError, ValueError):
         return {}
 
@@ -84,7 +86,7 @@ def needs_docs(project: Project) -> bool:
     brief hands to MarkItDown every file of brief/sources/ that is not an image, audio, video, text or an eXeLearning package."""
     from coursekit import brand, brief
 
-    def any_file(folder: Path, convertible) -> bool:
+    def any_file(folder: Path, convertible: Callable[[str], object]) -> bool:
         return folder.is_dir() and any(f.is_file() and not f.name.startswith(".") and convertible(f.suffix.lower())
                                        for f in folder.rglob("*"))
 
@@ -144,8 +146,8 @@ def collect(project: Project) -> list[Section]:
         base.add(bool(find_browser()) or None, t("doctor", "html_browser"), t("doctor", "html_browser_hint"))
 
     theme = Section(t("doctor", "section_theme"))
-    found = thememod.status(project)
-    theme.add(True if found.state == "derived" else None, t("doctor", f"theme_{found.state}"), t("doctor", "theme_hint"))
+    theme_status = thememod.status(project)
+    theme.add(True if theme_status.state == "derived" else None, t("doctor", f"theme_{theme_status.state}"), t("doctor", "theme_hint"))
 
     media = Section(t("doctor", "section_media"))
     for tool in ("ffmpeg", "vhs", "asciinema", "piper", "stable-ts"):

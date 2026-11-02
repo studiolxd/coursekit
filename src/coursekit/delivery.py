@@ -12,6 +12,7 @@ from __future__ import annotations
 import datetime as dt
 import zipfile
 from pathlib import Path
+from typing import TYPE_CHECKING, cast
 
 from coursekit import clientreview, config, http, identity
 from coursekit import course as coursemod
@@ -19,6 +20,9 @@ from coursekit.errors import CoursekitError
 from coursekit.i18n import t
 from coursekit.states import ensure_active, history_entry
 from coursekit.util import edit_yaml, save_yaml, sha256_file
+
+if TYPE_CHECKING:
+    from ruamel.yaml import YAML
 
 
 class DeliveryError(CoursekitError):
@@ -47,7 +51,7 @@ def check_ready(course: dict) -> str | None:
 def expected_name(course: dict, unit: int, version: str) -> str:
     cfg = settings(course)
     standard = cfg["export"]["standard"].replace("_", "")
-    return cfg["file_name"].format(code=course["code"], unit=unit, version=version, standard=standard)
+    return cast(str, cfg["file_name"]).format(code=course["code"], unit=unit, version=version, standard=standard)
 
 
 def check_package(path: Path) -> str | None:
@@ -67,7 +71,7 @@ def download(course: dict, unit: int, version: str, url: str) -> str:
     check_ready(course)
     if not url.startswith("https://"):
         raise DeliveryError(t("delivery", "download_not_https"))
-    folder = course["_dir"] / "delivery"
+    folder: Path = course["_dir"] / "delivery"
     folder.mkdir(exist_ok=True)
     path = folder / expected_name(course, unit, version)
     partial = path.with_name(path.name + ".part")
@@ -127,7 +131,7 @@ def _pending(course: dict, deliveries: list[dict], version: str) -> list[str]:
     return pending
 
 
-def _close(course: dict, ry, data: dict, version: str, name: str, warning: str | None) -> str:
+def _close(course: dict, ry: YAML, data: dict, version: str, name: str, warning: str | None) -> str:
     """Saves the record and, when nothing of the version is missing, moves the course to `delivered`."""
     pending = _pending(course, data["deliveries"], version)
     if not pending and data["status"] in ("assembly", "client_review"):
@@ -148,7 +152,7 @@ def download_bank(course: dict, version: str, fmt: str, url: str) -> Path:
     """The bank creator exported (`create_export` question_bank of the bank content), saved in delivery/."""
     if not url.startswith("https://"):
         raise DeliveryError(t("delivery", "download_not_https"))
-    path = course["_dir"] / "delivery" / f"{course['code']}-questions-v{version}.{BANK_EXTENSIONS[fmt]}"
+    path: Path = course["_dir"] / "delivery" / f"{course['code']}-questions-v{version}.{BANK_EXTENSIONS[fmt]}"
     path.parent.mkdir(exist_ok=True)
     partial = path.with_name(path.name + ".part")
     try:
