@@ -11,9 +11,9 @@ Lo que se va haciendo se tacha y pasa a la sección [Hecho](#hecho), al final, c
 
 ## 1. Estructura del código
 
-- **`commands.py` (1 720 líneas) y `cli.py` concentran el despacho de todos los comandos.** Cada
-  comando nuevo crece el mismo fichero. Propuesta: un registro de comandos donde cada módulo declare
-  su subcomando (`register(subparsers)`), y `cli.py` se limite a recorrer el registro. Permite además
+- **`commands.py` (1 720 líneas) declara 38 subcomandos en un solo `register(sub)`.** Cada comando nuevo crece el
+  mismo fichero, y al importarlo se cargan todos sus módulos (`openpyxl` incluido). Propuesta: partirlo en un módulo por
+  grupo de comandos, cada uno con su `register`. Permite además
   cargar módulos pesados (`capture_*`, `video`, `exelearning`) solo cuando se invoca su comando, lo que
   acorta el arranque de `coursekit --help`.
 - **Familia `capture_*` (seis módulos, más `capture.py` y `capture_session.py`, ~4 000 líneas).** Es ya
@@ -39,9 +39,8 @@ Lo que se va haciendo se tacha y pasa a la sección [Hecho](#hecho), al final, c
   ampliando.
 - **Reglas de ruff que faltan.** Añadir `SIM`, `RET`, `PTH` (uso de `pathlib` en vez de `os.path`) y
   `PERF`. Cada una se añade con `--fix` y un commit propio.
-- **Tiempo de la suite.** No hay marcador de pruebas lentas. Las que levantan navegador, ffmpeg o un
-  servidor deberían llevar `@pytest.mark.slow` y quedar fuera del `pytest -q` habitual (CI las corre
-  todas). Hoy el `real_defaults` es el único marcador.
+- **Tiempo de la suite.** Las pruebas que necesitan navegador, ffmpeg, OpenCV o pyte ya se saltan solas cuando falta
+  la herramienta, y la CI las corre en un trabajo aparte. Un marcador `slow` solo si una medida de duraciones lo pide.
 - **Los fixtures de proyecto se construyen a mano en cada test.** Un `conftest.py` con un fixture
   `project(tmp_path)` que ejecute `init` y escriba un curso mínimo ("contraseñas robustas", cliente
   ACME) ahorraría código en casi todos los ficheros de `tests/`.
@@ -64,8 +63,8 @@ Lo que se va haciendo se tacha y pasa a la sección [Hecho](#hecho), al final, c
 
 ## 4. Dependencias y distribución
 
-- **`markitdown[pdf,docx,pptx,xlsx,xls,outlook]` es la dependencia más pesada** y solo la usa `brief`.
-  Moverla a un extra `brief` (o `docs`) deja la instalación base mucho más ligera; `doctor` pide el
+- **`markitdown[pdf,docx,pptx,xlsx,xls,outlook]` es la dependencia más pesada** (trae `onnxruntime`, `pandas` y
+  `numpy`) y solo la usan `brief` y `brand`. Moverla a un extra `docs` deja la instalación base mucho más ligera; `doctor` pide el
   extra cuando haga falta.
 - **`opencv-python` fijado a `<5`** por rapidocr: anotar en `docs/*/09-troubleshooting.md` qué pasa si
   el usuario tiene otro OpenCV instalado, y comprobarlo en `doctor`.
