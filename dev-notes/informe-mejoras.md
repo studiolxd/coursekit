@@ -30,10 +30,7 @@ Nada pendiente: ver [Hecho](#hecho).
 
 ## 5. Documentación
 
-- **Las notas de `dev-notes/`** (`assessment-delivery`, `capture`, `field-feedback`, `gemini-tts`,
-  `pedagogical-criteria`, `research`, `terminal-capture`, `video`) corresponden a funciones que el
-  README ya da por publicadas. Según las reglas del repositorio, lo que ya está en `docs/` debe
-  borrarse de aquí; conviene repasar cada una y dejar solo las decisiones abiertas.
+Nada pendiente: ver [Hecho](#hecho).
 
 ## Orden propuesto
 
@@ -41,8 +38,7 @@ Sigue las fases del [plan](plan-mejoras.md).
 
 1. Marcador de pruebas lentas, si lo pide una medida de duraciones de la suite completa (sección 2).
 2. Ampliar `mypy` a más módulos, uno a uno (sección 2).
-3. Limpieza de `dev-notes/` (sección 5; fase 6).
-4. OCR de `capture` con `rapidocr` para Python 3.13 y 3.14 (sección 4; fuera del plan, necesita probarse con capturas reales).
+3. OCR de `capture` con `rapidocr` para Python 3.13 y 3.14 (sección 4; fuera del plan, necesita probarse con capturas reales).
 
 ## Hecho
 
@@ -116,3 +112,9 @@ Sigue las fases del [plan](plan-mejoras.md).
   `09-delivery.md` y `10-client-review.md`, y la resolución de problemas pasa a `11`. El banco de preguntas se queda en
   Montaje, dentro de «Dónde van las evaluaciones», porque es parte del plan de montaje; mover solo ese apartado partía en
   dos una explicación. Los enlaces se rehicieron por el fichero donde vive cada ancla.
+- ~~**Las notas de `dev-notes/`.**~~ Hecho el 2 de noviembre de 2026: cada punto se comprobó contra `docs/`, el código y el
+  README. Quedan `capture.md` (junta la del modo terminal), `gemini-tts.md`, `pedagogical-criteria.md` y `research.md` con
+  lo pendiente y el fundamento, y `validacion-pendiente.md` con lo que solo falta probar (evaluaciones aparte, curso piloto,
+  vídeos). Lo que solo estaba en las notas pasó a `docs/` antes de borrarlo: lo que el screencast no muestra, lo que no es
+  texto en la página, la carpeta personal tapada en el modo terminal y `home: clean`, y `research` en los cursos
+  importados. La revisión salió con una contradicción con la redacción (pasos numerados frente a carrusel), ya corregida.

@@ -131,7 +131,7 @@ hide: [opencode]        # commands that are not on the PATH (a machine without t
 env: {}                 # variables added
 ```
 
-Before each session coursekit mounts the stage from scratch in `<home>/<folder>/<name>`: it copies `files/`, runs its `setup` and the `prepare` of the `capture` block of the resource (what that one needs on top: a file taken away, a change already made), and starts `bash` there with no startup file of the person, a short prompt, the language of the course and an invented git author. So every take starts clean, and it can be repeated. coursekit writes down the folders it made and never deletes or overwrites one it did not make. `home: clean` gives an empty home folder (in the store of coursekit), and `hide` leaves commands out of the PATH (each folder that has one is replaced by links to everything else in it).
+Before each session coursekit mounts the stage from scratch in `<home>/<folder>/<name>`: it copies `files/`, runs its `setup` and the `prepare` of the `capture` block of the resource (what that one needs on top: a file taken away, a change already made), and starts `bash` there with no startup file of the person, a short prompt, the language of the course and an invented git author. So every take starts clean, and it can be repeated. coursekit writes down the folders it made and never deletes or overwrites one it did not make. `home: clean` gives an empty home folder (in the store of coursekit, with the XDG folders and the git configuration inside it), and `hide` leaves commands out of the PATH (each folder that has one is replaced by links to everything else in it).
 
 ```capture
 mode: terminal

@@ -131,7 +131,7 @@ hide: [opencode]        # órdenes que no están en el PATH (una máquina sin el
 env: {}                 # variables añadidas
 ```
 
-Antes de cada sesión coursekit monta el escenario de cero en `<home>/<folder>/<nombre>`: copia `files/`, ejecuta su `setup` y el `prepare` del bloque `capture` del recurso (lo que ese necesita además: un fichero quitado, un cambio ya hecho), y arranca allí `bash` sin ningún fichero de arranque de la persona, con un prompt corto, el idioma del curso y un autor de git inventado. Así cada toma empieza limpia y se puede repetir. coursekit apunta las carpetas que crea y nunca borra ni pisa una que no haya creado. `home: clean` da una carpeta personal vacía (en el almacén de coursekit), y `hide` deja órdenes fuera del PATH (cada carpeta que tiene una se sustituye por enlaces a todo lo demás).
+Antes de cada sesión coursekit monta el escenario de cero en `<home>/<folder>/<nombre>`: copia `files/`, ejecuta su `setup` y el `prepare` del bloque `capture` del recurso (lo que ese necesita además: un fichero quitado, un cambio ya hecho), y arranca allí `bash` sin ningún fichero de arranque de la persona, con un prompt corto, el idioma del curso y un autor de git inventado. Así cada toma empieza limpia y se puede repetir. coursekit apunta las carpetas que crea y nunca borra ni pisa una que no haya creado. `home: clean` da una carpeta personal vacía (en el almacén de coursekit, con las carpetas XDG y la configuración de git dentro), y `hide` deja órdenes fuera del PATH (cada carpeta que tiene una se sustituye por enlaces a todo lo demás).
 
 ```capture
 mode: terminal

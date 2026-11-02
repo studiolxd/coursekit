@@ -224,6 +224,8 @@ The course is the client's: its text comes from the packages converted in `brief
   many hours the design has: `coursekit verify` only warns that a unit is short, and **fails** when `content.md` has more
   than {{import_max_growth}} times the words of its package. Never add narrative, examples, scenarios or explanations that the
   package does not have to reach a length.
+- **`coursekit research` only checks.** In an imported course use it for the reference documentation and to check a fact
+  marked to verify, never to find more content to add.
 - **Reuse the text; do not rewrite it.** Take each section's text from the package page its `source:` names, as it is: do not
   summarise, restyle or "improve" it. Change only what the format needs (the `## {{t_section}}` headings, the objective tag, the directive keys of
   the course language) and what the notes ask (below). What is missing for the design (an objective's practice, assessment
