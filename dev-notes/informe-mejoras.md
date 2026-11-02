@@ -15,8 +15,6 @@ Nada pendiente: ver [Hecho](#hecho).
 
 ## 2. Calidad y pruebas
 
-- **Tiempo de la suite.** Las pruebas que necesitan navegador, ffmpeg, OpenCV o pyte ya se saltan solas cuando falta
-  la herramienta, y la CI las corre en un trabajo aparte. Un marcador `slow` solo si una medida de duraciones lo pide.
 ## 3. Experiencia de uso
 
 Nada pendiente: ver [Hecho](#hecho).
@@ -33,8 +31,7 @@ Nada pendiente: ver [Hecho](#hecho).
 
 Sigue las fases del [plan](plan-mejoras.md).
 
-1. Marcador de pruebas lentas, si lo pide una medida de duraciones de la suite completa (sección 2).
-2. Tipar los 39 módulos de `[tool.mypy] exclude`, uno a uno (sección 2).
+1. Tipar los 39 módulos de `[tool.mypy] exclude`, uno a uno (sección 2).
 
 ## Hecho
 
@@ -129,3 +126,6 @@ Sigue las fases del [plan](plan-mejoras.md).
 - ~~**Ampliar `mypy` a más módulos.**~~ Hecho en parte el 2 de noviembre de 2026: comprueba ya todo el paquete (76 ficheros)
   salvo 39 módulos que daban más de tres avisos, en `[tool.mypy] exclude`; un módulo nuevo nace tipado. Los 50 avisos de
   los 25 módulos añadidos eran anotaciones que faltaban y valores de YAML o JSON sin tipo; ninguno era un fallo.
+- ~~**Tiempo de la suite.**~~ Descartado el 2 de noviembre de 2026 con la medida: 850 tests en 5 min 18 s en macOS, con el
+  extra `capture`; el más lento tarda 5 s y los 25 más lentos suman unos 50 s. El tiempo está repartido: un marcador `slow`
+  ahorraría poco y dejaría tests fuera de la pasada habitual.
