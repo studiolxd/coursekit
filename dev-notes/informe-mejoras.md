@@ -5,21 +5,11 @@ Nota de trabajo (1 de noviembre de 2026). Revisión rápida del paquete en su es
 más de 700 pruebas, 9 ficheros de documentación por idioma. Las propuestas están ordenadas por lo que
 más conviene atacar primero. Cada una cabe en un cambio pequeño salvo donde se indica.
 
-## 1. Incoherencias visibles (arreglo inmediato)
+Cómo se aborda, por fases y con la validación de cada una: [plan de mejoras](plan-mejoras.md).
 
-- **La versión del README no es la del paquete.** `README.md › Status` dice "Early development (`0.3`)"
-  y `pyproject.toml` lleva `0.7.0`. Los límites conocidos del backend creator
-  (`docs/*/08-assembly-and-delivery.md`) dicen "when this version (0.2) was written". Conviene que esas
-  frases no lleven número, o que un test (`tests/test_docs.py`) compare el número con el de `pyproject.toml`.
-- **No hay `CHANGELOG`.** El estado del proyecto vive en una lista de "New:" del README que ya ocupa
-  veinte párrafos largos y que nadie podrá leer entera. Propuesta: `CHANGELOG.md` por versión (en
-  inglés, con su copia `.es`), y que el README se quede con cuatro bloques cortos: sólido, nuevo, en
-  curso, pendiente. Los párrafos actuales de "New" pasan al changelog de la versión en que entraron.
-- **Diferencia sin commit muy grande.** Hay 48 ficheros tocados y más de 800 líneas sin confirmar que
-  mezclan varios temas (banco de preguntas, galería, entrega, reglas, player html). Cuanto antes se
-  partan en commits por tema, menos cuesta revisarlos y menos riesgo de perder algo.
+Lo que se va haciendo se tacha y pasa a la sección [Hecho](#hecho), al final, con la fecha y cómo se resolvió.
 
-## 2. Estructura del código
+## 1. Estructura del código
 
 - **`commands.py` (1 720 líneas) y `cli.py` concentran el despacho de todos los comandos.** Cada
   comando nuevo crece el mismo fichero. Propuesta: un registro de comandos donde cada módulo declare
@@ -40,7 +30,7 @@ más conviene atacar primero. Cada una cabe en un cambio pequeño salvo donde se
   su manera (TTS, búsqueda web, Magnific, creator, PyPI). Un `http.py` con reintentos, tiempo de
   espera y el `User-Agent` del paquete, y una sola forma de leer las claves del `.env`.
 
-## 3. Calidad y pruebas
+## 2. Calidad y pruebas
 
 - **Sin comprobación de tipos.** Ruff pasa (`E, F, I, UP, B`) pero no hay `mypy` ni `pyright`. Con 27 000
   líneas que mueven diccionarios de YAML, el tipado de los puntos de entrada (`course.py`, `config.py`,
@@ -56,7 +46,7 @@ más conviene atacar primero. Cada una cabe en un cambio pequeño salvo donde se
   `project(tmp_path)` que ejecute `init` y escriba un curso mínimo ("contraseñas robustas", cliente
   ACME) ahorraría código en casi todos los ficheros de `tests/`.
 
-## 4. Experiencia de uso
+## 3. Experiencia de uso
 
 - **`--help` largo y en dos idiomas.** 59 ficheros de mensajes y un `cli.py` con más de 140 cadenas.
   Falta un `coursekit help <comando>` que muestre también el fragmento de `docs/<lang>/03-commands.md`
@@ -72,7 +62,7 @@ más conviene atacar primero. Cada una cabe en un cambio pequeño salvo donde se
   `config/<name>.example.yaml`, pero no avisa de claves del proyecto que ya no existen en los defaults.
   Un `coursekit config check` que compare `config/*.yaml` con `defaults/*.yaml` cerraría el hueco.
 
-## 5. Dependencias y distribución
+## 4. Dependencias y distribución
 
 - **`markitdown[pdf,docx,pptx,xlsx,xls,outlook]` es la dependencia más pesada** y solo la usa `brief`.
   Moverla a un extra `brief` (o `docs`) deja la instalación base mucho más ligera; `doctor` pide el
@@ -82,7 +72,7 @@ más conviene atacar primero. Cada una cabe en un cambio pequeño salvo donde se
 - **Python 3.14** queda fuera (`<3.14`). Revisar qué lo impide (probablemente `rapidocr`/`onnxruntime`)
   y abrir la ventana cuando publiquen ruedas.
 
-## 6. Documentación
+## 5. Documentación
 
 - **`docs/` suma más de 6 000 líneas por idioma** y `08-assembly-and-delivery.md` mezcla ensamblado,
   entrega, banco de preguntas, revisión de cliente y límites de creator. Partirlo en
@@ -95,10 +85,22 @@ más conviene atacar primero. Cada una cabe en un cambio pequeño salvo donde se
 
 ## Orden propuesto
 
-1. Versión y changelog (sección 1): media hora, sin riesgo.
-2. Partir la diferencia pendiente en commits por tema.
-3. Extra `brief` para `markitdown` y `doctor` con extras (secciones 4 y 5).
-4. Subpaquetes `capture/`, `media/`, `video/` y registro de comandos (sección 2).
-5. Marcadores de pruebas lentas y fixture común (sección 3).
-6. Tipado gradual con `pyright` y reglas nuevas de ruff.
-7. Reparto de `08-assembly-and-delivery.md` y limpieza de `dev-notes/`.
+1. Extra `brief` para `markitdown` y `doctor` con extras (secciones 3 y 4).
+2. Subpaquetes `capture/`, `media/`, `video/` y registro de comandos (sección 1).
+3. Marcadores de pruebas lentas y fixture común (sección 2).
+4. Tipado gradual con `pyright` y reglas nuevas de ruff (sección 2).
+5. Reparto de `08-assembly-and-delivery.md` y limpieza de `dev-notes/` (sección 5).
+
+## Hecho
+
+### Incoherencias visibles (arreglo inmediato)
+
+- ~~**La versión del README no es la del paquete.**~~ Hecho el 2 de noviembre de 2026. El estado del README, los límites
+  de creator y `CONTRIBUTING` ya no llevan número; solo el encabezado de cada README, y `tests/test_docs.py` comprueba
+  que coincide con `pyproject.toml`.
+- ~~**No hay `CHANGELOG`.**~~ Hecho el 2 de noviembre de 2026. `CHANGELOG.md` y `CHANGELOG.es.md` con todas las
+  versiones y un apartado sin publicar; el estado del README en cinco bloques cortos (asentado, nuevo, en desarrollo,
+  por demostrar, todavía no). `CONTRIBUTING` y `AGENTS.md` piden su línea en cada cambio, y un test comprueba que los
+  dos changelogs listan las mismas versiones y la actual.
+- ~~**Diferencia sin commit muy grande.**~~ Hecho el 1 de noviembre de 2026: confirmada y subida en un solo commit
+  (`a813564`), sin partir por temas.

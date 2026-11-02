@@ -6,7 +6,7 @@ itself. The instructions that coursekit generates for course projects live in
 
 ## Read first
 
-- `docs/` (English and Spanish): how each part works and how it is used; it is the reference for the design of the package. `README.md` has the status of the project and what is not done yet.
+- `docs/` (English and Spanish): how each part works and how it is used; it is the reference for the design of the package. `README.md` has the status of the project and what is not done yet; `CHANGELOG.md` what changed in each version.
 - `CONTRIBUTING.md` (English) and `CONTRIBUTING.es.md` (Spanish): environment, tests, how to contribute; keep both in step.
 
 ## Public repository: nothing about clients or origin
@@ -61,7 +61,10 @@ itself. The instructions that coursekit generates for course projects live in
   documented in `docs/en` and `docs/es` (same files, same structure) in the same change.
   `tests/test_docs.py` checks that both trees have the same files, that links resolve, and that
   `docs/*/03-commands.md` mentions every command and every option of the CLI.
-- `README.md` / `README.es.md` carry the status of the project (what is solid, what is new, what is not done) and
+- `CHANGELOG.md` / `CHANGELOG.es.md` carry what changes in each version: a change a person notices gets its line under
+  `Unreleased` / `Sin publicar` in both, in the same change; a release moves those lines under its version.
+- `README.md` / `README.es.md` carry the status of the project (what is solid, what is new, what is in progress, what is still to
+  prove, what is not done), short, and
   `docs/*/08-assembly-and-delivery.md` the known limits of the creator platform: update them when something changes.
 - Development notes (the plan of a feature in progress, its open decisions) go in `dev-notes/<feature>.md`, in Spanish
   (Spain), under the same public-repository rules. They are working material, not documentation: once the feature is

@@ -429,7 +429,7 @@ La causa típica es una línea que el formato no renderiza, por ejemplo una preg
 
 ## Límites conocidos del backend creator
 
-Son huecos de la plataforma de autoría, no de coursekit. El pipeline los esquiva o avisa en lugar de fallar, y cada uno desaparece cuando creator lo cierra. Eran conocidos cuando se escribió esta versión (0.2); la vista previa del curso montado es donde comprobar si uno sigue vigente.
+Son huecos de la plataforma de autoría, no de coursekit. El pipeline los esquiva o avisa en lugar de fallar, y cada uno desaparece cuando creator lo cierra. La lista se mantiene al día con cada versión de coursekit; la vista previa del curso montado es donde comprobar si uno sigue vigente.
 
 - **Theme.** Creator no publica por MCP qué campos del theme admite cada bloque, su tipo, su valor por defecto ni qué pintan, y `update_theme` no dice qué campos descartó ni por qué. Tras importar un theme, mira el resultado en creator.
 - **Embeds en la vista compartida.** Un EMBED (una simulación, una demo de terminal) puede verse en blanco en la vista compartida de un contenido, porque la plataforma se niega a enmarcarlo (`X-Frame-Options: DENY`). En la vista del alumno y en el paquete exportado funciona.

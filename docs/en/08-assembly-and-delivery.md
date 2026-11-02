@@ -427,7 +427,7 @@ The typical cause is a line that the format does not render, for example a quest
 
 ## Known limits of the creator backend
 
-These are gaps of the authoring platform, not of coursekit. The pipeline works around them or warns instead of failing, and each one disappears when creator closes it. They were known when this version (0.2) was written; the preview of the assembled course is where to check whether one still applies.
+These are gaps of the authoring platform, not of coursekit. The pipeline works around them or warns instead of failing, and each one disappears when creator closes it. The list is kept up to date with each version of coursekit; the preview of the assembled course is where to check whether one still applies.
 
 - **Theme.** Creator does not publish through MCP which fields of the theme each block accepts, their type, their default or what they paint, and `update_theme` does not say which fields it discarded or why. After importing a theme, look at the result in creator.
 - **Embeds in the shared view.** An EMBED (a simulation, a terminal demo) can show blank in the shared view of a content, because the platform refuses to frame it (`X-Frame-Options: DENY`). In the learner's view and in the exported package it works.

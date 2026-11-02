@@ -1,5 +1,6 @@
 import argparse
 import re
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -63,7 +64,7 @@ def heading_slugs(text: str) -> set[str]:
     return slugs
 
 
-ALL_DOCS = sorted(DOCS.glob("*/*.md")) + [ROOT / "README.md", ROOT / "README.es.md"]
+ALL_DOCS = sorted(DOCS.glob("*/*.md")) + [ROOT / name for name in ("README.md", "README.es.md", "CHANGELOG.md", "CHANGELOG.es.md")]
 
 
 @pytest.mark.parametrize("path", ALL_DOCS, ids=lambda p: p.relative_to(ROOT).as_posix())
@@ -107,3 +108,24 @@ def test_the_command_reference_covers_every_command_and_option(lang):
     assert not missing, f"docs/{lang}/03-commands.md does not mention: {missing}"
     missing = sorted(o for o in options if not re.search(rf"(?<![\w-]){re.escape(o)}(?![\w-])", text))
     assert not missing, f"docs/{lang}/03-commands.md does not mention the options: {missing}"
+
+
+def package_version() -> str:
+    return tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
+
+
+def test_the_readmes_show_the_version_of_the_package():
+    version = package_version()
+    for name in ("README.md", "README.es.md"):
+        shown = re.findall(r"`(\d+\.\d+(?:\.\d+)?)`", (ROOT / name).read_text(encoding="utf-8"))
+        assert shown, f"{name} does not show the version"
+        assert set(shown) == {version}, f"{name} shows {sorted(set(shown))}, the package is {version}"
+
+
+def test_the_changelogs_have_the_same_shape_and_the_current_version():
+    texts = {name: prose((ROOT / name).read_text(encoding="utf-8")) for name in ("CHANGELOG.md", "CHANGELOG.es.md")}
+    versions = [re.findall(r"^## (\d+\.\d+\.\d+) — \d{4}-\d{2}-\d{2}$", text, re.M) for text in texts.values()]
+    assert versions[0] == versions[1], "CHANGELOG.md and CHANGELOG.es.md list different versions"
+    assert package_version() in versions[0], f"the changelogs have no heading for {package_version()}"
+    assert "## Unreleased" in texts["CHANGELOG.md"] and "## Sin publicar" in texts["CHANGELOG.es.md"]
+    assert "CHANGELOG.es.md" in texts["CHANGELOG.md"] and "CHANGELOG.md" in texts["CHANGELOG.es.md"]
