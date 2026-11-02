@@ -7,6 +7,8 @@ status of the [README](README.md#status). Versions are published on PyPI as `slx
 
 ## Unreleased
 
+## 0.8.0 — 2026-11-02
+
 - The review asks for a procedure as a carousel, one slide per step, as the writing does (it still asked for numbered steps), and in an imported course the writer uses `research` only to check a fact or find the reference documentation.
 - The documentation of assembly and delivery is split in three chapters: [Assembly](docs/en/08-assembly.md), [Delivery and publishing](docs/en/09-delivery.md) and [Client review](docs/en/10-client-review.md); troubleshooting is now chapter 11.
 - `verify` names the family of each finding (`structure`, `words`, `style`, `language`, `readability`, `media`, `activities`, `simulations`, `assembly`), takes `--only` and `--ignore` to see some of them (a partial check never changes the status), sums up the errors and warnings of each unit when it checks several, and prints JSON with `--json`. `status`, `doctor` and `media check` print JSON with `--json` too, for the agents.

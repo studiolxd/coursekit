@@ -7,6 +7,8 @@ qué no está hecho está en el estado del [README](README.es.md#estado). Las ve
 
 ## Sin publicar
 
+## 0.8.0 — 2026-11-02
+
 - La revisión pide un procedimiento como carrusel, una diapositiva por paso, igual que la redacción (aún pedía pasos numerados), y en un curso importado quien redacta usa `research` solo para comprobar un dato o encontrar la documentación de referencia.
 - La documentación del montaje y la entrega se parte en tres capítulos: [Montaje](docs/es/08-assembly.md), [Entrega y publicación](docs/es/09-delivery.md) y [Revisión del cliente](docs/es/10-client-review.md); la resolución de problemas pasa a ser el capítulo 11.
 - `verify` dice la familia de cada aviso (`structure`, `words`, `style`, `language`, `readability`, `media`, `activities`, `simulations`, `assembly`), admite `--only` e `--ignore` para ver solo algunas (una comprobación parcial nunca cambia el estado), resume los errores y avisos de cada unidad cuando comprueba varias e imprime JSON con `--json`. `status`, `doctor` y `media check` imprimen JSON con `--json` también, para los agentes.
