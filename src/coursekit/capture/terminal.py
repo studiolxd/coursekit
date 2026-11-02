@@ -700,7 +700,7 @@ def finish(backend: TerminalBackend, asset_id: str, recipe: str, recordings: Pat
                           newline="\n")
         out["file"] = target
     elif recipe == "screen-recording":
-        from coursekit import capture_replay
+        from coursekit.capture import replay as capture_replay
 
         fps = int((cfg.get("replay") or {}).get("fps") or 30)
         video = recordings / f"{asset_id}.mp4"

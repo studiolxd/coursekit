@@ -7,8 +7,9 @@ import shutil
 import pytest
 import yaml
 
-from coursekit import capture, capture_stage
-from coursekit import capture_terminal as term
+from coursekit import capture
+from coursekit.capture import stage as capture_stage
+from coursekit.capture import terminal as term
 from coursekit.cli import main
 from coursekit.project import find_project
 from tests.test_assemble import course  # noqa: F401 — the approved sample course fixture
@@ -181,7 +182,7 @@ def test_a_clean_stage_has_an_empty_home_and_hides_the_commands_it_says(course, 
 # ── a whole session ──────────────────────────────────────────────────────────────────────────
 
 def tools():
-    from coursekit.capture_session import Manager
+    from coursekit.capture.session import Manager
 
     return {tool.name: tool for tool in Manager(find_project()).tools()}
 
@@ -266,7 +267,8 @@ def test_a_terminal_capture_saves_the_screen_as_it_is(course, home, capsys):  # 
 
 
 def test_a_capture_block_written_as_yaml_with_a_capture_key_is_read_the_same(course, capsys):  # noqa: F811
-    from coursekit import capture_session, mediascript
+    from coursekit.capture import session as capture_session
+    from coursekit.media import script as mediascript
 
     terminal_course(course, capsys, "asciinema")
     brief = course / "media" / "scripts" / "U1-S2-M1.md"
@@ -280,7 +282,8 @@ def test_a_capture_block_written_as_yaml_with_a_capture_key_is_read_the_same(cou
 
 
 def test_the_handoff_signs_the_scripts_of_what_its_agent_may_capture(course, capsys, monkeypatch):  # noqa: F811
-    from coursekit import handoff, mediascript
+    from coursekit import handoff
+    from coursekit.media import script as mediascript
 
     monkeypatch.setattr(mediascript, "required", lambda _course: True)
     terminal_course(course, capsys, "asciinema")
@@ -330,7 +333,7 @@ def test_a_recording_in_parts_keeps_each_part(course, home, capsys):  # noqa: F8
     asset = yaml.safe_load((course / "media" / "manifest.yaml").read_text(encoding="utf-8"))["assets"][0]
     assert asset["capture"]["parts"] == {"first": "media/recordings/U1-S2-M1-first.cast",
                                          "second": "media/recordings/U1-S2-M1-second.cast"}
-    from coursekit import capture_session
+    from coursekit.capture import session as capture_session
 
     written = capture_session.read_block(load(), "U1-S2-M1")
     assert set(written["parts"]) == {"first", "second"} and written["parts"]["first"]["prepare"] == ["touch one.txt"]
@@ -379,7 +382,7 @@ def test_a_fault_of_a_tool_is_told_to_the_agent_and_the_server_goes_on():
 def test_a_browser_session_of_a_stage_serves_its_site_here(course, home, capsys):  # noqa: F811
     import urllib.request
 
-    from coursekit import capture_session
+    from coursekit.capture import session as capture_session
     from tests.test_capture import FakeBrowser
 
     terminal_course(course, capsys, "screenshot", {"mode": "browser", "stage": "recipes", "start": "/recipes.json",

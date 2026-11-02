@@ -24,8 +24,9 @@ import os
 from pathlib import Path
 
 from coursekit import course as coursemod
-from coursekit import http, mediatools
+from coursekit import http
 from coursekit.i18n import t
+from coursekit.media import tools as mediatools
 
 UPLOAD = "https://generativelanguage.googleapis.com/upload/v1beta/files"
 DOWNLOAD = "https://generativelanguage.googleapis.com/download/v1beta"

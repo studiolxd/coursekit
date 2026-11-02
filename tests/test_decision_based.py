@@ -540,7 +540,7 @@ def test_a_simulation_becomes_an_embed_package_for_creator(decision_course, caps
 
 
 def test_download_writes_inside_the_project_only(project, monkeypatch, capsys):
-    from coursekit import mediatools
+    from coursekit.media import tools as mediatools
 
     monkeypatch.setattr(mediatools, "fetch", lambda req, timeout=300: b"xlsx-bytes")
     assert main(["download", "https://x.example/export", "--out", "courses/a.xlsx"]) == 0
@@ -719,7 +719,8 @@ def test_the_simulation_that_opens_a_section_holds_the_rest_of_the_lesson(decisi
 def test_scenes_can_be_narrated_with_the_voice_of_who_speaks(decision_course, monkeypatch, capsys):
     import yaml as yamlmod
 
-    from coursekit import assemble, course, mediatools, simulation
+    from coursekit import assemble, course, simulation
+    from coursekit.media import tools as mediatools
     from coursekit.project import find_project
 
     bad = simulation.parse("scenario", SCENARIO.splitlines()[1:-1] + ["audio: yes please"], "x")

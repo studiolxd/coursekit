@@ -20,11 +20,12 @@ from pathlib import Path
 from coursekit import assemble as assemblemod
 from coursekit import course as coursemod
 from coursekit import delivery as deliverymod
-from coursekit import external, mediaopt, store
+from coursekit import external, store
 from coursekit import media as mediamod
 from coursekit import theme as thememod
 from coursekit.htmlkit import check, manifest, render
 from coursekit.i18n import t
+from coursekit.media import opt as mediaopt
 
 Say = Callable[[str], None]
 

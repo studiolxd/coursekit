@@ -80,7 +80,11 @@ Besides the behaviour tests (`test_cli.py`, `test_course_flow.py`, `test_assembl
 | `src/coursekit/course.py`, `new.py`, `sync.py`, `outline.py`, `status.py`, `states.py` | The course model, creating a course, syncing the approved design into the content skeleton, reading the design and the course status. |
 | `src/coursekit/verify.py`, `approve.py`, `fingerprint.py`, `identity.py` | Checking content against the production rules, sign-offs and the fingerprints that detect later changes. |
 | `src/coursekit/agents.py`, `launch.py` | Rendering skills, commands and agents for each AI tool (`context()` holds the `{{tokens}}`), and launching the tools. |
-| `src/coursekit/brief.py`, `media.py`, `mediatools.py`, `voices.py`, `theme.py` | Brief conversion, media planning and production, voices and subtitles, theme tokens. |
+| `src/coursekit/brief.py`, `voices.py`, `theme.py` | Brief conversion, voices, theme tokens. |
+| `src/coursekit/media/` | The media of a course: the manifest and its statuses (`__init__.py`), the providers and programs that produce them (`tools.py`), their checks (`check.py`), accessibility (`access.py`), optimisation (`opt.py`), recording scripts (`script.py`), the style guide (`style.py`) and the gallery (`gallery.py`). |
+| `src/coursekit/capture/` | `coursekit capture`: profiles, permission and review (`__init__.py`), the MCP session that drives the browser or the terminal (`session.py`), its replay (`replay.py`), the stages (`stage.py`), the terminal mode (`terminal.py`) and the desktop windows (`window.py` and one module per system: `macos.py`, `windows.py`, `x11.py`). |
+| `src/coursekit/video/` | `coursekit video`: the montage of scenes (`__init__.py`) and its timeline for an editor (`edit.py`). `videokit/` holds the library of scenes in TypeScript. |
+| `src/coursekit/http.py`, `external.py`, `extras.py` | Every HTTP request (one User-Agent, a timeout, retries only when asked), every program run whose output is read (always as UTF-8), and the optional extras with the command that installs one without removing the others. |
 | `src/coursekit/assemble.py`, `directives.py`, `delivery.py`, `publish.py`, `catalog.py` | Assembly into the authoring platform, directives, SCORM delivery, publishing and the course catalog. |
 | `src/coursekit/i18n.py` | Messages for people: `t("module", "key", value=...)` and the choice of language. |
 | `src/coursekit/lang/` | `es.yaml` and `en.yaml`: tokens of the course content format per language. `lang/messages/<module>.yaml`: the CLI message catalogs (`es` and `en`). |

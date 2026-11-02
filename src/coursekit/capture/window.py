@@ -248,15 +248,15 @@ class WindowBackend:
 def make_backend(window_name: str) -> WindowBackend:
     """The backend of this system for a window."""
     if sys.platform == "darwin":
-        from coursekit.capture_macos import MacBackend
+        from coursekit.capture.macos import MacBackend
 
         return MacBackend(window_name)
     if sys.platform == "win32":
-        from coursekit.capture_windows import WindowsBackend
+        from coursekit.capture.windows import WindowsBackend
 
         return WindowsBackend(window_name)
     if sys.platform.startswith("linux"):
-        from coursekit.capture_x11 import X11Backend
+        from coursekit.capture.x11 import X11Backend
 
         return X11Backend(window_name)
     raise ToolError(t("capture", "desktop_unsupported", system=sys.platform))

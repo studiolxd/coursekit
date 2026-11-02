@@ -188,7 +188,7 @@ def approve_media_style(course: dict, confirm: Confirm, do_commit: bool = True, 
                         via: str | None = None) -> str:
     """The sign-off of the style guide of the media in force for the course (theme/branding/media-style.md, or its own): a
     person has read it. Its fingerprint is kept; when it changes it is signed again."""
-    from coursekit import mediastyle
+    from coursekit.media import style as mediastyle
 
     found = mediastyle.path(course)
     if found is None:
@@ -210,7 +210,7 @@ def approve_media_style(course: dict, confirm: Confirm, do_commit: bool = True, 
 
 def _notes_left_out(guide: Path) -> str:
     """The warning before signing a guide that does not quote every indication of its notes.md."""
-    from coursekit import mediastyle
+    from coursekit.media import style as mediastyle
 
     missing = mediastyle.missing_notes(guide)
     if not missing:
@@ -234,7 +234,7 @@ def approve_project_media_style(project, confirm: Confirm, do_commit: bool = Tru
     """The sign-off of the style guide of the project (theme/branding/media-style.md), once for every course that uses it (a
     course with its own guide signs that one). Recorded in project.yaml › approvals with its fingerprint; signed again when it
     changes."""
-    from coursekit import mediastyle
+    from coursekit.media import style as mediastyle
 
     found = mediastyle.project_path(project)
     if found is None:
@@ -259,7 +259,7 @@ def approve_script(course: dict, asset_id: str, confirm: Confirm, do_commit: boo
                    via: str | None = None) -> str:
     """The sign-off of the script of a resource: the brief of a screen recording (its steps and its narration) and the montage
     of a video. It is captured or voiced only once this is signed, and it is signed again if it changes."""
-    from coursekit import mediascript
+    from coursekit.media import script as mediascript
 
     found = mediascript.files(course, asset_id)
     if not found:
@@ -283,7 +283,7 @@ def approve_scripts(course: dict, asset_ids: list[str], confirm: Confirm, do_com
     """Several scripts signed at once: one question, one signature for each, one commit. None is signed if one has no script."""
     if len(asset_ids) == 1:
         return approve_script(course, asset_ids[0], confirm, do_commit)
-    from coursekit import mediascript
+    from coursekit.media import script as mediascript
 
     found = {asset_id: mediascript.files(course, asset_id) for asset_id in asset_ids}
     for asset_id, files in found.items():

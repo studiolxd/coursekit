@@ -7,7 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from coursekit import capture_replay, capture_session, mcpserver
+from coursekit import mcpserver
+from coursekit.capture import replay as capture_replay
+from coursekit.capture import session as capture_session
 from coursekit.cli import main
 from coursekit.htmlkit.playcheck import find_browser
 from coursekit.project import find_project
@@ -18,7 +20,7 @@ from tests.test_capture import asset_capture, configure, interface_asset
 @pytest.fixture(autouse=True)
 def no_script_gate(request, monkeypatch):
     """These tests are about what is made, not about its sign-off: the approval of the script is tested in test_media_script."""
-    from coursekit import mediascript
+    from coursekit.media import script as mediascript
 
     monkeypatch.setattr(mediascript, "required", lambda _course: False)
 

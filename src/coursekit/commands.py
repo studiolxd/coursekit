@@ -19,9 +19,6 @@ from coursekit import (
     envfile,
     launch,
     localdesign,
-    mediaaccess,
-    mediacheck,
-    mediatools,
     new,
     outline,
     questionbank,
@@ -40,7 +37,6 @@ from coursekit import handoff as handoffmod
 from coursekit import importer as importermod
 from coursekit import init as initmod
 from coursekit import media as mediamod
-from coursekit import mediagallery as mediagallerymod
 from coursekit import publish as publishmod
 from coursekit import research as researchmod
 from coursekit import setup as setupmod
@@ -51,6 +47,10 @@ from coursekit import videos as videosmod
 from coursekit.htmlkit.build import HtmlBuildError
 from coursekit.i18n import t, tn
 from coursekit.lang import format_number
+from coursekit.media import access as mediaaccess
+from coursekit.media import check as mediacheck
+from coursekit.media import gallery as mediagallerymod
+from coursekit.media import tools as mediatools
 from coursekit.project import Project, find_project
 from coursekit.sync import load_graph, sync
 
@@ -255,7 +255,7 @@ def cmd_capture(args: argparse.Namespace) -> int:
     project = _project()
     try:
         if args.action == "serve":
-            from coursekit import capture_session
+            from coursekit.capture import session as capture_session
 
             capture_session.serve(project)
             return 0
@@ -323,7 +323,7 @@ def cmd_capture(args: argparse.Namespace) -> int:
                 print(t("capture", "stage_mounted", name=asset_id, folder=workspace.folder.as_posix(),
                         home=t("capture", "stage_home_clean") if workspace.home != Path.home() else t("capture", "stage_home_real")))
             elif args.action == "replay":
-                from coursekit import capture_replay
+                from coursekit.capture import replay as capture_replay
 
                 statesmod.ensure_active(course)
                 try:

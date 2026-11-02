@@ -223,7 +223,7 @@ def capture_section(project: Project) -> Section | None:
     s.add(shutil.which("ffmpeg") is not None, t("doctor", "capture_ffmpeg"), "coursekit setup --media")
     if "desktop" in modes:
         if sys.platform == "darwin":
-            from coursekit import capture_macos
+            from coursekit.capture import macos as capture_macos
 
             granted = capture_macos.permissions()
             s.add(granted["screen"], t("doctor", "capture_screen"), t("doctor", "capture_screen_hint"))
@@ -235,7 +235,7 @@ def capture_section(project: Project) -> Section | None:
         elif sys.platform == "win32":
             s.add(None, t("doctor", "capture_windows"))
     if "terminal" in modes:
-        from coursekit import capture_terminal
+        from coursekit.capture import terminal as capture_terminal
 
         if not capture_terminal.supported():
             s.add(None, t("doctor", "capture_terminal_windows"))

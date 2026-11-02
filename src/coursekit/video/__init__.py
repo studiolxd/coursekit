@@ -43,10 +43,13 @@ import yaml
 
 from coursekit import config as configmod
 from coursekit import course as coursemod
-from coursekit import external, i18n, lang, mediaaccess, mediacheck, mediatools
+from coursekit import external, i18n, lang
 from coursekit import media as mediamod
 from coursekit import theme as thememod
 from coursekit.i18n import t
+from coursekit.media import access as mediaaccess
+from coursekit.media import check as mediacheck
+from coursekit.media import tools as mediatools
 
 VERSION = 1
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,47}$")
@@ -696,7 +699,7 @@ def _logo(course: dict) -> dict | None:
 
 
 def _ready(course: dict, asset_id: str) -> None:
-    from coursekit import mediascript
+    from coursekit.media import script as mediascript
 
     try:
         mediascript.ready(course, asset_id)
@@ -1018,7 +1021,7 @@ def example(piece: dict, language: str) -> dict | None:
     return dict(chosen) if isinstance(chosen, dict) else None
 
 
-SAMPLE_PHOTO = Path(__file__).parent / "videokit" / "gallery" / "sample-photo.jpg"  # a photo in the public domain (CC0)
+SAMPLE_PHOTO = Path(__file__).parent.parent / "videokit" / "gallery" / "sample-photo.jpg"  # a photo in the public domain (CC0)
 
 
 def _sample_image(tokens: dict) -> str:
@@ -1493,7 +1496,7 @@ def export(course: dict, asset_id: str, say=print) -> dict:
     """The pieces of the video, apart, and its timeline for an editor (DaVinci Resolve, Final Cut, Premiere): each scene clean
     (without its layers, without sound), each layer alone with transparency (ProRes 4444), the voice of each scene, the
     captions in SRT, and the timeline in FCPXML 1.10 and OpenTimelineIO, in media/edit/<id>/."""
-    from coursekit import videoedit
+    from coursekit.video import edit as videoedit
 
     resolved = resolve(course, asset_id)
     root = sync(course)

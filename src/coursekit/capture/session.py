@@ -36,10 +36,11 @@ from PIL import Image
 
 from coursekit import capture as capturemod
 from coursekit import course as coursemod
-from coursekit import extras, mediascript, pii
+from coursekit import extras, pii
 from coursekit import redact as redactmod
 from coursekit.i18n import t
 from coursekit.mcpserver import ToolError
+from coursekit.media import script as mediascript
 from coursekit.util import slugify
 
 RECIPES = capturemod.MODE_RECIPES["browser"]
@@ -446,7 +447,7 @@ class Session:
 
     def _end_terminal(self, notes: str) -> dict:
         """Terminal mode: the recording becomes the file the resource needs, and the capture waits for a review."""
-        from coursekit import capture_terminal
+        from coursekit.capture import terminal as capture_terminal
 
         info = self.terminal
         previous = read_block(self.course, self.asset_id, self.part)
@@ -590,7 +591,7 @@ def chosen_grant(project, course: dict, asset: dict, block: dict) -> dict | None
 def serve_stage(project, course: dict, block: dict):
     """A site of a stage of the course (a web written with invented data, `stage:` in the block of a browser session): mounted
     from scratch with its setup and the `prepare` of the block, and served on this machine while the session lasts."""
-    from coursekit import capture_stage
+    from coursekit.capture import stage as capture_stage
 
     try:
         workspace = capture_stage.mount(project, course, str(block["stage"]), [str(c) for c in block.get("prepare") or []])
@@ -662,7 +663,7 @@ def _start_desktop(project, cfg, course, asset, asset_id, grant, backend_factory
     except redactmod.RedactError:
         raise ToolError(t("capture", "desktop_needs_ocr")) from None
     if backend_factory is None:
-        from coursekit.capture_window import make_backend as backend_factory
+        from coursekit.capture.window import make_backend as backend_factory
     session = Session(project, course, asset_id, grant, None, rules, int((cfg.get("screenshot") or {}).get("max_edge") or 1920),
                       "", [], started_at=_now(), redactor=redactor, warnings=list(redactor.report.warnings))
     session.backend = backend_factory(str(grant["window"]))
@@ -672,8 +673,8 @@ def _start_desktop(project, cfg, course, asset, asset_id, grant, backend_factory
 
 def _start_terminal(project, cfg, course, asset, asset_id, grant, backend_factory, block: dict) -> Session:
     """A shell of its own in the stage the brief names: its output covered in the text, its screen drawn."""
-    from coursekit import capture_stage
-    from coursekit import capture_terminal as termmod
+    from coursekit.capture import stage as capture_stage
+    from coursekit.capture import terminal as termmod
 
     if not termmod.supported():
         raise ToolError(t("capture", "terminal_unsupported"))

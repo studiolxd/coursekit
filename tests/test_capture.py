@@ -17,7 +17,7 @@ from tests.test_media import prepare_asset
 @pytest.fixture(autouse=True)
 def no_script_gate(request, monkeypatch):
     """These tests are about what is made, not about its sign-off: the approval of the script is tested in test_media_script."""
-    from coursekit import mediascript
+    from coursekit.media import script as mediascript
 
     monkeypatch.setattr(mediascript, "required", lambda _course: False)
 
@@ -140,8 +140,9 @@ def test_a_grant_of_zero_minutes_lasts_until_it_is_revoked(course, browser, caps
 
 
 def test_the_project_grant_covers_every_course_and_a_course_grant_extends_it(course, browser, capsys, monkeypatch):  # noqa: F811
-    from coursekit import capture_session, capture_terminal
     from coursekit import course as coursemod
+    from coursekit.capture import session as capture_session
+    from coursekit.capture import terminal as capture_terminal
 
     monkeypatch.setattr(capture_terminal, "supported", lambda: True)  # the permission needs no pseudo-terminal (Windows)
     configure(course.parent.parent, modes=["browser", "desktop", "terminal"], grant_minutes=0)
@@ -431,7 +432,8 @@ def test_a_video_is_covered_between_readings(tmp_path, monkeypatch):
 
 # ── the MCP server ───────────────────────────────────────────────────────────────────────────
 
-from coursekit import capture_session, mcpserver  # noqa: E402
+from coursekit import mcpserver  # noqa: E402
+from coursekit.capture import session as capture_session  # noqa: E402
 
 
 def test_the_mcp_server_answers_the_protocol():
@@ -650,7 +652,7 @@ def test_the_page_script_replaces_text_and_never_touches_what_can_be_edited(tmp_
     import subprocess
     from importlib import resources
 
-    from coursekit import mediatools
+    from coursekit.media import tools as mediatools
 
     exe = mediatools.browser()
     if not exe:
@@ -681,7 +683,7 @@ def test_the_page_script_replaces_text_and_never_touches_what_can_be_edited(tmp_
 
 # ── replay ───────────────────────────────────────────────────────────────────────────────────
 
-from coursekit import capture_replay  # noqa: E402
+from coursekit.capture import replay as capture_replay  # noqa: E402
 
 
 class ReplayBrowser(FakeBrowser):
@@ -817,7 +819,10 @@ def subprocess_duration(path):
 
 # ── a window of a desktop program ────────────────────────────────────────────────────────────
 
-from coursekit import capture_macos, capture_window, capture_windows, capture_x11  # noqa: E402
+from coursekit.capture import macos as capture_macos  # noqa: E402
+from coursekit.capture import window as capture_window  # noqa: E402
+from coursekit.capture import windows as capture_windows  # noqa: E402
+from coursekit.capture import x11 as capture_x11  # noqa: E402
 
 
 class FakeWindow:

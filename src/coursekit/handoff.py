@@ -361,7 +361,7 @@ def _approve_captures(ctx: Context) -> int:
 def _sign_capture_scripts(ctx: Context) -> None:
     """The scripts of what the media agent may capture, signed before it starts, as the handoff signs every gate (a session
     would sign them anyway; signed first, the plan does not tell the agent to wait for a person)."""
-    from coursekit import mediascript
+    from coursekit.media import script as mediascript
 
     course = ctx.course()
     if not mediascript.required(course):
@@ -480,7 +480,7 @@ def _produce(ctx: Context, course: dict) -> None:
         _agent(ctx, "design", "define-theme", "", "theme", theme_note(ctx.project, coursemod.backend(course)))
         if thememod.status(ctx.project, ctx.course()).state != "derived":
             raise _stuck(ctx, "theme_missing")
-    from coursekit import mediastyle
+    from coursekit.media import style as mediastyle
 
     if mediastyle.waiting(ctx.course()):  # the style guide the theme agent wrote from the brand: coursekit signs it
         try:

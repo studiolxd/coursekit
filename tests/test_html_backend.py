@@ -9,11 +9,12 @@ from pathlib import Path
 import pytest
 import yaml
 
-from coursekit import config, directives, mediaopt, theme
+from coursekit import config, directives, theme
 from coursekit.cli import main
 from coursekit.htmlkit import build as htmlbuild
 from coursekit.htmlkit import check, manifest, render
 from coursekit.htmlkit.sanitize import clean, unwrap
+from coursekit.media import opt as mediaopt
 from coursekit.project import find_project
 from tests.test_course_flow import FIXTURES, write_course_rules
 

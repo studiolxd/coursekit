@@ -4,9 +4,11 @@ official video proposed for a resource stops it from being made."""
 import pytest
 import yaml
 
-from coursekit import capture_session, mcpserver, mediascript, video
+from coursekit import mcpserver, video
+from coursekit.capture import session as capture_session
 from coursekit.cli import main
 from coursekit.course import load as load_course
+from coursekit.media import script as mediascript
 from coursekit.project import find_project
 from tests.test_assemble import course  # noqa: F401 — the approved sample course fixture
 from tests.test_capture import FakeBrowser, configure, interface_asset

@@ -108,7 +108,8 @@ def awaiting_recording(asset: dict) -> bool:
 
 def _script_lines(course: dict, asset: dict) -> list[str]:
     """What waits for a person before a resource is made: an official video that stands in for it, or its script."""
-    from coursekit import mediascript, videos
+    from coursekit import videos
+    from coursekit.media import script as mediascript
 
     official = videos.standing_in(course, str(asset["id"]))
     if official:
@@ -456,7 +457,7 @@ def plan(course: dict) -> tuple[list[str], list[str]]:
             warnings.append(t("media", "no_generator", fallback=style["fallback"]))
         if not style_approval(course):
             warnings.append(t("media", "style_not_approved", code=course["code"]))
-    from coursekit import mediastyle
+    from coursekit.media import style as mediastyle
 
     if mediastyle.waiting(course):
         warnings.append(t("media", "media_style_not_approved", code=course["code"]))
@@ -559,7 +560,8 @@ def narrate(course: dict, ids: list[str] | None = None, again: bool = False, say
     queue of the Gemini batch: `coursekit tts-batch collect` produces them)."""
     import tempfile
 
-    from coursekit import mediatools, ttsbatch
+    from coursekit import ttsbatch
+    from coursekit.media import tools as mediatools
 
     _, _, data = load_manifest(course["_dir"])
     todo = [a for a in data["assets"] if a.get("kind") == "voice" and a.get("narration")
@@ -639,7 +641,7 @@ def stock(course: dict, asset_id: str, find: str | None = None, take: int | None
 def image_tool(course: dict, asset_id: str | None, action: str, size: str | None = None, file: str | None = None) -> str:
     """`fit`: the file of an asset to an exact size; `render`: its SVG as a PNG next to it (to look at it, and for creator).
     With `file`, that file instead of the one of the manifest: one not recorded yet, or a sample of the style sheet."""
-    from coursekit import mediatools
+    from coursekit.media import tools as mediatools
 
     bases = (course["_dir"], course["_dir"] / "media", course["_project"].root)
     if file:
@@ -734,7 +736,8 @@ def anchors(course: dict, ids: list[str] | None = None, sets: list[str] | None =
 
 def render_job_aid(course: dict, asset_id: str) -> str:
     """The PDF of a job aid (media/<id>.pdf), from the text of its placeholder and the template of the theme."""
-    from coursekit import jobaid, mediatools
+    from coursekit import jobaid
+    from coursekit.media import tools as mediatools
 
     _, _, data = load_manifest(course["_dir"])
     asset = next((a for a in data["assets"] if a["id"] == asset_id), None)
@@ -753,7 +756,7 @@ def render_job_aid(course: dict, asset_id: str) -> str:
 def optimize(course: dict, ids: list[str] | None = None) -> list[str]:
     """Makes the files of the produced assets lighter, in place (images scaled and recompressed, MP4 re-encoded): the ones named,
     else all. What cannot be made lighter (SVG, GIF, audio, packages) stays as it is. One line per file."""
-    from coursekit import mediaopt
+    from coursekit.media import opt as mediaopt
 
     cfg = config(course=course)
     _, _, data = load_manifest(course["_dir"])
@@ -880,7 +883,7 @@ def _set_asset(course: dict, data: dict, asset_id: str, **values) -> str:
         raise MediaError(t("media", "style_not_approved", code=course["code"]))
     visual_types = set(cfg.get("uses_theme") or []) | {"image"}
     if values.get("status") in ("produced", "uploaded") and asset["type"] in visual_types and not values.get("force"):
-        from coursekit import mediastyle
+        from coursekit.media import style as mediastyle
 
         if mediastyle.waiting(course):
             raise MediaError(t("media", "media_style_not_approved", code=course["code"]))

@@ -20,7 +20,7 @@ from pathlib import Path
 from PIL import Image
 
 from coursekit import external
-from coursekit.capture_window import Bounds, WindowBackend, one_program, paint_out
+from coursekit.capture.window import Bounds, WindowBackend, one_program, paint_out
 from coursekit.i18n import t
 from coursekit.mcpserver import ToolError
 
@@ -168,7 +168,7 @@ def permissions() -> dict[str, bool]:
 
 def find_window(name: str) -> dict:
     """The one window whose program or title contains `name` (normal windows only, the frontmost when a program has several)."""
-    from coursekit.capture_window import matches
+    from coursekit.capture.window import matches
 
     every = [w for w in quartz().windows() if w["layer"] == 0]
     found = [w for w in every if w["bounds"][2] > 40 and w["bounds"][3] > 40 and matches(w, name)]

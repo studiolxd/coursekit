@@ -15,7 +15,7 @@ from ctypes import wintypes
 
 from PIL import Image
 
-from coursekit.capture_window import Bounds, WindowBackend, matches, one_program
+from coursekit.capture.window import Bounds, WindowBackend, matches, one_program
 from coursekit.i18n import t
 from coursekit.mcpserver import ToolError
 

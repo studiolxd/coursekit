@@ -6,8 +6,10 @@ import json
 import pytest
 import yaml
 
-from coursekit import jobaid, mediastyle, mediatools
+from coursekit import jobaid
 from coursekit.cli import main
+from coursekit.media import style as mediastyle
+from coursekit.media import tools as mediatools
 from tests.test_assemble import course  # noqa: F401 — the approved sample course fixture
 
 JOB_AID = """

@@ -8,10 +8,10 @@ import pytest
 import yaml
 
 from coursekit import config as configmod
-from coursekit import mediatools
 from coursekit.assemble import Syntax, directive_brick
 from coursekit.cli import main
 from coursekit.lang import tokens
+from coursekit.media import tools as mediatools
 from tests.test_assemble import course  # noqa: F401 — the approved sample course fixture
 
 

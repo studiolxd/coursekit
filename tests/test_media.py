@@ -4,8 +4,9 @@ from pathlib import Path
 import pytest
 import yaml
 
-from coursekit import mediatools, voices
+from coursekit import voices
 from coursekit.cli import main
+from coursekit.media import tools as mediatools
 from tests.test_assemble import course  # noqa: F401 — the approved sample course fixture
 
 
@@ -303,7 +304,7 @@ def test_a_generator_option_shows_its_model_and_variants(course, capsys):  # noq
 def test_fit_and_render_work_locally(course, tmp_path, capsys):  # noqa: F811
     from PIL import Image
 
-    from coursekit import mediatools
+    from coursekit.media import tools as mediatools
     from coursekit.project import find_project
 
     root = find_project().root
@@ -332,7 +333,7 @@ def test_fit_and_render_work_locally(course, tmp_path, capsys):  # noqa: F811
 def test_optimize_scales_and_recompresses_images(course, capsys):  # noqa: F811
     from PIL import Image
 
-    from coursekit import mediaopt
+    from coursekit.media import opt as mediaopt
 
     big = course / "media" / "files" / "big.png"
     big.parent.mkdir(parents=True, exist_ok=True)

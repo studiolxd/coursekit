@@ -11,7 +11,7 @@ import tempfile
 from pathlib import Path
 
 from coursekit.i18n import t
-from coursekit.mediatools import ToolError, require_file, run
+from coursekit.media.tools import ToolError, require_file, run
 
 IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg", ".webp")
 VIDEO_SUFFIXES = (".mp4",)  # what Remotion and VHS write; the file keeps its name, so the manifest stays valid

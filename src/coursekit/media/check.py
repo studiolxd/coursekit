@@ -156,7 +156,7 @@ def caption_findings(asset: dict, path: Path, cfg: dict) -> list[Finding]:
 
 def check(course: dict, ids: list[str] | None = None, fix: bool = False) -> tuple[list[Finding], list[str]]:
     """What is wrong in the audios and videos produced, and what was fixed."""
-    from coursekit import mediaaccess
+    from coursekit.media import access as mediaaccess
 
     cfg = settings(course)
     findings, fixed = [], []

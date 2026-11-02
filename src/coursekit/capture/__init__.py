@@ -267,7 +267,7 @@ def allow(project: Project, course: dict | None, ids: list[str], modes: list[str
                 raise CaptureError(t("capture", "not_logged_in", name=profile))
             entries[mode] = {"profile": profile or None}
         elif mode == "terminal":  # a shell of its own, in a stage: no window and no profile
-            from coursekit import capture_terminal
+            from coursekit.capture import terminal as capture_terminal
 
             if not capture_terminal.supported():
                 if everything:
@@ -314,7 +314,7 @@ def capturable(course: dict) -> list[str]:
 def mount_stage(project: Project, course: dict, name: str, prepare: list[str]):
     """Mounts a stage of the course to look at it or try it (`coursekit capture stage`): it runs the commands of the stage, so
     it needs the permission of a person to capture in terminal mode."""
-    from coursekit import capture_stage
+    from coursekit.capture import stage as capture_stage
 
     _require_enabled(settings(project))
     if active_grant(project, course["code"], mode="terminal") is None:

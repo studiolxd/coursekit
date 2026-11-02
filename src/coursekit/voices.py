@@ -191,7 +191,7 @@ def set_voice(course: dict, provider: str, voice: str | None, speaker: str | Non
     if speaker is not None:
         entry["speaker"] = int(speaker)
     if provider == "gemini":  # the course keeps the model it starts with: a new default does not change its voice halfway
-        from coursekit.mediatools import gemini_settings
+        from coursekit.media.tools import gemini_settings
 
         old = (data["media"].get("voice") or {}) if not character else {}
         entry["model"] = (old.get("model") if old.get("provider") == "gemini" else None) or gemini_settings(course)["model"]

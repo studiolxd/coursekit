@@ -7,8 +7,9 @@ import subprocess
 import pytest
 import yaml
 
-from coursekit import mediaaccess, mediacheck
 from coursekit.cli import main
+from coursekit.media import access as mediaaccess
+from coursekit.media import check as mediacheck
 from tests.test_assemble import course  # noqa: F401 — the approved sample course fixture
 from tests.test_media import manifest, prepare_asset
 

@@ -12,9 +12,9 @@ from pathlib import Path
 
 from coursekit import config as configmod
 from coursekit import course as coursemod
-from coursekit import mediatools
 from coursekit import theme as thememod
 from coursekit.i18n import t
+from coursekit.media import tools as mediatools
 
 NAME = "job-aid.html"
 DEFAULT = Path(__file__).parent / "templates" / "media" / NAME

@@ -31,7 +31,7 @@ from coursekit import course as coursemod
 from coursekit import lang
 from coursekit import media as mediamod
 from coursekit.i18n import t
-from coursekit.mediatools import vtt_time
+from coursekit.media.tools import vtt_time
 
 
 class AccessError(Exception):

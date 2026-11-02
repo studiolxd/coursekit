@@ -128,7 +128,7 @@ def otio(tl: Timeline) -> str:
 
 def srt(vtt: str) -> str:
     """The captions of a VTT as an SRT (what every editor reads)."""
-    from coursekit.mediacheck import cues
+    from coursekit.media.check import cues
 
     def stamp(seconds: float) -> str:
         ms = round(seconds * 1000)

@@ -8,9 +8,10 @@ from pathlib import Path
 import pytest
 import yaml
 
-from coursekit import handoff, mediatools, ttsbatch, video
+from coursekit import handoff, ttsbatch, video
 from coursekit.cli import main
 from coursekit.course import load as load_course
+from coursekit.media import tools as mediatools
 from coursekit.project import find_project
 from tests.test_assemble import course  # noqa: F401 — the approved sample course fixture
 from tests.test_media import prepare_asset
@@ -19,7 +20,7 @@ from tests.test_video import montage
 
 @pytest.fixture(autouse=True)
 def no_script_gate(monkeypatch):
-    from coursekit import mediascript
+    from coursekit.media import script as mediascript
 
     monkeypatch.setattr(mediascript, "required", lambda _course: False)
 

@@ -7,9 +7,11 @@ from pathlib import Path
 import pytest
 import yaml
 
-from coursekit import mediacheck, mediatools, video
+from coursekit import video
 from coursekit.cli import main
 from coursekit.course import load as load_course
+from coursekit.media import check as mediacheck
+from coursekit.media import tools as mediatools
 from coursekit.project import find_project
 from tests.test_assemble import course  # noqa: F401 — the approved sample course fixture
 from tests.test_media import manifest, prepare_asset
@@ -18,7 +20,7 @@ from tests.test_media import manifest, prepare_asset
 @pytest.fixture(autouse=True)
 def no_script_gate(request, monkeypatch):
     """These tests are about what is made, not about its sign-off: the approval of the script is tested in test_media_script."""
-    from coursekit import mediascript
+    from coursekit.media import script as mediascript
 
     monkeypatch.setattr(mediascript, "required", lambda _course: False)
 
@@ -506,7 +508,7 @@ def test_an_atom_of_the_project_or_of_a_course_takes_the_place_of_the_library(co
 
 # ── for an editor ────────────────────────────────────────────────────────────────────────────
 
-from coursekit import videoedit  # noqa: E402
+from coursekit.video import edit as videoedit  # noqa: E402
 
 
 def sample_timeline(tmp_path):

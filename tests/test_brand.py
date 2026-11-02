@@ -9,9 +9,11 @@ from pathlib import Path
 import pytest
 import yaml
 
-from coursekit import brand, brief, media, mediastyle, mediatools, storybook, theme
+from coursekit import brand, brief, media, storybook, theme
 from coursekit.cli import main
 from coursekit.course import load as load_course
+from coursekit.media import style as mediastyle
+from coursekit.media import tools as mediatools
 from coursekit.project import find_project
 from tests.test_assemble import course  # noqa: F401 — the approved sample course fixture
 from tests.test_media import prepare_asset

@@ -10,8 +10,9 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 import pytest
 
-from coursekit import brief, launch, mediastyle, simulation, util, verify
+from coursekit import brief, launch, simulation, util, verify
 from coursekit import course as coursemod
+from coursekit.media import style as mediastyle
 
 COUNTER = """
 import sys

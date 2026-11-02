@@ -6,8 +6,8 @@ import urllib.request
 import yaml
 
 from coursekit import course as coursemod
-from coursekit import mediagallery
 from coursekit.cli import main
+from coursekit.media import gallery as mediagallery
 from coursekit.preview import Server
 from tests.test_assemble import course  # noqa: F401 — the approved sample course fixture
 from tests.test_media import import_theme, manifest

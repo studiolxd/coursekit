@@ -31,9 +31,9 @@ import time
 from pathlib import Path
 
 from coursekit import capture as capturemod
-from coursekit import capture_session as sessionmod
 from coursekit import external
 from coursekit import redact as redactmod
+from coursekit.capture import session as sessionmod
 from coursekit.i18n import t
 from coursekit.mcpserver import ToolError
 
