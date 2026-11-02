@@ -10,7 +10,6 @@ import os
 import re
 import sys
 import time
-import urllib.request
 
 from coursekit import __version__, store
 from coursekit.i18n import t
@@ -40,9 +39,9 @@ def newer(latest: str | None, current: str = __version__) -> bool:
 def latest() -> str | None:
     """The latest version on PyPI, or None when it cannot be known (no network, unexpected answer)."""
     try:
-        request = urllib.request.Request(URL, headers={"User-Agent": f"coursekit/{__version__}"})
-        with urllib.request.urlopen(request, timeout=TIMEOUT) as response:  # noqa: S310 — a fixed https URL
-            return str(json.load(response)["info"]["version"])
+        from coursekit import http
+
+        return str(json.loads(http.request(URL, timeout=TIMEOUT).body)["info"]["version"])
     except Exception:  # noqa: BLE001 — informing is optional: never fail because of it
         return None
 

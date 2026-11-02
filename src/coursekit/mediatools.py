@@ -17,12 +17,12 @@ import shutil
 import subprocess
 import tempfile
 import time
-import urllib.error
 import urllib.request
 import wave
 from pathlib import Path
 
 from coursekit import course as coursemod
+from coursekit import http
 from coursekit.i18n import t
 from coursekit.util import USER_AGENT
 from coursekit.voices import LOCALES, resolve, resolve_character
@@ -48,12 +48,11 @@ def run(command: list[str], **kwargs) -> None:
 def fetch(req: urllib.request.Request, timeout: int = 300) -> bytes:
     """The body of an API response; an HTTP or network failure is a ToolError that names the service and the status."""
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return resp.read()
-    except urllib.error.HTTPError as exc:
-        raise ToolError(t("mediatools", "http_failed", host=req.host, status=exc.code, reason=exc.reason), exc.code) from None
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        raise ToolError(t("mediatools", "network_failed", host=req.host, reason=getattr(exc, "reason", exc))) from None
+        return http.request(req, timeout=timeout).body
+    except http.HttpError as exc:
+        raise ToolError(t("mediatools", "http_failed", host=req.host, status=exc.status, reason=exc.reason), exc.status) from None
+    except http.NetworkError as exc:
+        raise ToolError(t("mediatools", "network_failed", host=req.host, reason=exc.reason)) from None
 
 
 def upload(path: Path, url: str, content_type: str, method: str = "PUT") -> str:

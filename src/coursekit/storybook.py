@@ -7,10 +7,10 @@ from __future__ import annotations
 
 import json
 import re
-import urllib.error
 import urllib.parse
-import urllib.request
 from pathlib import Path
+
+from coursekit import http
 
 AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36"
 ASSETS = (".svg", ".png", ".jpg", ".jpeg", ".webp", ".gif", ".ico", ".woff2", ".woff", ".ttf", ".otf", ".json", ".css", ".pdf")
@@ -18,11 +18,9 @@ ASSETS = (".svg", ".png", ".jpg", ".jpeg", ".webp", ".gif", ".ico", ".woff2", ".
 
 def get(url: str, timeout: int = 60) -> bytes | None:
     """The body of a URL, or None when it cannot be read (the tests stand in for it)."""
-    req = urllib.request.Request(url, headers={"User-Agent": AGENT})
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return resp.read()
-    except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+        return http.request(url, agent=AGENT, timeout=timeout).body
+    except (http.HttpError, http.NetworkError):
         return None
 
 

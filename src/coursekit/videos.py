@@ -12,17 +12,14 @@ from __future__ import annotations
 import datetime as dt
 import json
 import re
-import urllib.error
 import urllib.parse
-import urllib.request
 from pathlib import Path
 
 import yaml
 
 from coursekit import course as coursemod
-from coursekit import i18n, identity
+from coursekit import http, i18n, identity
 from coursekit.i18n import t
-from coursekit.util import USER_AGENT
 
 REGISTRY = "media/external-videos.yaml"
 REPORT = "reviews/external-videos.md"
@@ -92,11 +89,9 @@ def oembed(url: str) -> dict | None:
     template = next((v for h, v in OEMBED.items() if host == h or host.endswith(f".{h}")), None)
     if template is None:
         return None
-    request = urllib.request.Request(template.format(url=urllib.parse.quote(url, safe="")), headers={"User-Agent": USER_AGENT})
     try:
-        with urllib.request.urlopen(request, timeout=20) as response:
-            data = json.loads(response.read().decode("utf-8"))
-    except (urllib.error.URLError, OSError, ValueError):
+        data = json.loads(http.request(template.format(url=urllib.parse.quote(url, safe="")), timeout=20).body.decode("utf-8"))
+    except (http.HttpError, http.NetworkError, ValueError):
         return None
     return {"name": data.get("author_name") or "", "url": data.get("author_url") or "", "title": data.get("title") or ""}
 
@@ -109,11 +104,10 @@ def channel_id(address: str) -> str | None:
         return found.group(1)
     if not address.startswith("http"):
         return None
-    request = urllib.request.Request(address, headers={"User-Agent": "Mozilla/5.0 (compatible; coursekit)", "Accept-Language": "es,en"})
     try:
-        with urllib.request.urlopen(request, timeout=20) as response:
-            page = response.read(600_000).decode("utf-8", errors="replace")
-    except (urllib.error.URLError, OSError):
+        page = http.request(address, headers={"Accept-Language": "es,en"}, agent="Mozilla/5.0 (compatible; coursekit)", timeout=20,
+                            limit=600_000).body.decode("utf-8", errors="replace")
+    except (http.HttpError, http.NetworkError):
         return None
     found = CANONICAL.search(page)
     return found.group(1) if found else None

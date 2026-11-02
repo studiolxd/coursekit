@@ -64,7 +64,7 @@ def test_a_network_failure_is_not_an_error(monkeypatch):
     def boom(*args, **kwargs):
         raise OSError("offline")
 
-    monkeypatch.setattr(updatecheck.urllib.request, "urlopen", boom)
+    monkeypatch.setattr("urllib.request.urlopen", boom)
     assert updatecheck.latest() is None
 
 

@@ -402,18 +402,17 @@ def build(project: Project, course: dict | None = None, refresh: bool = False, l
 
 def npm_fetch(url: str) -> bytes:
     """What the registry of npm serves (the tests stand in for it)."""
-    import urllib.request
+    from coursekit import http
 
-    req = urllib.request.Request(url, headers={"User-Agent": "coursekit", "Accept": "application/json, application/octet-stream"})
-    with urllib.request.urlopen(req, timeout=120) as resp:
-        return resp.read()
+    return http.request(url, headers={"Accept": "application/json, application/octet-stream"}, agent="coursekit", timeout=120).body
 
 
 def _package(url: str, note: str, base: Path, state: dict, refresh: bool) -> dict:
     """A package of npm named in links.md (https://www.npmjs.com/package/<name>, or …/v/<version> for one version): its .tgz
     from the registry into packages/, downloaded again only when the version changes. A private package is not reached."""
-    import urllib.error
     import urllib.parse
+
+    from coursekit import http
 
     name, pinned = NPM_URL.match(url).groups()
     row = {"url": url, "note": note, "name": name, "version": pinned, "file": None, "error": None}
@@ -432,7 +431,7 @@ def _package(url: str, note: str, base: Path, state: dict, refresh: bool) -> dic
             target.write_bytes(npm_fetch(tarball))
         state[url] = version
         row.update(version=version, file=target.relative_to(base).as_posix())
-    except (urllib.error.URLError, TimeoutError, OSError, ValueError) as exc:
+    except (http.HttpError, http.NetworkError, OSError, ValueError) as exc:
         row["error"] = i18n.t("brand", "package_failed", name=name, reason=getattr(exc, "reason", exc))
     return row
 

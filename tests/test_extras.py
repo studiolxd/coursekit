@@ -4,8 +4,16 @@ from coursekit import brief, doctor, extras
 
 
 def installed_only(monkeypatch, modules):
+    """Only the extras whose modules are in `modules` look installed, whatever this environment really has."""
     real = importlib.util.find_spec
-    monkeypatch.setattr(importlib.util, "find_spec", lambda name, *a: real(name, *a) if name in modules else None)
+    extra_modules = {m for names in extras.EXTRAS.values() for m in names}
+
+    def find_spec(name, *a):
+        if name in extra_modules:
+            return object() if name in modules else None
+        return real(name, *a)
+
+    monkeypatch.setattr(importlib.util, "find_spec", find_spec)
 
 
 def test_the_install_command_keeps_the_extras_already_installed(monkeypatch):

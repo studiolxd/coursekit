@@ -8,11 +8,10 @@ from __future__ import annotations
 import json
 import os
 import re
-import urllib.error
 import urllib.parse
-import urllib.request
 from pathlib import Path
 
+from coursekit import http
 from coursekit.i18n import t
 
 API = "https://api.magnific.com/v1"
@@ -34,26 +33,23 @@ def key() -> str:
 def get(path: str, params: dict | None = None) -> dict:
     """A call to the Magnific API (the tests stand in for it)."""
     url = f"{API}/{path}" + ("?" + urllib.parse.urlencode(params) if params else "")
-    req = urllib.request.Request(url, headers={"x-magnific-api-key": key(), "Accept-Language": "en-US"})
     try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            return json.load(resp)
-    except urllib.error.HTTPError as exc:
-        if exc.code == 404:
+        return json.loads(http.request(url, headers={"x-magnific-api-key": key(), "Accept-Language": "en-US"}, timeout=60).body)
+    except http.HttpError as exc:
+        if exc.status == 404:
             return {"data": [], "meta": {"total": 0}}
-        detail = exc.read().decode("utf-8", "replace")[:200]
-        raise IllustrationError(t("illustrations", "api_failed", status=exc.code, detail=detail)) from None
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        raise IllustrationError(t("illustrations", "network_failed", reason=getattr(exc, "reason", exc))) from None
+        raise IllustrationError(t("illustrations", "api_failed", status=exc.status, detail=exc.detail(200))) from None
+    except http.NetworkError as exc:
+        raise IllustrationError(t("illustrations", "network_failed", reason=exc.reason)) from None
 
 
 def fetch(url: str) -> bytes:
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 coursekit"})
     try:
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            return resp.read()
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        raise IllustrationError(t("illustrations", "network_failed", reason=getattr(exc, "reason", exc))) from None
+        return http.request(url, agent="Mozilla/5.0 coursekit", timeout=120).body
+    except http.HttpError as exc:
+        raise IllustrationError(t("illustrations", "network_failed", reason=f"{exc.status} {exc.reason}")) from None
+    except http.NetworkError as exc:
+        raise IllustrationError(t("illustrations", "network_failed", reason=exc.reason)) from None
 
 
 def author_of(url: str) -> str | None:

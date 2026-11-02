@@ -21,11 +21,10 @@ import datetime as dt
 import hashlib
 import json
 import os
-import urllib.request
 from pathlib import Path
 
 from coursekit import course as coursemod
-from coursekit import mediatools
+from coursekit import http, mediatools
 from coursekit.i18n import t
 
 UPLOAD = "https://generativelanguage.googleapis.com/upload/v1beta/files"
@@ -132,15 +131,13 @@ class Api:
             raise BatchError(t("ttsbatch", "no_key"))
 
     def _call(self, url: str, body: bytes | None = None, headers: dict | None = None, method: str = "POST") -> tuple[dict, bytes]:
-        req = urllib.request.Request(url, data=body, headers={"x-goog-api-key": self.key, **(headers or {})}, method=method)
         try:
-            with urllib.request.urlopen(req, timeout=600) as resp:
-                return dict(resp.headers), resp.read()
-        except urllib.error.HTTPError as exc:
-            detail = exc.read().decode("utf-8", "replace")[:300].replace("\n", " ")
-            raise BatchError(t("ttsbatch", "api_failed", status=exc.code, detail=detail)) from None
-        except (urllib.error.URLError, TimeoutError, OSError) as exc:
-            raise BatchError(t("mediatools", "network_failed", host=req.host, reason=getattr(exc, "reason", exc))) from None
+            resp = http.request(url, data=body, headers={"x-goog-api-key": self.key, **(headers or {})}, method=method, timeout=600)
+        except http.HttpError as exc:
+            raise BatchError(t("ttsbatch", "api_failed", status=exc.status, detail=exc.detail())) from None
+        except http.NetworkError as exc:
+            raise BatchError(t("mediatools", "network_failed", host=exc.host, reason=exc.reason)) from None
+        return dict(resp.headers), resp.body
 
     def upload(self, data: bytes, name: str) -> str:
         """Uploads a JSONL file to the Files API; its name (`files/…`)."""

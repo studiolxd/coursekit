@@ -10,16 +10,14 @@ writes and records the bank. When every package (and the bank, if any) of the sa
 from __future__ import annotations
 
 import datetime as dt
-import urllib.error
-import urllib.request
 import zipfile
 from pathlib import Path
 
-from coursekit import clientreview, config, identity
+from coursekit import clientreview, config, http, identity
 from coursekit import course as coursemod
 from coursekit.i18n import t
 from coursekit.states import ensure_active, history_entry
-from coursekit.util import USER_AGENT, edit_yaml, save_yaml, sha256_file
+from coursekit.util import edit_yaml, save_yaml, sha256_file
 
 
 class DeliveryError(Exception):
@@ -73,16 +71,11 @@ def download(course: dict, unit: int, version: str, url: str) -> str:
     path = folder / expected_name(course, unit, version)
     partial = path.with_name(path.name + ".part")
     try:
-        request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-        with urllib.request.urlopen(request, timeout=300) as response, partial.open("wb") as out:
-            while chunk := response.read(1 << 20):
-                out.write(chunk)
-    except urllib.error.HTTPError as exc:
-        partial.unlink(missing_ok=True)
-        raise DeliveryError(t("delivery", "download_failed", status=exc.code, reason=exc.reason)) from None
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        partial.unlink(missing_ok=True)
-        raise DeliveryError(t("delivery", "download_failed", status="-", reason=getattr(exc, "reason", exc))) from None
+        http.download(url, partial)
+    except http.HttpError as exc:
+        raise DeliveryError(t("delivery", "download_failed", status=exc.status, reason=exc.reason)) from None
+    except http.NetworkError as exc:
+        raise DeliveryError(t("delivery", "download_failed", status="-", reason=exc.reason)) from None
     problem = check_package(partial)
     if problem:
         partial.unlink(missing_ok=True)
@@ -158,16 +151,11 @@ def download_bank(course: dict, version: str, fmt: str, url: str) -> Path:
     path.parent.mkdir(exist_ok=True)
     partial = path.with_name(path.name + ".part")
     try:
-        request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-        with urllib.request.urlopen(request, timeout=300) as response, partial.open("wb") as out:
-            while chunk := response.read(1 << 20):
-                out.write(chunk)
-    except urllib.error.HTTPError as exc:
-        partial.unlink(missing_ok=True)
-        raise DeliveryError(t("delivery", "download_failed", status=exc.code, reason=exc.reason)) from None
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        partial.unlink(missing_ok=True)
-        raise DeliveryError(t("delivery", "download_failed", status="-", reason=getattr(exc, "reason", exc))) from None
+        http.download(url, partial)
+    except http.HttpError as exc:
+        raise DeliveryError(t("delivery", "download_failed", status=exc.status, reason=exc.reason)) from None
+    except http.NetworkError as exc:
+        raise DeliveryError(t("delivery", "download_failed", status="-", reason=exc.reason)) from None
     if fmt == "qti" and check_package(partial) == t("delivery", "not_a_zip"):
         partial.unlink(missing_ok=True)
         raise DeliveryError(f"{path.name}: {t('delivery', 'not_a_zip')}")

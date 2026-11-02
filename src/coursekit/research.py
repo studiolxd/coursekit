@@ -16,8 +16,6 @@ import datetime as dt
 import json
 import os
 import re
-import time
-import urllib.error
 import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
@@ -25,7 +23,7 @@ from dataclasses import asdict, dataclass
 from html.parser import HTMLParser
 from pathlib import Path
 
-from coursekit import config
+from coursekit import config, http
 from coursekit import course as coursemod
 from coursekit.i18n import t
 from coursekit.util import USER_AGENT
@@ -35,6 +33,7 @@ NO_PROVIDER = 3  # exit code: no provider configured, the agent uses its own web
 LOG = "brief/research-log.md"
 VERIFY_MARK = re.compile(r"<!--\s*VERIFICAR\b")
 RETRY_WAIT = (2, 8)  # seconds before the second and third attempt, on 429 and 5xx
+RETRY_STATUS = frozenset({429, *range(500, 600)})
 PAGE_TIMEOUT = 10
 HEAD_BYTES = 400_000
 # Tavily wants the country by its English name; the rest of the providers take the ISO code.
@@ -101,23 +100,16 @@ def country(cfg: dict, language: str) -> str | None:
 
 def _call(req: urllib.request.Request, name: str) -> dict:
     """The JSON a provider answers, retrying on 429 and 5xx. The key never reaches a message."""
-    for attempt in range(len(RETRY_WAIT) + 1):
-        try:
-            with urllib.request.urlopen(req, timeout=60) as resp:
-                return json.loads(resp.read().decode("utf-8"))
-        except urllib.error.HTTPError as exc:
-            if (exc.code == 429 or exc.code >= 500) and attempt < len(RETRY_WAIT):
-                time.sleep(RETRY_WAIT[attempt])
-                continue
-            if exc.code in (401, 403):
-                raise ResearchError(t("research", "key_rejected", name=name, key=KEYS[name], status=exc.code)) from None
-            if exc.code == 402:
-                raise ResearchError(t("research", "no_credit", name=name)) from None
-            detail = exc.read().decode("utf-8", "replace")[:300].replace("\n", " ")
-            raise ResearchError(t("research", "api_failed", name=name, status=exc.code, detail=detail)) from None
-        except (urllib.error.URLError, TimeoutError, OSError, ValueError) as exc:
-            raise ResearchError(t("research", "network_failed", name=name, reason=getattr(exc, "reason", exc))) from None
-    raise ResearchError(t("research", "api_failed", name=name, status=429, detail=""))
+    try:
+        return json.loads(http.request(req, timeout=60, retry_waits=RETRY_WAIT, retry_status=RETRY_STATUS).body.decode("utf-8"))
+    except http.HttpError as exc:
+        if exc.status in (401, 403):
+            raise ResearchError(t("research", "key_rejected", name=name, key=KEYS[name], status=exc.status)) from None
+        if exc.status == 402:
+            raise ResearchError(t("research", "no_credit", name=name)) from None
+        raise ResearchError(t("research", "api_failed", name=name, status=exc.status, detail=exc.detail())) from None
+    except (http.NetworkError, ValueError) as exc:
+        raise ResearchError(t("research", "network_failed", name=name, reason=getattr(exc, "reason", exc))) from None
 
 
 def _post(url: str, body: dict, headers: dict) -> urllib.request.Request:
@@ -230,18 +222,17 @@ class Head:
 def page_head(url: str) -> Head | None:
     """The language the page declares, its translations by hreflang and its title; None when it is not an HTML page that
     answers."""
-    req = urllib.request.Request(url, headers={"User-Agent": f"Mozilla/5.0 (compatible; {USER_AGENT})"})
     try:
-        with urllib.request.urlopen(req, timeout=PAGE_TIMEOUT) as resp:
-            if resp.status in BLOCKING:
-                return Head("", {}, "", blocked=True)
-            if resp.status != 200 or "html" not in (resp.headers.get("Content-Type") or ""):
-                return None
-            text = resp.read(HEAD_BYTES).decode("utf-8", "replace")
-    except urllib.error.HTTPError as exc:
-        return Head("", {}, "", blocked=True) if exc.code in BLOCKING else None
-    except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+        resp = http.request(url, timeout=PAGE_TIMEOUT, agent=http.BROWSER, limit=HEAD_BYTES)
+    except http.HttpError as exc:
+        return Head("", {}, "", blocked=True) if exc.status in BLOCKING else None
+    except http.NetworkError:
         return None
+    if resp.status in BLOCKING:
+        return Head("", {}, "", blocked=True)
+    if resp.status != 200 or "html" not in (resp.headers.get("Content-Type") or ""):
+        return None
+    text = resp.body.decode("utf-8", "replace")
     if not text.strip() or (len(text) < 20_000 and CHALLENGE.search(text)):
         return Head("", {}, "", blocked=True)
     end = text.lower().find("</head>")

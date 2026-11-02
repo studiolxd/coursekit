@@ -113,7 +113,6 @@ def test_with_a_bank_format_the_questions_leave_the_packages(course):  # noqa: F
 
 
 def test_with_creator_the_bank_is_the_one_creator_exports(course, capsys, monkeypatch):  # noqa: F811
-    from coursekit import delivery
 
     set_assessment(course, fmt="qti", backend="creator")
     assert main(["delivery", "questions", "PWD", "--version", "1.0"]) == 1
@@ -128,7 +127,7 @@ def test_with_creator_the_bank_is_the_one_creator_exports(course, capsys, monkey
             zf.writestr("imsmanifest.xml", "<manifest/>")
         return io.BytesIO(data.getvalue())
 
-    monkeypatch.setattr(delivery.urllib.request, "urlopen", fetch)
+    monkeypatch.setattr("urllib.request.urlopen", fetch)
     assert main(["delivery", "questions", "PWD", "--version", "1.0", "--url", "https://example.com/bank"]) == 0
     assert (course / "delivery" / "PWD-questions-v1.0.zip").exists()
     entry = yaml.safe_load((course / "course.yaml").read_text(encoding="utf-8"))["deliveries"][-1]

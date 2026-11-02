@@ -64,7 +64,7 @@ def api(monkeypatch):
         raise urllib.error.HTTPError(url, 404, "Not Found", {}, io.BytesIO(b""))
 
     monkeypatch.setattr(research.urllib.request, "urlopen", urlopen)
-    monkeypatch.setattr(research.time, "sleep", lambda s: None)
+    monkeypatch.setattr("time.sleep", lambda s: None)
     Api.sent = []
     return Api
 

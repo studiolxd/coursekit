@@ -23,14 +23,13 @@ import shutil
 import subprocess
 import tempfile
 import urllib.parse
-import urllib.request
 from importlib import resources
 from pathlib import Path
 
 from coursekit import config as configmod
-from coursekit import exelearning, i18n
+from coursekit import exelearning, http, i18n
 from coursekit.lang import format_number
-from coursekit.util import USER_AGENT, sha256_file
+from coursekit.util import sha256_file
 
 WEB2MD = Path(str(resources.files("coursekit.tools").joinpath("web2md.js")))
 BLOCKED = re.compile(r"^BLOCKED\t(\S+)", re.M)  # what web2md says of a page that answered empty or with a check against robots
@@ -244,17 +243,16 @@ DOCUMENT_TYPES = {
 def fetch_document(url: str) -> tuple[bytes, str] | None:
     """The file behind a link when it is a document (PDF, Word, PowerPoint, Excel) and not a web page: its bytes and its
     extension, by the type the server says or, when it says only "binary", by the extension of the address. None otherwise."""
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     try:
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            kind = resp.headers.get_content_type()
-            suffix = DOCUMENT_TYPES.get(kind)
-            if suffix is None and kind in ("application/octet-stream", "binary/octet-stream", "application/download"):
-                found = Path(urllib.parse.urlparse(resp.url).path).suffix.lower()
-                suffix = found if found in DOCUMENT_TYPES.values() else None
-            return (resp.read(), suffix) if suffix else None
-    except (OSError, ValueError):  # unreachable or not HTTP: web2md tries it and says what happened
+        resp = http.request(url, timeout=120)
+    except (http.HttpError, http.NetworkError):  # unreachable or not HTTP: web2md tries it and says what happened
         return None
+    kind = resp.headers.get_content_type()
+    suffix = DOCUMENT_TYPES.get(kind)
+    if suffix is None and kind in ("application/octet-stream", "binary/octet-stream", "application/download"):
+        found = Path(urllib.parse.urlparse(resp.url).path).suffix.lower()
+        suffix = found if found in DOCUMENT_TYPES.values() else None
+    return (resp.body, suffix) if suffix else None
 
 
 def save_document(url: str, body: bytes, suffix: str, folder: Path) -> tuple[str, dict] | None:
