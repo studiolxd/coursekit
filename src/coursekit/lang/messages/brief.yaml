@@ -44,7 +44,7 @@ note_heavy:
 note_no_transcript:
   es: "sin transcripción: añade un .vtt/.txt con el texto"
   en: "no transcript: add a .vtt/.txt with the text"
-note_markitdown_missing: {es: "falta MarkItDown (coursekit setup)", en: "MarkItDown is missing (coursekit setup)"}
+note_markitdown_missing: {es: "convertir este fichero necesita el extra docs de coursekit: {command}", en: "converting this file needs the docs extra of coursekit: {command}"}
 note_convert_failed: {es: "no se pudo convertir: {error}", en: "could not be converted: {error}"}
 note_no_text: {es: "casi sin texto: ¿escaneado? necesita OCR", en: "almost no text: scanned? it needs OCR"}
 note_node_missing: {es: "falta Node (nodejs.org)", en: "Node is missing (nodejs.org)"}

@@ -25,7 +25,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter
 
-from coursekit import pii
+from coursekit import extras, pii
 from coursekit.i18n import t
 
 TESSERACT_LANGUAGES = {"es": "spa+eng", "en": "eng"}
@@ -95,7 +95,7 @@ def _rapidocr() -> Reader:
         import numpy as np
         from rapidocr_onnxruntime import RapidOCR
     except ImportError:
-        raise RedactError(t("redact", "ocr_missing")) from None
+        raise RedactError(t("redact", "ocr_missing", command=extras.install_command("capture"))) from None
     engine = RapidOCR()
 
     def read(image: Image.Image) -> list[Line]:
@@ -119,7 +119,7 @@ def _rapidocr() -> Reader:
 def _tesseract(language: str) -> Reader:
     program = shutil.which("tesseract")
     if not program:
-        raise RedactError(t("redact", "ocr_missing"))
+        raise RedactError(t("redact", "ocr_missing", command=extras.install_command("capture")))
 
     def run(path: Path, languages: str) -> subprocess.CompletedProcess:
         return subprocess.run([program, str(path), "stdout", "-l", languages, "tsv"], capture_output=True, text=True,
@@ -155,7 +155,7 @@ def _vision(language: str) -> Reader:
         import Vision
         from Foundation import NSData
     except ImportError:
-        raise RedactError(t("redact", "ocr_missing")) from None
+        raise RedactError(t("redact", "ocr_missing", command=extras.install_command("capture"))) from None
 
     def read(image: Image.Image) -> list[Line]:
         buffer = io.BytesIO()
@@ -316,7 +316,7 @@ def redact_video(source: Path, target: Path, redactor: Redactor, fps: float, rev
         import cv2
         import numpy as np
     except ImportError:
-        raise RedactError(t("redact", "video_needs_extra")) from None
+        raise RedactError(t("redact", "video_needs_extra", command=extras.install_command("capture"))) from None
     ffmpeg = shutil.which("ffmpeg")
     if not ffmpeg:
         raise RedactError(t("redact", "ffmpeg_missing"))

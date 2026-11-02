@@ -12,12 +12,14 @@ dependencies = [
     "ruamel.yaml>=0.18",
     "openpyxl>=3.1",
     "markdown-it-py>=3.0",
-    "markitdown[pdf,docx,pptx,xlsx,xls,outlook]>=0.1",
     "pillow>=10",
 ]
 
 [project.optional-dependencies]
 media = []
+# The documents of brief/sources and of the brand material (PDF, Word, PowerPoint, Excel, Outlook) converted to text. It brings
+# onnxruntime, pandas and numpy: most of the weight of an installation.
+docs = ["markitdown[pdf,docx,pptx,xlsx,xls,outlook]>=0.1"]
 capture = [
     "playwright>=1.48",
     "rapidocr-onnxruntime>=1.3",

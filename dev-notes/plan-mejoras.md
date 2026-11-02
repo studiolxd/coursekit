@@ -46,7 +46,7 @@ Al preparar el plan salieron tres datos que el informe tenía mal. Se corrigen e
   y el comando exacto para instalarlo.
 - `doctor` dice qué extra falta para cada función (`docs`, `capture`) y qué programas de sistema faltan (ffmpeg, Chrome, node),
   con el comando para esa plataforma. También avisa si hay instalado un OpenCV distinto del que pide rapidocr.
-- `coursekit config check` compara cada `config/<name>.yaml` del proyecto con `defaults/<name>.yaml` y avisa de las claves que
+- `coursekit config --check` compara cada `config/<name>.yaml` del proyecto con `defaults/<name>.yaml` y avisa de las claves que
   ya no existen o están mal escritas.
 - Se apunta en el informe qué dependencia impide Python 3.14, sin abrir todavía la versión.
 

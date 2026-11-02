@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 import importlib.util
 import json
 import os
@@ -10,7 +11,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from coursekit import __version__, config, identity, store, updatecheck
+from coursekit import __version__, config, extras, identity, store, updatecheck
 from coursekit import agents as agentsmod
 from coursekit import research as researchmod
 from coursekit import theme as thememod
@@ -78,6 +79,21 @@ def tool_sections(project: Project) -> Section:
     return s
 
 
+def needs_docs(project: Project) -> bool:
+    """Whether the reference material or the brand material has a document only the docs extra converts (a PDF, a Word file...):
+    brief hands to MarkItDown every file of brief/sources/ that is not an image, audio, video, text or an eXeLearning package."""
+    from coursekit import brand, brief
+
+    def any_file(folder: Path, convertible) -> bool:
+        return folder.is_dir() and any(f.is_file() and not f.name.startswith(".") and convertible(f.suffix.lower())
+                                       for f in folder.rglob("*"))
+
+    skipped = {*brief.IMAGES, *brief.AUDIO_VIDEO, *brief.COPY, *brief.EXELEARNING}
+    return (any_file(project.root / "brief" / "sources", lambda ext: ext not in skipped)
+            or any(any_file(folder / "theme" / "branding" / "sources", lambda ext: ext in brand.DOCUMENTS and ext not in brief.COPY)
+                   for folder in (project.root, *project.iter_courses())))
+
+
 def collect(project: Project) -> list[Section]:
     base = Section(t("doctor", "section_base"))
     python = f"{sys.version_info[0]}.{sys.version_info[1]}"
@@ -93,7 +109,7 @@ def collect(project: Project) -> list[Section]:
     hooks = git("config", "--get", "core.hooksPath", cwd=project.root)
     is_repo = bool(git("rev-parse", "--show-toplevel", cwd=project.root))
     base.add(bool(hooks) if is_repo else None, t("doctor", "git_hooks" if is_repo else "not_a_repo"), "coursekit setup")
-    base.add(importlib.util.find_spec("markitdown") is not None, t("doctor", "markitdown"), t("doctor", "markitdown_hint"))
+    base.add(extras.has("docs") or (None if not needs_docs(project) else False), t("doctor", "markitdown"), extras.install_command("docs"))
     base.add(shutil.which("node") is not None, t("doctor", "node_line"), "coursekit setup --media")
 
     net = Section(t("doctor", "section_network"))
@@ -166,6 +182,23 @@ def _imports(module: str) -> bool:
     return True
 
 
+OPENCV = ("opencv-python", "opencv-python-headless", "opencv-contrib-python", "opencv-contrib-python-headless")
+
+
+def opencv_distributions() -> list[str]:
+    """The OpenCV packages installed next to coursekit: they all install the same `cv2`, so a second one overwrites the first."""
+    from importlib import metadata
+
+    found = []
+    for name in OPENCV:
+        try:
+            metadata.distribution(name)
+        except metadata.PackageNotFoundError:
+            continue
+        found.append(name)
+    return found
+
+
 def capture_section(project: Project) -> Section | None:
     """What `coursekit capture` needs on this machine, when the project captures."""
     cfg = config.effective("capture", project).value
@@ -173,7 +206,7 @@ def capture_section(project: Project) -> Section | None:
         return None
     from coursekit.htmlkit.playcheck import find_browser
 
-    hint = 'uv tool install "slxd-coursekit[capture]"'
+    hint = extras.install_command("capture")
     s = Section(t("doctor", "section_capture"))
     modes = cfg.get("modes") or []
     if "browser" in modes:
@@ -181,7 +214,12 @@ def capture_section(project: Project) -> Section | None:
         s.add(bool(find_browser()), t("doctor", "capture_browser"), t("doctor", "html_browser_hint"))
     ocr = importlib.util.find_spec("rapidocr_onnxruntime") is not None or shutil.which("tesseract") is not None
     s.add(ocr, t("doctor", "capture_ocr"), hint)
-    s.add(_imports("cv2"), t("doctor", "capture_opencv"), t("doctor", "capture_opencv_hint") if sys.platform.startswith("linux") else hint)
+    opencv_hint = t("doctor", "capture_opencv_hint", command=hint) if sys.platform.startswith("linux") else hint
+    s.add(_imports("cv2"), t("doctor", "capture_opencv"), opencv_hint)
+    others = opencv_distributions()
+    if len(others) > 1:
+        s.add(False, t("doctor", "capture_opencv_several", names=", ".join(others)),
+              t("doctor", "capture_opencv_several_hint", command=hint))
     s.add(shutil.which("ffmpeg") is not None, t("doctor", "capture_ffmpeg"), "coursekit setup --media")
     if "desktop" in modes:
         if sys.platform == "darwin":

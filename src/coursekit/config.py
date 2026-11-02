@@ -16,6 +16,7 @@ identity, never production rules (those must be the same for the whole team).
 
 from __future__ import annotations
 
+import difflib
 from dataclasses import dataclass, field
 from importlib import resources
 from pathlib import Path
@@ -128,3 +129,60 @@ def effective(name: str, project: Project | None = None, course: dict | None = N
     if course is not None and isinstance(course.get(name), dict):
         result.merge({k: v for k, v in course[name].items() if k not in COURSE_STATE.get(name, ())}, "course")
     return result
+
+
+# Mappings whose keys a project chooses (a catalogue, not a fixed set of rules): `check` does not look inside them. An empty
+# mapping in the defaults (`capture › profiles`, `video › scenes`) is open too.
+OPEN = {
+    "directives": {("directives",), ("not_directives",), ("activity_types",), ("component_equivalents",)},
+    "import": {("idevices",)},
+    "research": {("providers",)},
+}
+
+
+@dataclass
+class Unknown:
+    """A key of a configuration layer that coursekit does not read: misspelt, or of an older version."""
+
+    where: str
+    key: str
+    suggestion: str | None = None
+
+
+def unknown_keys(name: str, data: Any, where: str) -> list[Unknown]:
+    """The keys of `data` (a layer of the configuration `name`) that are not in the package defaults."""
+    found: list[Unknown] = []
+
+    def walk(node: dict, ref: dict, path: tuple) -> None:
+        for key, value in node.items():
+            here = (*path, key)
+            if key not in ref:
+                close = difflib.get_close_matches(str(key), [str(k) for k in ref], n=1)
+                found.append(Unknown(where, ".".join(map(str, here)), ".".join(map(str, (*path, close[0]))) if close else None))
+                continue
+            known = ref[key]
+            if isinstance(value, dict) and isinstance(known, dict) and known and here not in OPEN.get(name, set()):
+                walk(value, known, here)
+
+    if isinstance(data, dict):
+        walk(data, package_defaults(name), ())
+    return found
+
+
+def check(project: Project) -> list[Unknown]:
+    """Every key of the project's configuration that coursekit does not read: `config/*.yaml`, the sections of
+    `project.yaml` and those of each `course.yaml`."""
+    found: list[Unknown] = []
+    data = project_data(project)
+    courses = [((folder / "course.yaml").relative_to(project.root).as_posix(), _read_yaml(folder / "course.yaml"))
+               for folder in project.iter_courses()]
+    for name in NAMES:
+        config_file = project.config_dir / f"{name}.yaml"
+        if config_file.exists():
+            found += unknown_keys(name, _read_yaml(config_file), config_file.relative_to(project.root).as_posix())
+        layers = [(f"{project.file.name} › {name}", data.get(name))]
+        layers += [(f"{file} › {name}", course.get(name)) for file, course in courses]
+        for where, section in layers:
+            if isinstance(section, dict):
+                found += unknown_keys(name, {k: v for k, v in section.items() if k not in COURSE_STATE.get(name, ())}, where)
+    return found

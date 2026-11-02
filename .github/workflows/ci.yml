@@ -17,9 +17,12 @@ jobs:
       - run: uv sync --group dev
       - run: uv run ruff check .
       - run: uv run pytest -q
+      # Without extras (the tests above need none: the documents of brief are converted by a stand-in), then with every extra.
       - name: install as a tool
         run: |
           uv tool install .
+          coursekit --version
+          uv tool install --force --python 3.12 ".[docs,capture]"  # rapidocr-onnxruntime, of the capture extra, needs Python < 3.13
           coursekit --version
 
   # The capture with a real browser (Playwright and the Chrome of the runner, with no window) and the OCR, the faces and the

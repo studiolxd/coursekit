@@ -147,15 +147,16 @@ coursekit init acme-courses --yes --language en --client ACME --name "ACME train
 Shows the effective configuration and the layer each value comes from. Use it to check which rules are in force. Who: both.
 
 ```
-coursekit config [{rules,directives,media,delivery}] [--course COURSE] [--changed] [--json]
+coursekit config [{rules,directives,media,delivery,import,capture,video,research}] [--course COURSE] [--changed] [--json] [--check]
 ```
 
 | Argument | Values / default | Meaning |
 |---|---|---|
-| `name` | `rules`, `directives`, `media`, `delivery`; default: all four | Which configuration to show. |
+| `name` | `rules`, `directives`, `media`, `delivery`, `import`, `capture`, `video`, `research`; default: all | Which configuration to show. |
 | `--course COURSE` | course code or folder | Include the overrides of that course (`course.yaml`). Exit code 1 if the course does not exist. |
 | `--changed` | flag | Only values that differ from the package defaults. |
 | `--json` | flag | Print the merged values as JSON (one object per configuration, or the bare value when `name` is given). |
+| `--check` | flag | Check every layer of the project (`config/*.yaml`, the sections of `project.yaml` and of each `course.yaml`) for keys coursekit does not read: misspelt, or of an older version. Each one is printed with its file and, when there is one, the key it probably meant. Exit code 1 if it finds any. The catalogues a project fills (directives, iDevices, capture profiles, video scenes, search providers) are not checked inside. |
 
 Layers, from lowest to highest priority: `package` (defaults shipped with coursekit), `config` (`config/<name>.yaml`), `project` (the `<name>:` section of `project.yaml`), `course` (the `<name>:` section of `course.yaml`). Mappings merge key by key; lists replace the whole list. Each line is `key  value  (layer)`.
 
@@ -163,7 +164,10 @@ The resource types appear by their English id (`image`, `infographic`, `animated
 
 ```
 coursekit config delivery --course PWD
+coursekit config --check
 ```
+
+Run `--check` after upgrading coursekit: a key renamed in a new version stops having effect without any error.
 
 ### `coursekit rules`
 

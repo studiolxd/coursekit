@@ -35,7 +35,7 @@ from PIL import Image
 
 from coursekit import capture as capturemod
 from coursekit import course as coursemod
-from coursekit import mediascript, pii
+from coursekit import extras, mediascript, pii
 from coursekit import redact as redactmod
 from coursekit.i18n import t
 from coursekit.mcpserver import ToolError
@@ -677,7 +677,7 @@ def _start_terminal(project, cfg, course, asset, asset_id, grant, backend_factor
     if not termmod.supported():
         raise ToolError(t("capture", "terminal_unsupported"))
     if backend_factory is None and not termmod.emulator_available():
-        raise ToolError(t("capture", "terminal_needs_pyte"))
+        raise ToolError(t("capture", "terminal_needs_pyte", command=extras.install_command("capture")))
     if not block.get("stage"):
         raise ToolError(t("capture", "terminal_needs_stage", path=brief_file(course, asset_id).name))
     settings = dict(cfg.get("terminal") or {})
@@ -741,7 +741,7 @@ class BrowserBackend:
         try:
             from playwright.sync_api import sync_playwright
         except ImportError:
-            raise ToolError(t("capture", "playwright_missing")) from None
+            raise ToolError(t("capture", "playwright_missing", command=extras.install_command("capture"))) from None
         from coursekit.htmlkit.playcheck import find_browser
 
         executable = find_browser()

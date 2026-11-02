@@ -55,7 +55,7 @@ Para probarlo desde un clon, con los cambios aplicándose al instante:
 uv tool install --editable /ruta/a/coursekit
 ```
 
-Las capturas reales de aplicaciones (`coursekit capture`) necesitan el extra opcional `capture`: `uv tool install --force "slxd-coursekit[capture]"` (desde un clon: `uv tool install --force --editable "/ruta/a/coursekit[capture]"`).
+Hay dos extras opcionales: `docs` convierte a texto los documentos del material de partida y del material de marca (PDF, Word, PowerPoint, Excel, Outlook), y `capture` hace las capturas reales de aplicaciones (`coursekit capture`). Nombra en un solo comando todos los extras que quieras, porque reinstalar con unos quita los demás: `uv tool install --force "slxd-coursekit[docs,capture]"` (desde un clon: `uv tool install --force --editable "/ruta/a/coursekit[docs,capture]"`). `coursekit doctor` dice cuál falta y da el comando. Por ahora `capture` necesita Python 3.12 (`--python 3.12`).
 
 Para actualizar una copia instalada: `uv tool upgrade slxd-coursekit`. Nada más: el primer comando en cada proyecto regenera sus ficheros gestionados y los de los agentes. Una versión concreta: `uv tool install slxd-coursekit==0.2.1`.
 

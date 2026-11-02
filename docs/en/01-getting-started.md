@@ -47,12 +47,19 @@ coursekit tells you when a newer version is published: at most once a day, when 
 
 If the shell does not find `coursekit` after installing, run `uv tool update-shell` and open a new terminal.
 
-The real captures of applications ([`coursekit capture`](03-commands.md#coursekit-capture)) need the optional `capture` extra (Playwright, an OCR and OpenCV; it downloads quite a lot). Install the package with it, or reinstall it over the copy you have; the quotes keep the shell from reading the brackets:
+Two parts of coursekit come in optional extras, because they download a lot:
+
+- `docs`: converts the documents left in `brief/sources/` and in the brand material (PDF, Word, PowerPoint, Excel, Outlook) to text, with MarkItDown. Without it, `coursekit brief` still reads Markdown, text and web links, and says which files it could not convert.
+- `capture`: the real captures of applications ([`coursekit capture`](03-commands.md#coursekit-capture)): Playwright, an OCR and OpenCV. For now its OCR needs Python 3.12: add `--python 3.12` to the command below.
+
+Install the package with the extras you want, or reinstall it over the copy you have. Reinstalling replaces the installed extras, so name all of them in the same command; the quotes keep the shell from reading the brackets:
 
 ```bash
-uv tool install --force "slxd-coursekit[capture]"
-uv tool install --force --editable "./coursekit[capture]"   # from a clone
+uv tool install --force "slxd-coursekit[docs,capture]"
+uv tool install --force --editable "./coursekit[docs,capture]"   # from a clone
 ```
+
+`coursekit doctor` says which extra a project needs and gives the command with the extras you already have.
 
 ### Uninstall
 

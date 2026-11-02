@@ -5,7 +5,7 @@ unknown_profile: {es: "el perfil {name} no está en capture.yaml › profiles (h
 bad_start_url: {es: "el perfil {name} necesita una start_url http(s) completa (tiene: {url})", en: "the profile {name} needs a full http(s) start_url (it has: {url})"}
 no_domains: {es: "el perfil {name} necesita allow_domains: los únicos dominios que la captura puede abrir", en: "the profile {name} needs allow_domains: the only domains the capture may open"}
 start_outside: {es: "la start_url del perfil {name} ({host}) no está en sus allow_domains", en: "the start_url of the profile {name} ({host}) is not in its allow_domains"}
-playwright_missing: {es: "la captura necesita el extra capture de coursekit: uv tool install \"slxd-coursekit[capture]\" (o pip install \"slxd-coursekit[capture]\")", en: "capture needs the capture extra of coursekit: uv tool install \"slxd-coursekit[capture]\" (or pip install \"slxd-coursekit[capture]\")"}
+playwright_missing: {es: "la captura necesita el extra capture de coursekit: {command}", en: "capture needs the capture extra of coursekit: {command}"}
 no_browser: {es: "no hay Chrome, Edge ni Chromium instalado: la captura abre el navegador de la máquina", en: "there is no Chrome, Edge or Chromium installed: capture opens the browser of the machine"}
 browser_failed: {es: "el navegador no se pudo abrir o se cerró con un error: {reason}", en: "the browser could not open or closed with an error: {reason}"}
 no_identity: {es: "el permiso de captura lo firma una persona: define COURSEKIT_USER_NAME y COURSEKIT_USER_EMAIL (coursekit setup --identity)", en: "the permission to capture is signed by a person: set COURSEKIT_USER_NAME and COURSEKIT_USER_EMAIL (coursekit setup --identity)"}
@@ -98,7 +98,7 @@ bad_unit: {es: "{start} no es una unidad del curso (start: unit:N)", en: "{start
 no_package: {es: "la unidad {n} no está construida: coursekit assemble build {code} --unit {n}", en: "unit {n} is not built: coursekit assemble build {code} --unit {n}"}
 no_review_link: {es: "la unidad {n} no tiene enlace de revisión en creator todavía: lo crea el agente de montaje (/assemble)", en: "unit {n} has no review link in creator yet: the assembly agent creates it (/assemble)"}
 terminal_unsupported: {es: "el modo terminal necesita un pseudoterminal: solo macOS y Linux (en Windows, el modo desktop)", en: "the terminal mode needs a pseudo-terminal: macOS and Linux only (on Windows, the desktop mode)"}
-terminal_needs_pyte: {es: "el modo terminal necesita el emulador del extra capture de coursekit: uv tool install \"slxd-coursekit[capture]\"", en: "the terminal mode needs the emulator of the capture extra of coursekit: uv tool install \"slxd-coursekit[capture]\""}
+terminal_needs_pyte: {es: "el modo terminal necesita el emulador del extra capture de coursekit: {command}", en: "the terminal mode needs the emulator of the capture extra of coursekit: {command}"}
 terminal_no_font: {es: "no se encuentra ninguna fuente monoespaciada para dibujar la terminal: pon su ruta en capture.yaml › terminal.font", en: "no monospaced font found to draw the terminal: set its path in capture.yaml › terminal.font"}
 terminal_needs_stage: {es: "el bloque capture de {path} no dice en qué escenario se graba (stage: NOMBRE, de media/stages/NOMBRE/)", en: "the capture block of {path} does not say which stage it is recorded in (stage: NAME, from media/stages/NAME/)"}
 terminal_failed: {es: "no se pudo abrir la shell del escenario: {reason}", en: "the shell of the stage could not start: {reason}"}

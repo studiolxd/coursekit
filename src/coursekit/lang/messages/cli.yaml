@@ -51,6 +51,11 @@ config_name: {es: "una configuración (por defecto, todas)", en: "one configurat
 config_course: {es: "incluye lo que cambia este curso (código o carpeta)", en: "include the overrides of this course (code or folder)"}
 config_changed: {es: "solo los valores que difieren de los del paquete", en: "only values that differ from the package defaults"}
 config_json: {es: "imprime los valores fusionados como JSON", en: "print the merged values as JSON"}
+config_check: {es: "comprueba que el proyecto y sus cursos solo usan claves que coursekit lee", en: "check that the project and its courses only use keys coursekit reads"}
+config_check_unknown: {es: "{where}: {key} no es una clave de coursekit (mal escrita o de una versión anterior)", en: "{where}: {key} is not a key of coursekit (misspelt or from an older version)"}
+config_check_did_you_mean: {es: "; ¿quisiste decir {key}?", en: "; did you mean {key}?"}
+config_check_found: {es: "{count} claves que coursekit no lee: corrígelas o bórralas (los valores y su explicación están en config/*.example.yaml)", en: "{count} keys coursekit does not read: fix or delete them (the values and what they do are in config/*.example.yaml)"}
+config_check_ok: {es: "la configuración solo usa claves que coursekit lee", en: "the configuration only uses keys coursekit reads"}
 help_rules:
   es: "reglas de producción vigentes para un curso, y dónde se define cada valor"
   en: "production rules in force for a course, and where each value is set"

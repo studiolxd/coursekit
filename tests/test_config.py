@@ -128,3 +128,33 @@ def test_config_prints_every_configuration_including_dates(tmp_path, monkeypatch
     assert "synced_with_creator" in capsys.readouterr().out
     assert main(["config", "--json"]) == 0
     assert "synced_with_creator" in capsys.readouterr().out
+
+
+def test_check_finds_no_unknown_key_in_a_valid_project(project, monkeypatch):
+    monkeypatch.chdir(project)
+    assert config.check(find_project()) == []
+    assert main(["config", "--check"]) == 0
+
+
+def test_check_names_each_unknown_key_with_its_layer_and_a_suggestion(project, monkeypatch, capsys):
+    (project / "config" / "rules.yaml").write_text("content:\n  word_margn: 0.1\nfoo: 1\n", encoding="utf-8")
+    (project / "courses" / "ABC101" / "course.yaml").write_text("code: ABC101\ndelivery:\n  shuffle_option: {practice: no}\n",
+                                                                 encoding="utf-8")
+    monkeypatch.chdir(project)
+    found = {(u.where, u.key, u.suggestion) for u in config.check(find_project())}
+    assert found == {
+        ("config/rules.yaml", "content.word_margn", "content.word_margin"),
+        ("config/rules.yaml", "foo", None),
+        ("courses/ABC101/course.yaml › delivery", "shuffle_option", "shuffle_options"),
+    }
+    assert main(["config", "--check"]) == 1
+    assert "did you mean content.word_margin?" in capsys.readouterr().out
+
+
+def test_check_does_not_look_inside_the_catalogues_a_project_fills(project, monkeypatch):
+    (project / "config" / "capture.yaml").write_text("profiles:\n  intranet: {url: https://intranet.example}\n", encoding="utf-8")
+    (project / "config" / "directives.yaml").write_text("directives:\n  stepper: {brick: STEPPER, role: content, use: steps}\n",
+                                                        encoding="utf-8")
+    (project / "project.yaml").write_text("name: Demo\nmedia:\n  voice: {provider: piper}\n", encoding="utf-8")
+    monkeypatch.chdir(project)
+    assert config.check(find_project()) == []

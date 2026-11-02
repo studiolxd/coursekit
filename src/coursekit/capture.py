@@ -27,7 +27,7 @@ from collections.abc import Callable
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from coursekit import config, identity, pii, store
+from coursekit import config, extras, identity, pii, store
 from coursekit import course as coursemod
 from coursekit import media as mediamod
 from coursekit import redact as redactmod
@@ -173,7 +173,7 @@ def _launch_login(folder: Path, url: str) -> None:
         from playwright.sync_api import Error as PlaywrightError
         from playwright.sync_api import sync_playwright
     except ImportError:
-        raise CaptureError(t("capture", "playwright_missing")) from None
+        raise CaptureError(t("capture", "playwright_missing", command=extras.install_command("capture"))) from None
     from coursekit.htmlkit.playcheck import find_browser
 
     executable = find_browser()

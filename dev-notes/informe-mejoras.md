@@ -51,25 +51,15 @@ Lo que se va haciendo se tacha y pasa a la sección [Hecho](#hecho), al final, c
   Falta un `coursekit help <comando>` que muestre también el fragmento de `docs/<lang>/03-commands.md`
   del comando, y un `--json` en los comandos de consulta (`status`, `verify`, `doctor`, `media check`)
   para que los agentes lean la salida sin analizar texto.
-- **`doctor` no comprueba los extras.** Debería decir qué grupo de `pip install` falta para cada
-  función (`capture`, `media`) y qué binarios de sistema faltan, con el comando exacto para esta
-  plataforma.
 - **Salida de `verify` sin niveles.** Las advertencias han crecido mucho (lenguaje inclusivo, carga
   cognitiva, crosshairs, barajado…). Un `--only` / `--ignore` por familia de regla y un resumen por
   unidad al final harían la salida manejable en cursos de diez unidades.
-- **Actualización de ejemplos de configuración.** `init --update` refresca los
-  `config/<name>.example.yaml`, pero no avisa de claves del proyecto que ya no existen en los defaults.
-  Un `coursekit config check` que compare `config/*.yaml` con `defaults/*.yaml` cerraría el hueco.
-
 ## 4. Dependencias y distribución
 
-- **`markitdown[pdf,docx,pptx,xlsx,xls,outlook]` es la dependencia más pesada** (trae `onnxruntime`, `pandas` y
-  `numpy`) y solo la usan `brief` y `brand`. Moverla a un extra `docs` deja la instalación base mucho más ligera; `doctor` pide el
-  extra cuando haga falta.
-- **`opencv-python` fijado a `<5`** por rapidocr: anotar en `docs/*/09-troubleshooting.md` qué pasa si
-  el usuario tiene otro OpenCV instalado, y comprobarlo en `doctor`.
-- **Python 3.14** queda fuera (`<3.14`). Revisar qué lo impide (probablemente `rapidocr`/`onnxruntime`)
-  y abrir la ventana cuando publiquen ruedas.
+- **El extra `capture` no se instala con Python 3.13.** Todas las versiones de `rapidocr-onnxruntime` exigen Python
+  anterior a 3.13, y el paquete admite 3.13. Es también lo que impide abrir 3.14. Su sucesora es `rapidocr` (3.x, admite
+  3.8 a 3.x), con otra forma de importar y de devolver los resultados: hay que cambiar `redact._rapidocr` y probar el OCR
+  con capturas reales antes de publicarlo. Mientras tanto, el extra `capture` necesita Python 3.12.
 
 ## 5. Documentación
 
@@ -84,11 +74,14 @@ Lo que se va haciendo se tacha y pasa a la sección [Hecho](#hecho), al final, c
 
 ## Orden propuesto
 
-1. Extra `brief` para `markitdown` y `doctor` con extras (secciones 3 y 4).
-2. Subpaquetes `capture/`, `media/`, `video/` y registro de comandos (sección 1).
-3. Marcadores de pruebas lentas y fixture común (sección 2).
-4. Tipado gradual con `pyright` y reglas nuevas de ruff (sección 2).
-5. Reparto de `08-assembly-and-delivery.md` y limpieza de `dev-notes/` (sección 5).
+Sigue las fases del [plan](plan-mejoras.md).
+
+1. Fixture común y, si la medida lo pide, marcador de pruebas lentas (sección 2; fase 2).
+2. Reglas nuevas de ruff y tipado gradual con `pyright` (sección 2; fase 3).
+3. Módulos comunes para programas externos y HTTP, subpaquetes y `commands.py` partido (sección 1; fase 4).
+4. `--json`, `verify --only` / `--ignore` y `help <comando>` (sección 3; fase 5).
+5. Reparto de `08-assembly-and-delivery.md` y limpieza de `dev-notes/` (sección 5; fase 6).
+6. OCR de `capture` con `rapidocr` para Python 3.13 y 3.14 (sección 4; fuera del plan, necesita probarse con capturas reales).
 
 ## Hecho
 
@@ -103,3 +96,14 @@ Lo que se va haciendo se tacha y pasa a la sección [Hecho](#hecho), al final, c
   dos changelogs listan las mismas versiones y la actual.
 - ~~**Diferencia sin commit muy grande.**~~ Hecho el 1 de noviembre de 2026: confirmada y subida en un solo commit
   (`a813564`), sin partir por temas.
+
+### Dependencias y diagnóstico (fase 1 del plan)
+
+- ~~**`markitdown` es la dependencia más pesada.**~~ Hecho el 2 de noviembre de 2026: extra `docs`; la instalación base pasa de
+  48 paquetes a 7. `brief` y `brand` avisan con el comando, y `doctor` lo pide solo si hay documentos que convertir.
+- ~~**`doctor` no comprueba los extras.**~~ Hecho el 2 de noviembre de 2026: `coursekit/extras.py` da el comando que conserva
+  los extras instalados, y todos los avisos de extras lo usan.
+- ~~**`opencv-python` fijado a `<5`.**~~ Hecho el 2 de noviembre de 2026: `doctor` avisa de varios OpenCV instalados y la
+  solución de problemas lo explica.
+- ~~**Actualización de ejemplos de configuración.**~~ Hecho el 2 de noviembre de 2026 como `coursekit config --check` (una
+  opción, porque `config` ya recibe el nombre de la configuración como primer argumento).

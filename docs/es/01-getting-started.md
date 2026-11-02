@@ -47,12 +47,19 @@ coursekit te avisa cuando se publica una versión nueva: como mucho una vez al d
 
 Si el shell no encuentra `coursekit` tras instalarlo, ejecuta `uv tool update-shell` y abre una terminal nueva.
 
-Las capturas reales de aplicaciones ([`coursekit capture`](03-commands.md#coursekit-capture)) necesitan el extra opcional `capture` (Playwright, un OCR y OpenCV; descarga bastante). Instala el paquete con él, o reinstálalo sobre la copia que tienes; las comillas evitan que la terminal interprete los corchetes:
+Dos partes de coursekit van en extras opcionales, porque descargan mucho:
+
+- `docs`: convierte a texto los documentos que dejas en `brief/sources/` y en el material de marca (PDF, Word, PowerPoint, Excel, Outlook), con MarkItDown. Sin él, `coursekit brief` sigue leyendo Markdown, texto y enlaces web, y dice qué ficheros no pudo convertir.
+- `capture`: las capturas reales de aplicaciones ([`coursekit capture`](03-commands.md#coursekit-capture)): Playwright, un OCR y OpenCV. Por ahora su OCR necesita Python 3.12: añade `--python 3.12` al comando de abajo.
+
+Instala el paquete con los extras que quieras, o reinstálalo sobre la copia que tienes. Reinstalar sustituye los extras instalados, así que nómbralos todos en el mismo comando; las comillas evitan que la terminal interprete los corchetes:
 
 ```bash
-uv tool install --force "slxd-coursekit[capture]"
-uv tool install --force --editable "./coursekit[capture]"   # desde un clon
+uv tool install --force "slxd-coursekit[docs,capture]"
+uv tool install --force --editable "./coursekit[docs,capture]"   # desde un clon
 ```
+
+`coursekit doctor` dice qué extra necesita un proyecto y da el comando con los extras que ya tienes.
 
 ### Desinstalar
 

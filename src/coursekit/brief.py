@@ -98,7 +98,9 @@ def markitdown(src: Path) -> tuple[str | None, tuple[str, dict] | None]:
     try:
         from markitdown import MarkItDown
     except ImportError:
-        return None, note("markitdown_missing")
+        from coursekit import extras
+
+        return None, note("markitdown_missing", command=extras.install_command("docs"))
     try:
         return MarkItDown().convert(str(src)).text_content or "", None
     except Exception as exc:  # noqa: BLE001 — any converter error is reported per file

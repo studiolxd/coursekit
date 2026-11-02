@@ -202,6 +202,8 @@ def cmd_agents(args: argparse.Namespace) -> int:
 def cmd_config(args: argparse.Namespace) -> int:
     project = find_project()
     envfile.load(project.env_file)
+    if getattr(args, "check", False):
+        return _config_check(project)
     course = None
     if args.course:
         course_file = project.course_dir(args.course) / "course.yaml"
@@ -225,6 +227,19 @@ def cmd_config(args: argparse.Namespace) -> int:
             print(f"  {key.ljust(width)}  {shown}  ({origin})")
         if len(names) > 1:
             print()
+    return 0
+
+
+def _config_check(project) -> int:
+    """`coursekit config --check`: the keys of the project's configuration that coursekit does not read."""
+    found = config.check(project)
+    for item in found:
+        hint = t("cli", "config_check_did_you_mean", key=item.suggestion) if item.suggestion else ""
+        print(t("cli", "config_check_unknown", where=item.where, key=item.key) + hint)
+    if found:
+        print(t("cli", "config_check_found", count=len(found)), file=sys.stderr)
+        return 1
+    print(t("cli", "config_check_ok"))
     return 0
 
 
@@ -268,6 +283,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--course", help=t("cli", "config_course"))
     p.add_argument("--changed", action="store_true", help=t("cli", "config_changed"))
     p.add_argument("--json", action="store_true", help=t("cli", "config_json"))
+    p.add_argument("--check", action="store_true", help=t("cli", "config_check"))
     p.set_defaults(func=cmd_config)
 
     p = sub.add_parser("rules", help=t("cli", "help_rules"))

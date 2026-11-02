@@ -147,15 +147,16 @@ coursekit init acme-courses --yes --language es --client ACME --name "Formación
 Muestra la configuración efectiva y la capa de la que viene cada valor. Úsalo para comprobar qué reglas están en vigor. Quién: ambos.
 
 ```
-coursekit config [{rules,directives,media,delivery}] [--course COURSE] [--changed] [--json]
+coursekit config [{rules,directives,media,delivery,import,capture,video,research}] [--course COURSE] [--changed] [--json] [--check]
 ```
 
 | Argumento | Valores / por defecto | Significado |
 |---|---|---|
-| `name` | `rules`, `directives`, `media`, `delivery`; por defecto: las cuatro | Qué configuración mostrar. |
+| `name` | `rules`, `directives`, `media`, `delivery`, `import`, `capture`, `video`, `research`; por defecto: todas | Qué configuración mostrar. |
 | `--course COURSE` | código o carpeta del curso | Incluye los ajustes propios de ese curso (`course.yaml`). Código de salida 1 si el curso no existe. |
 | `--changed` | indicador | Solo los valores que difieren de los del paquete. |
 | `--json` | indicador | Imprime los valores combinados como JSON (un objeto por configuración, o el valor directo cuando se indica `name`). |
+| `--check` | indicador | Busca en todas las capas del proyecto (`config/*.yaml`, las secciones de `project.yaml` y de cada `course.yaml`) claves que coursekit no lee: mal escritas o de una versión anterior. Escribe cada una con su fichero y, cuando la hay, la clave que probablemente se quería poner. Código de salida 1 si encuentra alguna. Los catálogos que llena un proyecto (directivas, iDevices, perfiles de captura, escenas de vídeo, proveedores de búsqueda) no se revisan por dentro. |
 
 Capas, de menor a mayor prioridad: `package` (valores por defecto que trae coursekit), `config` (`config/<name>.yaml`), `project` (la sección `<name>:` de `project.yaml`), `course` (la sección `<name>:` de `course.yaml`). Los mapas se combinan clave a clave; las listas sustituyen la lista entera. Cada línea es `clave  valor  (capa)`.
 
@@ -163,7 +164,10 @@ Los tipos de recurso aparecen con su id en inglés (`image`, `infographic`, `ani
 
 ```
 coursekit config delivery --course PWD
+coursekit config --check
 ```
+
+Ejecuta `--check` después de actualizar coursekit: una clave que cambia de nombre en una versión nueva deja de tener efecto sin dar ningún error.
 
 ### `coursekit rules`
 
