@@ -1167,7 +1167,7 @@ def _gallery_app(course: dict, out: Path, extra: dict, code: bool, say) -> Path:
             shutil.copytree(build / "assets", out / "assets", dirs_exist_ok=True)
         for name in ("app.css", "app.js"):
             if (build / name).exists():
-                os.replace(build / name, out / name)
+                (build / name).replace(out / name)
         shutil.rmtree(build, ignore_errors=True)
     title = html_escape(data["title"])
     head = (f'<!doctype html><html lang="{i18n.language()}"><head><meta charset="utf-8"><meta name="viewport" '
@@ -1192,7 +1192,7 @@ def _write(path: Path, text: str) -> None:
     """A file the page may be reading, replaced whole: never half written."""
     tmp = path.with_name(path.name + ".tmp")
     tmp.write_text(text, encoding="utf-8", newline="\n")
-    os.replace(tmp, path)
+    tmp.replace(path)
 
 
 def _course_images(course: dict, out: Path, limit: int = 40) -> list[str]:

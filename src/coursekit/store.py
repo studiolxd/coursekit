@@ -146,7 +146,7 @@ def link_node_modules(project_dir: Path, workspace: Path) -> str:
     if link.is_symlink() or link.is_junction():
         if link.resolve() == target.resolve():
             return "linked"
-        link.unlink() if link.is_symlink() else os.rmdir(link)
+        link.unlink() if link.is_symlink() else link.rmdir()
     elif link.exists():
         return "kept"
     return "linked" if _make_link(link, target) else "failed"

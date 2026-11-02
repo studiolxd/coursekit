@@ -56,7 +56,7 @@ def save_yaml_atomic(ry: YAML, data, path: Path) -> None:
     tmp.write_text(buffer.getvalue(), encoding="utf-8", newline="\n")
     for attempt in range(20):
         try:
-            os.replace(tmp, path)
+            tmp.replace(path)
             return
         except PermissionError:  # Windows: another process has the file open for a moment
             if attempt == 19:

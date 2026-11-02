@@ -79,7 +79,7 @@ def _private_dir(path: Path) -> Path:
         for folder in (path, *path.parents):
             if folder != top and top not in folder.parents:
                 break
-            os.chmod(folder, 0o700)
+            folder.chmod(0o700)
     return path
 
 

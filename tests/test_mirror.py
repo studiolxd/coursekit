@@ -1,7 +1,7 @@
 """The catalog and the mirror folder after a command: cheap, silent when nothing changed and deferred in agent sessions."""
 
-import os
 import shutil
+from pathlib import Path
 
 import openpyxl
 import pytest
@@ -56,7 +56,7 @@ def test_only_the_course_that_changed_is_read_again(course, monkeypatch):  # noq
     real = coursemod.load
 
     def counting(p, name, *a, **k):
-        loaded.append(os.path.basename(str(name)))
+        loaded.append(Path(str(name)).name)
         return real(p, name, *a, **k)
 
     monkeypatch.setattr(catalog.coursemod, "load", counting)

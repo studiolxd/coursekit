@@ -21,6 +21,7 @@ from __future__ import annotations
 import os
 from functools import cache
 from importlib import resources
+from pathlib import Path
 
 import yaml
 
@@ -44,7 +45,7 @@ def _normalize(language: str | None) -> str | None:
 @cache
 def _read_project_language(path: str, mtime_ns: int) -> str | None:  # mtime_ns: invalidates the cache when the file changes
     try:
-        with open(path, encoding="utf-8") as fh:
+        with Path(path).open(encoding="utf-8") as fh:
             data = yaml.safe_load(fh) or {}
     except (OSError, yaml.YAMLError):
         return None
