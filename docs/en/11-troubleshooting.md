@@ -196,7 +196,7 @@ The design tokens of the media (colours and fonts) must be derived from the them
 
 ### The html backend
 
-The html backend builds one SCORM package per unit with `coursekit assemble build` (see [Workflow](02-workflow.md#assembly-and-delivery-by-backend) and [Assembly and delivery](08-assembly-and-delivery.md)). These are its messages and what to do; `<CODE>` stands for the course code.
+The html backend builds one SCORM package per unit with `coursekit assemble build` (see [Workflow](02-workflow.md#assembly-and-delivery-by-backend) and [Assembly](08-assembly.md)). These are its messages and what to do; `<CODE>` stands for the course code.
 
 | Message | Meaning and fix |
 |---|---|
@@ -214,7 +214,7 @@ The packages must be tried in the LMS they will be delivered to (or in SCORM Clo
 
 ### The creator backend: plan, diff and applied
 
-`coursekit assemble plan`, `diff` and `applied` (see [The assembly flow](08-assembly-and-delivery.md#the-assembly-flow)); in `coursekit verify` the same errors start with `assembly:`. `<KEY>` is the key of a lesson (`U1-S2`, `U1-E1.1`) and `<N>` a number.
+`coursekit assemble plan`, `diff` and `applied` (see [The assembly flow](08-assembly.md#the-assembly-flow)); in `coursekit verify` the same errors start with `assembly:`. `<KEY>` is the key of a lesson (`U1-S2`, `U1-E1.1`) and `<N>` a number.
 
 | Message | Meaning and fix |
 |---|---|
@@ -387,7 +387,7 @@ Carry on with `coursekit handoff <CODE>`: when the design proposal was never cre
 |---|---|
 | `<CODE>: the project requires the client review to deliver (client_review.required) and handoff does not do it` | Handoff never opens a client review. For a new course it refuses before it creates anything. Set `client_review.required: false` in `config/delivery.yaml` (or in the `course.yaml`), or use the normal flow. A course whose review is already approved or skipped goes on |
 | ``<CODE>: the course is on hold; bring it back with `coursekit resume <CODE>` and then `coursekit handoff <CODE>``` | A person paused it. Resume it first |
-| ``<CODE>: a client review round is open; handoff does not handle it (`coursekit client <CODE> ...`)`` | Close the round with `approve` or `changes` ([Client review](08-assembly-and-delivery.md#client-review)), then run handoff again |
+| ``<CODE>: a client review round is open; handoff does not handle it (`coursekit client <CODE> ...`)`` | Close the round with `approve` or `changes` ([Client review](10-client-review.md#client-review)), then run handoff again |
 | `course <CODE> already exists; to carry it on: coursekit handoff <CODE>` | A new handoff with a title whose code exists. Carry the course on with its code, or pass another `--code` |
 | `<CODE>: media assets are still not uploaded to creator after the attempts: <ids>` | With the creator backend the media is uploaded once the assembly has created the content of each unit, and the course is assembled again to put it in place of its placeholders. The media agent could not upload them: read the log in `.cache/logs/` (the `-upload-handoff-` one), check that creator is connected ([MCP server problems](#mcp-server-problems)) and carry on |
 | `<CODE>: media assets are still not produced after the attempts: <ids>` · `<CODE>: the media needs the theme and it could not be defined (/define-theme)` | The media agent did not finish, or no theme could be derived. Read the session log in `.cache/logs/`, fix the cause (keys, tools: `coursekit doctor`) and carry on |

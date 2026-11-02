@@ -196,7 +196,7 @@ Los tokens de diseño de la multimedia (colores y fuentes) se derivan del theme 
 
 ### El backend html
 
-El backend html construye un paquete SCORM por unidad con `coursekit assemble build` (mira [Flujo de trabajo](02-workflow.md#montaje-y-entrega-según-el-backend) y [Montaje y entrega](08-assembly-and-delivery.md)). Estos son sus mensajes y qué hacer; `<CODE>` representa el código del curso.
+El backend html construye un paquete SCORM por unidad con `coursekit assemble build` (mira [Flujo de trabajo](02-workflow.md#montaje-y-entrega-según-el-backend) y [Montaje](08-assembly.md)). Estos son sus mensajes y qué hacer; `<CODE>` representa el código del curso.
 
 | Mensaje | Significado y solución |
 |---|---|
@@ -214,7 +214,7 @@ Los paquetes deben probarse en el LMS al que se van a entregar (o en SCORM Cloud
 
 ### El backend creator: plan, diff y applied
 
-`coursekit assemble plan`, `diff` y `applied` (mira [El flujo de montaje](08-assembly-and-delivery.md#el-flujo-de-montaje)); en `coursekit verify` los mismos errores empiezan por `ensamblado:`. `<KEY>` es la clave de una lección (`U1-S2`, `U1-E1.1`) y `<N>` un número.
+`coursekit assemble plan`, `diff` y `applied` (mira [El flujo de montaje](08-assembly.md#el-flujo-de-montaje)); en `coursekit verify` los mismos errores empiezan por `ensamblado:`. `<KEY>` es la clave de una lección (`U1-S2`, `U1-E1.1`) y `<N>` un número.
 
 | Mensaje | Significado y solución |
 |---|---|
@@ -387,7 +387,7 @@ Continúa con `coursekit handoff <CODE>`: si la propuesta de diseño nunca lleg�
 |---|---|
 | `<CODE>: el proyecto exige la revisión del cliente para entregar (client_review.required) y el handoff no la hace` | El handoff nunca abre una revisión del cliente. En un curso nuevo se niega antes de crear nada. Pon `client_review.required: false` en `config/delivery.yaml` (o en el `course.yaml`), o usa el flujo normal. Un curso cuya revisión ya está aprobada u omitida continúa |
 | ``<CODE>: el curso está en pausa; continúa con `coursekit resume <CODE>` y después `coursekit handoff <CODE>``` | Una persona lo pausó. Reanúdalo primero |
-| ``<CODE>: hay una ronda de revisión del cliente abierta; el handoff no la gestiona (`coursekit client <CODE> ...`)`` | Cierra la ronda con `approve` o `changes` ([Revisión del cliente](08-assembly-and-delivery.md#revisión-del-cliente)) y ejecuta el handoff otra vez |
+| ``<CODE>: hay una ronda de revisión del cliente abierta; el handoff no la gestiona (`coursekit client <CODE> ...`)`` | Cierra la ronda con `approve` o `changes` ([Revisión del cliente](10-client-review.md#revisión-del-cliente)) y ejecuta el handoff otra vez |
 | `el curso <CODE> ya existe; para continuarlo: coursekit handoff <CODE>` | Un handoff nuevo con un título cuyo código ya existe. Continúa el curso con su código, o pasa otro `--code` |
 | `<CODE>: quedan recursos multimedia sin subir a creator tras los intentos: <ids>` | Con el backend creator el multimedia se sube cuando el montaje ya ha creado el contenido de cada unidad, y el curso se monta otra vez para ponerlo en lugar de sus recuadros. El agente de multimedia no pudo subirlos: lee el registro en `.cache/logs/` (el `-upload-handoff-`), comprueba que creator está conectado ([Problemas con el servidor MCP](#problemas-con-el-servidor-mcp)) y continúa |
 | `<CODE>: quedan recursos multimedia sin producir tras los intentos: <ids>` · `<CODE>: el multimedia necesita el theme y no se pudo definir (/define-theme)` | El agente de multimedia no terminó, o no se pudo derivar ningún theme. Lee el registro de la sesión en `.cache/logs/`, corrige la causa (claves, herramientas: `coursekit doctor`) y continúa |

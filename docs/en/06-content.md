@@ -28,7 +28,7 @@ courses/PWD/
 │   ├── scripts/ · src/ · files/ scripts, sources and produced files (see 07-media.md)
 ├── theme/                       own theme of the course (optional): tokens.json, tokens.css, maqueta.css (html backend)
 ├── assembly/
-│   ├── unit-01.plan.json        generated plan, creator backend (see 08-assembly-and-delivery.md)
+│   ├── unit-01.plan.json        generated plan, creator backend (see 08-assembly.md)
 │   ├── unit-01.applied.json     what is loaded in the platform, creator backend
 │   └── html/unit-01/            package built by the html backend (generated, not versioned)
 └── delivery/
@@ -44,7 +44,7 @@ Two more folders of the project matter to the html backend, both next to `course
 | `theme/maqueta.css` | The stylesheet that restyles the package of the html backend (the "maqueta"). A course can have its own in `courses/PWD/theme/maqueta.css`; it goes over the project's. `coursekit theme import theme/maqueta.css` derives the design tokens from its CSS variables |
 | `components/` | Extra `*.css` (styles added to every package) and `*.js` (behaviour bundled into the player) of the project. Optional |
 
-Both are explained in [Styles](08-assembly-and-delivery.md#styles).
+Both are explained in [Styles](08-assembly.md#styles).
 
 ### Who writes what
 
@@ -241,7 +241,7 @@ The assembly loads only what is under **Instructions for the learner** and **Que
 
 - `verify` does not check the headings of `assessment.md`, but the assembly matches them exactly, with the words of the course language: a misspelled `### Question bank` loads no questions. One assessment lesson is built per `## ASSESSMENT ACTIVITY` heading.
 - `verify` counts every question directive of the file, wherever it is. One placed in another subsection counts for `verify` but never reaches the learner.
-- The pass mark, the attempts and the weight of a test are not read from the Markdown: they come from its assessment activity in the design (`notaAprobado`, `intentosMax`, `peso`) and, for what the design leaves empty, from `course.yaml › design.grading` (`passing_score` and `attempts`; see [Grading of a test](08-assembly-and-delivery.md#grading-of-a-test)). The subsections `Automatic marking and scoring` and `Attempts and feedback` only document the activity.
+- The pass mark, the attempts and the weight of a test are not read from the Markdown: they come from its assessment activity in the design (`notaAprobado`, `intentosMax`, `peso`) and, for what the design leaves empty, from `course.yaml › design.grading` (`passing_score` and `attempts`; see [Grading of a test](08-assembly.md#grading-of-a-test)). The subsections `Automatic marking and scoring` and `Attempts and feedback` only document the activity.
 
 ## Directives
 
@@ -300,7 +300,7 @@ Never reuse a password.
 | `quote` | `QUOTE` | static | Quote from an expert or source, with attribution | ✔ |
 | `reflection` | `NOTE` | static | Closing reflection of a unit: open questions on what the learner did, what they would change and how they will apply it | ✔ |
 
-The games (`word-search` to `trivial`) count as interactive; use them sparingly, for review or reward. They are practice: nothing is graded nor sent to the LMS. Every directive, games included, is built as described in [Components](08-assembly-and-delivery.md#components). A plain blockquote (`> text`) that is not a placeholder becomes a `HIGHLIGHT` brick.
+The games (`word-search` to `trivial`) count as interactive; use them sparingly, for review or reward. They are practice: nothing is graded nor sent to the LMS. Every directive, games included, is built as described in [Components](08-assembly.md#components). A plain blockquote (`> text`) that is not a placeholder becomes a `HIGHLIGHT` brick.
 
 Everything else in Markdown maps to a brick without a directive: paragraphs to `TEXT`, `###`–`######` headings to `HEADING`, lists to `LIST`, tables to `TABLE`, code fences to `CODE`. Media placeholders are explained in [07-media.md](07-media.md).
 
@@ -475,9 +475,9 @@ objective of the unit is practised in one (`objective`).
 
 This approach is being built: the agents design, write and review it (action map, story bible, simulations, adaptive
 blocks, [`coursekit paths`](03-commands.md#coursekit-paths) for the review of every path) and `coursekit verify` checks it,
-and both backends assemble it: html plays it in the package ([Components](08-assembly-and-delivery.md#components)); creator
+and both backends assemble it: html plays it in the package ([Components](08-assembly.md#components)); creator
 takes each simulation as an EMBED of its own package and the neutral branch of the adaptive blocks, and the score of the
-simulations does not reach its SCORM ([Simulations in creator](08-assembly-and-delivery.md#simulations-in-creator)).
+simulations does not reach its SCORM ([Simulations in creator](08-assembly.md#simulations-in-creator)).
 
 ### Story bible
 
@@ -763,7 +763,7 @@ The numbers are the package defaults (`src/coursekit/defaults/rules.yaml`). A pr
 | Runs of prose | Per section, each run of prose longer than `content.chunk_max_words` without a heading, a directive, a medium, a highlight, a list or a table; not in an imported course | 250 words | warning |
 | Readability | Per section, the share of sentences longer than `readability.long_sentence_words` and the readability index of the language (Szigriszt-Pazos in Spanish, Flesch in English), by the audience `readability.audience`; a section with fewer than `readability.min_sentences` sentences of prose is not measured | general audience: 30 words, at most 20 % long, index 55 | warning |
 | Inclusive language | `rules › inclusive_language`: with `neutral`, the words of `lang/<code>.yaml › inclusive` that name people in the generic masculine (one warning per word, with its lines and the neutral alternative) and the forms with a slash or an @; with `split`, the slashes. Code, comments and addresses are left out | `neutral` | warning |
-| Questions of a bank | With `delivery › assessment › format` `aiken`, `gift`, `moodle-xml` or `qti`, every question directive of `assessment.md` is a type the format takes (aiken: `single-choice`; gift and moodle-xml: also `multi-select`, `true-false`, `match`, `sorting-groups`, `short-answer`, `fill-in-the-blank`; moodle-xml and qti: also `sorting`), and in gift a `fill-in-the-blank` has a single blank. See [Where the tests go](08-assembly-and-delivery.md#where-the-tests-go) | `platform`: not checked | error |
+| Questions of a bank | With `delivery › assessment › format` `aiken`, `gift`, `moodle-xml` or `qti`, every question directive of `assessment.md` is a type the format takes (aiken: `single-choice`; gift and moodle-xml: also `multi-select`, `true-false`, `match`, `sorting-groups`, `short-answer`, `fill-in-the-blank`; moodle-xml and qti: also `sorting`), and in gift a `fill-in-the-blank` has a single blank. See [Where the tests go](08-assembly.md#where-the-tests-go) | `platform`: not checked | error |
 | Positional feedback | In the directives of `directives › shuffled_options`, a line of feedback that names an option by its position or letter ("the correct answer is the third one", "the first two", "option b", "all of the above"): the platform may shuffle the options and it would point at another one. An ordinal counts only next to a word such as answer, correct or option, so "the first time" passes | `single-choice`, `multi-select`, `true-false`, `match`, `sorting`, `sorting-groups`, `order-words` | error |
 | Crosshairs | Each point of a `labelled-graphic` has a `position` (warning), its placeholder is in the same section (warning), and the crosshairs drawn on a produced image are the ones the content says (`coursekit media anchors`) | — | error (a point without a position: warning) |
 | Symbols | No emoji or pictograph outside `allowed_symbols` | `★ ✔ ✘ · — ‹ ›` | error |

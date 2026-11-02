@@ -7,6 +7,7 @@ status of the [README](README.md#status). Versions are published on PyPI as `slx
 
 ## Unreleased
 
+- The documentation of assembly and delivery is split in three chapters: [Assembly](docs/en/08-assembly.md), [Delivery and publishing](docs/en/09-delivery.md) and [Client review](docs/en/10-client-review.md); troubleshooting is now chapter 11.
 - `verify` names the family of each finding (`structure`, `words`, `style`, `language`, `readability`, `media`, `activities`, `simulations`, `assembly`), takes `--only` and `--ignore` to see some of them (a partial check never changes the status), sums up the errors and warnings of each unit when it checks several, and prints JSON with `--json`. `status`, `doctor` and `media check` print JSON with `--json` too, for the agents.
 - `coursekit help COMMAND`: the options of a command and its part of the reference of the commands, in the language of the person.
 - Every command starts faster: a command loads only the modules it uses (`coursekit --version` takes about half the time), and the output of ffmpeg, git and the other programs is read as UTF-8 also in a console of Windows.

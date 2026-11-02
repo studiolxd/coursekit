@@ -88,7 +88,7 @@ The only pause is at the start: once the course folders exist, in a terminal, it
 - **Carry on.** `coursekit handoff <CODE>` continues from the current status, without repeating what is signed. If the course is `on_hold` (the message says to run `coursekit resume <CODE>` first) or in `client_review` it stops: handoff does not handle either. `coursekit handoff "<title>" <hours>` refuses a course code that already exists and points to `coursekit handoff <CODE>`.
 - **What it refuses.** If the project requires the client review (`delivery › client_review › required`) it refuses to start, before creating the course, and to carry on while that review is not approved or skipped: handoff does not do it. Both end with exit code 1.
 - **How it runs.** Every agent runs headless, with the limits in [Agents](05-agents.md#headless---headless). The sessions are logged in `.cache/logs/` (`<CODE>-<step>-handoff-<date>-<time>.log`, and `<CODE>-uNN-write-…` or `-review-…` for the units). After each step the mirror folder and the catalog are refreshed, if the project has them. At the end it prints `handoff finished`, with the status of the course, and writes its report in `courses/<CODE>/handoff-report.md`: who signed and what a person has to look at now. When it stops it writes the report too, with why it stopped instead, so you see it before carrying on. First come the decisions the design took with no one to ask (access, audience, scope, assessment, material: the questions of the proposal, with the option it took and why), which it also prints and which stay in the assumptions block of `design/proposal-notes.md` until a `/design-change` settles them. Then the recordings and captures waiting for a person, the captures the handoff approved by itself (its media agent made them and nobody reviewed them: look at them all on one page with `coursekit capture review CODE`) and the videos to check.
-- **What it needs.** The roles of the `.env` and, when the course uses slxd (creator backend, or a design made in slxd), the slxd MCP URL, like the normal flow, with creator already authorized (a session without an interface cannot sign in; see [MCP server problems](09-troubleshooting.md#mcp-server-problems)), and the providers of the media you want produced. It cannot ask: doubts are left written in the units (`<!-- VERIFICAR -->`) and in the reports.
+- **What it needs.** The roles of the `.env` and, when the course uses slxd (creator backend, or a design made in slxd), the slxd MCP URL, like the normal flow, with creator already authorized (a session without an interface cannot sign in; see [MCP server problems](11-troubleshooting.md#mcp-server-problems)), and the providers of the media you want produced. It cannot ask: doubts are left written in the units (`<!-- VERIFICAR -->`) and in the reports.
 
 ## Statuses
 
@@ -139,7 +139,7 @@ A round in a normal flow:
 5. You close the round: `coursekit client PWD changes --note "..."` if the client wants more; then apply, reassemble and `send` again (round 2). If the client agrees, `coursekit client PWD approve --by "..."`.
 6. Deliver with `/deliver`.
 
-A unit edited after its signature goes back to `verified`: it needs a new AI review and signature before delivery, as in [Changes after approval](#changes-after-approval). See [Assembly and delivery](08-assembly-and-delivery.md#client-review) for the review links and the creator tools involved.
+A unit edited after its signature goes back to `verified`: it needs a new AI review and signature before delivery, as in [Changes after approval](#changes-after-approval). See [Client review](10-client-review.md) for the review links and the creator tools involved.
 
 #### Pause a course
 
@@ -380,7 +380,7 @@ The media agent extracts the placeholders of the content into a manifest (`cours
 
 **html backend.** The agent runs `coursekit assemble build PWD --unit N` for each unit (without `--unit`, every unit). It writes a preview folder, `courses/PWD/assembly/html/unit-NN/`, that opens from the disk in a browser, and refuses the content that cannot be rendered (a key in the wrong language, a question without its options...); the folder is generated and is not versioned. With `--version X.Y` it also writes the zip of the unit in `courses/PWD/delivery/`. The agent tells you what to check in the preview (navigation, one component of each kind, the questions and the test).
 
-See [Assembly and delivery](08-assembly-and-delivery.md).
+See [Assembly](08-assembly.md).
 
 ### 8. Client review
 
@@ -392,7 +392,7 @@ Optional. A round is opened and closed by a person with [`coursekit client`](03-
 /deliver PWD 1.0
 ```
 
-The agent starts with `coursekit delivery check PWD`: it refuses while the course is on hold and, if the project requires the client's review, until the last round is approved or skipped. Then it exports one SCORM package per unit, downloads it to `courses/PWD/delivery/` and records it with `coursekit delivery add`. When every unit has a package of the same version, the course becomes `delivered` (only from `assembly` or `client_review`; in another status the package is recorded with a warning). Each `coursekit delivery add` also copies the course to the mirror folder and refreshes the catalog (when the project has one). See [Assembly and delivery](08-assembly-and-delivery.md).
+The agent starts with `coursekit delivery check PWD`: it refuses while the course is on hold and, if the project requires the client's review, until the last round is approved or skipped. Then it exports one SCORM package per unit, downloads it to `courses/PWD/delivery/` and records it with `coursekit delivery add`. When every unit has a package of the same version, the course becomes `delivered` (only from `assembly` or `client_review`; in another status the package is recorded with a warning). Each `coursekit delivery add` also copies the course to the mirror folder and refreshes the catalog (when the project has one). See [Assembly](08-assembly.md).
 
 With the html backend nothing is exported from a platform: for each unit the agent runs `coursekit assemble build PWD --unit N --version 1.0` (it writes the zip in `courses/PWD/delivery/`) and then `coursekit delivery add` without `--job` or `--snapshot`. The check at the start, the record and the publication are the same.
 
@@ -417,7 +417,7 @@ A course is assembled either in **slxd creator** or with the **html backend**. T
 | What registers the delivery | `coursekit delivery add` with `--job` and `--snapshot` of the export | `coursekit delivery add` without them |
 | Theme | a theme of the platform, tokens derived with `coursekit theme import <get_theme.json>` | the stylesheet `theme/maqueta.css`, tokens derived with `coursekit theme import theme/maqueta.css` |
 
-Commands of one backend are refused in the other, with a message that points to the right one (see [Troubleshooting](09-troubleshooting.md#the-html-backend)). The html backend does not need the platform to assemble, but the package must be tried in the LMS it will be delivered to (or in SCORM Cloud) before it is handed over. The details are in [Assembly and delivery](08-assembly-and-delivery.md).
+Commands of one backend are refused in the other, with a message that points to the right one (see [Troubleshooting](11-troubleshooting.md#the-html-backend)). The html backend does not need the platform to assemble, but the package must be tried in the LMS it will be delivered to (or in SCORM Cloud) before it is handed over. The details are in [Assembly](08-assembly.md).
 
 ## Theme and design tokens
 
@@ -447,7 +447,7 @@ Where the tokens live:
 
 `coursekit theme show` prints which tokens apply (`coursekit theme show --course PWD` for a course) and where they come from: the project's or the course's, the theme of the platform with its id and version, and when they were imported. `coursekit theme tokens` rewrites the CSS, `coursekit theme check` measures the contrast and `coursekit theme import FILE [--course CODE]` derives the tokens; the options are in [`coursekit theme`](03-commands.md#coursekit-theme).
 
-Where it sits in the flow: once the project exists and before producing media, ideally right after `/new-course` (which tells you in its summary when the project has no tokens). The assembly uses the same theme (see [Assembly and delivery](08-assembly-and-delivery.md#the-theme-of-the-course)).
+Where it sits in the flow: once the project exists and before producing media, ideally right after `/new-course` (which tells you in its summary when the project has no tokens). The assembly uses the same theme (see [Assembly](08-assembly.md#the-theme-of-the-course)).
 
 The guard. The design tokens are only trusted when they come from the platform:
 

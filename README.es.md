@@ -36,7 +36,7 @@ Desarrollo temprano. Lo que cambió en cada versión está en el [registro de ca
 - **Por demostrar en un curso entero:** la migración desde eXeLearning con agentes reales, el batch de Gemini TTS, el paso de marca del agente del theme, las fuentes de ilustraciones de la marca (`coursekit media stock`), las evaluaciones aparte o como banco de preguntas (aún sin montar aparte en creator ni importar en un LMS real), el ciclo pedagógico, las ayudas de trabajo (aún sin subir a creator), las crucetas, las fuentes oficiales que buscan los agentes, lo aprendido en el curso piloto y las opciones barajadas. Cada una se ha probado por separado, contra el servicio real cuando lo hay.
 - **Todavía no:** leer paquetes de eXeLearning 4 (`.elpx`) ni exportaciones HTML de un sitio, publicar los componentes del backend html como paquete propio, más idiomas que español e inglés.
 
-La plataforma creator tiene huecos conocidos que el pipeline esquiva: [Límites conocidos del backend creator](docs/es/08-assembly-and-delivery.md#límites-conocidos-del-backend-creator).
+La plataforma creator tiene huecos conocidos que el pipeline esquiva: [Límites conocidos del backend creator](docs/es/08-assembly.md#límites-conocidos-del-backend-creator).
 
 ## Instalación
 
@@ -101,8 +101,10 @@ La documentación completa, en español e inglés, está en [`docs/`](docs/es/in
 | [Agentes](docs/es/05-agents.md) | Claude Code, opencode, Codex, roles, modelos, MCP |
 | [Contenido](docs/es/06-content.md) | estructura del curso, formato, directivas, verificación |
 | [Multimedia](docs/es/07-media.md) | planificar y producir multimedia, voz, subtítulos |
-| [Montaje y entrega](docs/es/08-assembly-and-delivery.md) | backends creator y html, SCORM, carpeta compartida, catálogo |
-| [Resolución de problemas](docs/es/09-troubleshooting.md) | `doctor`, problemas habituales |
+| [Montaje](docs/es/08-assembly.md) | backends creator y html, el plan, los límites conocidos de creator |
+| [Entrega y publicación](docs/es/09-delivery.md) | SCORM, carpeta compartida, catálogo |
+| [Revisión del cliente](docs/es/10-client-review.md) | enlaces de revisión y rondas |
+| [Resolución de problemas](docs/es/11-troubleshooting.md) | `doctor`, problemas habituales |
 
 ## Contribuir
 

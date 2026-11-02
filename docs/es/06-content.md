@@ -28,7 +28,7 @@ courses/PWD/
 │   ├── scripts/ · src/ · files/ guiones, fuentes y ficheros producidos (consulta 07-media.md)
 ├── theme/                       theme propio del curso (opcional): tokens.json, tokens.css, maqueta.css (backend html)
 ├── assembly/
-│   ├── unit-01.plan.json        plan generado, backend creator (consulta 08-assembly-and-delivery.md)
+│   ├── unit-01.plan.json        plan generado, backend creator (consulta 08-assembly.md)
 │   ├── unit-01.applied.json     lo que hay cargado en la plataforma, backend creator
 │   └── html/unit-01/            paquete construido por el backend html (generado, no se versiona)
 └── delivery/
@@ -44,7 +44,7 @@ Otras dos carpetas del proyecto importan al backend html, ambas junto a `courses
 | `theme/maqueta.css` | La hoja de estilos que da otro aspecto al paquete del backend html (la «maqueta»). Un curso puede tener la suya en `courses/PWD/theme/maqueta.css`; va por encima de la del proyecto. `coursekit theme import theme/maqueta.css` deriva los tokens de diseño de sus variables CSS |
 | `components/` | `*.css` adicionales (estilos que se añaden a todos los paquetes) y `*.js` (comportamiento que se empaqueta en el reproductor) del proyecto. Opcional |
 
-Ambas se explican en [Estilos](08-assembly-and-delivery.md#estilos).
+Ambas se explican en [Estilos](08-assembly.md#estilos).
 
 ### Quién escribe qué
 
@@ -241,7 +241,7 @@ El montaje carga en la lección de evaluación de la plataforma solo lo que hay 
 
 - `verify` no comprueba los encabezados de `assessment.md`, pero el montaje los empareja exactamente, con las palabras del idioma del curso: un `### Banco de preguntas` mal escrito no carga ninguna pregunta. Se construye una lección de evaluación por cada encabezado `## ACTIVIDAD DE EVALUACIÓN`.
 - `verify` cuenta todas las directivas de pregunta del fichero, estén donde estén. Una colocada en otro subapartado cuenta para `verify`, pero nunca llega al alumno.
-- La nota de aprobado, los intentos y el peso de un test no se leen del Markdown: salen de su actividad de evaluación en el diseño (`notaAprobado`, `intentosMax`, `peso`) y, para lo que el diseño deja vacío, de `course.yaml › design.grading` (`passing_score` y `attempts`; consulta [Calificación de un test](08-assembly-and-delivery.md#calificación-de-un-test)). Los subapartados `Corrección automática y puntuación` e `Intentos y retroalimentación` solo documentan la actividad.
+- La nota de aprobado, los intentos y el peso de un test no se leen del Markdown: salen de su actividad de evaluación en el diseño (`notaAprobado`, `intentosMax`, `peso`) y, para lo que el diseño deja vacío, de `course.yaml › design.grading` (`passing_score` y `attempts`; consulta [Calificación de un test](08-assembly.md#calificación-de-un-test)). Los subapartados `Corrección automática y puntuación` e `Intentos y retroalimentación` solo documentan la actividad.
 
 ## Directivas
 
@@ -300,7 +300,7 @@ No reutilices nunca una contraseña.
 | `quote` | `QUOTE` | static | Cita de una persona experta o fuente, con atribución | ✔ |
 | `reflection` | `NOTE` | static | Reflexión de cierre de una unidad: preguntas abiertas sobre lo que hizo el alumno, qué cambiaría y cómo lo aplicará | ✔ |
 
-Los juegos (`word-search` a `trivial`) cuentan como interactivos; úsalos con moderación, para repasar o premiar. Son práctica: no se califican ni se mandan al LMS. Todas las directivas, juegos incluidos, se construyen como se describe en [Componentes](08-assembly-and-delivery.md#componentes). Una cita Markdown simple (`> texto`) que no sea un recurso multimedia se convierte en un brick `HIGHLIGHT`.
+Los juegos (`word-search` a `trivial`) cuentan como interactivos; úsalos con moderación, para repasar o premiar. Son práctica: no se califican ni se mandan al LMS. Todas las directivas, juegos incluidos, se construyen como se describe en [Componentes](08-assembly.md#componentes). Una cita Markdown simple (`> texto`) que no sea un recurso multimedia se convierte en un brick `HIGHLIGHT`.
 
 El resto del Markdown se convierte en bricks sin directiva: los párrafos en `TEXT`, los encabezados `###`–`######` en `HEADING`, las listas en `LIST`, las tablas en `TABLE` y los bloques de código en `CODE`. Los recursos multimedia se explican en [07-media.md](07-media.md).
 
@@ -475,9 +475,9 @@ objetivo de la unidad se practica en alguna (`objective`).
 
 Este enfoque está en construcción: los agentes lo diseñan, lo redactan y lo revisan (mapa de acciones, biblia narrativa,
 simulaciones, bloques adaptativos, [`coursekit paths`](03-commands.md#coursekit-paths) para revisar todos los caminos) y
-`coursekit verify` lo comprueba, y los dos backends lo montan: html lo juega en el paquete ([Componentes](08-assembly-and-delivery.md#componentes)); creator
+`coursekit verify` lo comprueba, y los dos backends lo montan: html lo juega en el paquete ([Componentes](08-assembly.md#componentes)); creator
 monta cada simulación como un EMBED de su propio paquete y la rama neutra de los bloques adaptativos, y la puntuación de las
-simulaciones no llega a su SCORM ([Simulaciones en creator](08-assembly-and-delivery.md#simulaciones-en-creator)).
+simulaciones no llega a su SCORM ([Simulaciones en creator](08-assembly.md#simulaciones-en-creator)).
 
 ### Biblia narrativa
 
@@ -769,7 +769,7 @@ Las cifras son los valores por defecto del paquete (`src/coursekit/defaults/rule
 | Tramos de prosa | Por apartado, cada tramo de prosa de más de `content.chunk_max_words` palabras sin un encabezado, una directiva, un medio, un destacado, una lista ni una tabla; no en un curso importado | 250 palabras | aviso |
 | Legibilidad | Por apartado, la proporción de frases de más de `readability.long_sentence_words` palabras y el índice de legibilidad del idioma (Szigriszt-Pazos en español, Flesch en inglés), según el público `readability.audience`; un apartado con menos de `readability.min_sentences` frases de prosa no se mide | público general: 30 palabras, como mucho un 20 % largas, índice 55 | aviso |
 | Lenguaje inclusivo | `rules › inclusive_language`: con `neutral`, las palabras de `lang/<código>.yaml › inclusive` que nombran a las personas en masculino genérico (un aviso por palabra, con sus líneas y la alternativa neutra) y las formas con barra o arroba; con `split`, las barras. Quedan fuera el código, los comentarios y las direcciones | `neutral` | aviso |
-| Preguntas de un banco | Con `delivery › assessment › format` `aiken`, `gift`, `moodle-xml` o `qti`, cada directiva de pregunta de `assessment.md` es de un tipo que el formato admite (aiken: `single-choice`; gift y moodle-xml: además `multi-select`, `true-false`, `match`, `sorting-groups`, `short-answer`, `fill-in-the-blank`; moodle-xml y qti: también `sorting`), y en gift un `fill-in-the-blank` tiene un solo hueco. Mira [Dónde van las evaluaciones](08-assembly-and-delivery.md#dónde-van-las-evaluaciones) | `platform`: no se comprueba | error |
+| Preguntas de un banco | Con `delivery › assessment › format` `aiken`, `gift`, `moodle-xml` o `qti`, cada directiva de pregunta de `assessment.md` es de un tipo que el formato admite (aiken: `single-choice`; gift y moodle-xml: además `multi-select`, `true-false`, `match`, `sorting-groups`, `short-answer`, `fill-in-the-blank`; moodle-xml y qti: también `sorting`), y en gift un `fill-in-the-blank` tiene un solo hueco. Mira [Dónde van las evaluaciones](08-assembly.md#dónde-van-las-evaluaciones) | `platform`: no se comprueba | error |
 | Retroalimentación posicional | En las directivas de `directives › shuffled_options`, una línea de retroalimentación que nombra una opción por su posición o su letra («la respuesta correcta es la tercera», «las dos primeras», «la opción b», «todas las anteriores»): la plataforma puede barajar las opciones y señalaría otra. Un ordinal solo cuenta junto a una palabra como respuesta, correcta u opción, así que «la primera vez» pasa | `single-choice`, `multi-select`, `true-false`, `match`, `sorting`, `sorting-groups`, `order-words` | error |
 | Crucetas | Cada punto de un `labelled-graphic` tiene `posición` (aviso), su ficha está en el mismo apartado (aviso), y las crucetas dibujadas en una imagen producida son las que dice el contenido (`coursekit media anchors`) | — | error (un punto sin posición: aviso) |
 | Símbolos | Ningún emoji ni pictograma fuera de `allowed_symbols` | `★ ✔ ✘ · — ‹ ›` | error |

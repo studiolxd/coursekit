@@ -35,7 +35,7 @@ Early development. What changed in each version is in the [changelog](CHANGELOG.
 - **To prove on a whole course:** the migration from eXeLearning with real agents, the Gemini TTS batch, the brand step of the theme agent, the illustration sources of the brand (`coursekit media stock`), the tests apart or as a question bank (not yet assembled apart in creator nor imported in a real LMS), the pedagogical cycle, the job aids (not yet uploaded to creator), the crosshairs, the official sources found by the agents, the lessons of the pilot course and the shuffled options. Each one was tried on its own, against the real service where there is one.
 - **Not yet:** reading eXeLearning 4 packages (`.elpx`) or HTML exports of a site, publishing the components of the html backend as a package of their own, more languages than Spanish and English.
 
-The creator platform has known gaps that the pipeline works around: [Known limits of the creator backend](docs/en/08-assembly-and-delivery.md#known-limits-of-the-creator-backend).
+The creator platform has known gaps that the pipeline works around: [Known limits of the creator backend](docs/en/08-assembly.md#known-limits-of-the-creator-backend).
 
 ## Install
 
@@ -100,8 +100,10 @@ Full documentation, in English and Spanish, is in [`docs/`](docs/en/index.md)
 | [Agents](docs/en/05-agents.md) | Claude Code, opencode, Codex, roles, models, MCP |
 | [Content](docs/en/06-content.md) | course layout, content format, directives, verification |
 | [Media](docs/en/07-media.md) | planning and producing media, voice, subtitles |
-| [Assembly and delivery](docs/en/08-assembly-and-delivery.md) | creator and html backends, SCORM, shared folder, catalog |
-| [Troubleshooting](docs/en/09-troubleshooting.md) | `doctor`, common problems |
+| [Assembly](docs/en/08-assembly.md) | creator and html backends, the plan, the known limits of creator |
+| [Delivery and publishing](docs/en/09-delivery.md) | SCORM, shared folder, catalog |
+| [Client review](docs/en/10-client-review.md) | review links and rounds |
+| [Troubleshooting](docs/en/11-troubleshooting.md) | `doctor`, common problems |
 
 ## Contributing
 

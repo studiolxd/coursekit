@@ -76,7 +76,7 @@ They are produced in the visual style of the course (`media › visual › style
 
 A simulation with `audio: true` adds one `VO-<SIMULATION>-<SCENE>` per scene (type `audio`, kind `voice`): its text in `narration` and, in a conversation, the `character` who says it. `coursekit media narrate <CODE>` produces them all with the configured voices (no agent is needed), and a scene whose text changes goes back to `pending`.
 
-With the **creator** backend `extract` also adds `SIM-<ID>` (kind `package`, type `simulation`): the package of each simulation, built with `coursekit media embed <CODE> SIM-<ID>` once its images are produced (see [Simulations in creator](08-assembly-and-delivery.md#simulations-in-creator)).
+With the **creator** backend `extract` also adds `SIM-<ID>` (kind `package`, type `simulation`): the package of each simulation, built with `coursekit media embed <CODE> SIM-<ID>` once its images are produced (see [Simulations in creator](08-assembly.md#simulations-in-creator)).
 
 **Style sheet.** Before them, the media agent produces a sample in `courses/<CODE>/media/style/` (a background, a character in several expressions and some objects) and a person signs it with [`coursekit approve style <CODE>`](03-commands.md#coursekit-approve). Until then `coursekit media set … --status produced` refuses those images (unless `--force`) and `plan` warns. In handoff mode the media agent produces the sample and coursekit signs it as Coursekit Handoff. The assembly takes each image by its id; until it is produced the simulation works without it (initials stand for the portraits).
 
@@ -155,7 +155,7 @@ An `image` or an `illustration` that only decorates (it sets the scene and gives
 | `produced` | The file exists (`media/files/<id>.<ext>`), with its alt text or captions. With the html backend it is the final status ([Media for the html backend](#media-for-the-html-backend)) |
 | `uploaded` | Uploaded to the platform; `asset_path` holds its path |
 
-`orphaned` is set by `extract`, never with `media set`, which accepts only the four above. Assets are not approved one by one: they are validated in the assembled course (the preview). With the creator backend only `uploaded` assets replace their placeholder when the unit is assembled; until then the placeholder shows as a note ([08-assembly-and-delivery.md](08-assembly-and-delivery.md)). With the html backend `produced` assets with their file replace it too.
+`orphaned` is set by `extract`, never with `media set`, which accepts only the four above. Assets are not approved one by one: they are validated in the assembled course (the preview). With the creator backend only `uploaded` assets replace their placeholder when the unit is assembled; until then the placeholder shows as a note ([08-assembly.md](08-assembly.md)). With the html backend `produced` assets with their file replace it too.
 
 ### How the options are chosen
 
@@ -515,7 +515,7 @@ The store is `COURSEKIT_HOME` if you define it, else the data folder of your use
 | Linux | `~/.local/share/coursekit` (`$XDG_DATA_HOME/coursekit` if that variable is set) |
 | Windows | `%LOCALAPPDATA%\coursekit` |
 
-`coursekit doctor` shows its path and size in the Media section. To move it, see [Troubleshooting](09-troubleshooting.md#the-coursekit-store-takes-a-lot-of-space).
+`coursekit doctor` shows its path and size in the Media section. To move it, see [Troubleshooting](11-troubleshooting.md#the-coursekit-store-takes-a-lot-of-space).
 
 ### Remotion is installed once
 
@@ -527,7 +527,7 @@ Remotion with its dependencies is about 230 MB, and the browser it downloads the
 
 The second project that runs `coursekit setup --media` downloads nothing: it only makes the link. The project `.gitignore` ignores `node_modules/`, so the link is never committed.
 
-The `<hash>` is that of the `package.json` of the project (and of its `package-lock.json`, if there is one). Projects with the same dependencies share the install; a project that changes its dependencies gets its own install in the store, next to the other. If the link cannot be made, the project installs its own `node_modules` in `tools/remotion/`, as any Node project does; and a project that already has a real `node_modules` folder there keeps it. See [Troubleshooting](09-troubleshooting.md#the-remotion-link-cannot-be-made).
+The `<hash>` is that of the `package.json` of the project (and of its `package-lock.json`, if there is one). Projects with the same dependencies share the install; a project that changes its dependencies gets its own install in the store, next to the other. If the link cannot be made, the project installs its own `node_modules` in `tools/remotion/`, as any Node project does; and a project that already has a real `node_modules` folder there keeps it. See [Troubleshooting](11-troubleshooting.md#the-remotion-link-cannot-be-made).
 
 To remove everything that `setup` installed outside the projects, run `coursekit uninstall` (see [Commands](03-commands.md#coursekit-uninstall) and [Getting started](01-getting-started.md#uninstall)).
 
@@ -543,7 +543,7 @@ The `/define-theme [CODE]` command (design agent; `coursekit run define-theme [C
 2. The agent lists the themes of the platform (`list_themes`) and, with the person, picks one, creates one (from scratch, from a preset or as a copy of another) or adapts one with `update_theme` using the colours and fonts of the client's brand. A theme change in the platform changes every content that uses it, so a course that needs its own look gets a copy of the theme.
 3. The agent saves the whole result of `get_theme` to `.cache/theme/get_theme.json` (a cache folder, not committed).
 4. `coursekit theme import .cache/theme/get_theme.json` converts it into `tokens.json` and `tokens.css`, and prints the notes and the contrast of each pair. If a pair fails, the colour is fixed in the platform (`update_theme`), `get_theme` is saved again and the import is repeated. The tokens are never edited by hand.
-5. The agent links the theme to the contents with `set_content_theme`, using the id that `coursekit theme show --course <CODE>` prints; contents created later get it when they are assembled ([08-assembly-and-delivery.md](08-assembly-and-delivery.md)). The person validates the theme the way they validate the design.
+5. The agent links the theme to the contents with `set_content_theme`, using the id that `coursekit theme show --course <CODE>` prints; contents created later get it when they are assembled ([08-assembly.md](08-assembly.md)). The person validates the theme the way they validate the design.
 
 The platform theme can be redone at any time: importing again overwrites the tokens, and `coursekit media plan` then warns about the assets made with the previous ones.
 
@@ -721,7 +721,7 @@ A course already `delivered` is not carried on by the handoff: redo the media an
 
 The import prints the same lines. A failing pair does not stop it: fix the colour in the platform theme (or in the CSS variable of the stylesheet) and import again.
 
-The accent colour of the project tokens (`accent-ink`, else `accent`) also paints the header of the catalog Excel ([08-assembly-and-delivery.md](08-assembly-and-delivery.md)).
+The accent colour of the project tokens (`accent-ink`, else `accent`) also paints the header of the catalog Excel ([The tracking catalog](09-delivery.md#the-tracking-catalog)).
 
 ## Remotion workspace
 
@@ -802,4 +802,4 @@ coursekit media set PWD U1-S2-M2 --status produced --recipe agent-svg \
 
 The command is refused if the course tokens are missing or were written by hand ([The media guard](#the-media-guard)): run `/define-theme` first. After uploading it to the platform, the agent records `coursekit media set PWD U1-S2-M2 --status uploaded --asset-path <path>`. The next `coursekit assemble plan` then replaces the placeholder with the image. With the html backend there is no upload: the `produced` status with its `--file` is final, and `coursekit assemble build PWD --unit 1` copies the SVG into the package ([Media for the html backend](#media-for-the-html-backend)). For a video, the same flow adds the steps `scripted` (script in `media/scripts/`), `coursekit voice set PWD <provider>`, `coursekit tts --course PWD …` and `coursekit subtitles …`.
 
-Next: [08-assembly-and-delivery.md](08-assembly-and-delivery.md)
+Next: [Assembly](08-assembly.md)

@@ -76,7 +76,7 @@ Se producen en el estilo visual del curso (`media › visual › style`, ver [Co
 
 Una simulación con `audio: true` añade un `VO-<SIMULACIÓN>-<ESCENA>` por escena (tipo `audio`, kind `voice`): su texto en `narration` y, en una conversación, el `character` que lo dice. `coursekit media narrate <CODE>` los produce todos con las voces configuradas (no hace falta ningún agente), y una escena cuyo texto cambia vuelve a `pending`.
 
-Con el backend **creator** `extract` añade también `SIM-<ID>` (kind `package`, tipo `simulation`): el paquete de cada simulación, que se construye con `coursekit media embed <CODE> SIM-<ID>` cuando sus imágenes están producidas (ver [Simulaciones en creator](08-assembly-and-delivery.md#simulaciones-en-creator)).
+Con el backend **creator** `extract` añade también `SIM-<ID>` (kind `package`, tipo `simulation`): el paquete de cada simulación, que se construye con `coursekit media embed <CODE> SIM-<ID>` cuando sus imágenes están producidas (ver [Simulaciones en creator](08-assembly.md#simulaciones-en-creator)).
 
 **Lámina de estilo.** Antes, el agente de multimedia produce una muestra en `courses/<CODE>/media/style/` (un fondo, un personaje en varias expresiones y algunos objetos) y una persona la firma con [`coursekit approve style <CODE>`](03-commands.md#coursekit-approve). Hasta entonces `coursekit media set … --status produced` rechaza esas imágenes (salvo con `--force`) y `plan` avisa. En modo handoff el agente de multimedia produce la muestra y coursekit la firma como Coursekit Handoff. El montaje toma cada imagen por su id; mientras no está producida, la simulación funciona sin ella (los retratos se sustituyen por iniciales).
 
@@ -155,7 +155,7 @@ Una `image` o una `illustration` que solo decora (ambienta y no da información 
 | `produced` | El fichero existe (`media/files/<id>.<ext>`), con su texto alternativo o sus subtítulos. Con el backend html es el estado definitivo ([Multimedia para el backend html](#multimedia-para-el-backend-html)) |
 | `uploaded` | Subido a la plataforma; `asset_path` guarda su ruta |
 
-`orphaned` lo pone `extract`, nunca `media set`, que solo acepta los cuatro anteriores. Los recursos no se aprueban uno a uno: se validan en el curso montado (la vista previa). Con el backend creator, solo los recursos `uploaded` sustituyen a su recurso reservado cuando se monta la unidad; hasta entonces se muestra como una nota ([08-assembly-and-delivery.md](08-assembly-and-delivery.md)). Con el backend html, los recursos `produced` con su fichero lo sustituyen también.
+`orphaned` lo pone `extract`, nunca `media set`, que solo acepta los cuatro anteriores. Los recursos no se aprueban uno a uno: se validan en el curso montado (la vista previa). Con el backend creator, solo los recursos `uploaded` sustituyen a su recurso reservado cuando se monta la unidad; hasta entonces se muestra como una nota ([08-assembly.md](08-assembly.md)). Con el backend html, los recursos `produced` con su fichero lo sustituyen también.
 
 ### Cómo se eligen las opciones
 
@@ -516,7 +516,7 @@ El almacén es `COURSEKIT_HOME` si la defines; si no, la carpeta de datos de tu 
 | Linux | `~/.local/share/coursekit` (`$XDG_DATA_HOME/coursekit` si esa variable está definida) |
 | Windows | `%LOCALAPPDATA%\coursekit` |
 
-`coursekit doctor` muestra su ruta y su tamaño en la sección Multimedia. Para moverlo, mira [Solución de problemas](09-troubleshooting.md#el-almacén-de-coursekit-ocupa-mucho-espacio).
+`coursekit doctor` muestra su ruta y su tamaño en la sección Multimedia. Para moverlo, mira [Solución de problemas](11-troubleshooting.md#el-almacén-de-coursekit-ocupa-mucho-espacio).
 
 ### Remotion se instala una sola vez
 
@@ -528,7 +528,7 @@ Remotion con sus dependencias ocupa unos 230 MB, y el navegador que descarga la 
 
 El segundo proyecto que ejecuta `coursekit setup --media` no descarga nada: solo crea el enlace. El `.gitignore` del proyecto ignora `node_modules/`, así que el enlace nunca se sube al repositorio.
 
-El `<hash>` es el del `package.json` del proyecto (y el de su `package-lock.json`, si lo hay). Los proyectos con las mismas dependencias comparten la instalación; un proyecto que cambia sus dependencias obtiene su propia instalación en el almacén, junto a la otra. Si no se puede crear el enlace, el proyecto instala su propio `node_modules` en `tools/remotion/`, como cualquier proyecto de Node; y un proyecto que ya tiene allí una carpeta `node_modules` real la conserva. Mira [Solución de problemas](09-troubleshooting.md#no-se-puede-crear-el-enlace-de-remotion).
+El `<hash>` es el del `package.json` del proyecto (y el de su `package-lock.json`, si lo hay). Los proyectos con las mismas dependencias comparten la instalación; un proyecto que cambia sus dependencias obtiene su propia instalación en el almacén, junto a la otra. Si no se puede crear el enlace, el proyecto instala su propio `node_modules` en `tools/remotion/`, como cualquier proyecto de Node; y un proyecto que ya tiene allí una carpeta `node_modules` real la conserva. Mira [Solución de problemas](11-troubleshooting.md#no-se-puede-crear-el-enlace-de-remotion).
 
 Para quitar todo lo que `setup` instaló fuera de los proyectos, ejecuta `coursekit uninstall` (mira [Comandos](03-commands.md#coursekit-uninstall) y [Primeros pasos](01-getting-started.md#desinstalar)).
 
@@ -544,7 +544,7 @@ El comando `/define-theme [CODE]` (agente de diseño; `coursekit run define-them
 2. El agente lista los temas de la plataforma (`list_themes`) y, con la persona, elige uno, crea uno (desde cero, desde un preajuste o como copia de otro) o adapta uno con `update_theme` usando los colores y las tipografías de la marca del cliente. Un cambio de tema en la plataforma cambia todos los contenidos que lo usan, así que un curso que necesita un aspecto propio recibe una copia del tema.
 3. El agente guarda el resultado completo de `get_theme` en `.cache/theme/get_theme.json` (una carpeta de caché que no se sube al repositorio).
 4. `coursekit theme import .cache/theme/get_theme.json` lo convierte en `tokens.json` y `tokens.css`, e imprime las notas y el contraste de cada par. Si un par falla, se corrige el color en la plataforma (`update_theme`), se vuelve a guardar `get_theme` y se repite la importación. Los tokens nunca se editan a mano.
-5. El agente vincula el tema a los contenidos con `set_content_theme`, con el id que imprime `coursekit theme show --course <CODE>`; los contenidos que se creen más tarde lo reciben al montarse ([08-assembly-and-delivery.md](08-assembly-and-delivery.md)). La persona valida el tema igual que valida el diseño.
+5. El agente vincula el tema a los contenidos con `set_content_theme`, con el id que imprime `coursekit theme show --course <CODE>`; los contenidos que se creen más tarde lo reciben al montarse ([08-assembly.md](08-assembly.md)). La persona valida el tema igual que valida el diseño.
 
 El tema de la plataforma se puede rehacer en cualquier momento: importar de nuevo sobrescribe los tokens, y entonces `coursekit media plan` avisa de los recursos hechos con los anteriores.
 
@@ -722,7 +722,7 @@ Un curso ya `delivered` no lo continúa el handoff: rehaz el multimedia y el mon
 
 La importación imprime las mismas líneas. Un par que falla no la detiene: corrige el color en el tema de la plataforma (o en la variable CSS de la hoja de estilos) e importa de nuevo.
 
-El color de acento de los tokens del proyecto (`accent-ink`, y si no `accent`) pinta también la cabecera del Excel de catálogo ([08-assembly-and-delivery.md](08-assembly-and-delivery.md)).
+El color de acento de los tokens del proyecto (`accent-ink`, y si no `accent`) pinta también la cabecera del Excel de catálogo ([El catálogo de seguimiento](09-delivery.md#el-catálogo-de-seguimiento)).
 
 ## Espacio de trabajo de Remotion
 
@@ -803,4 +803,4 @@ coursekit media set PWD U1-S2-M2 --status produced --recipe agent-svg \
 
 El comando se rechaza si los tokens del curso faltan o están escritos a mano ([El control de los recursos](#el-control-de-los-recursos)): ejecuta antes `/define-theme`. Tras subirlo a la plataforma, el agente registra `coursekit media set PWD U1-S2-M2 --status uploaded --asset-path <ruta>`. El siguiente `coursekit assemble plan` sustituye entonces el recurso reservado por la imagen. Con el backend html no hay subida: el estado `produced` con su `--file` es definitivo, y `coursekit assemble build PWD --unit 1` copia el SVG en el paquete ([Multimedia para el backend html](#multimedia-para-el-backend-html)). Para un vídeo, el mismo flujo añade los pasos `scripted` (guion en `media/scripts/`), `coursekit voice set PWD <proveedor>`, `coursekit tts --course PWD …` y `coursekit subtitles …`.
 
-Siguiente: [08-assembly-and-delivery.md](08-assembly-and-delivery.md)
+Siguiente: [Montaje](08-assembly.md)

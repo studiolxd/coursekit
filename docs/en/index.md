@@ -38,8 +38,10 @@ You do not need to program. You need a terminal and one of the supported AI tool
 | [Agents](05-agents.md) | Claude Code, opencode, Codex, roles, models, skills, MCP |
 | [Content](06-content.md) | course folders, content format, directives, verification |
 | [Media](07-media.md) | planning and producing media, voice, subtitles |
-| [Assembly and delivery](08-assembly-and-delivery.md) | SLXD Creator, SCORM, shared folder, catalog |
-| [Troubleshooting](09-troubleshooting.md) | `coursekit doctor`, `coursekit setup`, common problems, FAQ |
+| [Assembly](08-assembly.md) | creator and html backends, the plan, the directives, the known limits of creator |
+| [Delivery and publishing](09-delivery.md) | SCORM export, record of the packages, shared folder, catalog |
+| [Client review](10-client-review.md) | review links, rounds and the client's answer |
+| [Troubleshooting](11-troubleshooting.md) | `coursekit doctor`, `coursekit setup`, common problems, FAQ |
 
 ## Quick start
 

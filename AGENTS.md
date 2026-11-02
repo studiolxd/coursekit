@@ -65,7 +65,7 @@ itself. The instructions that coursekit generates for course projects live in
   `Unreleased` / `Sin publicar` in both, in the same change; a release moves those lines under its version.
 - `README.md` / `README.es.md` carry the status of the project (what is solid, what is new, what is in progress, what is still to
   prove, what is not done), short, and
-  `docs/*/08-assembly-and-delivery.md` the known limits of the creator platform: update them when something changes.
+  `docs/*/08-assembly.md` the known limits of the creator platform: update them when something changes.
 - Development notes (the plan of a feature in progress, its open decisions) go in `dev-notes/<feature>.md`, in Spanish
   (Spain), under the same public-repository rules. They are working material, not documentation: once the feature is
   validated and published, what lasts is in `docs/` and the READMEs and its note is deleted. No maintainers' notes anywhere

@@ -38,8 +38,10 @@ No hace falta programar. Necesitas una terminal y una de las herramientas de IA 
 | [Agentes](05-agents.md) | Claude Code, opencode, Codex, roles, modelos, skills, MCP |
 | [Contenido](06-content.md) | carpetas del curso, formato del contenido, directivas, verificación |
 | [Multimedia](07-media.md) | planificar y producir multimedia, voz, subtítulos |
-| [Montaje y entrega](08-assembly-and-delivery.md) | SLXD Creator, SCORM, carpeta compartida, catálogo |
-| [Solución de problemas](09-troubleshooting.md) | `coursekit doctor`, `coursekit setup`, problemas habituales, preguntas frecuentes |
+| [Montaje](08-assembly.md) | backends creator y html, el plan, las directivas, los límites conocidos de creator |
+| [Entrega y publicación](09-delivery.md) | exportación SCORM, registro de los paquetes, carpeta compartida, catálogo |
+| [Revisión del cliente](10-client-review.md) | enlaces de revisión, rondas y la respuesta del cliente |
+| [Solución de problemas](11-troubleshooting.md) | `coursekit doctor`, `coursekit setup`, problemas habituales, preguntas frecuentes |
 
 ## Inicio rápido
 

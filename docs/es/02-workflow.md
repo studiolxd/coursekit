@@ -88,7 +88,7 @@ La única pausa es al principio: con las carpetas del curso ya creadas, en una t
 - **Continuar.** `coursekit handoff <CODE>` sigue desde el estado actual, sin repetir lo ya firmado. Si el curso está `on_hold` (el mensaje dice que antes ejecutes `coursekit resume <CODE>`) o en `client_review` se para: handoff no gestiona ninguno. `coursekit handoff "<título>" <horas>` rechaza un código de curso que ya existe y señala `coursekit handoff <CODE>`.
 - **Qué rechaza.** Si el proyecto exige la revisión del cliente (`delivery › client_review › required`), se niega a empezar, antes de crear el curso, y a continuar mientras esa revisión no esté aprobada u omitida: handoff no la hace. Ambos casos terminan con código de salida 1.
 - **Cómo se ejecuta.** Todos los agentes se ejecutan en modo headless, con los límites de [Agentes](05-agents.md#headless---headless). Las sesiones quedan en `.cache/logs/` (`<CODE>-<paso>-handoff-<fecha>-<hora>.log`, y `<CODE>-uNN-write-…` o `-review-…` para las unidades). Tras cada paso se refrescan la carpeta espejo y el catálogo, si el proyecto los tiene. Al final imprime `handoff terminado`, con el estado del curso, y escribe su informe en `courses/<CODE>/handoff-report.md`: quién firmó y qué tiene que mirar ahora una persona. Cuando se para también lo escribe, con el motivo de la parada en su lugar, para que lo veas antes de seguir. Primero van las decisiones que el diseño tomó sin poder preguntar (acceso, público, alcance, evaluación, material: las preguntas de la propuesta, con la opción que tomó y por qué), que también imprime y que siguen en el bloque de supuestos de `design/proposal-notes.md` hasta que un `/design-change` las resuelve. Después, las grabaciones y capturas que esperan a una persona, las capturas que aprobó el propio handoff (las hizo su agente de media y nadie las revisó: míralas todas en una página con `coursekit capture review CODE`) y los vídeos por comprobar.
-- **Qué necesita.** Los roles del `.env` y, cuando el curso usa slxd (backend creator o un diseño hecho en slxd), la URL del MCP de slxd, como el flujo normal, con creator ya autorizado (una sesión sin interfaz no puede iniciar sesión; mira [Problemas con el servidor MCP](09-troubleshooting.md#problemas-con-el-servidor-mcp)), y los proveedores del multimedia que quieras producir. No puede preguntar: las dudas quedan escritas en las unidades (`<!-- VERIFICAR -->`) y en los informes.
+- **Qué necesita.** Los roles del `.env` y, cuando el curso usa slxd (backend creator o un diseño hecho en slxd), la URL del MCP de slxd, como el flujo normal, con creator ya autorizado (una sesión sin interfaz no puede iniciar sesión; mira [Problemas con el servidor MCP](11-troubleshooting.md#problemas-con-el-servidor-mcp)), y los proveedores del multimedia que quieras producir. No puede preguntar: las dudas quedan escritas en las unidades (`<!-- VERIFICAR -->`) y en los informes.
 
 ## Estados
 
@@ -139,7 +139,7 @@ Una ronda en un flujo normal:
 5. Cierras la ronda: `coursekit client PWD changes --note "..."` si el cliente quiere más cambios; después aplica, vuelve a montar y haz `send` otra vez (ronda 2). Si el cliente está conforme, `coursekit client PWD approve --by "..."`.
 6. Entrega con `/deliver`.
 
-Una unidad editada después de su firma vuelve a `verified`: necesita nueva revisión con IA y nueva firma antes de la entrega, como en [Cambios tras la aprobación](#cambios-tras-la-aprobación). Mira [Montaje y entrega](08-assembly-and-delivery.md#revisión-del-cliente) para los enlaces de revisión y las herramientas de creator que intervienen.
+Una unidad editada después de su firma vuelve a `verified`: necesita nueva revisión con IA y nueva firma antes de la entrega, como en [Cambios tras la aprobación](#cambios-tras-la-aprobación). Mira [Revisión del cliente](10-client-review.md) para los enlaces de revisión y las herramientas de creator que intervienen.
 
 #### Pausar un curso
 
@@ -380,7 +380,7 @@ El agente de multimedia extrae los recursos del contenido a un manifiesto (`cour
 
 **Backend html.** El agente ejecuta `coursekit assemble build PWD --unit N` para cada unidad (sin `--unit`, todas). Escribe una carpeta de vista previa, `courses/PWD/assembly/html/unit-NN/`, que se abre desde el disco en un navegador, y rechaza el contenido que no puede representar (una clave en el idioma equivocado, una pregunta sin sus opciones...); la carpeta es generada y no se versiona. Con `--version X.Y` escribe además el zip de la unidad en `courses/PWD/delivery/`. El agente te dice qué comprobar en la vista previa (la navegación, un componente de cada tipo, las preguntas y el test).
 
-Mira [Montaje y entrega](08-assembly-and-delivery.md).
+Mira [Montaje](08-assembly.md).
 
 ### 8. Revisión del cliente
 
@@ -392,7 +392,7 @@ Opcional. Una persona abre y cierra cada ronda con [`coursekit client`](03-comma
 /deliver PWD 1.0
 ```
 
-El agente empieza con `coursekit delivery check PWD`: se niega mientras el curso está en pausa y, si el proyecto exige la revisión del cliente, hasta que la última ronda esté aprobada u omitida. Después exporta un paquete SCORM por unidad, lo descarga en `courses/PWD/delivery/` y lo registra con `coursekit delivery add`. Cuando todas las unidades tienen un paquete de la misma versión, el curso pasa a `delivered` (solo desde `assembly` o `client_review`; en otro estado el paquete se registra con un aviso). Cada `coursekit delivery add` copia además el curso a la carpeta espejo y refresca el catálogo (cuando el proyecto tiene una). Mira [Montaje y entrega](08-assembly-and-delivery.md).
+El agente empieza con `coursekit delivery check PWD`: se niega mientras el curso está en pausa y, si el proyecto exige la revisión del cliente, hasta que la última ronda esté aprobada u omitida. Después exporta un paquete SCORM por unidad, lo descarga en `courses/PWD/delivery/` y lo registra con `coursekit delivery add`. Cuando todas las unidades tienen un paquete de la misma versión, el curso pasa a `delivered` (solo desde `assembly` o `client_review`; en otro estado el paquete se registra con un aviso). Cada `coursekit delivery add` copia además el curso a la carpeta espejo y refresca el catálogo (cuando el proyecto tiene una). Mira [Montaje](08-assembly.md).
 
 Con el backend html no se exporta nada de ninguna plataforma: para cada unidad el agente ejecuta `coursekit assemble build PWD --unit N --version 1.0` (escribe el zip en `courses/PWD/delivery/`) y después `coursekit delivery add` sin `--job` ni `--snapshot`. La comprobación inicial, el registro y la publicación son los mismos.
 
@@ -417,7 +417,7 @@ Un curso se monta o en **slxd creator** o con el **backend html**. La elección 
 | Qué registra la entrega | `coursekit delivery add` con el `--job` y el `--snapshot` de la exportación | `coursekit delivery add` sin ellos |
 | Theme | un theme de la plataforma, tokens derivados con `coursekit theme import <get_theme.json>` | la hoja de estilos `theme/maqueta.css`, tokens derivados con `coursekit theme import theme/maqueta.css` |
 
-Los comandos de un backend se rechazan en el otro, con un mensaje que señala el correcto (mira [Solución de problemas](09-troubleshooting.md#el-backend-html)). El backend html no necesita la plataforma para montar, pero el paquete debe probarse en el LMS al que se va a entregar (o en SCORM Cloud) antes de dárselo a nadie. Los detalles están en [Montaje y entrega](08-assembly-and-delivery.md).
+Los comandos de un backend se rechazan en el otro, con un mensaje que señala el correcto (mira [Solución de problemas](11-troubleshooting.md#el-backend-html)). El backend html no necesita la plataforma para montar, pero el paquete debe probarse en el LMS al que se va a entregar (o en SCORM Cloud) antes de dárselo a nadie. Los detalles están en [Montaje](08-assembly.md).
 
 ## Theme y tokens de diseño
 
@@ -447,7 +447,7 @@ Dónde están los tokens:
 
 `coursekit theme show` imprime qué tokens se aplican (`coursekit theme show --course PWD` para un curso) y de dónde vienen: los del proyecto o los del curso, el theme de la plataforma con su id y su versión, y cuándo se importaron. `coursekit theme tokens` reescribe el CSS, `coursekit theme check` mide el contraste y `coursekit theme import FILE [--course CODE]` deriva los tokens; las opciones están en [`coursekit theme`](03-commands.md#coursekit-theme).
 
-Dónde encaja en el flujo: cuando el proyecto ya existe y antes de producir multimedia, idealmente justo después de `/new-course` (que en su resumen te avisa si el proyecto no tiene tokens). El montaje usa el mismo theme (mira [Montaje y entrega](08-assembly-and-delivery.md#el-theme-del-curso)).
+Dónde encaja en el flujo: cuando el proyecto ya existe y antes de producir multimedia, idealmente justo después de `/new-course` (que en su resumen te avisa si el proyecto no tiene tokens). El montaje usa el mismo theme (mira [Montaje](08-assembly.md#el-theme-del-curso)).
 
 La salvaguarda. Los tokens de diseño solo se dan por buenos cuando vienen de la plataforma:
 

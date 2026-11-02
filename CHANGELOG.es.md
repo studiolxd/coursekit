@@ -7,6 +7,7 @@ qué no está hecho está en el estado del [README](README.es.md#estado). Las ve
 
 ## Sin publicar
 
+- La documentación del montaje y la entrega se parte en tres capítulos: [Montaje](docs/es/08-assembly.md), [Entrega y publicación](docs/es/09-delivery.md) y [Revisión del cliente](docs/es/10-client-review.md); la resolución de problemas pasa a ser el capítulo 11.
 - `verify` dice la familia de cada aviso (`structure`, `words`, `style`, `language`, `readability`, `media`, `activities`, `simulations`, `assembly`), admite `--only` e `--ignore` para ver solo algunas (una comprobación parcial nunca cambia el estado), resume los errores y avisos de cada unidad cuando comprueba varias e imprime JSON con `--json`. `status`, `doctor` y `media check` imprimen JSON con `--json` también, para los agentes.
 - `coursekit help COMMAND`: las opciones de un comando y su apartado de la referencia de comandos, en el idioma de la persona.
 - Todos los comandos arrancan antes: cada uno carga solo los módulos que usa (`coursekit --version` tarda más o menos la mitad), y la salida de ffmpeg, git y los demás programas se lee en UTF-8 también en una consola de Windows.
