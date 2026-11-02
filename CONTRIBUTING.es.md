@@ -52,10 +52,11 @@ CI se ejecuta en los tres (consulta `.github/workflows/ci.yml`), así que un cam
 
 ```bash
 uv run ruff check .
+uv run mypy
 uv run pytest -q
 ```
 
-Ambas deben pasar; CI ejecuta las dos (más `uv tool install .` y `coursekit --version`) en Linux, macOS y Windows con cada push a `main` y cada pull request. Un tercer trabajo, `video-types`, comprueba los tipos del TypeScript de los vídeos (`videokit` y la plantilla de Remotion) con la estructura de un proyecto. Los zooms de una grabación están en `videokit/atoms/zoom.ts`, y `templates/remotion/src/zoom.ts` es una copia (un test las mantiene iguales): cambia la primera y cópiala. Ruff se configura en `pyproject.toml`: longitud de línea 140, Python 3.12 como objetivo y las reglas `E`, `F`, `I` (imports), `UP` y `B`. `uv run ruff check . --fix` corrige la mayoría de los avisos de orden de imports y de estilo.
+Las tres deben pasar; CI ejecuta ruff y pytest (más `uv tool install .` y `coursekit --version`) en Linux, macOS y Windows con cada push a `main` y cada pull request, y mypy en Linux. Mypy comprueba los módulos de `[tool.mypy] files` de `pyproject.toml`, con todas las funciones anotadas; añade un módulo allí cuando pase. Otro trabajo, `video-types`, comprueba los tipos del TypeScript de los vídeos (`videokit` y la plantilla de Remotion) con la estructura de un proyecto. Los zooms de una grabación están en `videokit/atoms/zoom.ts`, y `templates/remotion/src/zoom.ts` es una copia (un test las mantiene iguales): cambia la primera y cópiala. Ruff se configura en `pyproject.toml`: longitud de línea 140, Python 3.12 como objetivo y las reglas `E`, `F`, `I` (imports), `UP`, `B`, `SIM` (salvo `SIM905`), `RET` y `PTH`. `uv run ruff check . --fix` corrige la mayoría de los avisos de orden de imports y de estilo.
 
 `tests/conftest.py` fija `COURSEKIT_LANG=en` en todos los tests y restaura el entorno después, así que los mensajes en los tests están en inglés. Un test que necesite español lo indica de forma explícita (`monkeypatch.setenv("COURSEKIT_LANG", "es")` o `i18n.use("es")`).
 
@@ -153,7 +154,7 @@ La documentación de usuario vive en `docs/en/` y `docs/es/`, con los mismos nom
 
 - Mantén los cambios pequeños y centrados: una corrección o función por pull request, sin reformateos ajenos al cambio.
 - Código, tests y documentación van juntos. Un pull request que cambia el comportamiento incluye el test que lo cubre y las actualizaciones de `docs/en` y `docs/es`.
-- Ejecuta antes `uv run ruff check .` y `uv run pytest -q`. Comprueba que la salida se lee bien en los dos idiomas en todo lo que ve una persona (`COURSEKIT_LANG=es` y `COURSEKIT_LANG=en`).
+- Ejecuta antes `uv run ruff check .`, `uv run mypy` y `uv run pytest -q`. Comprueba que la salida se lee bien en los dos idiomas en todo lo que ve una persona (`COURSEKIT_LANG=es` y `COURSEKIT_LANG=en`).
 - Los mensajes de commit se escriben en español (España): una primera línea breve que diga qué cambia y, si hace falta, los detalles después. Ejemplo: `Rutas con barras normales en los mensajes de error`.
 - No hagas force-push en ramas compartidas ni reescribas historial que otras personas ya hayan descargado.
 - No subas ficheros generados o locales: `.venv/`, `dist/`, `build/`, cachés ni ningún `.env`.

@@ -6,6 +6,7 @@ import argparse
 import os
 import re
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 from coursekit import agents as agentsmod
@@ -109,7 +110,7 @@ def _pause_for_material(project: Project, folder: Path) -> None:
     initmod.ask(t("commands", "handoff_pause_wait"), "")
 
 
-def _handoff_report(project, code: str, stopped: str | None, course: dict | None = None) -> None:
+def _handoff_report(project: Project, code: str, stopped: str | None, course: dict | None = None) -> None:
     """The decisions the design took with no one to ask, printed, and the report of the handoff; also when it stopped (once the
     course exists), so the person sees them before carrying on."""
     try:
@@ -337,8 +338,8 @@ def cmd_capture(args: argparse.Namespace) -> int:
                 print(t("capture", "replayed", id=asset_id, files=", ".join(made), found=found,
                         review=result["review"].relative_to(project.root).as_posix()))
             else:
-                state = capturemod.decide(project, course, asset_id, args.action == "approve", args.note, args.mask)
-                print(t("capture", f"decided_{state['state']}", id=asset_id, code=course["code"]))
+                decision = capturemod.decide(project, course, asset_id, args.action == "approve", args.note, args.mask)
+                print(t("capture", f"decided_{decision['state']}", id=asset_id, code=course["code"]))
                 _mirror(project, course["code"])
     except capturemod.CaptureError as exc:
         print(t("commands", "error_line", text=exc), file=sys.stderr)
@@ -566,7 +567,7 @@ def cmd_reviewed(args: argparse.Namespace) -> int:
     return 0
 
 
-def _confirm(yes: bool):
+def _confirm(yes: bool) -> Callable[[str], bool]:
     def ask(question: str) -> bool:
         print(question)
         if yes:
@@ -638,9 +639,9 @@ def cmd_brief_find(project: Project, args: argparse.Namespace) -> int:
     if not files:
         print(t("commands", "brief_find_no_text", code=course["code"]), file=sys.stderr)
         return 1
-    found = sources.passages(files, int(cfg.get("passage_words") or 200), words)
-    best = sources.rank(found, query, words, int(args.top or cfg.get("passages") or 8))
-    print(t("commands", "brief_find_title", query=label, count=len(best), total=len(found)))
+    passages = sources.passages(files, int(cfg.get("passage_words") or 200), words)
+    best = sources.rank(passages, query, words, int(args.top or cfg.get("passages") or 8))
+    print(t("commands", "brief_find_title", query=label, count=len(best), total=len(passages)))
     for i, (_score, passage) in enumerate(best, 1):
         where = f"{passage.file.relative_to(project.root).as_posix()}:{passage.start}-{passage.end}"
         heading = f" · {passage.heading}" if passage.heading else ""

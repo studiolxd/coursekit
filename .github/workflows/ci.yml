@@ -25,6 +25,15 @@ jobs:
           uv tool install --force --python 3.12 ".[docs,capture]"  # rapidocr-onnxruntime, of the capture extra, needs Python < 3.13
           coursekit --version
 
+  # The types of the Python modules listed in `[tool.mypy] files` of pyproject.toml (widened module by module).
+  types:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.0  # it publishes no short major tag
+      - run: uv sync --group dev
+      - run: uv run mypy
+
   # The capture with a real browser (Playwright and the Chrome of the runner, with no window) and the OCR, the faces and the
   # video of `coursekit capture`: the capture extra, which the job above does not install (its tests are skipped there).
   capture:

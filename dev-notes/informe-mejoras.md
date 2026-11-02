@@ -32,13 +32,6 @@ Lo que se va haciendo se tacha y pasa a la sección [Hecho](#hecho), al final, c
 
 ## 2. Calidad y pruebas
 
-- **Sin comprobación de tipos.** Ruff pasa (`E, F, I, UP, B`) pero no hay `mypy` ni `pyright`. Con 27 000
-  líneas que mueven diccionarios de YAML, el tipado de los puntos de entrada (`course.py`, `config.py`,
-  `assemble.py`, `verify.py`) con `TypedDict` o `dataclass` evitaría una clase entera de fallos.
-  Propuesta: `pyright` en modo `basic` solo sobre `config.py`, `course.py`, `i18n.py` y `paths.py`, e ir
-  ampliando.
-- **Reglas de ruff que faltan.** Añadir `SIM`, `RET`, `PTH` (uso de `pathlib` en vez de `os.path`) y
-  `PERF`. Cada una se añade con `--fix` y un commit propio.
 - **Tiempo de la suite.** Las pruebas que necesitan navegador, ffmpeg, OpenCV o pyte ya se saltan solas cuando falta
   la herramienta, y la CI las corre en un trabajo aparte. Un marcador `slow` solo si una medida de duraciones lo pide.
 ## 3. Experiencia de uso
@@ -73,7 +66,7 @@ Lo que se va haciendo se tacha y pasa a la sección [Hecho](#hecho), al final, c
 Sigue las fases del [plan](plan-mejoras.md).
 
 1. Marcador de pruebas lentas, si lo pide una medida de duraciones de la suite completa (sección 2).
-2. Reglas nuevas de ruff y tipado gradual con `pyright` (sección 2; fase 3).
+2. Ampliar `mypy` a más módulos, uno a uno (sección 2).
 3. Módulos comunes para programas externos y HTTP, subpaquetes y `commands.py` partido (sección 1; fase 4).
 4. `--json`, `verify --only` / `--ignore` y `help <comando>` (sección 3; fase 5).
 5. Reparto de `08-assembly-and-delivery.md` y limpieza de `dev-notes/` (sección 5; fase 6).
@@ -110,3 +103,12 @@ Sigue las fases del [plan](plan-mejoras.md).
   `make_course` en `tests/conftest.py`; doce fixtures reescritos sobre ellos, con los mismos 821 tests recogidos. Al
   provocar fallos para comprobarlos salió un hueco: nada probaba que el redactor retoma una unidad a medio escribir
   (`launch.units_to_do`); ya tiene su test.
+
+### Calidad estática (fase 3 del plan)
+
+- ~~**Reglas de ruff que faltan.**~~ Hecho el 2 de noviembre de 2026: `SIM` (sin `SIM905`), `RET` y `PTH`. `PERF` se
+  descartó: solo pedía `extend` en bucles que construyen informes de pocas líneas, a costa de leerse peor.
+- ~~**Sin comprobación de tipos.**~~ Hecho el 2 de noviembre de 2026 con `mypy` en lugar de `pyright` (el paquete de
+  `pyright` descarga Node en la caché del usuario): siete módulos con todas las funciones anotadas (`commands`, `config`,
+  `course`, `i18n`, `paths`, `status`, `sync`), un trabajo de CI que bloquea, y `files` en `pyproject.toml` para ampliar.
+  Los quince avisos que dio eran variables reutilizadas con otro tipo y funciones sin anotar; ninguno era un fallo.

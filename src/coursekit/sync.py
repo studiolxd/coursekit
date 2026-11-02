@@ -20,6 +20,7 @@ import re
 from dataclasses import dataclass, field
 from importlib import resources
 from pathlib import Path
+from typing import Any, cast
 
 from coursekit import course as coursemod
 from coursekit import localdesign
@@ -39,7 +40,7 @@ class SyncResult:
     written: list[str] = field(default_factory=list)
 
 
-def ordered(items):
+def ordered(items: list[dict]) -> list[dict]:
     return sorted(items, key=lambda x: x.get("orden", 0))
 
 
@@ -52,7 +53,7 @@ def load_graph(path: Path) -> dict:
     if not path.is_file():
         raise DesignError(t("sync", "matrix_missing", path=path.as_posix()))
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        data: Any = json.loads(path.read_text(encoding="utf-8"))
     except ValueError as exc:
         raise DesignError(t("sync", "not_a_matrix", path=path.as_posix())) from exc
     if not isinstance(data, dict):
@@ -62,7 +63,7 @@ def load_graph(path: Path) -> dict:
             data = data[key]
     if "nodos" not in data:
         raise DesignError(t("sync", "not_a_matrix", path=path.as_posix()))
-    return data
+    return cast(dict, data)
 
 
 def build_units(graph: dict, course: dict, cfg: dict, tokens: dict) -> tuple[list[dict], list[str]]:
@@ -89,7 +90,7 @@ def build_units(graph: dict, course: dict, cfg: dict, tokens: dict) -> tuple[lis
         section_nodes = [n for n in ordered(children.get(unit["id"], [])) if n["tipo"] == "apartado"]
         labels: dict[str, str] = {}
 
-        def label(obj_id: str, un: int = un, labels: dict = labels) -> str:
+        def label(obj_id: str, un: int = un, labels: dict[str, str] = labels) -> str:
             if obj_id not in labels:
                 labels[obj_id] = f"U{un}.{len(labels) + 1}"
             return labels[obj_id]
@@ -99,8 +100,8 @@ def build_units(graph: dict, course: dict, cfg: dict, tokens: dict) -> tuple[lis
             subs = ordered(children.get(node["id"], []))
             hours = node.get("horas")
             if hours is None and subs:
-                sub_hours = [s.get("horas") for s in subs]
-                hours = sum(sub_hours) if all(h is not None for h in sub_hours) else None
+                sub_hours = [s["horas"] for s in subs if s.get("horas") is not None]
+                hours = sum(sub_hours) if len(sub_hours) == len(subs) else None
             obj_ids = list(node.get("objetivoIds") or [])
             for sub in subs:
                 obj_ids += [o for o in sub.get("objetivoIds") or [] if o not in obj_ids]
@@ -134,7 +135,7 @@ def build_units(graph: dict, course: dict, cfg: dict, tokens: dict) -> tuple[lis
 
         # the activities hang from the unit or (slxd lets a learning activity hang from a section) from one of its sections:
         # the section is recorded, so the writer puts the practice there
-        where = {unit["id"]: None}
+        where: dict[str, int | None] = {unit["id"]: None}
         for sn, node in enumerate(section_nodes, 1):
             where[node["id"]] = sn
             for sub in children.get(node["id"], []):
@@ -215,8 +216,8 @@ def skeleton(unit: dict, cfg: dict, tokens: dict, language: str, course: dict | 
 
     fmt = lambda n: format_number(n, language)  # noqa: E731
     objectives = "\n".join(f"> - **{o['id']}** — {o['text']}" for o in unit["objectives"]) or "> - (—)"
-    imported = bool(course) and (course.get("design") or {}).get("origin") == "import"
-    package, pages = importer.source_pages(course["_dir"], unit["n"]) if imported else (None, [])
+    imported = course is not None and (course.get("design") or {}).get("origin") == "import"
+    package, pages = importer.source_pages(course["_dir"], unit["n"]) if course is not None and imported else (None, [])
     intro, summary = re.compile(tokens["intro_pattern"], re.I), re.compile(tokens["summary_pattern"], re.I)
     blocks = []
     for s in unit["sections"]:

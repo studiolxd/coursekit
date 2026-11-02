@@ -35,7 +35,7 @@ Repository = "https://github.com/studiolxd/coursekit"
 coursekit = "coursekit.cli:main"
 
 [dependency-groups]
-dev = ["pytest>=8", "ruff>=0.6"]
+dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.13", "types-PyYAML>=6.0"]
 
 [build-system]
 requires = ["hatchling>=1.25"]
@@ -51,6 +51,20 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RET", "PTH"]
 ignore = ["SIM905"]  # a sentence written as text and split reads better in the tests than a list of words
+
+[tool.mypy]
+# Typed so far: the core every command goes through. Widen `files` module by module; each one must pass before it is added.
+files = [
+    "src/coursekit/commands.py", "src/coursekit/config.py", "src/coursekit/course.py", "src/coursekit/i18n.py",
+    "src/coursekit/paths.py", "src/coursekit/status.py", "src/coursekit/sync.py",
+]
+python_version = "3.12"
+follow_imports = "silent"
+ignore_missing_imports = true
+check_untyped_defs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+warn_return_any = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

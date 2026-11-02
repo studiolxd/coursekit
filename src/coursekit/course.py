@@ -247,7 +247,7 @@ def package_unit(course: dict, n: int | None) -> dict | None:
 
 def min_words(hours: float, cfg: dict) -> int:
     """Minimum learner-facing words for a number of hours. Pages round up, never down."""
-    return math.ceil(float(hours) * cfg["pages_per_hour"]) * cfg["words_per_page"]
+    return math.ceil(float(hours) * float(cfg["pages_per_hour"])) * int(cfg["words_per_page"])
 
 
 def unit_dir(course_dir: Path, n: int) -> Path:

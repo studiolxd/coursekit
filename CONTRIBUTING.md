@@ -52,10 +52,11 @@ CI runs on all three (see `.github/workflows/ci.yml`), so a change must work on 
 
 ```bash
 uv run ruff check .
+uv run mypy
 uv run pytest -q
 ```
 
-Both must pass; CI runs both (plus `uv tool install .` and `coursekit --version`) on Linux, macOS and Windows for every push to `main` and every pull request. A third job, `video-types`, type-checks the TypeScript of the videos (`videokit` and the Remotion template) in a project layout. The zooms of a recording live in `videokit/atoms/zoom.ts`, and `templates/remotion/src/zoom.ts` is a copy (a test keeps them equal): change the first and copy it. Ruff is configured in `pyproject.toml`: line length 140, target Python 3.12, rules `E`, `F`, `I` (imports), `UP` and `B`. `uv run ruff check . --fix` fixes most import-order and style findings.
+All three must pass; CI runs ruff and pytest (plus `uv tool install .` and `coursekit --version`) on Linux, macOS and Windows for every push to `main` and every pull request, and mypy on Linux. Mypy checks the modules listed in `[tool.mypy] files` of `pyproject.toml`, with every function annotated; add a module there once it passes. Another job, `video-types`, type-checks the TypeScript of the videos (`videokit` and the Remotion template) in a project layout. The zooms of a recording live in `videokit/atoms/zoom.ts`, and `templates/remotion/src/zoom.ts` is a copy (a test keeps them equal): change the first and copy it. Ruff is configured in `pyproject.toml`: line length 140, target Python 3.12, rules `E`, `F`, `I` (imports), `UP`, `B`, `SIM` (except `SIM905`), `RET` and `PTH`. `uv run ruff check . --fix` fixes most import-order and style findings.
 
 `tests/conftest.py` sets `COURSEKIT_LANG=en` for every test and restores the environment afterwards, so messages in tests are in English. A test that needs Spanish says so explicitly (`monkeypatch.setenv("COURSEKIT_LANG", "es")` or `i18n.use("es")`).
 
@@ -153,7 +154,7 @@ User documentation lives in `docs/en/` and `docs/es/`, with the same file names 
 
 - Keep changes small and focused: one fix or feature per pull request, without unrelated reformatting.
 - Code, tests and documentation travel together. A pull request that changes behaviour includes the test that covers it and the updates in `docs/en` and `docs/es`.
-- Run `uv run ruff check .` and `uv run pytest -q` first. Check that the output reads well in both languages for anything a person sees (`COURSEKIT_LANG=es` and `COURSEKIT_LANG=en`).
+- Run `uv run ruff check .`, `uv run mypy` and `uv run pytest -q` first. Check that the output reads well in both languages for anything a person sees (`COURSEKIT_LANG=es` and `COURSEKIT_LANG=en`).
 - Commit messages are written in Spanish (Spain): a short first line saying what changes, then details if needed. Example: `Rutas con barras normales en los mensajes de error`.
 - Do not force-push shared branches, and do not rewrite history that others have pulled.
 - Do not commit generated or local files: `.venv/`, `dist/`, `build/`, caches and any `.env`.

@@ -98,8 +98,8 @@ la base y no hacer este cambio.
 - `pyright` entra primero en la CI sin bloquear. Pasa a bloquear cuando los cuatro módulos estén limpios.
 - Ningún cambio de mensajes ni de salida: la salida de `--help` es la misma que en la fase 0.
 
-**Decide el mantenedor.** Si `PTH` merece la pena: es la regla que más líneas toca. También, hasta dónde ampliar `pyright`
-después de los cuatro primeros módulos.
+**Decidido.** `PTH` entra (nueve cambios). `PERF` no. `mypy` en lugar de `pyright`, porque el paquete de `pyright`
+descarga Node en la caché del usuario; ya limpio, su trabajo de CI bloquea desde el principio.
 
 ## Fase 4. Estructura del código (informe, sección 1)
 

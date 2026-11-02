@@ -47,7 +47,7 @@ itself. The instructions that coursekit generates for course projects live in
 
 ## Working rules
 
-- `uv sync --group dev`, then `uv run ruff check .` and `uv run pytest -q` before every commit;
+- `uv sync --group dev`, then `uv run ruff check .`, `uv run mypy` and `uv run pytest -q` before every commit;
   CI runs both on Linux, macOS and Windows (paths in messages with `as_posix()`; read git output as
   UTF-8).
 - Production rules and numbers live in `src/coursekit/defaults/*.yaml` and reach skills as
