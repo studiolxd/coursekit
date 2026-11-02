@@ -7,6 +7,8 @@ status of the [README](README.md#status). Versions are published on PyPI as `slx
 
 ## Unreleased
 
+## 0.9.0 — 2026-11-02
+
 - More visual courses. The writing decides what the learner sees by the kind of content (a capture for each step on a real screen, a photo of the situation, an illustration of an idea, an icon, an infographic for a comparison), and `verify` warns, never fails, of a long section with too few visuals, of a unit without a photograph or capture and of a unit whose visuals are almost all infographics and diagrams (`content.visual_per_words`, `photos_per_unit`, `visual_mix_max`). The AI review adds the placeholders that are missing instead of only proposing them.
 - A visual resource still to produce (a capture waiting for a person, a recording, an image with no generator) is never left out of the course: it goes in as a provisional image in the theme, with its title and what is missing, in both backends (`coursekit media provisional` and `media set --provisional-path` for creator). `delivery add` warns of the units delivered with them.
 - Licensed photographs in every project, also without creator: `coursekit media stock CODE ID --photos` searches Pexels (new key `PEXELS_API_KEY`, no credit needed) and the photographs of Magnific, those that ask for no credit first; a photograph that asks for one gets it in its caption.

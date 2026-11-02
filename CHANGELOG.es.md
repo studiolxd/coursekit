@@ -7,6 +7,8 @@ qué no está hecho está en el estado del [README](README.es.md#estado). Las ve
 
 ## Sin publicar
 
+## 0.9.0 — 2026-11-02
+
 - Cursos más visuales. La redacción decide qué ve el alumnado según el tipo de contenido (una captura por cada paso sobre una pantalla real, una foto de la situación, una ilustración de una idea, un icono, una infografía para una comparación), y `verify` avisa, sin fallar nunca, de un apartado largo con pocos visuales, de una unidad sin fotografía ni captura y de una unidad cuyos visuales son casi todos infografías y esquemas (`content.visual_per_words`, `photos_per_unit`, `visual_mix_max`). La revisión con IA añade los marcadores que faltan en lugar de solo proponerlos.
 - Un recurso visual por producir (una captura que espera a una persona, una grabación, una imagen sin generador) nunca se queda fuera del curso: va como una imagen provisional con el tema, su título y lo que falta, en los dos backends (`coursekit media provisional` y `media set --provisional-path` para creator). `delivery add` avisa de las unidades que se entregan con ellas.
 - Fotografías con licencia en todos los proyectos, también sin creator: `coursekit media stock CODE ID --photos` busca en Pexels (clave nueva `PEXELS_API_KEY`, sin atribución) y en las fotografías de Magnific, primero las que no piden atribución; una fotografía que la pide la lleva en su pie.
