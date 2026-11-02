@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -197,6 +198,11 @@ def cmd_media(args: argparse.Namespace) -> int:
         except mediacheck.CheckError as exc:
             print(t("commands", "error_line", text=exc), file=sys.stderr)
             return 1
+        if getattr(args, "json", False):
+            print(json.dumps({"ok": not findings, "fixed": fixed,
+                              "findings": [{"asset": f.asset, "code": f.code, "text": f.text} for f in findings]},
+                             ensure_ascii=False, indent=2))
+            return 1 if findings else 0
         for line in fixed:
             print(line)
         for f in findings:

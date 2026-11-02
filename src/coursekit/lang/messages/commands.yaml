@@ -188,6 +188,15 @@ help_outline: {es: "mapa compacto de un curso, o el texto de un apartado", en: "
 help_outline_section: {es: "U.S: imprime solo el texto de ese apartado", en: "U.S: print only that section's text"}
 help_verify: {es: "comprueba el contenido con las reglas de producción", en: "check the content against the production rules"}
 help_verify_no_update: {es: "no actualiza el estado de la unidad ni del curso", en: "do not update unit and course status"}
+help_verify_only: {es: "solo las comprobaciones de estas familias (repetible o separadas por comas): {families}", en: "only the checks of these families (repeatable or separated by commas): {families}"}
+help_verify_ignore: {es: "todas las comprobaciones salvo las de estas familias", en: "every check except those of these families"}
+help_verify_json: {es: "imprime el resultado como JSON (para los agentes)", en: "print the result as JSON (for the agents)"}
+help_json: {es: "imprime el resultado como JSON (para los agentes)", en: "print the result as JSON (for the agents)"}
+help_media_json: {es: "con check: imprime el resultado como JSON (para los agentes)", en: "with check: print the result as JSON (for the agents)"}
+verify_unknown_family: {es: "familia desconocida: {names} (una de: {families})", en: "unknown family: {names} (one of: {families})"}
+verify_summary_title: {es: "Resumen:", en: "Summary:"}
+verify_summary_line: {es: "U{n}: {errors} errores, {warnings} avisos — {title}", en: "U{n}: {errors} errors, {warnings} warnings — {title}"}
+verify_filtered: {es: "Comprobación parcial (--only / --ignore): el estado de las unidades no cambia.", en: "Partial check (--only / --ignore): the status of the units does not change."}
 help_reviewed: {es: "marca una unidad como revisada: por la IA (lo usa el agente revisor) o, con --by, por una persona", en: "mark a unit as reviewed: by the AI (used by the review agent) or, with --by, by a person"}
 help_reviewed_by: {es: "nombre de la persona que ha revisado la unidad (sin él, la revisión es la de la IA); solo lo ejecutan personas", en: "name of the person who reviewed the unit (without it, the review is the AI's); only people run it"}
 help_reviewed_note: {es: "nota de la revisión de la persona (con --by)", en: "note of the person's review (with --by)"}

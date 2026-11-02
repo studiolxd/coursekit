@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 
 from coursekit import agents as agentsmod
@@ -120,5 +121,9 @@ def cmd_setup(args: argparse.Namespace) -> int:
 def cmd_doctor(args: argparse.Namespace) -> int:
     project = common.project()
     sections = doctor.collect(project)
+    if getattr(args, "json", False):
+        print(json.dumps([{"title": s.title, "checks": [{"status": c.status, "label": c.label, "hint": c.hint} for c in s.checks]}
+                          for s in sections], ensure_ascii=False, indent=2))
+        return 0
     print(doctor.render(sections))
     return 0

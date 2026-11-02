@@ -10,7 +10,8 @@ unit in `course.yaml`; if it matches, say so in the report and carry on.
 
 ## Preparation
 
-1. `coursekit verify <CODE> --unit N`: errors are fixed first (they are objective and cheap).
+1. `coursekit verify <CODE> --unit N` (`--json` for the findings as data, each with its family): errors are fixed first
+   (they are objective and cheap).
 2. Read `course.yaml` (objectives, sections and activities of the unit, audience, level), the
    design Excel, `design/proposal-notes.md` and the whole unit. In a decision-based course (`design.approach`), also
    `design/story.md` and the paths report (`coursekit paths <CODE> --unit N`).

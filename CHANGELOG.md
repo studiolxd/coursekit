@@ -7,6 +7,8 @@ status of the [README](README.md#status). Versions are published on PyPI as `slx
 
 ## Unreleased
 
+- `verify` names the family of each finding (`structure`, `words`, `style`, `language`, `readability`, `media`, `activities`, `simulations`, `assembly`), takes `--only` and `--ignore` to see some of them (a partial check never changes the status), sums up the errors and warnings of each unit when it checks several, and prints JSON with `--json`. `status`, `doctor` and `media check` print JSON with `--json` too, for the agents.
+- `coursekit help COMMAND`: the options of a command and its part of the reference of the commands, in the language of the person.
 - Every command starts faster: a command loads only the modules it uses (`coursekit --version` takes about half the time), and the output of ffmpeg, git and the other programs is read as UTF-8 also in a console of Windows.
 - MarkItDown, which converts the documents of the brief and of the brand material, moves to the optional extra `docs`: the base installation goes from 48 packages to 7, about 250 MB less. Without it, `brief` still reads Markdown, text, eXeLearning packages and web links. **To keep converting PDF, Word or PowerPoint files after upgrading:** `uv tool install --force "slxd-coursekit[docs]"` (with `capture` too, name both: `[docs,capture]`).
 - Every message that asks for an extra gives the command with the extras already installed, because reinstalling with one removes the others. `doctor` asks for `docs` only when there are documents to convert, and warns when more than one OpenCV package is installed.

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -169,6 +170,10 @@ def cmd_import(args: argparse.Namespace) -> int:
 
 def cmd_status(args: argparse.Namespace) -> int:
     project = common.project()
+    if getattr(args, "json", False):
+        data = status.detail_data(coursemod.load(project, args.code)) if args.code else status.overview_data(project)
+        print(json.dumps(data, ensure_ascii=False, indent=2, default=str))
+        return 0
     print(status.detail(coursemod.load(project, args.code)) if args.code else status.overview(project))
     return 0
 
@@ -281,39 +286,82 @@ def cmd_preview(args: argparse.Namespace) -> int:
                 print(t("commands", "warning_line", text=warning))
     return preview.run(course, units, first, args.port, not args.no_open)
 
+def _families(values: list[str] | None) -> set[str] | None:
+    """The families named by --only or --ignore (repeated, or separated by commas); None when the option is not given."""
+    if not values:
+        return None
+    names = {name.strip() for value in values for name in value.split(",") if name.strip()}
+    unknown = sorted(names - set(verify.FAMILIES))
+    if unknown:
+        raise coursemod.RuleError(t("commands", "verify_unknown_family", names=", ".join(unknown), families=", ".join(verify.FAMILIES)))
+    return names
+
+
 def cmd_verify(args: argparse.Namespace) -> int:
     course = coursemod.load(common.project(), args.code)
+    as_json = getattr(args, "json", False)
     problem = coursemod.approval_problem(course)
     if problem:
-        print(t("commands", "error_line", text=f"{course['code']}: {problem}"))
+        if as_json:
+            print(json.dumps({"code": course["code"], "error": problem}, ensure_ascii=False, indent=2))
+        else:
+            print(t("commands", "error_line", text=f"{course['code']}: {problem}"))
         return 1
     units = [u for u in course.get("units") or [] if args.unit is None or u["n"] == args.unit]
     if not units:
         message = t("commands", "no_units_n", n=args.unit) if args.unit else t("commands", "no_units")
         print(message, file=sys.stderr)
         return 1
+    only, ignore = _families(getattr(args, "only", None)), _families(getattr(args, "ignore", None))
+    filtered = only is not None or ignore is not None
+    update = not args.no_update and not filtered  # a partial view must not mark a unit as verified
+
+    def shown(finding: verify.Finding) -> bool:
+        return (only is None or finding.family in only) and (ignore is None or finding.family not in ignore)
+
     fmt = lambda n: format_number(n, coursemod.language(course))  # noqa: E731
     failed = False
+    results = []
     for unit in units:
         report = verify.verify_unit(course, unit)
+        findings = [f for f in report.findings if shown(f)]
+        errors = [f for f in findings if f.level == "error"]
+        warnings = [f for f in findings if f.level == "warning"]
+        failed = failed or bool(errors)
+        notes = verify.update_status(course, unit, report) if update else []
+        results.append({"n": unit["n"], "title": unit.get("title", ""), "ok": not errors, "summary": report.summary,
+                        "errors": [{"family": f.family, "message": f.message} for f in errors],
+                        "warnings": [{"family": f.family, "message": f.message} for f in warnings], "status": notes})
+        if as_json:
+            continue
         s = report.summary
-        header = "verify_header_fail" if report.errors else "verify_header_ok"
+        header = "verify_header_fail" if errors else "verify_header_ok"
         print("\n" + t("commands", header, code=course["code"], n=unit["n"], title=unit.get("title", "")))
         if s:
             print(t("commands", "verify_stats", words=fmt(s["words"]), min_words=fmt(s["min_words"]),
                     placeholders=s["placeholders"], types=s["placeholder_types"], formative=s["formative_questions"],
                     bank=s["bank_questions"]))
-        for msg in report.errors:
-            print("  " + t("commands", "error_line", text=msg))
-        for msg in report.warnings:
-            print("  " + t("commands", "warning_line", text=msg))
-        failed = failed or bool(report.errors)
-        if not args.no_update:
-            for note in verify.update_status(course, unit, report):
-                print(f"  {note}")
-    if not args.no_update:
+        for f in errors:
+            print("  " + t("commands", "error_line", text=f"[{f.family}] {f.message}"))
+        for f in warnings:
+            print("  " + t("commands", "warning_line", text=f"[{f.family}] {f.message}"))
+        for note in notes:
+            print(f"  {note}")
+    if update:
         common.mirror(course["_project"], course["code"])
+    if as_json:
+        print(json.dumps({"code": course["code"], "ok": not failed, "filtered": filtered, "units": results}, ensure_ascii=False,
+                         indent=2, default=str))
+        return 1 if failed else 0
+    if len(results) > 1:
+        print("\n" + t("commands", "verify_summary_title"))
+        for r in results:
+            print("  " + t("commands", "verify_summary_line", n=r["n"], errors=len(r["errors"]), warnings=len(r["warnings"]),
+                           title=r["title"]))
+    if filtered:
+        print(t("commands", "verify_filtered"))
     return 1 if failed else 0
+
 
 def cmd_reviewed(args: argparse.Namespace) -> int:
     course = coursemod.load(common.project(), args.code)

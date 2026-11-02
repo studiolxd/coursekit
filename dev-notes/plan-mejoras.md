@@ -151,7 +151,8 @@ nueva (el primer comando tras actualizar regenera sus ficheros gestionados).
 - Se lanza una unidad del curso de prueba con un agente real usando las skills con `--json`, para ver que lo lee bien.
 - La documentación de cada opción nueva en `03-commands.md` en los dos idiomas.
 
-**Decide el mantenedor.** El nombre de las familias de regla de `verify`, porque pasan a ser parte de la interfaz.
+**Decidido.** Familias en inglés, como los identificadores de tipos de recurso: `structure`, `words`, `style`, `language`,
+`readability`, `media`, `activities`, `simulations`, `assembly`.
 
 ## Fase 6. Documentación y notas (informe, sección 5)
 

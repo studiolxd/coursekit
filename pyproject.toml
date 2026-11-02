@@ -44,6 +44,11 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/coursekit"]
 
+# The reference of the commands, for `coursekit help COMMAND` (coursekit/manual.py).
+[tool.hatch.build.targets.wheel.force-include]
+"docs/en/03-commands.md" = "coursekit/manual/en/03-commands.md"
+"docs/es/03-commands.md" = "coursekit/manual/es/03-commands.md"
+
 [tool.ruff]
 line-length = 140
 target-version = "py312"

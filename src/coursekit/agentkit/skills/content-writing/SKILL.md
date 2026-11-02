@@ -51,7 +51,9 @@ final summary under "Design out of date" so that a person decides.
 ## How to write
 
 - **Section by section**, in order. After each one run `coursekit verify <CODE> --unit N` and fix
-  it before going on. Do not rewrite a verified section unless asked.
+  it before going on. Each finding names its family (`[words]`, `[style]`…); `--json` gives them as data and `--only` /
+  `--ignore` narrow them, but only a full run (no `--only`, no `--ignore`) marks the unit as verified. Do not rewrite a
+  verified section unless asked.
 - Complete, explanatory prose: each concept is defined, exemplified and connected with the
   professional practice of the audience. No bare word lists or unexpanded outlines.
 - Facts, versions, commands and product names **real and verifiable**. If unsure, do not invent

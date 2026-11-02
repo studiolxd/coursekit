@@ -27,7 +27,10 @@ course_not_found:
   es: "coursekit: curso {code} no encontrado ({file})"
   en: "coursekit: course {code} not found ({file})"
 description: {es: "Producción de cursos e-learning asistida por IA.", en: "AI-assisted e-learning course production."}
-help_help: {es: "muestra esta ayuda", en: "show this help"}
+help_help: {es: "muestra esta ayuda, o la de un comando con su referencia", en: "show this help, or that of a command with its reference"}
+help_topic: {es: "el comando del que mostrar las opciones y su apartado de la referencia", en: "the command whose options and part of the reference to show"}
+help_unknown: {es: "no hay ningún comando {command} (los comandos: {commands})", en: "there is no command {command} (the commands: {commands})"}
+help_no_reference: {es: "(la referencia de los comandos no está en esta instalación: docs/es/03-commands.md en el repositorio)", en: "(the reference of the commands is not in this installation: docs/en/03-commands.md in the repository)"}
 help_init:
   es: "crea un proyecto, o refresca los ficheros que coursekit generó en él"
   en: "create a project, or refresh the files coursekit generated in it"

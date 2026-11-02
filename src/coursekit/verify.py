@@ -119,17 +119,32 @@ class Section:
     words: int = 0
 
 
+# The families of the checks, in the order `verify` reports them: `--only` and `--ignore` take these names.
+FAMILIES = ("structure", "words", "style", "language", "readability", "media", "activities", "simulations", "assembly")
+
+
+@dataclass
+class Finding:
+    level: str  # error | warning
+    family: str
+    message: str
+
+
 @dataclass
 class Report:
     errors: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
     summary: dict = field(default_factory=dict)
+    findings: list[Finding] = field(default_factory=list)
+    family: str = "structure"  # the family of what is reported next: verify_unit sets it before each group of checks
 
     def error(self, msg: str) -> None:
         self.errors.append(msg)
+        self.findings.append(Finding("error", self.family, msg))
 
     def warn(self, msg: str) -> None:
         self.warnings.append(msg)
+        self.findings.append(Finding("warning", self.family, msg))
 
 
 URL = re.compile(r"https?://[^\s)>\]\"']+|(?<![\w/.])www\.[^\s)>\]\"']+", re.I)
@@ -763,10 +778,11 @@ def opens_with_simulation(sec: Section, simulations: tuple[str, ...]) -> bool:
 
 
 def verify_unit(course: dict, unit: dict) -> Report:
-    report = Report()
+    report = Report(family="simulations")
     if course.get("_project"):  # the skins of the project, checked (and joined to the built-in ones) before the simulations
         for problem in simmod.use_project_skins(course["_project"].root):
             report.error(problem)
+    report.family = "structure"
     language = coursemod.language(course)
     tokens = coursemod.tokens(course)
     syntax = Syntax.for_tokens(tokens)
@@ -785,14 +801,17 @@ def verify_unit(course: dict, unit: dict) -> Report:
         return report
 
     text = content_path.read_text(encoding="utf-8")
+    report.family = "style"
     check_pictographs(content_path, text, rules["allowed_symbols"], report)
     check_objective_ids(content_path, text, rules, syntax, report)
     check_lists(content_path, text, report)
     forbidden = all_rules.get("forbidden") or {}
     registry = videosmod.by_key(course["_dir"])
+    report.family = "language"
     check_forbidden(content_path.name, text.splitlines(), forbidden, report, registry)
     inclusive = coursemod.inclusive_language(all_rules)
     check_inclusive(content_path.name, text.splitlines(), inclusive, tokens, report)
+    report.family = "structure"
     sections = split_sections(text, syntax)
     specs = unit.get("sections") or []
     found, expected = [s.n for s in sections], [s["n"] for s in specs]
@@ -813,6 +832,7 @@ def verify_unit(course: dict, unit: dict) -> Report:
         assessment_sims = parse_simulations(assessment_path, parse_directives(assessment_path, quiet_lines, rules, Report()), rules,
                                             Report())
     activities = next((s["n"] for s in specs if s["kind"] == "activities"), None)
+    report.family = "simulations"
     if assessment_sims and activities is None:
         report.error(t("verify", "assessment_simulations_without_section", minutes=fmt(round(
             60 * sim_words(assessment_sims) / words_per_hour, 1))))
@@ -825,6 +845,7 @@ def verify_unit(course: dict, unit: dict) -> Report:
         if sec is None:
             min_total += spec["min_words"]
             continue
+        report.family = "structure"
         analyse_section(content_path, sec, rules, syntax, report)
         total_words += sec.words
         placeholders += sec.placeholders
@@ -836,6 +857,7 @@ def verify_unit(course: dict, unit: dict) -> Report:
         played = sim_words(sec.simulations)
         if spec["n"] == activities:
             played += sim_words(assessment_sims)
+        report.family = "simulations"
         for sim in sec.simulations + (assessment_sims if spec["n"] == activities else []):
             if sim.time_words(words_per_hour, think) > minimum:
                 report.error(t("verify", "simulation_longer_than_section", label=label, id=sim.id,
@@ -843,20 +865,25 @@ def verify_unit(course: dict, unit: dict) -> Report:
         sec.words += played  # a simulation takes the time of what is read in it, like the rest of the section
         total_words += played
         min_total += minimum
+        report.family = "structure"
         if sec.title.strip() != spec["title"].strip():
             report.warn(t("verify", "title_differs", label=label, title=sec.title, design=spec["title"]))
+        report.family = "readability"
         check_readability(course, label, sec.lines, report)
         if not imported:  # the text of an imported course is the client's: the review proposes how to split it
             check_stretches(course, label, sec.lines, report)
+        report.family = "activities"
         needed_reflections = int(rules.get("reflections_per_unit") or 0)
         if spec["n"] == closing and sec.directives.count("reflection") < needed_reflections:
             report.warn(t("verify", "no_reflection", label=label, n=needed_reflections))
+        report.family = "simulations"
         if decision_based and spec["kind"] == "content":
             if not opens_with_simulation(sec, simulations):
                 report.error(t("verify", "section_not_opening_with_simulation", label=label))
             needed_sims = int(decision.get("min_simulations_per_content_section") or 0)
             if len(sec.simulations) < needed_sims:
                 report.error(t("verify", "few_simulations", label=label, count=len(sec.simulations), needed=needed_sims))
+        report.family = "words"
         if sec.words < minimum:
             shortfall(t("verify", "words_below_minimum", label=label, words=fmt(sec.words), minimum=fmt(minimum)))
         elif sec.words < minimum * (1 + margin):
@@ -864,18 +891,22 @@ def verify_unit(course: dict, unit: dict) -> Report:
         elif rules.get("word_margin_max") is not None and sec.words > minimum * (1 + float(rules["word_margin_max"])):
             report.warn(t("verify", "words_above_margin", label=label, words=fmt(sec.words), minimum=fmt(minimum),
                           margin=round(float(rules["word_margin_max"]) * 100)))
+        report.family = "media"
         check_visuals(sec, spec, rules, syntax, tokens, label, report, shortfall)
+        report.family = "structure"
         if spec["kind"] == "content":
             tags = [line for line in sec.lines if syntax.objective_tag.match(line)]
             if not tags:
                 report.error(t("verify", "missing_objective_tag", label=label, objective=tokens["objective"]))
             for tag in tags:
                 covered.update(re.findall(r"U\d+\.\d+", tag))
+            report.family = "activities"
             interactive = {d for d in sec.directives if d in rules["interactive_directives"] or d in simulations}
             needed = max(rules["min_interactive_per_content_section"], math.ceil(spec["hours"] * rules["interactive_per_hour"]))
             if len(interactive) < needed:
                 shortfall(t("verify", "few_interactive", label=label, count=len(interactive), needed=needed))
 
+    report.family = "structure"
     if any(s["kind"] == "content" for s in specs):
         for obj in unit.get("objectives") or []:
             if obj["id"] not in covered:
@@ -883,6 +914,7 @@ def verify_unit(course: dict, unit: dict) -> Report:
             if decision_based and obj["id"] not in practised:
                 report.error(t("verify", "objective_not_practised", id=obj["id"]))
 
+    report.family = "media"
     allowed = ", ".join(tokens["media_types"][i] for i in rules["placeholder_types"] if i in tokens["media_types"])
     for ph in placeholders:
         if syntax.media_type(ph.kind) not in rules["placeholder_types"]:
@@ -901,22 +933,27 @@ def verify_unit(course: dict, unit: dict) -> Report:
     if len(kinds) < needed_types:
         shortfall(t("verify", "few_placeholder_types", count=len(kinds), needed=needed_types))
 
+    report.family = "activities"
     quiet = list(parse_directives(Path("content.md"), text.splitlines(), rules, Report()))
     check_activity_types(unit, by_n, activities, rules, report)
     check_card_lengths(content_path, quiet, rules, report)
     content_questions = check_questions(content_path, quiet, rules, syntax, report)
     check_positional_feedback(content_path, quiet, rules, tokens, report)
     sims = course_simulations(course, rules)
+    report.family = "simulations"
     adaptive = check_adaptive(content_path, text.splitlines(), unit["n"], sims, report)
 
     questions = 0
     assessment_directives: list = []
     if assessment_path.exists():
         a_text = assessment_path.read_text(encoding="utf-8")
+        report.family = "style"
         check_pictographs(assessment_path, a_text, rules["allowed_symbols"], report)
+        report.family = "language"
         check_forbidden(assessment_path.name, a_text.splitlines(), forbidden, report, registry)
         format_headings = tuple(f"### {tokens[k]}" for k in ("assessment_instructions", "assessment_bank"))
         check_inclusive(assessment_path.name, a_text.splitlines(), inclusive, tokens, report, format_headings)
+        report.family = "activities"
         directives = list(parse_directives(assessment_path, a_text.splitlines(), rules, report))
         assessment_directives = directives
         questions = check_questions(assessment_path, directives, rules, syntax, report)
@@ -925,12 +962,14 @@ def verify_unit(course: dict, unit: dict) -> Report:
         check_bank_format(course, assessment_path, directives, rules, report)
         passing = float(((course.get("design") or {}).get("grading") or {}).get("passing_score") or 50)
         # with a test, the grade is the test's: a scored simulation of the content does not count (in any backend)
+        report.family = "simulations"
         if any(syntax.activity.match(line) for line in a_text.splitlines()):
             for sim in unit_sims:
                 if sim.scored:
                     report.warn(t("verify", "scored_outside_test", id=sim.id))
         unit_sims += parse_simulations(assessment_path, directives, rules, report, passing)
         adaptive += check_adaptive(assessment_path, a_text.splitlines(), unit["n"], sims, report)
+        report.family = "activities"
         quizzes = [a for a in (unit.get("activities") or {}).get("assessment", []) if a.get("instrument") == "cuestionario"]
         quiz_objectives = {o for a in quizzes for o in a.get("objectives") or []}
         expected_q = rules["questions_per_objective"] * len(quiz_objectives)
@@ -939,15 +978,19 @@ def verify_unit(course: dict, unit: dict) -> Report:
                 t("verify", "few_questions", questions=questions, expected=expected_q, per_objective=rules["questions_per_objective"])
             )
     else:
+        report.family = "structure"
         report.error(t("verify", "file_missing", path=assessment_path.name))
 
+    report.family = "simulations"
     places = {}
     for n, name, line, sid, _, _ in sims:
         places.setdefault(sid, []).append(f"{t('verify', 'unit_word')} {n} {name}:{line}")
     for sid in sorted({sim.id for sim in unit_sims if sim.id}):
         if len(places.get(sid, [])) > 1:
             report.error(t("verify", "duplicate_simulation", id=sid, places=", ".join(places[sid])))
+    report.family = "activities"
     check_misconceptions(course, unit, [(content_path.name, quiet), (assessment_path.name, assessment_directives)], unit_sims, report)
+    report.family = "simulations"
     if decision_based and unit_sims:
         bible, problems = storymod.load(course)
         for problem in problems:
@@ -969,6 +1012,7 @@ def verify_unit(course: dict, unit: dict) -> Report:
                         and storymod.canonical(course, m.group(1)) is None:
                     report.error(f"content.md:{line_no}: " + t("story", "unknown_speaker", name=m.group(1),
                                                                  learner=coursemod.tokens(course).get("learner", "")))
+    report.family = "assembly"
     backend = coursemod.backend(course) if course.get("_project") else None
     checks = list(BACKEND_CHECKS)
     if backend == "creator":
@@ -986,6 +1030,7 @@ def verify_unit(course: dict, unit: dict) -> Report:
         for err in check(course, unit):
             report.error(t("verify", "assembly_error", error=err))
 
+    report.family = "words"
     if imported:  # the text is the client's: it is reused, not written again
         package = importermod.source_words(course["_dir"], unit["n"])
         growth = float(rules.get("import_max_growth") or 0)

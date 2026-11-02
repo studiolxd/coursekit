@@ -16,6 +16,8 @@ from coursekit.i18n import t
 # The modes of `coursekit capture` (capture.MODES; a test keeps them equal): written here so that building the parser does not
 # load the capture package.
 CAPTURE_MODES = ("browser", "desktop", "terminal")
+# The families of the checks of `verify` (verify.FAMILIES; a test keeps them equal), for the same reason.
+VERIFY_FAMILIES = ("structure", "words", "style", "language", "readability", "media", "activities", "simulations", "assembly")
 
 
 def _lazy(group: str, name: str) -> Callable[[argparse.Namespace], int]:
@@ -75,6 +77,7 @@ def register(sub: argparse._SubParsersAction) -> None:
 
     p = sub.add_parser("status", help=t("commands", "help_status"))
     p.add_argument("code", nargs="?")
+    p.add_argument("--json", action="store_true", help=t("commands", "help_json"))
     p.set_defaults(func=_lazy("course", "cmd_status"))
 
     p = sub.add_parser("sync", help=t("commands", "help_sync"))
@@ -109,6 +112,9 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("code")
     p.add_argument("--unit", type=int)
     p.add_argument("--no-update", action="store_true", help=t("commands", "help_verify_no_update"))
+    p.add_argument("--only", action="append", metavar="FAMILY", help=t("commands", "help_verify_only", families=", ".join(VERIFY_FAMILIES)))
+    p.add_argument("--ignore", action="append", metavar="FAMILY", help=t("commands", "help_verify_ignore"))
+    p.add_argument("--json", action="store_true", help=t("commands", "help_verify_json"))
     p.set_defaults(func=_lazy("course", "cmd_verify"))
 
     p = sub.add_parser("reviewed", help=t("commands", "help_reviewed"))
@@ -197,6 +203,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--recapture", action="store_true", help=t("commands", "help_media_recapture"))
     p.add_argument("--size", help=t("commands", "help_media_size"))
     p.add_argument("--fix", action="store_true", help=t("commands", "help_media_fix"))
+    p.add_argument("--json", action="store_true", help=t("commands", "help_media_json"))
     p.add_argument("--frames", type=int, help=t("commands", "help_media_frames"))
     p.add_argument("--batch", action="store_true", help=t("commands", "help_media_batch"))
     p.add_argument("--find", help=t("commands", "help_media_find"))
@@ -333,6 +340,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.set_defaults(func=_lazy("roles", "cmd_setup"))
 
     p = sub.add_parser("doctor", help=t("commands", "help_doctor"))
+    p.add_argument("--json", action="store_true", help=t("commands", "help_json"))
     p.set_defaults(func=_lazy("roles", "cmd_doctor"))
 
     p = sub.add_parser("roles", help=t("commands", "help_roles"))

@@ -26,6 +26,7 @@ Los comandos cargan `.env` (en la raíz del proyecto) en el entorno del proceso 
 |---|---|
 | `coursekit --help`, `coursekit -h` | Lista de comandos. Código de salida 0. |
 | `coursekit help` | Igual que `--help`. Ejecutar `coursekit` sin comando hace lo mismo. |
+| `coursekit help COMMAND` | Las opciones de ese comando y su apartado de esta referencia. |
 | `coursekit <command> --help` | Argumentos y opciones de ese comando. |
 | `coursekit --version` | Imprime `coursekit <versión>`. |
 
@@ -90,10 +91,11 @@ Mientras un curso está en `on_hold`, los comandos que cambian su trabajo se rec
 
 ### `coursekit help`
 
-Muestra la lista de comandos (igual que `--help`). No tiene argumentos. Quién: ambos.
+Muestra la lista de comandos (igual que `--help`). Con un comando, sus opciones y su apartado de esta referencia, en tu idioma. Quién: ambos.
 
 ```
-coursekit help
+coursekit help [COMMAND]
+coursekit help verify
 ```
 
 ### `coursekit init`
@@ -236,10 +238,10 @@ coursekit setup --identity --name "Ana Reyes" --email ana@example.com
 Informa de lo que hay instalado y configurado en esta máquina para el proyecto. Solo lectura. Quién: ambos.
 
 ```
-coursekit doctor
+coursekit doctor [--json]
 ```
 
-Sin argumentos. Imprime las secciones Base (versión de coursekit y de Python, la última versión publicada en PyPI cuando se puede consultar, `.env`, identidad de firma, hooks de git, MarkItDown, Node y, en un proyecto con el backend html, el constructor de los paquetes html), Herramientas de agente (servidor MCP de slxd, skills y comandos de cada herramienta, herramienta y modelo de cada rol), Red, Carpeta espejo, Theme del proyecto (`ok` cuando `theme/tokens.json` está derivado del tema de la plataforma o de la hoja de estilos del backend html; `info`, con la indicación `/define-theme antes de producir multimedia`, cuando no hay tokens o están escritos a mano) y Multimedia (ffmpeg, vhs, asciinema, piper, stable-ts, el almacén, las dependencias de Remotion, voz y claves opcionales) y, con `capture.yaml › enabled` activado, Captura (Playwright y el navegador para `--mode browser`, el OCR, OpenCV, ffmpeg y, para `--mode desktop`, lo que necesita el sistema: los permisos de Grabación de pantalla y Accesibilidad en macOS, una sesión X11 y `xdotool` en Linux). En Multimedia, una línea `info` muestra la ruta y el tamaño del almacén de la máquina (solo cuando la carpeta del almacén existe), y `dependencias de Remotion (tools/remotion/node_modules)` sale `ok` o `falta`, y `versiones del espacio de Remotion` sale `falta`, con los paquetes distintos, cuando lo instalado no tiene las versiones de coursekit (se arregla con `coursekit setup --media`) (solo cuando el proyecto tiene `tools/remotion/`; sale `falta` cuando el enlace `node_modules` apunta a la nada, y se arregla con `coursekit setup --media`). En un proyecto cuyo `assembly.backend` es `html`, la sección Base añade `constructor del backend html (@studiolxd/scorm y esbuild)`: `ok` cuando el constructor está instalado en el almacén (`workspaces/html-builder-<hash>/`), `info` (con el comando `coursekit setup`) cuando todavía no; `coursekit assemble build` lo instala la primera vez que se usa; y `navegador para coursekit assemble check (Chrome o Edge)`: `ok` cuando está instalado Google Chrome, Microsoft Edge o Chromium, `info` cuando no (entonces `assemble check` solo comprueba los ficheros). Cada línea es `ok`, `falta` (seguido del comando que lo arregla) o `info`. Siempre termina con código 0.
+Con `--json`, las mismas secciones como datos (`title`, y `checks` con `status`, `label` y `hint`). Imprime las secciones Base (versión de coursekit y de Python, la última versión publicada en PyPI cuando se puede consultar, `.env`, identidad de firma, hooks de git, MarkItDown, Node y, en un proyecto con el backend html, el constructor de los paquetes html), Herramientas de agente (servidor MCP de slxd, skills y comandos de cada herramienta, herramienta y modelo de cada rol), Red, Carpeta espejo, Theme del proyecto (`ok` cuando `theme/tokens.json` está derivado del tema de la plataforma o de la hoja de estilos del backend html; `info`, con la indicación `/define-theme antes de producir multimedia`, cuando no hay tokens o están escritos a mano) y Multimedia (ffmpeg, vhs, asciinema, piper, stable-ts, el almacén, las dependencias de Remotion, voz y claves opcionales) y, con `capture.yaml › enabled` activado, Captura (Playwright y el navegador para `--mode browser`, el OCR, OpenCV, ffmpeg y, para `--mode desktop`, lo que necesita el sistema: los permisos de Grabación de pantalla y Accesibilidad en macOS, una sesión X11 y `xdotool` en Linux). En Multimedia, una línea `info` muestra la ruta y el tamaño del almacén de la máquina (solo cuando la carpeta del almacén existe), y `dependencias de Remotion (tools/remotion/node_modules)` sale `ok` o `falta`, y `versiones del espacio de Remotion` sale `falta`, con los paquetes distintos, cuando lo instalado no tiene las versiones de coursekit (se arregla con `coursekit setup --media`) (solo cuando el proyecto tiene `tools/remotion/`; sale `falta` cuando el enlace `node_modules` apunta a la nada, y se arregla con `coursekit setup --media`). En un proyecto cuyo `assembly.backend` es `html`, la sección Base añade `constructor del backend html (@studiolxd/scorm y esbuild)`: `ok` cuando el constructor está instalado en el almacén (`workspaces/html-builder-<hash>/`), `info` (con el comando `coursekit setup`) cuando todavía no; `coursekit assemble build` lo instala la primera vez que se usa; y `navegador para coursekit assemble check (Chrome o Edge)`: `ok` cuando está instalado Google Chrome, Microsoft Edge o Chromium, `info` cuando no (entonces `assemble check` solo comprueba los ficheros). Cada línea es `ok`, `falta` (seguido del comando que lo arregla) o `info`. Siempre termina con código 0.
 
 ```
 coursekit doctor
@@ -353,12 +355,13 @@ coursekit handoff PWD
 Muestra el estado de todos los cursos, o el detalle y el siguiente paso de uno. Solo lectura. Quién: ambos (`/course-status` lo ejecuta).
 
 ```
-coursekit status [code]
+coursekit status [code] [--json]
 ```
 
 | Argumento | Valores / por defecto | Significado |
 |---|---|---|
 | `code` | código o carpeta del curso; opcional | Sin él: una línea por curso (código, estado, horas, unidades, firma del diseño). Con él: título, estado, la línea `Montaje: backend <backend>` (`creator` o `html`: el backend del curso o, si no, el del proyecto), quién firmó el diseño (o por qué la firma ya no vale), una línea por unidad con su estado, una línea con la pausa (desde cuándo, quién, por qué y el estado en que estaba) cuando el curso está `on_hold`, una línea con la última ronda de la revisión del cliente (`abierta`, `pidió cambios`, `aprobada` u `omitida`, y a quién se envió) y el siguiente paso. El siguiente paso depende del estado: en `assembly` propone la revisión del cliente (`coursekit client <CODE> send`) o la entrega (`/deliver`), en `client_review` pide registrar la respuesta del cliente, en `on_hold` remite a `coursekit resume`, etcétera. |
+| `--json` | indicador | Lo mismo como datos, para los agentes: una lista de cursos, o el curso con la firma del diseño, las unidades, la evaluación, la pausa, la última ronda de revisión del cliente y el siguiente paso. |
 
 ```
 coursekit status PWD
@@ -573,7 +576,7 @@ coursekit videos approve ACME https://www.youtube.com/watch?v=abc
 Comprueba el contenido de un curso con las reglas de producción. Úsalo después de cada apartado que escribas y antes de cualquier revisión. Quién: ambos.
 
 ```
-coursekit verify [--unit UNIT] [--no-update] code
+coursekit verify [--unit UNIT] [--no-update] [--only FAMILY] [--ignore FAMILY] [--json] code
 ```
 
 | Argumento | Valores / por defecto | Significado |
@@ -581,8 +584,11 @@ coursekit verify [--unit UNIT] [--no-update] code
 | `code` | código o carpeta del curso | Curso que comprobar. |
 | `--unit UNIT` | número de unidad; por defecto: todas | Comprueba solo esa unidad. |
 | `--no-update` | indicador | No actualiza el estado de la unidad ni del curso. |
+| `--only FAMILY` | `structure`, `words`, `style`, `language`, `readability`, `media`, `activities`, `simulations`, `assembly`; repetible o separadas por comas | Informa solo de las comprobaciones de esas familias. El estado no cambia: una comprobación parcial nunca da una unidad por verificada. |
+| `--ignore FAMILY` | las mismas familias | Informa de todas las comprobaciones salvo las de esas familias. Tampoco cambia el estado. |
+| `--json` | indicador | Imprime el resultado como JSON para los agentes: por unidad, su resumen, sus errores y avisos (cada uno con `family` y `message`) y el cambio de estado. |
 
-Por unidad comprueba (sobre `content.md` y `assessment.md`): que el diseño está aprobado y no ha cambiado desde la firma; apartados presentes y en el orden del diseño; palabras mínimas por apartado; etiqueta de objetivo en cada apartado de contenido y todos los objetivos cubiertos; ningún identificador de objetivo en el texto que lee el alumno; directivas interactivas distintas por apartado de contenido; recursos multimedia por hora (cantidad, tipos distintos, campos obligatorios; el tipo se escribe con la palabra del idioma del curso, y la palabra del otro idioma es un error que enumera las válidas); directivas bien formadas (conocidas, cerradas, no anidadas); preguntas con objetivo; que la retroalimentación de una pregunta cuyas opciones se pueden barajar nunca nombra una por su posición o su letra; ningún emoji fuera de los símbolos permitidos; que el contenido se convierte para el backend de montaje (incluido que las claves de las directivas, como `pregunta:` o `respuesta:`, son las del idioma del curso: una clave del otro idioma se muestra como `assembly: …` con el idioma al que pertenece y las claves válidas; con el backend html comprueba además que cada componente de la unidad se puede dibujar, y una que no se puede se indica como `<lección>: <BRICK>: este componente no está disponible en el backend html`; con el backend creator avisa, como `ensamblado: …`, de cada campo de una línea, como las opciones de una pregunta, que el plan envía sin su código en línea, enlaces ni saltos de línea, mira [Límites conocidos del backend creator](08-assembly-and-delivery.md#límites-conocidos-del-backend-creator)). ninguna dirección de un sitio ni término de `rules › forbidden`. En un curso con `design.origin: import` las carencias de palabras, interactivos y recursos son avisos, con un aviso por cada unidad que se queda corta o se pasa de las palabras de sus horas ([`design.origin`](04-configuration.md#courseyaml-qué-puede-fijar-una-persona-por-curso)). Las cifras salen de `coursekit rules`. Salida: una cabecera `[OK]` o `[FALLO]` por unidad, una línea de estadísticas y después líneas `ERROR` y `AVISO`. Salvo con `--no-update`, mueve el estado de la unidad (ver [Estados de un vistazo](#estados-de-un-vistazo)) e imprime el cambio. Código de salida 1 cuando el diseño no está aprobado o cambió después de la firma, cuando la unidad no existe o cuando alguna unidad tiene errores; los avisos no hacen fallar.
+Por unidad comprueba (sobre `content.md` y `assessment.md`): que el diseño está aprobado y no ha cambiado desde la firma; apartados presentes y en el orden del diseño; palabras mínimas por apartado; etiqueta de objetivo en cada apartado de contenido y todos los objetivos cubiertos; ningún identificador de objetivo en el texto que lee el alumno; directivas interactivas distintas por apartado de contenido; recursos multimedia por hora (cantidad, tipos distintos, campos obligatorios; el tipo se escribe con la palabra del idioma del curso, y la palabra del otro idioma es un error que enumera las válidas); directivas bien formadas (conocidas, cerradas, no anidadas); preguntas con objetivo; que la retroalimentación de una pregunta cuyas opciones se pueden barajar nunca nombra una por su posición o su letra; ningún emoji fuera de los símbolos permitidos; que el contenido se convierte para el backend de montaje (incluido que las claves de las directivas, como `pregunta:` o `respuesta:`, son las del idioma del curso: una clave del otro idioma se muestra como `assembly: …` con el idioma al que pertenece y las claves válidas; con el backend html comprueba además que cada componente de la unidad se puede dibujar, y una que no se puede se indica como `<lección>: <BRICK>: este componente no está disponible en el backend html`; con el backend creator avisa, como `ensamblado: …`, de cada campo de una línea, como las opciones de una pregunta, que el plan envía sin su código en línea, enlaces ni saltos de línea, mira [Límites conocidos del backend creator](08-assembly-and-delivery.md#límites-conocidos-del-backend-creator)). ninguna dirección de un sitio ni término de `rules › forbidden`. En un curso con `design.origin: import` las carencias de palabras, interactivos y recursos son avisos, con un aviso por cada unidad que se queda corta o se pasa de las palabras de sus horas ([`design.origin`](04-configuration.md#courseyaml-qué-puede-fijar-una-persona-por-curso)). Las cifras salen de `coursekit rules`. Salida: una cabecera `[OK]` o `[FALLO]` por unidad, una línea de estadísticas y después líneas `ERROR` y `AVISO`, cada una con su familia entre corchetes (`[words]`); con más de una unidad, al final un resumen con los errores y avisos de cada una. Las familias: `structure` (ficheros, apartados, títulos, etiquetas de objetivo), `words` (mínimo y margen), `style` (símbolos, identificadores de objetivo en el texto, listas que van como directiva), `language` (sitios y términos prohibidos, lenguaje inclusivo), `readability`, `media` (recursos, apoyo visual, crucetas), `activities` (interactivos, preguntas, feedback, reflexión, errores típicos), `simulations` y `assembly` (lo que el backend no admite). Salvo con `--no-update`, mueve el estado de la unidad (ver [Estados de un vistazo](#estados-de-un-vistazo)) e imprime el cambio. Código de salida 1 cuando el diseño no está aprobado o cambió después de la firma, cuando la unidad no existe o cuando alguna unidad tiene errores; los avisos no hacen fallar.
 
 ```
 coursekit verify PWD --unit 1
@@ -849,6 +855,7 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
 | `--content-type CONTENT_TYPE` | tipo MIME, por ejemplo `image/png` | `upload`: el mismo con el que se pidió la subida. |
 | `--method METHOD` | por defecto `PUT` | `upload`: método HTTP. |
 | `--fix` | indicador | Solo `check`: lleva a la sonoridad objetivo los audios y vídeos que no la tienen, en el sitio. |
+| `--json` | indicador | Solo `check`: imprime el resultado como JSON para los agentes (`ok`, `fixed` y `findings` con `asset`, `code` y `text`). |
 | `--frames FRAMES` | número; por defecto `media › checks › sheet_frames` | Solo `sheet`: fotogramas de la hoja de contactos. |
 | `--batch` | indicador | Solo `narrate`: añade las escenas a la cola del batch de Gemini en lugar de locutarlas ([`coursekit tts-batch`](#coursekit-tts-batch)). |
 | `--find FIND` | texto, en inglés | Solo `stock`: busca en las fuentes de ilustraciones de la marca. |

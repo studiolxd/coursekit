@@ -19,13 +19,8 @@ Nada pendiente: ver [Hecho](#hecho).
   la herramienta, y la CI las corre en un trabajo aparte. Un marcador `slow` solo si una medida de duraciones lo pide.
 ## 3. Experiencia de uso
 
-- **`--help` largo y en dos idiomas.** 59 ficheros de mensajes y un `cli.py` con más de 140 cadenas.
-  Falta un `coursekit help <comando>` que muestre también el fragmento de `docs/<lang>/03-commands.md`
-  del comando, y un `--json` en los comandos de consulta (`status`, `verify`, `doctor`, `media check`)
-  para que los agentes lean la salida sin analizar texto.
-- **Salida de `verify` sin niveles.** Las advertencias han crecido mucho (lenguaje inclusivo, carga
-  cognitiva, crosshairs, barajado…). Un `--only` / `--ignore` por familia de regla y un resumen por
-  unidad al final harían la salida manejable en cursos de diez unidades.
+Nada pendiente: ver [Hecho](#hecho).
+
 ## 4. Dependencias y distribución
 
 - **El extra `capture` no se instala con Python 3.13.** Todas las versiones de `rapidocr-onnxruntime` exigen Python
@@ -50,9 +45,8 @@ Sigue las fases del [plan](plan-mejoras.md).
 
 1. Marcador de pruebas lentas, si lo pide una medida de duraciones de la suite completa (sección 2).
 2. Ampliar `mypy` a más módulos, uno a uno (sección 2).
-3. `--json`, `verify --only` / `--ignore` y `help <comando>` (sección 3; fase 5).
-4. Reparto de `08-assembly-and-delivery.md` y limpieza de `dev-notes/` (sección 5; fase 6).
-5. OCR de `capture` con `rapidocr` para Python 3.13 y 3.14 (sección 4; fuera del plan, necesita probarse con capturas reales).
+3. Reparto de `08-assembly-and-delivery.md` y limpieza de `dev-notes/` (sección 5; fase 6).
+4. OCR de `capture` con `rapidocr` para Python 3.13 y 3.14 (sección 4; fuera del plan, necesita probarse con capturas reales).
 
 ## Hecho
 
@@ -109,3 +103,13 @@ Sigue las fases del [plan](plan-mejoras.md).
   llamadas que leían la salida con la codificación del sistema (cp1252 en Windows).
 - ~~**Peticiones HTTP sin cliente común.**~~ Hecho el 2 de noviembre de 2026: `http.py` con `request` y `download`; los
   reintentos solo donde el módulo los pide (la búsqueda web), nunca por defecto.
+
+### Experiencia de uso (fase 5 del plan)
+
+- ~~**`--help` largo y en dos idiomas.**~~ Hecho el 2 de noviembre de 2026: `coursekit help COMMAND` da las opciones y el
+  apartado de `03-commands.md` en el idioma de la persona (el wheel lleva la referencia en `coursekit/manual/`); `--json` en
+  `status`, `doctor`, `media check` y `verify`.
+- ~~**Salida de `verify` sin niveles.**~~ Hecho el 2 de noviembre de 2026: nueve familias (`structure`, `words`, `style`,
+  `language`, `readability`, `media`, `activities`, `simulations`, `assembly`) con `--only` e `--ignore`; una comprobación
+  parcial no cambia el estado. Resumen por unidad al final. Las skills de redacción y revisión lo mencionan, sin obligar a
+  usar JSON: el texto ya les sirve.

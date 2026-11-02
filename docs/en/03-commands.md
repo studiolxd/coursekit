@@ -26,6 +26,7 @@ Commands load `.env` (at the project root) into the process environment before r
 |---|---|
 | `coursekit --help`, `coursekit -h` | List of commands. Exit code 0. |
 | `coursekit help` | Same as `--help`. Running `coursekit` with no command does the same. |
+| `coursekit help COMMAND` | The options of that command and its part of this reference. |
 | `coursekit <command> --help` | Arguments and options of that command. |
 | `coursekit --version` | Prints `coursekit <version>`. |
 
@@ -90,10 +91,11 @@ While a course is `on_hold`, the commands that change its work are refused with 
 
 ### `coursekit help`
 
-Shows the list of commands (same as `--help`). Takes no arguments. Who: both.
+Shows the list of commands (same as `--help`). With a command, its options and its part of this reference, in your language. Who: both.
 
 ```
-coursekit help
+coursekit help [COMMAND]
+coursekit help verify
 ```
 
 ### `coursekit init`
@@ -236,10 +238,10 @@ coursekit setup --identity --name "Ana Reyes" --email ana@example.com
 Reports what is installed and configured on this machine for the project. Read-only. Who: both.
 
 ```
-coursekit doctor
+coursekit doctor [--json]
 ```
 
-No arguments. Prints sections Base (coursekit and Python version, the latest version published on PyPI when it can be asked, `.env`, signing identity, git hooks, MarkItDown, Node and, in a project with the html backend, the builder of the html packages), Agent tools (slxd MCP server, skills and commands of each tool, tool and model of each role), Network, Mirror folder, Project theme (`ok` when `theme/tokens.json` is derived from the theme of the platform or from the stylesheet of the html backend; `info`, with the hint `/define-theme before producing media`, when there are no tokens or they were written by hand) and Media (ffmpeg, vhs, asciinema, piper, stable-ts, the store, the Remotion dependencies, voice and optional keys) and, when `capture.yaml › enabled` is on, Capture (Playwright and the browser for `--mode browser`, the OCR, OpenCV, ffmpeg and, for `--mode desktop`, what the system needs: the permissions of Screen Recording and Accessibility on macOS, an X11 session and `xdotool` on Linux). In Media, a line `info` shows the path and size of the per-machine store (only when the store folder exists), and `Remotion dependencies (tools/remotion/node_modules)` is `ok` or `missing`, and `versions of the Remotion workspace` is `missing`, with the packages that differ, when what is installed is not at the versions of coursekit (fix: `coursekit setup --media`) (only when the project has `tools/remotion/`; it is `missing` when the `node_modules` link points at nothing, and the fix is `coursekit setup --media`). In a project whose `assembly.backend` is `html`, the Base section adds `html backend builder (@studiolxd/scorm and esbuild)`: `ok` when the builder is installed in the store (`workspaces/html-builder-<hash>/`), `info` (with the command `coursekit setup`) when it is not yet; `coursekit assemble build` installs it on first use; and `browser for coursekit assemble check (Chrome or Edge)`: `ok` when Google Chrome, Microsoft Edge or Chromium is installed, `info` when not (then `assemble check` only checks the files). Each line is `ok`, `missing` (followed by the command that fixes it) or `info`. Always exits with code 0.
+With `--json`, the same sections as data (`title`, and `checks` with `status`, `label` and `hint`). Prints sections Base (coursekit and Python version, the latest version published on PyPI when it can be asked, `.env`, signing identity, git hooks, MarkItDown, Node and, in a project with the html backend, the builder of the html packages), Agent tools (slxd MCP server, skills and commands of each tool, tool and model of each role), Network, Mirror folder, Project theme (`ok` when `theme/tokens.json` is derived from the theme of the platform or from the stylesheet of the html backend; `info`, with the hint `/define-theme before producing media`, when there are no tokens or they were written by hand) and Media (ffmpeg, vhs, asciinema, piper, stable-ts, the store, the Remotion dependencies, voice and optional keys) and, when `capture.yaml › enabled` is on, Capture (Playwright and the browser for `--mode browser`, the OCR, OpenCV, ffmpeg and, for `--mode desktop`, what the system needs: the permissions of Screen Recording and Accessibility on macOS, an X11 session and `xdotool` on Linux). In Media, a line `info` shows the path and size of the per-machine store (only when the store folder exists), and `Remotion dependencies (tools/remotion/node_modules)` is `ok` or `missing`, and `versions of the Remotion workspace` is `missing`, with the packages that differ, when what is installed is not at the versions of coursekit (fix: `coursekit setup --media`) (only when the project has `tools/remotion/`; it is `missing` when the `node_modules` link points at nothing, and the fix is `coursekit setup --media`). In a project whose `assembly.backend` is `html`, the Base section adds `html backend builder (@studiolxd/scorm and esbuild)`: `ok` when the builder is installed in the store (`workspaces/html-builder-<hash>/`), `info` (with the command `coursekit setup`) when it is not yet; `coursekit assemble build` installs it on first use; and `browser for coursekit assemble check (Chrome or Edge)`: `ok` when Google Chrome, Microsoft Edge or Chromium is installed, `info` when not (then `assemble check` only checks the files). Each line is `ok`, `missing` (followed by the command that fixes it) or `info`. Always exits with code 0.
 
 ```
 coursekit doctor
@@ -353,12 +355,13 @@ coursekit handoff PWD
 Shows the state of every course, or the detail and next step of one. Read-only. Who: both (`/course-status` runs it).
 
 ```
-coursekit status [code]
+coursekit status [code] [--json]
 ```
 
 | Argument | Values / default | Meaning |
 |---|---|---|
 | `code` | course code or folder; optional | Without it: one line per course (code, status, hours, units, design signature). With it: title, status, the line `Assembly: <backend> backend` (`creator` or `html`: the backend of the course, else the project's), who signed the design (or why the signature no longer holds), one line per unit with its status, a line with the hold (since when, who, why and the status it was in) when the course is `on_hold`, a line with the last round of the client's review (`open`, `asked for changes`, `approved` or `skipped`, and who it was sent to), and the next step. The next step depends on the status: for `assembly` it offers the client's review (`coursekit client <CODE> send`) or delivery (`/deliver`), for `client_review` it asks you to record the client's answer, for `on_hold` it points to `coursekit resume`, and so on. |
+| `--json` | flag | The same as data, for the agents: a list of courses, or the course with its design signature, units, assessment, hold, last round of the client's review and next step. |
 
 ```
 coursekit status PWD
@@ -573,7 +576,7 @@ coursekit videos approve ACME https://www.youtube.com/watch?v=abc
 Checks a course's content against the production rules. Use it after each section you write, and before any review. Who: both.
 
 ```
-coursekit verify [--unit UNIT] [--no-update] code
+coursekit verify [--unit UNIT] [--no-update] [--only FAMILY] [--ignore FAMILY] [--json] code
 ```
 
 | Argument | Values / default | Meaning |
@@ -581,8 +584,11 @@ coursekit verify [--unit UNIT] [--no-update] code
 | `code` | course code or folder | Course to check. |
 | `--unit UNIT` | unit number; default: every unit | Check only that unit. |
 | `--no-update` | flag | Do not update the unit and course status. |
+| `--only FAMILY` | `structure`, `words`, `style`, `language`, `readability`, `media`, `activities`, `simulations`, `assembly`; repeatable or separated by commas | Report only the checks of those families. The status does not change: a partial check never marks a unit as verified. |
+| `--ignore FAMILY` | the same families | Report every check except those families. The status does not change either. |
+| `--json` | flag | Print the result as JSON for the agents: per unit, its summary, its errors and warnings (each with `family` and `message`) and the change of status. |
 
-Per unit it checks (on `content.md` and `assessment.md`): the design is approved and unchanged since it was signed; sections present and in design order; minimum words per section; objective tag in every content section and every objective covered; no objective id in the text the learner reads; distinct interactive directives per content section; media placeholders per hour (count, distinct types, required fields; the type is written with the word of the course language, and the word of the other language is an error that lists the valid ones); directives well formed (known, closed, not nested); questions carry an objective; the feedback of a question whose options may be shuffled never names one by its position or letter; no emojis outside the allowed symbols; the content converts for the assembly backend (including that the keys of the directives, such as `question:` or `answer:`, are those of the course language: a key of the other language is reported as `assembly: …` with the language it belongs to and the valid keys; with the html backend it also checks that every component of the unit can be rendered, and one it cannot is reported as `<lesson>: <BRICK>: this component is not available in the html backend`; with the creator backend it warns, as `assembly: …`, of each field of one line, such as the options of a question, that the plan sends without its inline code, links or line breaks, see [Known limits of the creator backend](08-assembly-and-delivery.md#known-limits-of-the-creator-backend)). no address of a site and no term listed in `rules › forbidden`. In a course with `design.origin: import` the shortfalls of words, interactives and placeholders are warnings, with a warning per unit that falls short of or runs over the words of its hours ([`design.origin`](04-configuration.md#courseyaml-what-a-person-may-set-per-course)). The numbers come from `coursekit rules`. Output: `[OK]` or `[FAIL]` header per unit, a statistics line, then `ERROR` and `WARNING` lines. Unless `--no-update`, it moves the unit status (see [Statuses at a glance](#statuses-at-a-glance)) and prints the change. Exit code 1 when the design is not approved or changed after approval, when the unit does not exist, or when any unit has errors; warnings do not fail.
+Per unit it checks (on `content.md` and `assessment.md`): the design is approved and unchanged since it was signed; sections present and in design order; minimum words per section; objective tag in every content section and every objective covered; no objective id in the text the learner reads; distinct interactive directives per content section; media placeholders per hour (count, distinct types, required fields; the type is written with the word of the course language, and the word of the other language is an error that lists the valid ones); directives well formed (known, closed, not nested); questions carry an objective; the feedback of a question whose options may be shuffled never names one by its position or letter; no emojis outside the allowed symbols; the content converts for the assembly backend (including that the keys of the directives, such as `question:` or `answer:`, are those of the course language: a key of the other language is reported as `assembly: …` with the language it belongs to and the valid keys; with the html backend it also checks that every component of the unit can be rendered, and one it cannot is reported as `<lesson>: <BRICK>: this component is not available in the html backend`; with the creator backend it warns, as `assembly: …`, of each field of one line, such as the options of a question, that the plan sends without its inline code, links or line breaks, see [Known limits of the creator backend](08-assembly-and-delivery.md#known-limits-of-the-creator-backend)). no address of a site and no term listed in `rules › forbidden`. In a course with `design.origin: import` the shortfalls of words, interactives and placeholders are warnings, with a warning per unit that falls short of or runs over the words of its hours ([`design.origin`](04-configuration.md#courseyaml-what-a-person-may-set-per-course)). The numbers come from `coursekit rules`. Output: `[OK]` or `[FAIL]` header per unit, a statistics line, then `ERROR` and `WARNING` lines, each with its family in brackets (`[words]`); with more than one unit, a summary with the errors and warnings of each at the end. The families: `structure` (files, sections, titles, objective tags), `words` (minimum and margin), `style` (symbols, objective ids in the text, lists that go as a directive), `language` (forbidden sites and terms, inclusive language), `readability`, `media` (placeholders, visual support, crosshairs), `activities` (interactives, questions, feedback, reflection, common errors), `simulations` and `assembly` (what the backend cannot take). Unless `--no-update`, it moves the unit status (see [Statuses at a glance](#statuses-at-a-glance)) and prints the change. Exit code 1 when the design is not approved or changed after approval, when the unit does not exist, or when any unit has errors; warnings do not fail.
 
 ```
 coursekit verify PWD --unit 1
@@ -849,6 +855,7 @@ coursekit media [--status STATUS] [--recipe RECIPE] [--asset-path ASSET_PATH] [-
 | `--content-type CONTENT_TYPE` | MIME type, for example `image/png` | `upload`: the one the upload was requested with. |
 | `--method METHOD` | default `PUT` | `upload`: HTTP method. |
 | `--fix` | flag | `check` only: bring to the target loudness the audios and videos out of it, in place. |
+| `--json` | flag | `check` only: print the result as JSON for the agents (`ok`, `fixed`, and `findings` with `asset`, `code` and `text`). |
 | `--frames FRAMES` | number; default `media › checks › sheet_frames` | `sheet` only: frames of the contact sheet. |
 | `--batch` | flag | `narrate` only: put the scenes in the queue of the Gemini batch instead of voicing them ([`coursekit tts-batch`](#coursekit-tts-batch)). |
 | `--find FIND` | text, in English | `stock` only: search the illustration sources of the brand. |

@@ -257,7 +257,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--version", action="version", version=f"coursekit {__version__}")
     sub = parser.add_subparsers(dest="command", metavar="<command>")
-    sub.add_parser("help", help=t("cli", "help_help"))
+    p = sub.add_parser("help", help=t("cli", "help_help"))
+    p.add_argument("topic", nargs="?", metavar="COMMAND", help=t("cli", "help_topic"))
 
     p = sub.add_parser("init", help=t("cli", "help_init"))
     p.add_argument("folder", nargs="?", default=".", help=t("cli", "init_folder"))
@@ -343,11 +344,27 @@ def _utf8_output() -> None:
                 stream.reconfigure(encoding="utf-8", errors="replace")
 
 
+def _help_topic(parser: argparse.ArgumentParser, command: str) -> int:
+    """`coursekit help COMMAND`: the options of the command and its part of the reference, in the language of the person."""
+    from coursekit import manual
+
+    commands = next(a for a in parser._actions if isinstance(a, argparse._SubParsersAction)).choices
+    if command not in commands:
+        print(t("cli", "help_unknown", command=command, commands=", ".join(sorted(commands))), file=sys.stderr)
+        return 2
+    print(commands[command].format_help())
+    text = manual.section(command, i18n.language())
+    print(text if text else t("cli", "help_no_reference", command=command))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     _utf8_output()
     _language_from_env_file()
     parser = build_parser()
     args = parser.parse_args(argv)
+    if args.command == "help" and args.topic:
+        return _help_topic(parser, args.topic)
     if args.command in (None, "help"):
         parser.print_help()
         return 0
