@@ -22,8 +22,18 @@ jobs:
         run: |
           uv tool install .
           coursekit --version
-          uv tool install --force --python 3.12 ".[docs,capture]"  # rapidocr-onnxruntime, of the capture extra, needs Python < 3.13
+          uv tool install --force ".[docs,capture]"
           coursekit --version
+
+  # The newest Python the package admits (requires-python), with both extras: the whole suite, captures and OCR included.
+  python-newest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.0  # it publishes no short major tag
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: uv sync --python 3.14 --group dev --extra docs --extra capture
+      - run: uv run --no-sync pytest -q
 
   # The types of the Python modules listed in `[tool.mypy] files` of pyproject.toml (widened module by module).
   types:
@@ -41,7 +51,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.3.0  # it publishes no short major tag
-      - run: sudo apt-get update && sudo apt-get install -y ffmpeg libgl1  # libgl1: what OpenCV needs on Linux
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg  # the OpenCV of the extra is headless: no libgl1
       - run: uv sync --group dev --extra capture
       - run: uv run pytest -q tests/test_capture.py tests/test_capture_browser.py tests/test_capture_terminal.py tests/test_media_checks.py
 

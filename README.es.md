@@ -40,7 +40,7 @@ La plataforma creator tiene huecos conocidos que el pipeline esquiva: [Límites 
 
 ## Instalación
 
-Necesitas [uv](https://docs.astral.sh/uv/); él aporta el Python adecuado (3.12 o 3.13). Para trabajar los cursos necesitas además git, una herramienta de IA (Claude Code, opencode o Codex) y la URL de tu servidor MCP de SLXD Creator; mira [Primeros pasos](docs/es/01-getting-started.md#requisitos).
+Necesitas [uv](https://docs.astral.sh/uv/); él aporta el Python adecuado (de 3.12 a 3.14). Para trabajar los cursos necesitas además git, una herramienta de IA (Claude Code, opencode o Codex) y la URL de tu servidor MCP de SLXD Creator; mira [Primeros pasos](docs/es/01-getting-started.md#requisitos).
 
 ```bash
 uv tool install slxd-coursekit
@@ -55,7 +55,7 @@ Para probarlo desde un clon, con los cambios aplicándose al instante:
 uv tool install --editable /ruta/a/coursekit
 ```
 
-Hay dos extras opcionales: `docs` convierte a texto los documentos del material de partida y del material de marca (PDF, Word, PowerPoint, Excel, Outlook), y `capture` hace las capturas reales de aplicaciones (`coursekit capture`). Nombra en un solo comando todos los extras que quieras, porque reinstalar con unos quita los demás: `uv tool install --force "slxd-coursekit[docs,capture]"` (desde un clon: `uv tool install --force --editable "/ruta/a/coursekit[docs,capture]"`). `coursekit doctor` dice cuál falta y da el comando. Por ahora `capture` necesita Python 3.12 (`--python 3.12`).
+Hay dos extras opcionales: `docs` convierte a texto los documentos del material de partida y del material de marca (PDF, Word, PowerPoint, Excel, Outlook), y `capture` hace las capturas reales de aplicaciones (`coursekit capture`). Nombra en un solo comando todos los extras que quieras, porque reinstalar con unos quita los demás: `uv tool install --force "slxd-coursekit[docs,capture]"` (desde un clon: `uv tool install --force --editable "/ruta/a/coursekit[docs,capture]"`). `coursekit doctor` dice cuál falta y da el comando.
 
 Para actualizar una copia instalada: `uv tool upgrade slxd-coursekit`. Nada más: el primer comando en cada proyecto regenera sus ficheros gestionados y los de los agentes. Una versión concreta: `uv tool install slxd-coursekit==0.2.1`.
 

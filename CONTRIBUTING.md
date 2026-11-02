@@ -12,7 +12,7 @@ The repository is public. Never include the name of a client, a person, a tenant
 
 ## Set up the environment
 
-You need Python 3.12 or 3.13 (`requires-python = ">=3.12,<3.14"`; `.python-version` pins 3.12) and [uv](https://docs.astral.sh/uv/).
+You need Python 3.12, 3.13 or 3.14 (`requires-python = ">=3.12,<3.15"`; `.python-version` pins 3.12) and [uv](https://docs.astral.sh/uv/).
 
 ```bash
 git clone https://github.com/studiolxd/coursekit
@@ -56,7 +56,7 @@ uv run mypy
 uv run pytest -q
 ```
 
-All three must pass; CI runs ruff and pytest (plus `uv tool install .` and `coursekit --version`) on Linux, macOS and Windows for every push to `main` and every pull request, and mypy on Linux. Mypy checks the modules listed in `[tool.mypy] files` of `pyproject.toml`, with every function annotated; add a module there once it passes. Another job, `video-types`, type-checks the TypeScript of the videos (`videokit` and the Remotion template) in a project layout. The zooms of a recording live in `videokit/atoms/zoom.ts`, and `templates/remotion/src/zoom.ts` is a copy (a test keeps them equal): change the first and copy it. Ruff is configured in `pyproject.toml`: line length 140, target Python 3.12, rules `E`, `F`, `I` (imports), `UP`, `B`, `SIM` (except `SIM905`), `RET` and `PTH`. `uv run ruff check . --fix` fixes most import-order and style findings.
+All three must pass; CI runs ruff and pytest (plus `uv tool install .` and `coursekit --version`) on Linux, macOS and Windows for every push to `main` and every pull request, and mypy on Linux; another job runs the whole suite on Linux with Python 3.14 and both extras. Mypy checks the modules listed in `[tool.mypy] files` of `pyproject.toml`, with every function annotated; add a module there once it passes. Another job, `video-types`, type-checks the TypeScript of the videos (`videokit` and the Remotion template) in a project layout. The zooms of a recording live in `videokit/atoms/zoom.ts`, and `templates/remotion/src/zoom.ts` is a copy (a test keeps them equal): change the first and copy it. Ruff is configured in `pyproject.toml`: line length 140, target Python 3.12, rules `E`, `F`, `I` (imports), `UP`, `B`, `SIM` (except `SIM905`), `RET` and `PTH`. `uv run ruff check . --fix` fixes most import-order and style findings.
 
 `tests/conftest.py` sets `COURSEKIT_LANG=en` for every test and restores the environment afterwards, so messages in tests are in English. A test that needs Spanish says so explicitly (`monkeypatch.setenv("COURSEKIT_LANG", "es")` or `i18n.use("es")`).
 

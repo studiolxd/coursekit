@@ -90,26 +90,50 @@ def _line_from_words(words: list[tuple[str, tuple[int, int, int, int]]]) -> Line
     return Line(text, spans)
 
 
+def _rows(pieces: list[tuple[str, tuple[int, int, int, int]]]) -> list[list[tuple[str, tuple[int, int, int, int]]]]:
+    """The boxes an OCR read, joined in lines: rapidocr may give a line in one box or in one box per word, and a name split
+    in two lines would not be found. Boxes at the same height (half of the smaller one overlapping) and close to each other
+    (a gap under one and a half times their height; boxes of two words in a row may overlap a little) are one line, from left
+    to right."""
+    rows: list[list[tuple[str, tuple[int, int, int, int]]]] = []
+    for piece in sorted(pieces, key=lambda p: p[1][0]):  # from left to right, so each box can only extend a row
+        _, (x, y, w, h) = piece
+        for row in rows:
+            _, (rx, ry, rw, rh) = row[-1]
+            overlap = min(y + h, ry + rh) - max(y, ry)
+            if overlap >= min(h, rh) / 2 and -max(h, rh) / 2 <= x - (rx + rw) < 1.5 * max(h, rh):
+                row.append(piece)
+                break
+        else:
+            rows.append([piece])
+    return sorted(rows, key=lambda row: min(p[1][1] for p in row))  # the lines from top to bottom
+
+
 def _rapidocr() -> Reader:
     try:
         import numpy as np
-        from rapidocr_onnxruntime import RapidOCR
+        from rapidocr import RapidOCR
     except ImportError:
         raise RedactError(t("redact", "ocr_missing", command=extras.install_command("capture"))) from None
-    engine = RapidOCR()
+    engine = RapidOCR(params={"Global.log_level": "warning"})  # by default it announces every model it loads
 
     def read(image: Image.Image) -> list[Line]:
-        result, _ = engine(np.array(image.convert("RGB")))
-        lines = []
-        for points, text, _score in result or []:
+        found = engine(np.array(image.convert("RGB")))
+        boxes, texts = getattr(found, "boxes", None), getattr(found, "txts", None) or ()
+        pieces = []
+        for points, text in zip(boxes if boxes is not None else (), texts, strict=False):
             xs, ys = [p[0] for p in points], [p[1] for p in points]
-            x, y, w, h = int(min(xs)), int(min(ys)), int(max(xs) - min(xs)), int(max(ys) - min(ys))
-            # one box per line: each word gets the part of the width that its characters take
-            words, cursor, step = [], 0, w / max(1, len(text))
-            for word in str(text).split(" "):
-                if word:
-                    words.append((word, (x + round(cursor * step), y, max(1, round(len(word) * step)), h)))
-                cursor += len(word) + 1
+            pieces.append((str(text), (int(min(xs)), int(min(ys)), int(max(xs) - min(xs)), int(max(ys) - min(ys)))))
+        lines = []
+        for row in _rows(pieces):
+            # each box is a line or a part of one: each word gets the part of the width that its characters take
+            words = []
+            for text, (x, y, w, h) in row:
+                cursor, step = 0, w / max(1, len(text))
+                for word in text.split(" "):
+                    if word:
+                        words.append((word, (x + round(cursor * step), y, max(1, round(len(word) * step)), h)))
+                    cursor += len(word) + 1
             lines.append(_line_from_words(words))
         return lines
 

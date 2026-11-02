@@ -212,10 +212,9 @@ def capture_section(project: Project) -> Section | None:
     if "browser" in modes:
         s.add(importlib.util.find_spec("playwright") is not None, t("doctor", "capture_playwright"), hint)
         s.add(bool(find_browser()), t("doctor", "capture_browser"), t("doctor", "html_browser_hint"))
-    ocr = importlib.util.find_spec("rapidocr_onnxruntime") is not None or shutil.which("tesseract") is not None
+    ocr = importlib.util.find_spec("rapidocr") is not None or shutil.which("tesseract") is not None
     s.add(ocr, t("doctor", "capture_ocr"), hint)
-    opencv_hint = t("doctor", "capture_opencv_hint", command=hint) if sys.platform.startswith("linux") else hint
-    s.add(_imports("cv2"), t("doctor", "capture_opencv"), opencv_hint)
+    s.add(_imports("cv2"), t("doctor", "capture_opencv"), hint)
     others = opencv_distributions()
     if len(others) > 1:
         s.add(False, t("doctor", "capture_opencv_several", names=", ".join(others)),

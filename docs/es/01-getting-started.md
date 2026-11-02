@@ -7,7 +7,7 @@ Instala coursekit, crea un proyecto con `coursekit init` y lanza tu primer curso
 | Necesitas | Para qué |
 |---|---|
 | macOS, Windows o Linux | coursekit funciona en los tres |
-| [uv](https://docs.astral.sh/uv/) | instala coursekit y trae el Python adecuado (3.12 o 3.13) |
+| [uv](https://docs.astral.sh/uv/) | instala coursekit y trae el Python adecuado (de 3.12 a 3.14) |
 | git | `init` ejecuta `git init`; las aprobaciones se confirman (commit) a nombre de quien firma; los hooks del proyecto lo usan |
 | Una herramienta de IA: Claude Code (`claude`), opencode o Codex (`codex`) | los agentes que redactan, revisan, producen y montan. Hace falta al menos una para trabajar los cursos |
 | La URL de tu servidor MCP de SLXD Creator | el diseño instruccional se hace siempre en creator; con el backend creator, el montaje y la entrega se apoyan también en él (mira la nota sobre los backends más abajo) |
@@ -50,7 +50,7 @@ Si el shell no encuentra `coursekit` tras instalarlo, ejecuta `uv tool update-sh
 Dos partes de coursekit van en extras opcionales, porque descargan mucho:
 
 - `docs`: convierte a texto los documentos que dejas en `brief/sources/` y en el material de marca (PDF, Word, PowerPoint, Excel, Outlook), con MarkItDown. Sin él, `coursekit brief` sigue leyendo Markdown, texto y enlaces web, y dice qué ficheros no pudo convertir.
-- `capture`: las capturas reales de aplicaciones ([`coursekit capture`](03-commands.md#coursekit-capture)): Playwright, un OCR y OpenCV. Por ahora su OCR necesita Python 3.12: añade `--python 3.12` al comando de abajo.
+- `capture`: las capturas reales de aplicaciones ([`coursekit capture`](03-commands.md#coursekit-capture)): Playwright, un OCR y OpenCV.
 
 Instala el paquete con los extras que quieras, o reinstálalo sobre la copia que tienes. Reinstalar sustituye los extras instalados, así que nómbralos todos en el mismo comando; las comillas evitan que la terminal interprete los corchetes:
 

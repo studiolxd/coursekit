@@ -23,10 +23,7 @@ Nada pendiente: ver [Hecho](#hecho).
 
 ## 4. Dependencias y distribución
 
-- **El extra `capture` no se instala con Python 3.13.** Todas las versiones de `rapidocr-onnxruntime` exigen Python
-  anterior a 3.13, y el paquete admite 3.13. Es también lo que impide abrir 3.14. Su sucesora es `rapidocr` (3.x, admite
-  3.8 a 3.x), con otra forma de importar y de devolver los resultados: hay que cambiar `redact._rapidocr` y probar el OCR
-  con capturas reales antes de publicarlo. Mientras tanto, el extra `capture` necesita Python 3.12.
+Nada pendiente: ver [Hecho](#hecho).
 
 ## 5. Documentación
 
@@ -38,7 +35,6 @@ Sigue las fases del [plan](plan-mejoras.md).
 
 1. Marcador de pruebas lentas, si lo pide una medida de duraciones de la suite completa (sección 2).
 2. Ampliar `mypy` a más módulos, uno a uno (sección 2).
-3. OCR de `capture` con `rapidocr` para Python 3.13 y 3.14 (sección 4; fuera del plan, necesita probarse con capturas reales).
 
 ## Hecho
 
@@ -118,3 +114,12 @@ Sigue las fases del [plan](plan-mejoras.md).
   vídeos). Lo que solo estaba en las notas pasó a `docs/` antes de borrarlo: lo que el screencast no muestra, lo que no es
   texto en la página, la carpeta personal tapada en el modo terminal y `home: clean`, y `research` en los cursos
   importados. La revisión salió con una contradicción con la redacción (pasos numerados frente a carrusel), ya corregida.
+
+### OCR y Python 3.13 y 3.14
+
+- ~~**El extra `capture` no se instala con Python 3.13.**~~ Hecho el 2 de noviembre de 2026: `rapidocr` 3 (lleva sus modelos,
+  no descarga nada) con `onnxruntime` 1.24.1 o posterior, y OpenCV headless, que `rapidocr` exige y que en Linux no necesita
+  `libgl1`. Su salida da a veces una caja por palabra: `redact._rows` junta en una línea las cajas a la misma altura, para
+  que un nombre repartido se siga encontrando. `requires-python` pasa a `<3.15`. Probado en macOS con 3.12 y 3.14 (no hay
+  3.13 en la máquina; la CI lo cubre). Python 3.14 sacó además un fallo: su `argparse` comprueba la ayuda al declarar cada
+  opción, y un `%` de un mensaje la rompía; ahora se escapa al declararla. Nuevo trabajo de CI con 3.14 y los dos extras.

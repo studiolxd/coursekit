@@ -1183,3 +1183,25 @@ def test_apple_vision_reads_the_words_and_where_each_one_is():
     assert {b.kind for b in boxes} == {"name", "email"}
     name = next(b for b in boxes if b.kind == "name")
     assert 30 <= name.x <= 60 and 40 <= name.y <= 70 and name.w < 300  # the name only, not the whole line
+
+
+def test_the_boxes_of_the_ocr_are_joined_in_lines():
+    from coursekit import redact
+
+    pieces = [("García", (93, 28, 139, 51)), ("Ana", (15, 30, 83, 46)), ("ana@example.com", (250, 21, 400, 60)),
+              ("Contraseña", (20, 120, 200, 45)), ("12/10", (900, 121, 90, 44))]
+    rows = [" ".join(text for text, _ in row) for row in redact._rows(pieces)]
+    assert rows == ["Ana García ana@example.com", "Contraseña", "12/10"]
+
+
+def test_rapidocr_reads_a_name_split_in_boxes_as_one_line():
+    pytest.importorskip("rapidocr")
+    from PIL import Image, ImageDraw, ImageFont
+
+    from coursekit import redact
+
+    image = Image.new("RGB", (900, 120), "white")
+    # the default font of Pillow has no accents
+    ImageDraw.Draw(image).text((20, 30), "Ana Garcia ana.garcia@example.com", fill="black", font=ImageFont.load_default(size=40))
+    texts = [line.text for line in redact._rapidocr()(image)]
+    assert any("Ana Garcia" in text and "example.com" in text for text in texts), texts

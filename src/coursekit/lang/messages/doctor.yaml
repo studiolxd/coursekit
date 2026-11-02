@@ -79,7 +79,6 @@ capture_screen: {es: "permiso de grabación de pantalla para la terminal", en: "
 capture_screen_hint: {es: "Ajustes del Sistema › Privacidad y seguridad › Grabación de pantalla", en: "System Settings › Privacy & Security › Screen Recording"}
 capture_accessibility: {es: "permiso de accesibilidad para la terminal (ratón y teclado)", en: "Accessibility permission for the terminal (mouse and keyboard)"}
 capture_accessibility_hint: {es: "Ajustes del Sistema › Privacidad y seguridad › Accesibilidad", en: "System Settings › Privacy & Security › Accessibility"}
-capture_opencv_hint: {es: "el extra capture ({command}); en Linux, además, sudo apt install libgl1", en: "the capture extra ({command}); on Linux, also sudo apt install libgl1"}
 capture_opencv_several: {es: "un solo OpenCV instalado (hay varios: {names})", en: "one OpenCV installed (there are several: {names})"}
 capture_opencv_several_hint: {es: "comparten cv2 y uno pisa al otro; reinstala coursekit en un entorno limpio: {command}", en: "they share cv2 and one overwrites the other; reinstall coursekit in a clean environment: {command}"}
 capture_terminal_emulator: {es: "emulador de terminal del modo terminal (pyte)", en: "terminal emulator of the terminal mode (pyte)"}

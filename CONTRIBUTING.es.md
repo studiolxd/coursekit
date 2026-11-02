@@ -12,7 +12,7 @@ El repositorio es público. No incluyas nunca el nombre de un cliente, de una pe
 
 ## Preparar el entorno
 
-Necesitas Python 3.12 o 3.13 (`requires-python = ">=3.12,<3.14"`; `.python-version` fija 3.12) y [uv](https://docs.astral.sh/uv/).
+Necesitas Python 3.12, 3.13 o 3.14 (`requires-python = ">=3.12,<3.15"`; `.python-version` fija 3.12) y [uv](https://docs.astral.sh/uv/).
 
 ```bash
 git clone https://github.com/studiolxd/coursekit
@@ -56,7 +56,7 @@ uv run mypy
 uv run pytest -q
 ```
 
-Las tres deben pasar; CI ejecuta ruff y pytest (más `uv tool install .` y `coursekit --version`) en Linux, macOS y Windows con cada push a `main` y cada pull request, y mypy en Linux. Mypy comprueba los módulos de `[tool.mypy] files` de `pyproject.toml`, con todas las funciones anotadas; añade un módulo allí cuando pase. Otro trabajo, `video-types`, comprueba los tipos del TypeScript de los vídeos (`videokit` y la plantilla de Remotion) con la estructura de un proyecto. Los zooms de una grabación están en `videokit/atoms/zoom.ts`, y `templates/remotion/src/zoom.ts` es una copia (un test las mantiene iguales): cambia la primera y cópiala. Ruff se configura en `pyproject.toml`: longitud de línea 140, Python 3.12 como objetivo y las reglas `E`, `F`, `I` (imports), `UP`, `B`, `SIM` (salvo `SIM905`), `RET` y `PTH`. `uv run ruff check . --fix` corrige la mayoría de los avisos de orden de imports y de estilo.
+Las tres deben pasar; CI ejecuta ruff y pytest (más `uv tool install .` y `coursekit --version`) en Linux, macOS y Windows con cada push a `main` y cada pull request, y mypy en Linux; otro trabajo ejecuta la suite entera en Linux con Python 3.14 y los dos extras. Mypy comprueba los módulos de `[tool.mypy] files` de `pyproject.toml`, con todas las funciones anotadas; añade un módulo allí cuando pase. Otro trabajo, `video-types`, comprueba los tipos del TypeScript de los vídeos (`videokit` y la plantilla de Remotion) con la estructura de un proyecto. Los zooms de una grabación están en `videokit/atoms/zoom.ts`, y `templates/remotion/src/zoom.ts` es una copia (un test las mantiene iguales): cambia la primera y cópiala. Ruff se configura en `pyproject.toml`: longitud de línea 140, Python 3.12 como objetivo y las reglas `E`, `F`, `I` (imports), `UP`, `B`, `SIM` (salvo `SIM905`), `RET` y `PTH`. `uv run ruff check . --fix` corrige la mayoría de los avisos de orden de imports y de estilo.
 
 `tests/conftest.py` fija `COURSEKIT_LANG=en` en todos los tests y restaura el entorno después, así que los mensajes en los tests están en inglés. Un test que necesite español lo indica de forma explícita (`monkeypatch.setenv("COURSEKIT_LANG", "es")` o `i18n.use("es")`).
 

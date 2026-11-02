@@ -6,9 +6,11 @@ import argparse
 import contextlib
 import json
 import os
+import re
 import shutil
 import sys
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -251,7 +253,7 @@ def cmd_uninstall(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
+    parser = Parser(
         prog="coursekit",
         description=t("cli", "description"),
     )
@@ -302,23 +304,36 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_uninstall)
 
     commands.register(sub)
-    _escape_percent(parser)
     return parser
 
 
-def _escape_percent(parser: argparse.ArgumentParser) -> None:
-    """argparse formats every help text with `%`: a `%` of a message («in %») would break `--help`, so it is written `%%`."""
-    import re
+_PERCENT = re.compile(r"%(?![(%])")
 
-    for action in parser._actions:
-        if action.help and action.help is not argparse.SUPPRESS:
-            action.help = re.sub(r"%(?![(%])", "%%", action.help)
-        if isinstance(action, argparse._SubParsersAction):
-            for choice in action._choices_actions:
-                if choice.help:
-                    choice.help = re.sub(r"%(?![(%])", "%%", choice.help)
-            for sub in dict.fromkeys(action.choices.values()):
-                _escape_percent(sub)
+
+def _escaped(text: object) -> object:
+    """argparse formats every help text with `%` (Python 3.14 already when the option is declared): a `%` of a message
+    («in %») is written `%%`."""
+    return _PERCENT.sub("%%", text) if isinstance(text, str) and text is not argparse.SUPPRESS else text
+
+
+class _SubParsers(argparse._SubParsersAction):
+    def add_parser(self, name: str, **kwargs: Any) -> argparse.ArgumentParser:
+        if "help" in kwargs:
+            kwargs["help"] = _escaped(kwargs["help"])
+        return super().add_parser(name, **kwargs)
+
+
+class Parser(argparse.ArgumentParser):
+    """The parser of coursekit and of each command: the help texts come from the catalogs of messages, with any `%`."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.register("action", "parsers", _SubParsers)
+
+    def add_argument(self, *args: Any, **kwargs: Any) -> argparse.Action:
+        if "help" in kwargs:
+            kwargs["help"] = _escaped(kwargs["help"])
+        return super().add_argument(*args, **kwargs)
 
 
 def _language_from_env_file() -> None:

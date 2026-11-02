@@ -7,7 +7,7 @@ Install coursekit, create a project with `coursekit init` and launch your first 
 | Need | Why |
 |---|---|
 | macOS, Windows or Linux | coursekit runs on all three |
-| [uv](https://docs.astral.sh/uv/) | installs coursekit and brings the right Python (3.12 or 3.13) |
+| [uv](https://docs.astral.sh/uv/) | installs coursekit and brings the right Python (3.12 to 3.14) |
 | git | `init` runs `git init`; approvals are committed in the signer's name; the project hooks use it |
 | An AI tool: Claude Code (`claude`), opencode or Codex (`codex`) | the agents that draft, review, produce and assemble. At least one is needed to work on courses |
 | The URL of your SLXD Creator MCP server | the instructional design is always done in creator; with the creator backend, assembly and delivery run on it too (see the note on backends below) |
@@ -50,7 +50,7 @@ If the shell does not find `coursekit` after installing, run `uv tool update-she
 Two parts of coursekit come in optional extras, because they download a lot:
 
 - `docs`: converts the documents left in `brief/sources/` and in the brand material (PDF, Word, PowerPoint, Excel, Outlook) to text, with MarkItDown. Without it, `coursekit brief` still reads Markdown, text and web links, and says which files it could not convert.
-- `capture`: the real captures of applications ([`coursekit capture`](03-commands.md#coursekit-capture)): Playwright, an OCR and OpenCV. For now its OCR needs Python 3.12: add `--python 3.12` to the command below.
+- `capture`: the real captures of applications ([`coursekit capture`](03-commands.md#coursekit-capture)): Playwright, an OCR and OpenCV.
 
 Install the package with the extras you want, or reinstall it over the copy you have. Reinstalling replaces the installed extras, so name all of them in the same command; the quotes keep the shell from reading the brackets:
 
