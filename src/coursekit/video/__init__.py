@@ -807,7 +807,8 @@ def voice(course: dict, asset_id: str, say: Say = print, batch: bool = False) ->
     return made
 
 
-def voice_collected(course: dict, asset_id: str, sid: str, key: str, audio: Path, says: str, say: Say = print) -> None:
+def voice_collected(course: dict, asset_id: str, sid: str, key: str, audio: Path, says: str,
+                    say: Callable[[str], object] = print) -> None:
     """A scene whose narration came in the Gemini batch: the timings of its words and its length, as `voice` leaves them."""
     folder = voice_dir(course, asset_id)
     text = folder / f"{sid}.txt"

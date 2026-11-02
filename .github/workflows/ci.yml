@@ -35,7 +35,7 @@ jobs:
       - run: uv sync --python 3.14 --group dev --extra docs --extra capture
       - run: uv run --no-sync pytest -q
 
-  # The types of the package, but for the modules still to type (`[tool.mypy] exclude` of pyproject.toml).
+  # The types of the whole package (`[tool.mypy]` of pyproject.toml).
   types:
     runs-on: ubuntu-latest
     steps:

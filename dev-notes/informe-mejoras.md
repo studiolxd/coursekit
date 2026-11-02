@@ -5,8 +5,6 @@ Nota de trabajo (1 de noviembre de 2026). Revisión rápida del paquete en su es
 más de 700 pruebas, 9 ficheros de documentación por idioma. Las propuestas están ordenadas por lo que
 más conviene atacar primero. Cada una cabe en un cambio pequeño salvo donde se indica.
 
-Cómo se aborda, por fases y con la validación de cada una: [plan de mejoras](plan-mejoras.md).
-
 Lo que se va haciendo se tacha y pasa a la sección [Hecho](#hecho), al final, con la fecha y cómo se resolvió.
 
 ## 1. Estructura del código
@@ -29,9 +27,7 @@ Nada pendiente: ver [Hecho](#hecho).
 
 ## Orden propuesto
 
-Sigue las fases del [plan](plan-mejoras.md).
-
-1. Tipar los 39 módulos de `[tool.mypy] exclude`, uno a uno (sección 2).
+Nada pendiente: todo el informe está hecho.
 
 ## Hecho
 
@@ -47,7 +43,7 @@ Sigue las fases del [plan](plan-mejoras.md).
 - ~~**Diferencia sin commit muy grande.**~~ Hecho el 1 de noviembre de 2026: confirmada y subida en un solo commit
   (`a813564`), sin partir por temas.
 
-### Dependencias y diagnóstico (fase 1 del plan)
+### Dependencias y diagnóstico (fase 1)
 
 - ~~**`markitdown` es la dependencia más pesada.**~~ Hecho el 2 de noviembre de 2026: extra `docs`; la instalación base pasa de
   48 paquetes a 7. `brief` y `brand` avisan con el comando, y `doctor` lo pide solo si hay documentos que convertir.
@@ -58,14 +54,14 @@ Sigue las fases del [plan](plan-mejoras.md).
 - ~~**Actualización de ejemplos de configuración.**~~ Hecho el 2 de noviembre de 2026 como `coursekit config --check` (una
   opción, porque `config` ya recibe el nombre de la configuración como primer argumento).
 
-### Pruebas (fase 2 del plan)
+### Pruebas (fase 2)
 
 - ~~**Los fixtures de proyecto se construyen a mano en cada test.**~~ Hecho el 2 de noviembre de 2026: `make_project` y
   `make_course` en `tests/conftest.py`; doce fixtures reescritos sobre ellos, con los mismos 821 tests recogidos. Al
   provocar fallos para comprobarlos salió un hueco: nada probaba que el redactor retoma una unidad a medio escribir
   (`launch.units_to_do`); ya tiene su test.
 
-### Calidad estática (fase 3 del plan)
+### Calidad estática (fase 3)
 
 - ~~**Reglas de ruff que faltan.**~~ Hecho el 2 de noviembre de 2026: `SIM` (sin `SIM905`), `RET` y `PTH`. `PERF` se
   descartó: solo pedía `extend` en bucles que construyen informes de pocas líneas, a costa de leerse peor.
@@ -74,7 +70,7 @@ Sigue las fases del [plan](plan-mejoras.md).
   `course`, `i18n`, `paths`, `status`, `sync`), un trabajo de CI que bloquea, y `files` en `pyproject.toml` para ampliar.
   Los quince avisos que dio eran variables reutilizadas con otro tipo y funciones sin anotar; ninguno era un fallo.
 
-### Estructura del código (fase 4 del plan)
+### Estructura del código (fase 4)
 
 - ~~**`commands.py` declara 38 subcomandos en un solo `register(sub)`.**~~ Hecho el 2 de noviembre de 2026: paquete
   `commands/` con un módulo por grupo (`course`, `brief`, `roles`, `media`, `assembly`, `common`), cada uno cargado solo cuando
@@ -89,7 +85,7 @@ Sigue las fases del [plan](plan-mejoras.md).
 - ~~**Peticiones HTTP sin cliente común.**~~ Hecho el 2 de noviembre de 2026: `http.py` con `request` y `download`; los
   reintentos solo donde el módulo los pide (la búsqueda web), nunca por defecto.
 
-### Experiencia de uso (fase 5 del plan)
+### Experiencia de uso (fase 5)
 
 - ~~**`--help` largo y en dos idiomas.**~~ Hecho el 2 de noviembre de 2026: `coursekit help COMMAND` da las opciones y el
   apartado de `03-commands.md` en el idioma de la persona (el wheel lleva la referencia en `coursekit/manual/`); `--json` en
@@ -99,7 +95,7 @@ Sigue las fases del [plan](plan-mejoras.md).
   parcial no cambia el estado. Resumen por unidad al final. Las skills de redacción y revisión lo mencionan, sin obligar a
   usar JSON: el texto ya les sirve.
 
-### Documentación (fase 6 del plan)
+### Documentación (fase 6)
 
 - ~~**`docs/` suma más de 6 000 líneas por idioma.**~~ Hecho el 2 de noviembre de 2026: `08-assembly.md`,
   `09-delivery.md` y `10-client-review.md`, y la resolución de problemas pasa a `11`. El banco de preguntas se queda en
@@ -129,3 +125,8 @@ Sigue las fases del [plan](plan-mejoras.md).
 - ~~**Tiempo de la suite.**~~ Descartado el 2 de noviembre de 2026 con la medida: 850 tests en 5 min 18 s en macOS, con el
   extra `capture`; el más lento tarda 5 s y los 25 más lentos suman unos 50 s. El tiempo está repartido: un marcador `slow`
   ahorraría poco y dejaría tests fuera de la pasada habitual.
+- ~~**Tipar los 39 módulos que quedaban.**~~ Hecho el 2 de noviembre de 2026: mypy comprueba los 115 ficheros del paquete
+  sin lista de exclusiones. Unos 600 avisos, en cuatro grupos (captura; vídeo, montaje y recursos; brief, tema, marca y
+  `verify`; el resto): anotaciones, `cast` donde el valor viene de YAML o JSON y variables renombradas cuando un nombre
+  guardaba dos tipos; ninguno era un fallo real. Cinco `type: ignore`, todos de APIs solo de Windows o que faltan en los
+  tipos de OpenCV.
