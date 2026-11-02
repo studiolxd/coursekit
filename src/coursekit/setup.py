@@ -176,9 +176,8 @@ def system_packages(say: Say) -> None:
             say(t("setup", "brew_missing"))
             return
         missing = [tool for tool in BREW if not shutil.which(tool)]
-        if missing:
-            if subprocess.run(["brew", "install", *missing], check=False).returncode == 0:
-                store.record("system", {"manager": "brew", "packages": missing})
+        if missing and subprocess.run(["brew", "install", *missing], check=False).returncode == 0:
+            store.record("system", {"manager": "brew", "packages": missing})
         say(t("setup", "ok_item", item=", ".join(BREW)))
     elif IS_WINDOWS:
         if not shutil.which("winget"):

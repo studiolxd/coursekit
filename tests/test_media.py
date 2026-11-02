@@ -132,7 +132,7 @@ def test_tts_and_subtitles_with_fake_tools(course, monkeypatch, tmp_path):  # no
     def fake_run(cmd, **kwargs):
         calls.append(cmd)
         if "-f" in cmd:  # piper writes the wav
-            open(cmd[cmd.index("-f") + 1], "wb").write(b"RIFF")
+            Path(cmd[cmd.index("-f") + 1]).write_bytes(b"RIFF")
         if "--align" in cmd:  # stable-ts writes its result as JSON
             segments = [{"start": 0.0, "end": 0.6, "text": " Hola.", "words": [{"word": " Hola.", "start": 0.0, "end": 0.6}]},
                         {"start": 0.8, "end": 1.5, "text": " Adiós.", "words": [{"word": " Adiós.", "start": 0.8, "end": 1.5}]}]

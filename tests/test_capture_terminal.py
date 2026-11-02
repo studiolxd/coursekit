@@ -245,7 +245,7 @@ def test_a_terminal_video_is_drawn_with_the_places_its_narration_names(course, h
     assert word["shape"] == "round" and word["tone"] == "light"  # the light palette of capture.yaml › terminal
     x, y, w, h = block["box"]
     assert block["shape"] == "rect" and w > word["box"][2] and h > 2 * word["box"][3]  # three lines, as wide as the longest
-    assert 0 <= x and x + w <= 1 and 0 <= y and y + h <= 1
+    assert x >= 0 and x + w <= 1 and y >= 0 and y + h <= 1
 
 
 @real

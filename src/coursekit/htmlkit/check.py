@@ -7,6 +7,7 @@ of words, so the check cannot fail because of how a component lays the text out.
 
 from __future__ import annotations
 
+import contextlib
 import html as htmllib
 import json
 import re
@@ -102,10 +103,8 @@ def learner_text(path: Path, tokens: dict, assessment: bool) -> str:
                 body.append(lines[i])
                 i += 1
             i += 1
-            try:
+            with contextlib.suppress(yaml.YAMLError):
                 kept += simulation_text(yaml.safe_load("\n".join(body)))
-            except yaml.YAMLError:
-                pass
             continue
         if FENCE.match(line):
             in_fence = not in_fence

@@ -8,6 +8,7 @@ removes system packages (brew, winget): it lists them with the command to remove
 
 from __future__ import annotations
 
+import contextlib
 import os
 import shutil
 import subprocess
@@ -126,10 +127,8 @@ def collect() -> Report:
                 f.unlink(missing_ok=True)
                 store.forget("files", str(f))
             for parent in parents:
-                try:
+                with contextlib.suppress(OSError):
                     parent.rmdir()  # only when it is left empty
-                except OSError:
-                    pass
             return [t("uninstall", "removed_files", count=len(files))]
 
         report.groups.append(Group("group_files", [t("uninstall", "item_size", path=f.as_posix(), size=store.human(store.size(f.parent)

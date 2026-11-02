@@ -18,6 +18,7 @@ capture to media/recordings/<id>.png and leaves it waiting for a person (`course
 
 from __future__ import annotations
 
+import contextlib
 import datetime as dt
 import hashlib
 import io
@@ -788,10 +789,8 @@ class BrowserBackend:
         if self._blocked:  # a link or a script tried to leave the application: back to where it was, and say so
             blocked, self._blocked = self._blocked, None
             if self.page.url.startswith("chrome-error://"):
-                try:
+                with contextlib.suppress(PlaywrightError):
                     self.page.go_back(wait_until="domcontentloaded")
-                except PlaywrightError:
-                    pass
             raise ToolError(t("capture", "domain_blocked", host=blocked))
         try:
             self.page.wait_for_load_state("domcontentloaded", timeout=15000)
@@ -890,10 +889,8 @@ class BrowserBackend:
         import base64
 
         self._frames.append((float(event["metadata"]["timestamp"]), base64.b64decode(event["data"])))
-        try:
+        with contextlib.suppress(Exception):  # the screencast may already be stopping
             self._cdp.send("Page.screencastFrameAck", {"sessionId": event["sessionId"]})
-        except Exception:  # noqa: BLE001 — the screencast may already be stopping
-            pass
 
     def stop_recording(self) -> list[tuple[float, bytes]]:
         """The frames recorded since `start_recording`, with the time each one appeared, and the time it stopped."""
@@ -917,14 +914,10 @@ class BrowserBackend:
         return self.page.url
 
     def close(self) -> None:
-        try:
+        with contextlib.suppress(Exception):  # closing must never fail the end of a session
             self.context.close()
-        except Exception:  # noqa: BLE001 — closing must never fail the end of a session
-            pass
-        try:
+        with contextlib.suppress(Exception):
             self._pw.stop()
-        except Exception:  # noqa: BLE001
-            pass
 
 
 # ── the MCP server ───────────────────────────────────────────────────────────────────────────

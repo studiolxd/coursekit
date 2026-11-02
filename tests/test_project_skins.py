@@ -54,7 +54,7 @@ def test_a_skin_badly_declared_is_reported_and_not_used(tmp_path):
         assert "phone.yaml: the name of the skin is the file's" in problems
         assert "no-js.yaml: no-js.js, which draws it, is missing" in problems
         assert "broken.yaml: a skin declares 'screen'" in problems
-        assert simulation.SKINS == list(simulation.BUILTIN_SKINS)
+        assert list(simulation.BUILTIN_SKINS) == simulation.SKINS
     finally:
         simulation.use_project_skins(tmp_path / "nothing")
 

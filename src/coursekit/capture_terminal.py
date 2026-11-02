@@ -20,6 +20,7 @@ pauses of the model are shortened to `terminal.idle_limit`, and it becomes `medi
 from __future__ import annotations
 
 import codecs
+import contextlib
 import hashlib
 import io
 import itertools
@@ -271,10 +272,8 @@ class Terminal:
         self._stop.set()
         self._reader.join(timeout=2)
         self._flush(everything=True)
-        try:
+        with contextlib.suppress(OSError):
             os.close(self.master)
-        except OSError:
-            pass
 
 
 @dataclass

@@ -13,6 +13,7 @@ Where: `COURSEKIT_HOME`, else the user's data folder (`~/Library/Application Sup
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import os
@@ -50,10 +51,8 @@ def size(path: Path) -> int:
     total = 0
     for root, _, files in os.walk(path):
         for name in files:
-            try:
+            with contextlib.suppress(OSError):
                 total += (Path(root) / name).lstat().st_size
-            except OSError:
-                pass
     return total
 
 

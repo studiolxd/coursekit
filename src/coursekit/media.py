@@ -875,9 +875,9 @@ def _set_asset(course: dict, data: dict, asset_id: str, **values) -> str:
     statuses = cfg["statuses"]
     if values.get("status") and values["status"] not in statuses:
         raise MediaError(t("media", "bad_status", statuses=statuses))
-    if values.get("status") in ("produced", "uploaded") and asset.get("kind") in SIMULATION_KINDS and not values.get("force"):
-        if not style_approval(course):
-            raise MediaError(t("media", "style_not_approved", code=course["code"]))
+    if (values.get("status") in ("produced", "uploaded") and asset.get("kind") in SIMULATION_KINDS and not values.get("force")
+            and not style_approval(course)):
+        raise MediaError(t("media", "style_not_approved", code=course["code"]))
     visual_types = set(cfg.get("uses_theme") or []) | {"image"}
     if values.get("status") in ("produced", "uploaded") and asset["type"] in visual_types and not values.get("force"):
         from coursekit import mediastyle

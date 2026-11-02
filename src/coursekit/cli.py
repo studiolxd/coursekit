@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import shutil
@@ -338,10 +339,8 @@ def _utf8_output() -> None:
     for stream in (sys.stdout, sys.stderr):
         encoding = (getattr(stream, "encoding", None) or "").lower().replace("-", "")
         if encoding != "utf8" and hasattr(stream, "reconfigure"):
-            try:
+            with contextlib.suppress(OSError, ValueError):
                 stream.reconfigure(encoding="utf-8", errors="replace")
-            except (OSError, ValueError):
-                pass
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -357,10 +356,8 @@ def main(argv: list[str] | None = None) -> int:
         print(line, file=sys.stderr)
     try:
         if args.command not in refresh.SKIP:
-            try:
+            with contextlib.suppress(ProjectNotFound):  # outside a project there is nothing to refresh
                 refresh.ensure(find_project().root)
-            except ProjectNotFound:
-                pass  # outside a project there is nothing to refresh
         return args.func(args)
     except (ProjectNotFound, DesignError, agentsmod.RenderError, *commands.ERRORS) as exc:
         print(f"coursekit: {exc}", file=sys.stderr)

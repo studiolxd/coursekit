@@ -3,6 +3,7 @@
 
 import base64
 import json
+from pathlib import Path
 
 import pytest
 import yaml
@@ -66,7 +67,7 @@ def gemini(course, capsys, monkeypatch):  # noqa: F811
 
     def run(cmd, **kw):
         encoded.append(kw.get("input"))
-        open(cmd[-1], "wb").write(b"ID3")
+        Path(cmd[-1]).write_bytes(b"ID3")
 
     def subtitles(audio, text_path, out, model_name="base", language="es"):
         words = text_path.read_text(encoding="utf-8").split()

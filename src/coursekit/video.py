@@ -317,9 +317,9 @@ def check(course: dict, asset_id: str) -> list[Finding]:
             value = props.get(prop)
             if rule.get("required") and value in (None, "", []):
                 found.append(Finding("error", "PROP_MISSING", where, t("video", "prop_missing", prop=prop)))
-            if rule.get("type") == "media" and value and not re.match(r"^https?:", str(value)):
-                if not (course["_dir"] / "media" / str(value)).exists():
-                    found.append(Finding("error", "MEDIA_MISSING", where, t("video", "media_missing", prop=prop, path=f"media/{value}")))
+            if (rule.get("type") == "media" and value and not re.match(r"^https?:", str(value))
+                    and not (course["_dir"] / "media" / str(value)).exists()):
+                found.append(Finding("error", "MEDIA_MISSING", where, t("video", "media_missing", prop=prop, path=f"media/{value}")))
             if rule.get("type") == "list" and isinstance(value, list) and rule.get("max_items") and len(value) > int(rule["max_items"]):
                 found.append(Finding("warning", "TOO_MANY", where, t("video", "too_many", prop=prop, n=len(value), max=rule["max_items"])))
         for prop in props:

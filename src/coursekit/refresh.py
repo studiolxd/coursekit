@@ -72,9 +72,8 @@ def ensure(root: Path) -> None:
     except Exception as exc:  # noqa: BLE001 — a refresh problem must not block the work; `coursekit agents` shows it in full
         print(t("refresh", "failed", error=exc), file=sys.stderr)
         return
-    if before is None:  # the project had never been refreshed on this machine: say nothing unless something changed
-        if not (report.created or report.updated or agents.written or media):
-            return
+    if before is None and not (report.created or report.updated or agents.written or media):
+        return  # the project had never been refreshed on this machine: say nothing unless something changed
     print(t("refresh", "done", version=__version__, files=len(report.created) + len(report.updated), agents=len(agents.written)),
           file=sys.stderr)
     for path in report.kept_edited:
