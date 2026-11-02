@@ -115,7 +115,7 @@ def test_the_design_agent_is_told_what_to_do_with_the_theme_without_asking(tmp_p
 
 
 def test_the_handoff_pause_reminds_where_the_brand_goes(tmp_path, monkeypatch, capsys):
-    from coursekit import commands
+    from coursekit.commands import course as commands
 
     root = tmp_path / "demo"
     assert run_init(root, "--backend", "html") == 0

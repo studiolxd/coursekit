@@ -47,3 +47,20 @@ def test_every_help_can_be_shown(language, monkeypatch):
                     walk(sub)
 
     walk(build_parser())
+
+
+def test_the_capture_modes_of_the_parser_are_those_of_capture():
+    from coursekit import capture, commands
+
+    assert commands.CAPTURE_MODES == capture.MODES
+
+
+def test_the_parser_does_not_load_the_modules_of_the_commands():
+    import subprocess
+    import sys
+
+    code = ("import sys; from coursekit.cli import build_parser; build_parser(); "
+            "heavy = ('coursekit.commands.', 'coursekit.capture', 'coursekit.video', 'openpyxl'); "
+            "print(sorted(m for m in sys.modules if m.startswith(heavy)))")
+    loaded = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True).stdout.strip()
+    assert loaded == "[]"

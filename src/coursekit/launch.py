@@ -32,6 +32,7 @@ from coursekit import agents as agentsmod
 from coursekit import config as configmod
 from coursekit import course as coursemod
 from coursekit import store
+from coursekit.errors import CoursekitError
 from coursekit.fingerprint import changed_since_review
 from coursekit.i18n import t
 from coursekit.project import Project
@@ -78,7 +79,7 @@ CLAUDE_DENY = ["Bash(git commit:*)", "Bash(git push:*)", "Bash(coursekit approve
 SEARCH_ROLES = ("design", "writer", "reviewer", "media")  # the roles that may search the web (WebSearch in Claude Code)
 
 
-class LaunchError(Exception):
+class LaunchError(CoursekitError):
     pass
 
 

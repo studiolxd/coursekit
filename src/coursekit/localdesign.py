@@ -13,6 +13,11 @@ exports what the rest of coursekit reads, the same three files a design made in 
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from openpyxl import Workbook
+
 import json
 import re
 import unicodedata
@@ -21,12 +26,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
-from openpyxl import Workbook
-from openpyxl.styles import Alignment, Font, PatternFill
-from openpyxl.utils import get_column_letter
 
 from coursekit import course as coursemod
 from coursekit import lang
+from coursekit.errors import CoursekitError
 from coursekit.i18n import t
 
 FILE = Path("design") / "design.yaml"
@@ -44,7 +47,7 @@ STRUCTURES = ("sin_modulos", "con_modulos")
 ID_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_.-]*$")
 
 
-class DesignError(Exception):
+class DesignError(CoursekitError):
     pass
 
 
@@ -477,17 +480,19 @@ def export(course: dict) -> tuple[list[Finding], list[Path]]:
 
 # ── the Excel the person reviews ─────────────────────────────────────────────────────────
 
-HEAD_FILL = PatternFill("solid", fgColor="1F3A5F")
-HEAD_FONT = Font(bold=True, color="FFFFFF")
-UNIT_FONT = Font(bold=True)
+# openpyxl is loaded only to write the Excel: every command imports this module, few write one.
+HEAD_COLOR = "1F3A5F"
 
 
 def _sheet(book: Workbook, title: str, columns: list[tuple[str, int]], first: bool = False):
+    from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.utils import get_column_letter
+
     sheet = book.active if first else book.create_sheet()
     sheet.title = title[:31]
     for i, (name, width) in enumerate(columns, 1):
         cell = sheet.cell(row=1, column=i, value=name)
-        cell.fill, cell.font = HEAD_FILL, HEAD_FONT
+        cell.fill, cell.font = PatternFill("solid", fgColor=HEAD_COLOR), Font(bold=True, color="FFFFFF")
         cell.alignment = Alignment(vertical="top", wrap_text=True)
         sheet.column_dimensions[get_column_letter(i)].width = width
     sheet.freeze_panes = "A2"
@@ -495,11 +500,13 @@ def _sheet(book: Workbook, title: str, columns: list[tuple[str, int]], first: bo
 
 
 def _row(sheet, values: list, bold: bool = False) -> None:
+    from openpyxl.styles import Alignment, Font
+
     sheet.append(values)
     for cell in sheet[sheet.max_row]:
         cell.alignment = Alignment(vertical="top", wrap_text=True)
         if bold:
-            cell.font = UNIT_FONT
+            cell.font = Font(bold=True)
 
 
 def keys(course: dict, graph: dict) -> tuple[dict[str, str], dict[str, str], dict[str, str]]:
@@ -599,6 +606,8 @@ def write_excel(course: dict, graph: dict, findings: list[Finding], target: Path
     rules = coursemod.rules(course)
     names = lambda ids, found: ", ".join(found.get(i, "?") for i in ids)  # noqa: E731
     ordered = lambda items: sorted(items, key=lambda x: x.get("orden", 0))  # noqa: E731
+
+    from openpyxl import Workbook
 
     book = Workbook()
     meta = graph["matrix"]

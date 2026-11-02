@@ -16,9 +16,9 @@ from coursekit import __version__, commands, config, envfile, i18n, refresh, upd
 from coursekit import agents as agentsmod
 from coursekit import init as initmod
 from coursekit import setup as setupmod
+from coursekit.errors import CoursekitError
 from coursekit.i18n import t
 from coursekit.project import PROJECT_FILE, ProjectNotFound, find_project
-from coursekit.sync import DesignError
 
 
 def _print_report(report: initmod.Report) -> None:
@@ -359,7 +359,7 @@ def main(argv: list[str] | None = None) -> int:
             with contextlib.suppress(ProjectNotFound):  # outside a project there is nothing to refresh
                 refresh.ensure(find_project().root)
         return args.func(args)
-    except (ProjectNotFound, DesignError, agentsmod.RenderError, *commands.ERRORS) as exc:
+    except (CoursekitError, FileExistsError) as exc:
         print(f"coursekit: {exc}", file=sys.stderr)
         return 1
 

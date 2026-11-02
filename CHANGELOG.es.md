@@ -7,6 +7,7 @@ qué no está hecho está en el estado del [README](README.es.md#estado). Las ve
 
 ## Sin publicar
 
+- Todos los comandos arrancan antes: cada uno carga solo los módulos que usa (`coursekit --version` tarda más o menos la mitad), y la salida de ffmpeg, git y los demás programas se lee en UTF-8 también en una consola de Windows.
 - MarkItDown, que convierte los documentos del brief y del material de marca, pasa al extra opcional `docs`: la instalación base pasa de 48 paquetes a 7, unos 250 MB menos. Sin él, `brief` sigue leyendo Markdown, texto, paquetes de eXeLearning y enlaces web. **Para seguir convirtiendo PDF, Word o PowerPoint tras actualizar:** `uv tool install --force "slxd-coursekit[docs]"` (con `capture` también, nombra los dos: `[docs,capture]`).
 - Todo mensaje que pide un extra da el comando con los extras ya instalados, porque reinstalar con uno quita los demás. `doctor` pide `docs` solo cuando hay documentos que convertir, y avisa cuando hay instalado más de un paquete de OpenCV.
 - `coursekit config --check`: las claves de `config/*.yaml`, `project.yaml` y cada `course.yaml` que coursekit no lee (mal escritas o de una versión anterior), cada una con la clave que probablemente se quería poner.

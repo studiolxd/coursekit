@@ -1,0 +1,355 @@
+"""The sub-commands of coursekit (every command but init, config, rules, agents and uninstall, which `cli.py` declares).
+
+`register` builds the parser, in the order `--help` lists them; each command lives in the module of its group and is imported only
+when it runs, so that `coursekit --help` or a light command does not load the whole package."""
+
+from __future__ import annotations
+
+import argparse
+import importlib
+from collections.abc import Callable
+
+from coursekit import agents as agentsmod
+from coursekit import launch, new, voices
+from coursekit.i18n import t
+
+# The modes of `coursekit capture` (capture.MODES; a test keeps them equal): written here so that building the parser does not
+# load the capture package.
+CAPTURE_MODES = ("browser", "desktop", "terminal")
+
+
+def _lazy(group: str, name: str) -> Callable[[argparse.Namespace], int]:
+    def run(args: argparse.Namespace) -> int:
+        return int(getattr(importlib.import_module(f"coursekit.commands.{group}"), name)(args))
+
+    return run
+
+
+def register(sub: argparse._SubParsersAction) -> None:
+    p = sub.add_parser("new", help=t("commands", "help_new"))
+    p.add_argument("title")
+    p.add_argument("hours", type=float)
+    p.add_argument("--code", help=t("commands", "help_new_code"))
+    p.add_argument("--language", help=t("commands", "help_new_language"))
+    p.add_argument("--no-intro", action="store_true", help=t("commands", "help_new_no_intro"))
+    p.add_argument("--no-summary", action="store_true", help=t("commands", "help_new_no_summary"))
+    p.add_argument("--notes", default="", help=t("commands", "help_new_notes"))
+    p.add_argument("--approach", choices=new.APPROACHES, help=t("commands", "help_new_approach"))
+    p.add_argument("--design-tool", choices=new.DESIGN_TOOLS, help=t("commands", "help_new_design_tool"))
+    p.set_defaults(func=_lazy("course", "cmd_new"))
+
+    p = sub.add_parser("import", help=t("commands", "help_import"))
+    p.add_argument("path", help=t("commands", "help_import_path"))
+    p.add_argument("--plan", action="store_true", help=t("commands", "help_import_plan"))
+    p.add_argument("--plan-file", help=t("commands", "help_import_plan_file"))
+    p.add_argument("--hours-file", help=t("commands", "help_import_hours_file"))
+    p.add_argument("--default-hours", type=float, help=t("commands", "help_import_default_hours"))
+    p.add_argument("--hours", type=float, help=t("commands", "help_import_hours"))
+    p.add_argument("--title", help=t("commands", "help_import_title"))
+    p.add_argument("--code", help=t("commands", "help_new_code"))
+    p.add_argument("--handoff", action="store_true", help=t("commands", "help_import_handoff"))
+    p.add_argument("--rounds", type=int, help=t("commands", "help_handoff_rounds"))
+    p.set_defaults(func=_lazy("course", "cmd_import"))
+
+    p = sub.add_parser("videos", help=t("commands", "help_videos"))
+    p.add_argument("action", choices=("check", "propose", "approve", "reject"))
+    p.add_argument("code")
+    p.add_argument("url", nargs="?")
+    p.add_argument("--why", help=t("commands", "help_videos_why"))
+    p.add_argument("--replaces", help=t("commands", "help_videos_replaces"))
+    p.add_argument("--for", dest="asset", metavar="ASSET", help=t("commands", "help_videos_for"))
+    p.set_defaults(func=_lazy("brief", "cmd_videos"))
+
+    p = sub.add_parser("handoff", help=t("commands", "help_handoff"))
+    p.add_argument("target", help=t("commands", "help_handoff_target"))
+    p.add_argument("hours", nargs="?", type=float, help=t("commands", "help_handoff_hours"))
+    p.add_argument("--code", help=t("commands", "help_new_code"))
+    p.add_argument("--no-intro", action="store_true", help=t("commands", "help_new_no_intro"))
+    p.add_argument("--no-summary", action="store_true", help=t("commands", "help_new_no_summary"))
+    p.add_argument("--notes", default="", help=t("commands", "help_new_notes"))
+    p.add_argument("--approach", choices=new.APPROACHES, help=t("commands", "help_new_approach"))
+    p.add_argument("--rounds", type=int, help=t("commands", "help_handoff_rounds"))
+    p.add_argument("--no-pause", action="store_true", help=t("commands", "help_handoff_no_pause"))
+    p.add_argument("--new-version", action="store_true", help=t("commands", "help_handoff_new_version"))
+    p.set_defaults(func=_lazy("course", "cmd_handoff"))
+
+    p = sub.add_parser("status", help=t("commands", "help_status"))
+    p.add_argument("code", nargs="?")
+    p.set_defaults(func=_lazy("course", "cmd_status"))
+
+    p = sub.add_parser("sync", help=t("commands", "help_sync"))
+    p.add_argument("code")
+    p.add_argument("--check", action="store_true", help=t("commands", "help_sync_check"))
+    p.set_defaults(func=_lazy("course", "cmd_sync"))
+
+    p = sub.add_parser("design", help=t("commands", "help_design"))
+    p.add_argument("code")
+    p.add_argument("--check", action="store_true", help=t("commands", "help_design_check"))
+    p.set_defaults(func=_lazy("course", "cmd_design"))
+
+    p = sub.add_parser("outline", help=t("commands", "help_outline"))
+    p.add_argument("code")
+    p.add_argument("--section", help=t("commands", "help_outline_section"))
+    p.set_defaults(func=_lazy("course", "cmd_outline"))
+
+    p = sub.add_parser("paths", help=t("commands", "help_paths"))
+    p.add_argument("code")
+    p.add_argument("--unit", type=int, help=t("commands", "help_paths_unit"))
+    p.set_defaults(func=_lazy("course", "cmd_paths"))
+
+    p = sub.add_parser("preview", help=t("commands", "help_preview"))
+    p.add_argument("code")
+    p.add_argument("--unit", type=int, help=t("commands", "help_preview_unit"))
+    p.add_argument("--build", action="store_true", help=t("commands", "help_preview_build"))
+    p.add_argument("--port", type=int, default=8765, help=t("commands", "help_preview_port"))
+    p.add_argument("--no-open", action="store_true", help=t("commands", "help_preview_no_open"))
+    p.set_defaults(func=_lazy("course", "cmd_preview"))
+
+    p = sub.add_parser("verify", help=t("commands", "help_verify"))
+    p.add_argument("code")
+    p.add_argument("--unit", type=int)
+    p.add_argument("--no-update", action="store_true", help=t("commands", "help_verify_no_update"))
+    p.set_defaults(func=_lazy("course", "cmd_verify"))
+
+    p = sub.add_parser("reviewed", help=t("commands", "help_reviewed"))
+    p.add_argument("code")
+    p.add_argument("unit", type=int)
+    p.add_argument("--by", help=t("commands", "help_reviewed_by"))
+    p.add_argument("--note", help=t("commands", "help_reviewed_note"))
+    p.add_argument("--report", help=t("commands", "help_reviewed_report"))
+    p.set_defaults(func=_lazy("course", "cmd_reviewed"))
+
+    p = sub.add_parser("approve", help=t("commands", "help_approve"))
+    p.add_argument("gate", choices=("design", "content", "style", "media-style", "script"))
+    p.add_argument("code", nargs="?", help=t("commands", "help_approve_code"))
+    p.add_argument("--unit", type=int, help=t("commands", "help_approve_unit"))
+    p.add_argument("--asset", action="append", help=t("commands", "help_approve_asset"))
+    p.add_argument("--yes", action="store_true", help=t("commands", "help_approve_yes"))
+    p.add_argument("--no-commit", action="store_true", help=t("commands", "help_approve_no_commit"))
+    p.add_argument("--force", action="store_true", help=t("commands", "help_approve_force"))
+    p.set_defaults(func=_lazy("course", "cmd_approve"))
+
+    for name, help_text in (("write", t("commands", "help_write")), ("review", t("commands", "help_review"))):
+        p = sub.add_parser(name, help=help_text)
+        p.add_argument("code")
+        p.add_argument("n", type=int, nargs="?", help=t("commands", "help_unit_n"))
+        p.add_argument("--headless", action="store_true", help=t("commands", "help_headless"))
+        if name == "review":
+            p.add_argument("--full", action="store_true", help=t("commands", "help_full"))
+            p.add_argument("--parts", help=t("commands", "help_parts"))
+        p.add_argument("--agent", choices=launch.TOOLS, help=t("commands", "help_agent_launch"))
+        p.add_argument("--model", help=t("commands", "help_model_launch"))
+        p.set_defaults(func=_lazy("roles", "cmd_unit_agent"))
+
+    p = sub.add_parser("run", help=t("commands", "help_run"))
+    p.add_argument("name", help=t("commands", "help_run_name"))
+    p.add_argument("arguments", nargs=argparse.REMAINDER)
+    p.add_argument("--role", choices=agentsmod.ROLES, help=t("commands", "help_run_role"))
+    p.add_argument("--headless", action="store_true")
+    p.add_argument("--agent", choices=launch.TOOLS)
+    p.add_argument("--model")
+    p.set_defaults(func=_lazy("roles", "cmd_run"))
+
+    p = sub.add_parser("assemble", help=t("commands", "help_assemble"))
+    p.add_argument("action", choices=("plan", "diff", "applied", "checked", "link", "build", "check"),
+                   help=t("commands", "help_assemble_action"))
+    p.add_argument("code")
+    p.add_argument("--unit", type=int, help=t("commands", "help_assemble_unit"))
+    p.add_argument("--version", help=t("commands", "help_assemble_version"))
+    p.add_argument("--no-check", action="store_true", help=t("commands", "help_assemble_no_check"))
+    p.add_argument("--browser", help=t("commands", "help_assemble_browser"))
+    p.add_argument("--lesson")
+    p.add_argument("--lesson-id")
+    p.add_argument("--brick-ids", default="")
+    p.add_argument("--brick-ids-file", help=t("commands", "help_assemble_brick_ids_file"))
+    p.add_argument("--keep-ids", action="store_true", help=t("commands", "help_assemble_keep_ids"))
+    p.add_argument("--replace-id", help=t("commands", "help_assemble_replace_id"))
+    p.add_argument("--content", action="store_true", help=t("commands", "help_assemble_content"))
+    p.add_argument("--content-id")
+    p.add_argument("--preview", help=t("commands", "help_assemble_preview"))
+    p.add_argument("--review", help=t("commands", "help_assemble_review"))
+    p.set_defaults(func=_lazy("assembly", "cmd_assemble"))
+
+    p = sub.add_parser("directives", help=t("commands", "help_directives"))
+    p.add_argument("action", choices=("check",))
+    p.add_argument("file", help=t("commands", "help_directives_file"))
+    p.set_defaults(func=_lazy("assembly", "cmd_directives"))
+
+    p = sub.add_parser("media", help=t("commands", "help_media"))
+    p.add_argument("action", choices=("extract", "plan", "providers", "set", "upload", "redo", "embed", "fit", "render", "narrate",
+                                      "optimize", "adopt", "check", "sheet", "transcript", "stock", "anchors", "gallery"))
+    p.add_argument("code", nargs="?")
+    p.add_argument("id", nargs="?")
+    p.add_argument("more", nargs="*", help=t("commands", "help_media_more"))
+    p.add_argument("--url", help=t("commands", "help_media_url"))
+    p.add_argument("--content-type", help=t("commands", "help_media_content_type"))
+    p.add_argument("--method", default="PUT", help=t("commands", "help_media_method"))
+    for key in ("status", "recipe", "asset-path", "file", "alt", "transcript", "subtitles-path", "made-with",
+                "download", "download-title", "download-asset-path"):
+        p.add_argument(f"--{key}")
+    p.add_argument("--depicts", choices=("interface", "concept"), help=t("commands", "help_media_depicts"))
+    p.add_argument("--decorative", action=argparse.BooleanOptionalAction, default=None, help=t("commands", "help_media_decorative"))
+    p.add_argument("--unit", type=int, help=t("commands", "help_media_unit"))
+    p.add_argument("--set", action="append", dest="anchor_set", metavar="POINT=X,Y", help=t("commands", "help_media_set"))
+    p.add_argument("--force", action="store_true", help=t("commands", "help_media_force"))
+    p.add_argument("--all", action="store_true", help=t("commands", "help_media_all"))
+    p.add_argument("--clean", action="store_true", help=t("commands", "help_media_clean"))
+    p.add_argument("--recapture", action="store_true", help=t("commands", "help_media_recapture"))
+    p.add_argument("--size", help=t("commands", "help_media_size"))
+    p.add_argument("--fix", action="store_true", help=t("commands", "help_media_fix"))
+    p.add_argument("--frames", type=int, help=t("commands", "help_media_frames"))
+    p.add_argument("--batch", action="store_true", help=t("commands", "help_media_batch"))
+    p.add_argument("--find", help=t("commands", "help_media_find"))
+    p.add_argument("--take", type=int, help=t("commands", "help_media_take"))
+    p.add_argument("--color", help=t("commands", "help_media_color"))
+    p.add_argument("--serve", action="store_true", help=t("commands", "help_media_serve"))
+    p.add_argument("--port", type=int, default=8767, help=t("commands", "help_media_port"))
+    p.add_argument("--no-open", action="store_true", help=t("commands", "help_media_no_open"))
+    p.set_defaults(func=_lazy("media", "cmd_media"))
+
+    p = sub.add_parser("video", help=t("commands", "help_video"))
+    p.add_argument("action", choices=("new", "check", "voice", "preview", "render", "catalog", "gallery", "export"))
+    p.add_argument("code", nargs="?", help=t("commands", "help_video_code"))
+    p.add_argument("id", nargs="?")
+    p.add_argument("--batch", action="store_true", help=t("commands", "help_video_batch"))
+    p.add_argument("--serve", action="store_true", help=t("commands", "help_video_serve"))
+    p.add_argument("--port", type=int, default=8766, help=t("commands", "help_video_port"))
+    p.add_argument("--no-open", action="store_true", help=t("commands", "help_video_no_open"))
+    p.set_defaults(func=_lazy("media", "cmd_video"))
+
+    p = sub.add_parser("capture", help=t("commands", "help_capture"))
+    p.add_argument("action", choices=("login", "logout", "profiles", "allow", "revoke", "redact", "review", "approve", "reject",
+                                      "serve", "replay", "stage"))
+    p.add_argument("target", nargs="?", help=t("commands", "help_capture_target"))
+    p.add_argument("ids", nargs="*", help=t("commands", "help_capture_ids"))
+    p.add_argument("--mode", action="append", choices=(*CAPTURE_MODES, "all"), help=t("commands", "help_capture_mode"))
+    p.add_argument("--profile", help=t("commands", "help_capture_profile"))
+    p.add_argument("--window", help=t("commands", "help_capture_window"))
+    p.add_argument("--minutes", type=float, help=t("commands", "help_capture_minutes"))
+    p.add_argument("--file", help=t("commands", "help_capture_file"))
+    p.add_argument("--note", help=t("commands", "help_capture_note"))
+    p.add_argument("--mask", action="append", help=t("commands", "help_capture_mask"))
+    p.add_argument("--prepare", action="append", help=t("commands", "help_capture_prepare"))
+    p.add_argument("--part", help=t("commands", "help_capture_part"))
+    p.set_defaults(func=_lazy("media", "cmd_capture"))
+
+    p = sub.add_parser("download", help=t("commands", "help_download"))
+    p.add_argument("url", help=t("commands", "help_download_url"))
+    p.add_argument("--out", required=True, help=t("commands", "help_download_out"))
+    p.set_defaults(func=_lazy("media", "cmd_download"))
+
+    p = sub.add_parser("voice", help=t("commands", "help_voice"))
+    p.add_argument("action", choices=("list", "set", "unset"))
+    p.add_argument("code", nargs="?", help=t("commands", "help_voice_code"))
+    p.add_argument("provider", nargs="?", choices=tuple(voices.PROVIDERS))
+    p.add_argument("--voice")
+    p.add_argument("--speaker")
+    p.add_argument("--character", help=t("commands", "help_voice_character"))
+    p.set_defaults(func=_lazy("media", "cmd_voice"))
+
+    p = sub.add_parser("tts", help=t("commands", "help_tts"))
+    p.add_argument("--course", help=t("commands", "help_tts_course"))
+    p.add_argument("--engine", choices=tuple(voices.PROVIDERS))
+    p.add_argument("--in", dest="input", required=True)
+    p.add_argument("--out", required=True)
+    p.add_argument("--voice")
+    p.add_argument("--speaker", help=t("commands", "help_tts_speaker"))
+    p.add_argument("--character", help=t("commands", "help_tts_character"))
+    p.add_argument("--batch", action="store_true", help=t("commands", "help_tts_batch"))
+    p.set_defaults(func=_lazy("media", "cmd_tts"))
+
+    p = sub.add_parser("brand", help=t("brand", "help"))
+    p.add_argument("code", nargs="?", help=t("brand", "help_code"))
+    p.add_argument("--refresh", action="store_true", help=t("brand", "help_refresh"))
+    p.set_defaults(func=_lazy("brief", "cmd_brand"))
+
+    p = sub.add_parser("tts-batch", help=t("commands", "help_tts_batch_command"))
+    p.add_argument("action", choices=("list", "send", "status", "collect"))
+    p.add_argument("code")
+    p.set_defaults(func=_lazy("media", "cmd_tts_batch"))
+
+    p = sub.add_parser("subtitles", help=t("commands", "help_subtitles"))
+    p.add_argument("--audio", required=True)
+    p.add_argument("--text", required=True)
+    p.add_argument("--out", required=True)
+    p.add_argument("--course", help=t("commands", "help_subtitles_course"))
+    p.add_argument("--language", default="es")
+    p.add_argument("--model", default="base")
+    p.set_defaults(func=_lazy("media", "cmd_subtitles"))
+
+    p = sub.add_parser("delivery", help=t("commands", "help_delivery"))
+    p.add_argument("action", choices=("add", "name", "check", "download", "questions"))
+    p.add_argument("code")
+    p.add_argument("--unit", type=int)
+    p.add_argument("--url", help=t("commands", "help_delivery_url"))
+    p.add_argument("--version")
+    p.add_argument("--file")
+    p.add_argument("--job")
+    p.add_argument("--snapshot")
+    p.set_defaults(func=_lazy("assembly", "cmd_delivery"))
+
+    p = sub.add_parser("hold", help=t("commands", "help_hold"))
+    p.add_argument("code")
+    p.add_argument("--reason", required=True, help=t("commands", "help_hold_reason"))
+    p.set_defaults(func=_lazy("course", "cmd_hold"))
+
+    p = sub.add_parser("resume", help=t("commands", "help_resume"))
+    p.add_argument("code")
+    p.set_defaults(func=_lazy("course", "cmd_resume"))
+
+    p = sub.add_parser("client", help=t("commands", "help_client"))
+    p.add_argument("code")
+    p.add_argument("action", choices=("send", "changes", "approve", "skip"), help=t("commands", "help_client_action"))
+    p.add_argument("--to", help=t("commands", "help_client_to"))
+    p.add_argument("--where", help=t("commands", "help_client_where"))
+    p.add_argument("--by", help=t("commands", "help_client_by"))
+    p.add_argument("--note", help=t("commands", "help_client_note"))
+    p.add_argument("--reason", help=t("commands", "help_client_reason"))
+    p.set_defaults(func=_lazy("course", "cmd_client"))
+
+    p = sub.add_parser("publish", help=t("commands", "help_publish"))
+    p.add_argument("code", nargs="?")
+    p.add_argument("--check", action="store_true", help=t("commands", "help_publish_check"))
+    p.add_argument("--only-if-configured", action="store_true", help=t("commands", "help_publish_only"))
+    p.set_defaults(func=_lazy("course", "cmd_publish"))
+
+    p = sub.add_parser("catalog", help=t("commands", "help_catalog"))
+    p.add_argument("--output")
+    p.set_defaults(func=_lazy("course", "cmd_catalog"))
+
+    p = sub.add_parser("theme", help=t("commands", "help_theme"))
+    p.add_argument("action", choices=("tokens", "check", "import", "show", "roles", "sample"), help=t("commands", "help_theme_action"))
+    p.add_argument("file", nargs="?", help=t("commands", "help_theme_file"))
+    p.add_argument("--course", help=t("commands", "help_theme_course"))
+    p.set_defaults(func=_lazy("assembly", "cmd_theme"))
+
+    p = sub.add_parser("setup", help=t("setup", "help_setup"))
+    p.add_argument("--identity", action="store_true", help=t("setup", "help_identity"))
+    p.add_argument("--media", action="store_true", help=t("setup", "help_media"))
+    p.add_argument("--roles", action="store_true", help=t("setup", "help_roles"))
+    p.add_argument("--name", help=t("setup", "help_name"))
+    p.add_argument("--email", help=t("setup", "help_email"))
+    p.add_argument("--yes", "-y", action="store_true", help=t("setup", "help_yes"))
+    p.set_defaults(func=_lazy("roles", "cmd_setup"))
+
+    p = sub.add_parser("doctor", help=t("commands", "help_doctor"))
+    p.set_defaults(func=_lazy("roles", "cmd_doctor"))
+
+    p = sub.add_parser("roles", help=t("commands", "help_roles"))
+    p.set_defaults(func=_lazy("roles", "cmd_roles"))
+
+    p = sub.add_parser("brief", help=t("commands", "help_brief"))
+    p.add_argument("code", nargs="?", help=t("commands", "help_brief_code"))
+    p.add_argument("--refresh", action="store_true", help=t("commands", "help_brief_refresh"))
+    p.add_argument("--find", help=t("commands", "help_brief_find"))
+    p.add_argument("--section", help=t("commands", "help_brief_section"))
+    p.add_argument("--top", type=int, help=t("commands", "help_brief_top"))
+    p.set_defaults(func=_lazy("brief", "cmd_brief"))
+
+    p = sub.add_parser("research", help=t("commands", "help_research"))
+    p.add_argument("code")
+    p.add_argument("query", nargs="?", help=t("commands", "help_research_query"))
+    p.add_argument("--fact", action="store_true", help=t("commands", "help_research_fact"))
+    p.add_argument("--json", action="store_true", help=t("commands", "help_research_json"))
+    p.add_argument("--status", action="store_true", help=t("commands", "help_research_status"))
+    p.set_defaults(func=_lazy("brief", "cmd_research"))

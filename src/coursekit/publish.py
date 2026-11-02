@@ -28,11 +28,12 @@ from pathlib import Path
 from urllib.parse import parse_qs, quote, unquote, urlencode, urlsplit, urlunsplit
 
 from coursekit import catalog, config
+from coursekit.errors import CoursekitError
 from coursekit.i18n import t
 from coursekit.project import Project
 
 
-class PublishError(Exception):
+class PublishError(CoursekitError):
     pass
 
 

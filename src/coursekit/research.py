@@ -25,6 +25,7 @@ from pathlib import Path
 
 from coursekit import config, http
 from coursekit import course as coursemod
+from coursekit.errors import CoursekitError
 from coursekit.i18n import t
 from coursekit.util import USER_AGENT
 
@@ -52,7 +53,7 @@ CHALLENGE = re.compile(r"challenge-platform|cf-chl-|awswaf|_Incapsula_Resource|c
 BLOCKING = (202, 204, 401, 403, 429)
 
 
-class ResearchError(Exception):
+class ResearchError(CoursekitError):
     pass
 
 

@@ -17,12 +17,13 @@ import datetime as dt
 from pathlib import Path
 
 from coursekit import config, identity
+from coursekit.errors import CoursekitError
 from coursekit.i18n import t
 from coursekit.states import ensure_active, history_entry
 from coursekit.util import edit_yaml, save_yaml
 
 
-class ClientReviewError(Exception):
+class ClientReviewError(CoursekitError):
     pass
 
 

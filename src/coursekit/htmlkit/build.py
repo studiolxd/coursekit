@@ -23,6 +23,7 @@ from coursekit import delivery as deliverymod
 from coursekit import external, store
 from coursekit import media as mediamod
 from coursekit import theme as thememod
+from coursekit.errors import CoursekitError
 from coursekit.htmlkit import check, manifest, render
 from coursekit.i18n import t
 from coursekit.media import opt as mediaopt
@@ -30,7 +31,7 @@ from coursekit.media import opt as mediaopt
 Say = Callable[[str], None]
 
 
-class HtmlBuildError(Exception):
+class HtmlBuildError(CoursekitError):
     pass
 
 

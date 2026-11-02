@@ -26,6 +26,7 @@ from coursekit import course as coursemod
 from coursekit import identity, localdesign
 from coursekit import misconceptions as misconmod
 from coursekit import story as storymod
+from coursekit.errors import CoursekitError
 from coursekit.fingerprint import changed_since_review
 from coursekit.i18n import t
 from coursekit.lang import format_number
@@ -35,7 +36,7 @@ from coursekit.util import edit_yaml, save_yaml, sha256_file
 from coursekit.verify import verify_unit
 
 
-class ApprovalError(Exception):
+class ApprovalError(CoursekitError):
     pass
 
 

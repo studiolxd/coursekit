@@ -13,6 +13,7 @@ import os
 import shutil
 
 from coursekit import course as coursemod
+from coursekit.errors import CoursekitError
 from coursekit.i18n import t
 from coursekit.util import edit_yaml, save_yaml
 
@@ -41,7 +42,7 @@ PROVIDERS = {
 LOCALES = {"es": "es-ES", "en": "en-GB"}
 
 
-class VoiceError(Exception):
+class VoiceError(CoursekitError):
     pass
 
 

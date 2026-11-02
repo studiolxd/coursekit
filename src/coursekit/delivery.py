@@ -15,12 +15,13 @@ from pathlib import Path
 
 from coursekit import clientreview, config, http, identity
 from coursekit import course as coursemod
+from coursekit.errors import CoursekitError
 from coursekit.i18n import t
 from coursekit.states import ensure_active, history_entry
 from coursekit.util import edit_yaml, save_yaml, sha256_file
 
 
-class DeliveryError(Exception):
+class DeliveryError(CoursekitError):
     pass
 
 

@@ -30,6 +30,7 @@ from coursekit import course as coursemod
 from coursekit import media as mediamod
 from coursekit import theme as thememod
 from coursekit import videos as videosmod
+from coursekit.errors import CoursekitError
 from coursekit.i18n import t
 from coursekit.project import Project
 from coursekit.states import derive_course_status, history_entry
@@ -68,7 +69,7 @@ Log = Callable[[str], None]
 Mirror = Callable[[], None]
 
 
-class HandoffError(Exception):
+class HandoffError(CoursekitError):
     pass
 
 

@@ -7,9 +7,10 @@ import openpyxl
 import pytest
 import yaml
 
-from coursekit import catalog, commands, launch
+from coursekit import catalog, launch
 from coursekit import course as coursemod
 from coursekit.cli import main
+from coursekit.commands import common
 from coursekit.project import find_project
 from tests.test_assemble import course  # noqa: F401 — project with a course
 from tests.test_exelearning import edit_course
@@ -100,7 +101,7 @@ def test_agent_sessions_leave_the_mirror_to_who_started_them(mirror, capsys, mon
     monkeypatch.delenv("COURSEKIT_MIRROR")
     assert launch.session_env()["COURSEKIT_MIRROR"] == "deferred"  # what the sessions without an interface start with
     calls = []
-    monkeypatch.setattr(commands, "_mirror", lambda project, code: calls.append(code))
+    monkeypatch.setattr(common, "mirror", lambda project, code: calls.append(code))
     monkeypatch.setattr(launch, "execute", lambda *a, **k: (0, None, ""))
     assert main(["run", "produce-media", "PWD", "--headless"]) == 0
     assert calls == ["PWD"]  # once, when the session ends
@@ -108,7 +109,7 @@ def test_agent_sessions_leave_the_mirror_to_who_started_them(mirror, capsys, mon
 
 def test_verify_without_update_does_not_touch_the_mirror(course, monkeypatch):  # noqa: F811
     calls = []
-    monkeypatch.setattr(commands, "_mirror", lambda project, code: calls.append(code))
+    monkeypatch.setattr(common, "mirror", lambda project, code: calls.append(code))
     main(["verify", "PWD", "--unit", "1", "--no-update"])
     assert calls == []
     main(["verify", "PWD", "--unit", "1"])

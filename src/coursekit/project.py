@@ -10,11 +10,13 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from coursekit.errors import CoursekitError
+
 PROJECT_FILE = "project.yaml"
 ROOT_ENV = "COURSEKIT_PROJECT"  # explicit project root, overrides the search
 
 
-class ProjectNotFound(Exception):
+class ProjectNotFound(CoursekitError):
     def __init__(self, start: Path):
         super().__init__(start)
         self.start = start

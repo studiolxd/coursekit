@@ -25,6 +25,7 @@ from pathlib import Path
 
 from coursekit import course as coursemod
 from coursekit import http
+from coursekit.errors import CoursekitError
 from coursekit.i18n import t
 from coursekit.media import tools as mediatools
 
@@ -33,7 +34,7 @@ DOWNLOAD = "https://generativelanguage.googleapis.com/download/v1beta"
 FINISHED = ("succeeded", "failed", "cancelled", "expired")
 
 
-class BatchError(Exception):
+class BatchError(CoursekitError):
     pass
 
 

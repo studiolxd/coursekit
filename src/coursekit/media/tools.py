@@ -23,13 +23,14 @@ from pathlib import Path
 
 from coursekit import course as coursemod
 from coursekit import http
+from coursekit.errors import CoursekitError
 from coursekit.i18n import t
 from coursekit.util import USER_AGENT
 from coursekit.voices import LOCALES, resolve, resolve_character
 from coursekit.voices import course_voice as chosen_voice
 
 
-class ToolError(Exception):
+class ToolError(CoursekitError):
     def __init__(self, message: str, status: int | None = None):
         super().__init__(message)
         self.status = status  # the HTTP status of the answer, when the failure was one

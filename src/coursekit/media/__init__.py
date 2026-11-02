@@ -24,13 +24,14 @@ from coursekit import course as coursemod
 from coursekit import i18n, lang
 from coursekit import story as storymod
 from coursekit import theme as thememod
+from coursekit.errors import CoursekitError
 from coursekit.i18n import t
 from coursekit.util import LockTimeout, character_asset_id, file_lock, roundtrip_yaml, save_yaml_atomic
 
 FIELD_KEYS = ("title", "description", "how", "specs")  # in the order of the language's placeholder_fields
 
 
-class MediaError(Exception):
+class MediaError(CoursekitError):
     pass
 
 

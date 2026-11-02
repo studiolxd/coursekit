@@ -22,6 +22,7 @@ from xml.sax.saxutils import escape as xml_escape
 
 from coursekit import assemble as assemblemod
 from coursekit import course as coursemod
+from coursekit.errors import CoursekitError
 from coursekit.i18n import t
 
 EXTENSIONS = {"aiken": "txt", "gift": "gift", "moodle-xml": "xml"}
@@ -33,7 +34,7 @@ FRACTIONS = {1: "100", 2: "50", 3: "33.33333", 4: "25", 5: "20", 6: "16.66667", 
 BLANK = re.compile(r"\{([^{}]+)\}")
 
 
-class BankError(Exception):
+class BankError(CoursekitError):
     pass
 
 

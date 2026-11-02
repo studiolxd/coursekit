@@ -24,12 +24,13 @@ from typing import Any, cast
 
 from coursekit import course as coursemod
 from coursekit import localdesign
+from coursekit.errors import CoursekitError
 from coursekit.i18n import t
 from coursekit.lang import format_number
 from coursekit.util import edit_yaml, render, save_yaml
 
 
-class DesignError(Exception):
+class DesignError(CoursekitError):
     pass
 
 

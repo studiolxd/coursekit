@@ -55,7 +55,7 @@ ignore = ["SIM905"]  # a sentence written as text and split reads better in the 
 [tool.mypy]
 # Typed so far: the core every command goes through. Widen `files` module by module; each one must pass before it is added.
 files = [
-    "src/coursekit/commands.py", "src/coursekit/config.py", "src/coursekit/course.py", "src/coursekit/i18n.py",
+    "src/coursekit/commands/__init__.py", "src/coursekit/commands/common.py", "src/coursekit/config.py", "src/coursekit/course.py", "src/coursekit/i18n.py",
     "src/coursekit/paths.py", "src/coursekit/status.py", "src/coursekit/sync.py",
 ]
 python_version = "3.12"

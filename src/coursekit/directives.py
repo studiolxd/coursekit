@@ -10,10 +10,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from coursekit.errors import CoursekitError
 from coursekit.i18n import t
 
 
-class CatalogError(Exception):
+class CatalogError(CoursekitError):
     pass
 
 

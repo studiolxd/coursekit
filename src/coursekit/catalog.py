@@ -5,15 +5,16 @@ Generated output, never edited by hand. Written in the project's ui_language (es
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from openpyxl.styles import PatternFill
+
 import datetime as dt
 import hashlib
 import json
 from collections.abc import Callable
 from pathlib import Path
-
-from openpyxl import Workbook
-from openpyxl.styles import Alignment, Font, PatternFill
-from openpyxl.utils import get_column_letter
 
 from coursekit import config
 from coursekit import course as coursemod
@@ -22,7 +23,7 @@ from coursekit.util import git, load_yaml
 from coursekit.verify import Syntax, learner_words, split_sections
 
 CATALOG_NAME = {"es": "catalogo-cursos.xlsx", "en": "course-catalog.xlsx"}
-LINK_FONT = Font(color="0563C1", underline="single")
+LINK_COLOR = "0563C1"
 
 TEXT = {
     "es": {
@@ -110,6 +111,9 @@ def content_approval(course: dict, n: int) -> dict | None:
 
 
 def _sheet(ws, headers, rows, fill: PatternFill, link_columns=()):
+    from openpyxl.styles import Alignment, Font
+    from openpyxl.utils import get_column_letter
+
     ws.append([h for h, _ in headers])
     for col, (_, width) in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col)
@@ -122,7 +126,7 @@ def _sheet(ws, headers, rows, fill: PatternFill, link_columns=()):
         for r in range(2, ws.max_row + 1):
             cell = ws.cell(row=r, column=col)
             if cell.value:
-                cell.hyperlink, cell.font = cell.value, LINK_FONT
+                cell.hyperlink, cell.font = cell.value, Font(color=LINK_COLOR, underline="single")
     ws.freeze_panes = "B2"
     ws.auto_filter.ref = ws.dimensions
 
@@ -225,6 +229,9 @@ def build(project: Project, output: Path, folder_url: Callable[[str], str] | Non
     state = _read_json(state_file)
     if not force and output.exists() and state.get(str(output)) == digest:
         return len(course_rows), len(unit_rows), False
+
+    from openpyxl import Workbook
+    from openpyxl.styles import PatternFill
 
     fill = PatternFill("solid", fgColor=header_color(project))
     wb = Workbook()

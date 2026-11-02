@@ -6,6 +6,7 @@ import math
 from pathlib import Path
 
 from coursekit import config, lang
+from coursekit.errors import CoursekitError
 from coursekit.i18n import t
 from coursekit.project import Project
 from coursekit.util import load_yaml, sha256_file
@@ -26,7 +27,7 @@ STATUSES = (
 SECTION_KINDS = ("intro", "content", "activities", "summary")
 
 
-class CourseNotFound(Exception):
+class CourseNotFound(CoursekitError):
     pass
 
 
@@ -47,7 +48,7 @@ def update_mode(rules: dict) -> str:
     return mode
 
 
-class RuleError(Exception):
+class RuleError(CoursekitError):
     pass
 
 

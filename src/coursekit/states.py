@@ -16,6 +16,7 @@ import datetime as dt
 from pathlib import Path
 
 from coursekit import identity
+from coursekit.errors import CoursekitError
 from coursekit.i18n import t
 from coursekit.util import edit_yaml, save_yaml
 
@@ -81,7 +82,7 @@ def set_unit_status(course_dir: Path, n: int, status: str, note: str | None = No
     return old, new
 
 
-class StateError(Exception):
+class StateError(CoursekitError):
     pass
 
 

@@ -34,6 +34,7 @@ from markdown_it import MarkdownIt
 from coursekit import config, lang, simulation
 from coursekit import course as coursemod
 from coursekit import story as storymod
+from coursekit.errors import CoursekitError
 from coursekit.i18n import t
 from coursekit.misconceptions import strip_tag
 from coursekit.states import history_entry
@@ -985,7 +986,7 @@ def assessment_lessons(course: dict, unit: dict, ctx: dict, fmt: str = "platform
 # ── Plan, diff and applied state ─────────────────────────────────────────────────────────────
 
 
-class AssembleError(Exception):
+class AssembleError(CoursekitError):
     pass
 
 

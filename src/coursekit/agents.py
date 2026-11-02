@@ -30,6 +30,7 @@ import yaml
 
 from coursekit import config, lang
 from coursekit import course as coursemod
+from coursekit.errors import CoursekitError
 from coursekit.i18n import t
 from coursekit.project import Project
 
@@ -73,7 +74,7 @@ TOKEN = re.compile(r"\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}")
 PARTIAL = re.compile(r"\{\{>\s*([a-z0-9_-]+)\s*\}\}")
 
 
-class RenderError(Exception):
+class RenderError(CoursekitError):
     pass
 
 

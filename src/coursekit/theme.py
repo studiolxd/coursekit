@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from coursekit import config
+from coursekit.errors import CoursekitError
 from coursekit.i18n import t
 from coursekit.project import Project
 from coursekit.util import edit_yaml, save_yaml
@@ -39,7 +40,7 @@ PAIRS = [
 ]
 
 
-class ThemeError(Exception):
+class ThemeError(CoursekitError):
     pass
 
 
