@@ -14,13 +14,8 @@ from tests.test_course_flow import ASSESSMENT, FIXTURES, WORDS, write_course_rul
 
 
 @pytest.fixture
-def project(tmp_path, monkeypatch):
-    for key in ("COURSEKIT_PROJECT", "COURSEKIT_USER_NAME", "COURSEKIT_USER_EMAIL"):
-        monkeypatch.delenv(key, raising=False)
-    root = tmp_path / "demo"
-    assert main(["init", str(root), "--yes", "--no-git", "--client", "ACME"]) == 0
-    monkeypatch.chdir(root)
-    return root
+def project(make_project):
+    return make_project("--client", "ACME")
 
 
 def course_data(root, code):

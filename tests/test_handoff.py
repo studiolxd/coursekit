@@ -106,15 +106,8 @@ class Agents:
 
 
 @pytest.fixture
-def project(tmp_path, monkeypatch):
-    monkeypatch.delenv("COURSEKIT_PROJECT", raising=False)
-    root = tmp_path / "demo"
-    assert main(["init", str(root), "--yes", "--no-git"]) == 0
-    monkeypatch.chdir(root)
-    # nobody is the signer: handoff signs with its own identity
-    monkeypatch.delenv("COURSEKIT_USER_NAME", raising=False)
-    monkeypatch.delenv("COURSEKIT_USER_EMAIL", raising=False)
-    return root
+def project(make_project):
+    return make_project()  # nobody is the signer: handoff signs with its own identity
 
 
 def test_the_whole_process_by_itself_signed_as_handoff(project, monkeypatch, capsys):

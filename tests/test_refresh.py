@@ -9,11 +9,8 @@ from coursekit.cli import main
 
 
 @pytest.fixture
-def project(tmp_path, monkeypatch):
-    monkeypatch.delenv("COURSEKIT_PROJECT", raising=False)
-    root = tmp_path / "demo"
-    assert main(["init", str(root), "--yes", "--no-git"]) == 0
-    monkeypatch.chdir(root)
+def project(make_project, monkeypatch):
+    root = make_project()
     monkeypatch.delenv(refresh.OFF_ENV)
     return root
 

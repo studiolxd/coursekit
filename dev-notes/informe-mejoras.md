@@ -41,10 +41,6 @@ Lo que se va haciendo se tacha y pasa a la sección [Hecho](#hecho), al final, c
   `PERF`. Cada una se añade con `--fix` y un commit propio.
 - **Tiempo de la suite.** Las pruebas que necesitan navegador, ffmpeg, OpenCV o pyte ya se saltan solas cuando falta
   la herramienta, y la CI las corre en un trabajo aparte. Un marcador `slow` solo si una medida de duraciones lo pide.
-- **Los fixtures de proyecto se construyen a mano en cada test.** Un `conftest.py` con un fixture
-  `project(tmp_path)` que ejecute `init` y escriba un curso mínimo ("contraseñas robustas", cliente
-  ACME) ahorraría código en casi todos los ficheros de `tests/`.
-
 ## 3. Experiencia de uso
 
 - **`--help` largo y en dos idiomas.** 59 ficheros de mensajes y un `cli.py` con más de 140 cadenas.
@@ -76,7 +72,7 @@ Lo que se va haciendo se tacha y pasa a la sección [Hecho](#hecho), al final, c
 
 Sigue las fases del [plan](plan-mejoras.md).
 
-1. Fixture común y, si la medida lo pide, marcador de pruebas lentas (sección 2; fase 2).
+1. Marcador de pruebas lentas, si lo pide una medida de duraciones de la suite completa (sección 2).
 2. Reglas nuevas de ruff y tipado gradual con `pyright` (sección 2; fase 3).
 3. Módulos comunes para programas externos y HTTP, subpaquetes y `commands.py` partido (sección 1; fase 4).
 4. `--json`, `verify --only` / `--ignore` y `help <comando>` (sección 3; fase 5).
@@ -107,3 +103,10 @@ Sigue las fases del [plan](plan-mejoras.md).
   solución de problemas lo explica.
 - ~~**Actualización de ejemplos de configuración.**~~ Hecho el 2 de noviembre de 2026 como `coursekit config --check` (una
   opción, porque `config` ya recibe el nombre de la configuración como primer argumento).
+
+### Pruebas (fase 2 del plan)
+
+- ~~**Los fixtures de proyecto se construyen a mano en cada test.**~~ Hecho el 2 de noviembre de 2026: `make_project` y
+  `make_course` en `tests/conftest.py`; doce fixtures reescritos sobre ellos, con los mismos 821 tests recogidos. Al
+  provocar fallos para comprobarlos salió un hueco: nada probaba que el redactor retoma una unidad a medio escribir
+  (`launch.units_to_do`); ya tiene su test.

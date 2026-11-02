@@ -8,13 +8,8 @@ from coursekit.project import find_project
 
 
 @pytest.fixture
-def project(tmp_path, monkeypatch):
-    for key in ("COURSEKIT_PROJECT", "COURSEKIT_USER_NAME", "COURSEKIT_USER_EMAIL", "NODE_EXTRA_CA_CERTS"):
-        monkeypatch.delenv(key, raising=False)
-    root = tmp_path / "demo"
-    assert main(["init", str(root), "--yes"]) == 0  # with git
-    monkeypatch.chdir(root)
-    return root
+def project(make_project):
+    return make_project(git=True, clear=("NODE_EXTRA_CA_CERTS",))
 
 
 def test_set_env_value_keeps_the_rest(tmp_path):

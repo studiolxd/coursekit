@@ -56,13 +56,8 @@ class Fakes:
 
 
 @pytest.fixture
-def project(tmp_path, monkeypatch):
-    for key in ("COURSEKIT_PROJECT", "COURSEKIT_USER_NAME", "COURSEKIT_USER_EMAIL"):
-        monkeypatch.delenv(key, raising=False)
-    root = tmp_path / "p1"
-    assert main(["init", str(root), "--yes", "--no-git"]) == 0
-    monkeypatch.chdir(root)
-    return find_project(root)
+def project(make_project):
+    return find_project(make_project(folder="p1"))
 
 
 @pytest.fixture

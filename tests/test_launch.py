@@ -1,6 +1,5 @@
 """Launchers with fake tools: no model is ever called."""
 
-import shutil
 from pathlib import Path
 
 import pytest
@@ -32,18 +31,10 @@ class FakeTools:
 
 
 @pytest.fixture
-def course(tmp_path, monkeypatch):
-    for key in ("COURSEKIT_PROJECT", *(f"{r}_{k}" for r in ("WRITER", "REVIEWER", "DESIGN") for k in ("AGENT", "MODEL"))):
-        monkeypatch.delenv(key, raising=False)
-    root = tmp_path / "demo"
-    assert main(["init", str(root), "--yes", "--no-git"]) == 0
-    monkeypatch.chdir(root)
-    (root / ".env").write_text("COURSEKIT_USER_NAME=Ana\nCOURSEKIT_USER_EMAIL=ana@example.com\n", encoding="utf-8")
-    assert main(["new", "Contraseñas", "1", "--code", "PWD"]) == 0
-    course_dir = root / "courses" / "PWD"
-    shutil.copy(FIXTURES / "matrix.json", course_dir / "design" / "matrix.json")
-    assert main(["approve", "design", "PWD", "--yes", "--no-commit"]) == 0
-    return course_dir
+def course(make_project, make_course):
+    root = make_project(signer=("Ana", "ana@example.com"),
+                        clear=[f"{r}_{k}" for r in ("WRITER", "REVIEWER", "DESIGN") for k in ("AGENT", "MODEL")])
+    return make_course(root, title="Contraseñas", approve=True)
 
 
 def unit(course_dir, key):
@@ -222,3 +213,12 @@ def test_codex_without_interface_has_network_and_web_search(agent_tool):
     assert "--search" not in assembly and "sandbox_workspace_write.network_access=true" in assembly
     design = launch.headless_args(launch.Agent("design", "claude", ""), "x", Path("last.txt"), "slxd")
     assert "WebSearch" in design and "Bash(coursekit research:*)" in design  # the reference documentation, with or without a provider
+
+
+def test_the_writer_resumes_a_unit_left_half_written_and_the_reviewer_takes_the_verified_ones():
+    from coursekit import launch
+
+    course = {"units": [{"n": 1, "status": "pending"}, {"n": 2, "status": "writing"}, {"n": 3, "status": "verified"},
+                        {"n": 4, "status": "reviewed"}, {"n": 5}]}
+    assert launch.units_to_do(course, "writer") == [1, 2, 5]
+    assert launch.units_to_do(course, "reviewer") == [3]

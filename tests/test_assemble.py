@@ -1,5 +1,4 @@
 import json
-import shutil
 from pathlib import Path
 
 import pytest
@@ -10,17 +9,9 @@ from tests.test_course_flow import ASSESSMENT, CONTENT, FIXTURES, write_course_r
 
 
 @pytest.fixture
-def course(tmp_path, monkeypatch):
-    monkeypatch.delenv("COURSEKIT_PROJECT", raising=False)
-    root = tmp_path / "demo"
-    assert main(["init", str(root), "--yes", "--no-git"]) == 0
-    monkeypatch.chdir(root)
-    (root / ".env").write_text("COURSEKIT_USER_NAME=Ana\nCOURSEKIT_USER_EMAIL=ana@example.com\n", encoding="utf-8")
-    assert main(["new", "Contraseñas seguras", "1", "--code", "PWD"]) == 0
-    course_dir = root / "courses" / "PWD"
-    write_course_rules(course_dir)
-    shutil.copy(FIXTURES / "matrix.json", course_dir / "design" / "matrix.json")
-    assert main(["approve", "design", "PWD", "--yes", "--no-commit"]) == 0
+def course(make_project, make_course):
+    root = make_project(signer=("Ana", "ana@example.com"))
+    course_dir = make_course(root, approve=True, prepare=write_course_rules)
     (course_dir / "content" / "unit-01" / "content.md").write_text(CONTENT, encoding="utf-8")
     (course_dir / "content" / "unit-01" / "assessment.md").write_text(ASSESSMENT, encoding="utf-8")
     return course_dir

@@ -10,14 +10,10 @@ SKILLS = ("instructional-design", "content-writing", "content-review", "creator-
 
 
 @pytest.fixture
-def project(tmp_path, monkeypatch):
-    for key in ("COURSEKIT_PROJECT", "WRITER_AGENT", "WRITER_MODEL", "REVIEWER_AGENT", "REVIEWER_MODEL"):
-        monkeypatch.delenv(key, raising=False)
-    root = tmp_path / "demo"
-    assert main(["init", str(root), "--yes", "--no-git", "--client", "ACME"]) == 0
+def project(make_project):
+    root = make_project("--client", "ACME", clear=("WRITER_AGENT", "WRITER_MODEL", "REVIEWER_AGENT", "REVIEWER_MODEL"))
     text = (root / "project.yaml").read_text(encoding="utf-8")
     (root / "project.yaml").write_text(text.replace('mcp_url: ""', 'mcp_url: "https://acme.example/mcp"'), encoding="utf-8")
-    monkeypatch.chdir(root)
     return root
 
 

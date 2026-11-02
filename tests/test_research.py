@@ -15,15 +15,10 @@ KEY = "secret-key-123"
 
 
 @pytest.fixture
-def course(tmp_path, monkeypatch):
-    monkeypatch.delenv("COURSEKIT_PROJECT", raising=False)
+def course(make_project, make_course, monkeypatch):
     for name in ("RESEARCH_PROVIDER", *research.KEYS.values()):
         monkeypatch.delenv(name, raising=False)
-    root = tmp_path / "demo"
-    assert main(["init", str(root), "--yes", "--no-git"]) == 0
-    monkeypatch.chdir(root)
-    assert main(["new", "Contraseñas seguras", "1", "--code", "PWD"]) == 0
-    return root / "courses" / "PWD"
+    return make_course(make_project())
 
 
 def use(monkeypatch, name):

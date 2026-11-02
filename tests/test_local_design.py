@@ -47,14 +47,8 @@ units:
 
 
 @pytest.fixture
-def project(tmp_path, monkeypatch):
-    for key in ("COURSEKIT_PROJECT", "COURSEKIT_USER_NAME", "COURSEKIT_USER_EMAIL"):
-        monkeypatch.delenv(key, raising=False)
-    root = tmp_path / "demo"
-    assert main(["init", str(root), "--yes", "--no-git", "--client", "Demo"]) == 0
-    monkeypatch.chdir(root)
-    (root / ".env").write_text("COURSEKIT_USER_NAME=Ana Pérez\nCOURSEKIT_USER_EMAIL=ana@example.com\n", encoding="utf-8")
-    return root
+def project(make_project):
+    return make_project("--client", "Demo", signer=("Ana Pérez", "ana@example.com"))
 
 
 def new_local(project: Path, design: str = DESIGN) -> Path:
