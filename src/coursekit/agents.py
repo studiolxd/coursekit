@@ -25,6 +25,7 @@ import shutil
 from dataclasses import dataclass, field
 from importlib import resources
 from pathlib import Path
+from typing import cast
 
 import yaml
 
@@ -217,7 +218,7 @@ def context(project: Project) -> dict[str, str]:
 
 def project_audience(data: dict) -> str:
     """`project.yaml › audience`, as the skills give it (what is empty is said to be missing)."""
-    given = data.get("audience") if isinstance(data.get("audience"), dict) else {}
+    given: dict = data["audience"] if isinstance(data.get("audience"), dict) else {}
     lines = [f"{key}: {str(given.get(key) or '').strip() or '(not set)'}" for key in coursemod.AUDIENCE_KEYS]
     return "; ".join(lines)
 
@@ -420,7 +421,7 @@ def _load_json(path: Path) -> dict:
     if not path.exists():
         return {}
     try:
-        return json.loads(path.read_text(encoding="utf-8") or "{}")
+        return cast("dict", json.loads(path.read_text(encoding="utf-8") or "{}"))
     except json.JSONDecodeError as exc:
         raise RenderError(t("agents", "invalid_json", file=path.name, error=exc)) from exc
 

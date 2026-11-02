@@ -14,6 +14,7 @@ import json
 import re
 import urllib.parse
 from pathlib import Path
+from typing import cast
 
 import yaml
 
@@ -253,4 +254,4 @@ def report(course: dict, lang: str) -> Path:
     path = course["_dir"] / REPORT
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(out), encoding="utf-8", newline="\n")
-    return path
+    return cast("Path", path)

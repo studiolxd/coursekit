@@ -6,9 +6,15 @@ for that course alone); in handoff mode coursekit signs it."""
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from coursekit.project import Project
+
 import hashlib
 import re
 from pathlib import Path
+from typing import cast
 
 from coursekit import course as coursemod
 from coursekit.util import sha256_file
@@ -16,7 +22,7 @@ from coursekit.util import sha256_file
 NAME = "media-style.md"
 
 
-def project_path(project) -> Path | None:
+def project_path(project: Project) -> Path | None:
     """The guide of the project (theme/branding/media-style.md), None when there is none."""
     found = project.theme_dir / "branding" / NAME
     return found if found.is_file() else None
@@ -38,7 +44,7 @@ def _last(approvals: list | None, found: Path) -> dict | None:
     return signed[-1] if signed and signed[-1].get("sha256") == fingerprint(found) else None
 
 
-def project_approval(project) -> dict | None:
+def project_approval(project: Project) -> dict | None:
     """The last signature of the guide of the project, while it has not changed since."""
     from coursekit import config
 
@@ -50,7 +56,7 @@ def path(course: dict) -> Path | None:
     """The guide in force for a course: its own, else the project's; None when there is none."""
     for base in (course["_dir"] / "theme" / "branding", course["_project"].theme_dir / "branding"):
         if (base / NAME).is_file():
-            return base / NAME
+            return cast("Path | None", base / NAME)
     return None
 
 

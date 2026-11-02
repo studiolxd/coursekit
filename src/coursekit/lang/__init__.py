@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from functools import cache
 from importlib import resources
+from typing import cast
 
 import yaml
 
@@ -16,7 +17,7 @@ def tokens(language: str = "es") -> dict:
     if code not in LANGUAGES:
         raise ValueError(f"unsupported content language {language!r} (one of: {', '.join(LANGUAGES)})")
     text = resources.files("coursekit.lang").joinpath(f"{code}.yaml").read_text(encoding="utf-8")
-    return yaml.safe_load(text)
+    return cast("dict", yaml.safe_load(text))
 
 
 def format_number(number: int, language: str = "es") -> str:
@@ -32,8 +33,8 @@ def media_type_id(tk: dict, label: str) -> str | None:
 def directive_key(tk: dict, name: str) -> str:
     """How a key of the directives is written in the language (`question` -> `pregunta`)."""
     if name == "objective":
-        return tk["question_objective_key"].rstrip(":")
-    return tk["directive_keys"][name]
+        return cast("str", tk["question_objective_key"].rstrip(":"))
+    return cast("str", tk["directive_keys"][name])
 
 
 def directive_keys(tk: dict) -> set[str]:

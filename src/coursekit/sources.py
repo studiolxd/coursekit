@@ -51,7 +51,8 @@ def passages(files: list[Path], size: int, stopwords: set[str]) -> list[Passage]
     out: list[Passage] = []
     for file in files:
         lines = file.read_text(encoding="utf-8", errors="replace").splitlines()
-        heading, chunk, start = "", [], 1
+        chunk: list[str] = []
+        heading, start = "", 1
         for i, line in enumerate(lines, 1):
             m = HEADING_RE.match(line)
             if m or (not line.strip() and len(" ".join(chunk).split()) >= size):

@@ -132,7 +132,7 @@ def _make_link(link: Path, target: Path) -> bool:
         if os.name == "nt":
             import _winapi
 
-            _winapi.CreateJunction(str(target), str(link))
+            _winapi.CreateJunction(str(target), str(link))  # type: ignore[attr-defined]  # Windows only
         else:
             link.symlink_to(target, target_is_directory=True)
     except (OSError, ImportError, AttributeError):

@@ -34,7 +34,7 @@ Nada pendiente: ver [Hecho](#hecho).
 Sigue las fases del [plan](plan-mejoras.md).
 
 1. Marcador de pruebas lentas, si lo pide una medida de duraciones de la suite completa (sección 2).
-2. Ampliar `mypy` a más módulos, uno a uno (sección 2).
+2. Tipar los 39 módulos de `[tool.mypy] exclude`, uno a uno (sección 2).
 
 ## Hecho
 
@@ -123,3 +123,9 @@ Sigue las fases del [plan](plan-mejoras.md).
   que un nombre repartido se siga encontrando. `requires-python` pasa a `<3.15`. Probado en macOS con 3.12 y 3.14 (no hay
   3.13 en la máquina; la CI lo cubre). Python 3.14 sacó además un fallo: su `argparse` comprueba la ayuda al declarar cada
   opción, y un `%` de un mensaje la rompía; ahora se escapa al declararla. Nuevo trabajo de CI con 3.14 y los dos extras.
+
+### mypy en todo el paquete
+
+- ~~**Ampliar `mypy` a más módulos.**~~ Hecho en parte el 2 de noviembre de 2026: comprueba ya todo el paquete (76 ficheros)
+  salvo 39 módulos que daban más de tres avisos, en `[tool.mypy] exclude`; un módulo nuevo nace tipado. Los 50 avisos de
+  los 25 módulos añadidos eran anotaciones que faltaban y valores de YAML o JSON sin tipo; ninguno era un fallo.

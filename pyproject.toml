@@ -59,11 +59,10 @@ select = ["E", "F", "I", "UP", "B", "SIM", "RET", "PTH"]
 ignore = ["SIM905"]  # a sentence written as text and split reads better in the tests than a list of words
 
 [tool.mypy]
-# Typed so far: the core every command goes through. Widen `files` module by module; each one must pass before it is added.
-files = [
-    "src/coursekit/commands/__init__.py", "src/coursekit/commands/common.py", "src/coursekit/config.py", "src/coursekit/course.py", "src/coursekit/i18n.py",
-    "src/coursekit/paths.py", "src/coursekit/status.py", "src/coursekit/sync.py",
-]
+# The whole package, with every function annotated, except the modules still to type (they had more than three findings when
+# mypy came in): take one out of `exclude` once it passes, never add one. A new module is typed from the start.
+files = ["src/coursekit"]
+exclude = ['^src/coursekit/(approve|assemble|brand|brief|catalog|delivery|doctor|exelearning|importer|jobaid|localdesign|preview|questionbank|redact|research|simulation|storybook|theme|ttsbatch|util|verify|voices|capture/__init__|capture/macos|capture/replay|capture/session|capture/stage|capture/terminal|capture/window|capture/windows|capture/x11|htmlkit/playcheck|htmlkit/render|init|media/__init__|media/access|media/gallery|media/tools|video/__init__)\.py$']
 python_version = "3.12"
 follow_imports = "silent"
 ignore_missing_imports = true

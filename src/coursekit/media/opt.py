@@ -6,6 +6,11 @@ backend (a lighter copy goes into the package; the source file is not touched). 
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from PIL import Image
+
 import shutil
 import tempfile
 from pathlib import Path
@@ -30,11 +35,11 @@ def is_video(path: Path) -> bool:
     return path.suffix.lower() in VIDEO_SUFFIXES
 
 
-def _scaled(im, max_width: int):
+def _scaled(im: Image.Image, max_width: int) -> Image.Image:
     from PIL import Image
 
     if max_width and im.width > max_width:
-        return im.resize((max_width, max(1, round(im.height * max_width / im.width))), Image.LANCZOS)
+        return im.resize((max_width, max(1, round(im.height * max_width / im.width))), Image.Resampling.LANCZOS)
     return im
 
 

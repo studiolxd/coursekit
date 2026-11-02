@@ -21,6 +21,7 @@ Markdown with a YAML front matter that coursekit reads; the rest is prose for th
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from pathlib import Path
 
 import yaml
@@ -32,7 +33,7 @@ CHARACTER_KEYS = ("name", "role", "personality", "speech", "look", "expressions"
 
 
 def path(course: dict) -> Path:
-    return course["_dir"] / FILE
+    return Path(course["_dir"]) / FILE
 
 
 def front_matter(text: str) -> tuple[object, str | None]:
@@ -110,7 +111,7 @@ def speakers(course: dict) -> dict:
     return dict(configmod.effective("media", course["_project"], course).value.get("speakers") or {})
 
 
-def _named(names: object, name: str) -> bool:
+def _named(names: Iterable[object] | None, name: str) -> bool:
     return name.strip().casefold() in {str(n).strip().casefold() for n in names or []}
 
 

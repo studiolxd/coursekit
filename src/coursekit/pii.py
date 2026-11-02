@@ -17,6 +17,7 @@ from __future__ import annotations
 import hashlib
 import re
 import unicodedata
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from coursekit import lang
@@ -110,7 +111,7 @@ def _names(text: str, known_first: frozenset[str]) -> list[Finding]:
     return found
 
 
-def find(text: str, rules: dict, who: People, terms: list[str] = (), strict: bool = True) -> list[Finding]:
+def find(text: str, rules: dict, who: People, terms: Sequence[str] = (), strict: bool = True) -> list[Finding]:
     """The stretches of `text` with personal data, without overlaps (the first kind of `patterns` wins, then the longest)."""
     candidates: list[tuple[int, Finding]] = []
     for rank, (kind, expression) in enumerate((rules.get("patterns") or {}).items()):
@@ -191,7 +192,7 @@ def fake(kind: str, value: str, who: People) -> str:
     return scramble(value, kind)
 
 
-def replace(text: str, rules: dict, who: People, terms: list[str] = ()) -> str:
+def replace(text: str, rules: dict, who: People, terms: Sequence[str] = ()) -> str:
     """The text with every stretch of personal data replaced by its invented counterpart (the text of a page is exact)."""
     out, last = [], 0
     for finding in find(text, rules, who, terms, strict=True):

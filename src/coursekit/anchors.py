@@ -74,8 +74,9 @@ def graphic_points(course: dict, unit: dict) -> dict[str, list[Point]]:
         elif inside and current is not None and (m := re.match(rf"^{re.escape(position_key)}:\s*(.+)$", stripped)):
             parts = [_number(v.strip()) for v in m.group(1).split(",")]
             current.position_line = i
-            if len(parts) == 2 and None not in parts:
-                current.at = (parts[0], parts[1])
+            x, y = (parts + [None, None])[:2]
+            if len(parts) == 2 and x is not None and y is not None:
+                current.at = (x, y)
     return found
 
 

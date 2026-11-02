@@ -13,6 +13,7 @@ import hashlib
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import cast
 
 from coursekit import verify
 from coursekit.i18n import t
@@ -27,7 +28,7 @@ class Finding:
 
 
 def report_path(course: dict, n: int) -> Path:
-    return course["_dir"] / "reviews" / f"unit-{n:02d}-fix.md"
+    return cast("Path", course["_dir"] / "reviews" / f"unit-{n:02d}-fix.md")
 
 
 def verify_findings(course: dict, n: int) -> list[Finding]:
@@ -81,7 +82,7 @@ def write_package_check(course: dict, problems: dict[int, list[str]]) -> Path:
     for n, items in sorted(problems.items()):
         lines += [f"## {t('fixes', 'package_unit', n=n)}", ""] + [f"{i}. {text}" for i, text in enumerate(items, 1)] + [""]
     path.write_text("\n".join(lines), encoding="utf-8", newline="\n")
-    return path
+    return cast("Path", path)
 
 
 def write(course: dict, n: int, findings: list[Finding], round_no: int) -> Path:

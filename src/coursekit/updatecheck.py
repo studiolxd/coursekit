@@ -10,6 +10,8 @@ import os
 import re
 import sys
 import time
+from pathlib import Path
+from typing import cast
 
 from coursekit import __version__, store
 from coursekit.i18n import t
@@ -33,7 +35,7 @@ def key(version: str) -> tuple:
 
 
 def newer(latest: str | None, current: str = __version__) -> bool:
-    return bool(latest) and key(latest) > key(current)
+    return latest is not None and bool(latest) and key(latest) > key(current)
 
 
 def latest() -> str | None:
@@ -46,13 +48,13 @@ def latest() -> str | None:
         return None
 
 
-def _cache():
+def _cache() -> Path:
     return store.home() / "update-check.json"
 
 
 def _remembered() -> dict:
     try:
-        return json.loads(_cache().read_text(encoding="utf-8"))
+        return cast("dict", json.loads(_cache().read_text(encoding="utf-8")))
     except (OSError, ValueError):
         return {}
 

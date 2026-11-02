@@ -23,7 +23,7 @@ import json
 import os
 import re
 import shutil
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from pathlib import Path
 from urllib.parse import parse_qs, quote, unquote, urlencode, urlsplit, urlunsplit
 
@@ -51,7 +51,7 @@ def digest(path: Path) -> str:
     return h.hexdigest()
 
 
-def source_files(course_dir: Path, names) -> list[Path]:
+def source_files(course_dir: Path, names: Iterable[str]) -> list[Path]:
     files = []
     for name in names:
         src = course_dir / name
@@ -131,7 +131,7 @@ def folder_path(base_url: str) -> str | None:
     return unquote(re.sub(r"^/:[a-z]:/r(?=/)", "", parts.path)).rstrip("/")
 
 
-def sharepoint_link(base_url: str):
+def sharepoint_link(base_url: str) -> Callable[[str], str]:
     """Return code -> URL of the course folder, in the same form the user pasted."""
     parts = urlsplit(base_url)
     root = folder_path(base_url)

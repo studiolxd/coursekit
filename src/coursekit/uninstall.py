@@ -55,7 +55,7 @@ def _marked_lines(path: Path) -> list[int]:
 def _remove_shell_lines(path: Path) -> int:
     lines = path.read_text(encoding="utf-8").splitlines()
     marks = set(_marked_lines(path))
-    keep = []
+    keep: list[str] = []
     skip_next = False
     for i, line in enumerate(lines):
         if skip_next:

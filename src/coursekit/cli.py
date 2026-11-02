@@ -10,7 +10,7 @@ import re
 import shutil
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
 
@@ -20,7 +20,7 @@ from coursekit import init as initmod
 from coursekit import setup as setupmod
 from coursekit.errors import CoursekitError
 from coursekit.i18n import t
-from coursekit.project import PROJECT_FILE, ProjectNotFound, find_project
+from coursekit.project import PROJECT_FILE, Project, ProjectNotFound, find_project
 
 
 def _print_report(report: initmod.Report) -> None:
@@ -233,7 +233,7 @@ def cmd_config(args: argparse.Namespace) -> int:
     return 0
 
 
-def _config_check(project) -> int:
+def _config_check(project: Project) -> int:
     """`coursekit config --check`: the keys of the project's configuration that coursekit does not read."""
     found = config.check(project)
     for item in found:
@@ -320,7 +320,7 @@ class _SubParsers(argparse._SubParsersAction):
     def add_parser(self, name: str, **kwargs: Any) -> argparse.ArgumentParser:
         if "help" in kwargs:
             kwargs["help"] = _escaped(kwargs["help"])
-        return super().add_parser(name, **kwargs)
+        return cast("argparse.ArgumentParser", super().add_parser(name, **kwargs))
 
 
 class Parser(argparse.ArgumentParser):
@@ -390,7 +390,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.command not in refresh.SKIP:
             with contextlib.suppress(ProjectNotFound):  # outside a project there is nothing to refresh
                 refresh.ensure(find_project().root)
-        return args.func(args)
+        return cast("int", args.func(args))
     except (CoursekitError, FileExistsError) as exc:
         print(f"coursekit: {exc}", file=sys.stderr)
         return 1

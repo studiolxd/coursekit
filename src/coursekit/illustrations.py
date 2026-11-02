@@ -10,6 +10,7 @@ import os
 import re
 import urllib.parse
 from pathlib import Path
+from typing import cast
 
 from coursekit import http
 from coursekit.i18n import t
@@ -34,7 +35,8 @@ def get(path: str, params: dict | None = None) -> dict:
     """A call to the Magnific API (the tests stand in for it)."""
     url = f"{API}/{path}" + ("?" + urllib.parse.urlencode(params) if params else "")
     try:
-        return json.loads(http.request(url, headers={"x-magnific-api-key": key(), "Accept-Language": "en-US"}, timeout=60).body)
+        answer = http.request(url, headers={"x-magnific-api-key": key(), "Accept-Language": "en-US"}, timeout=60)
+        return cast("dict", json.loads(answer.body))
     except http.HttpError as exc:
         if exc.status == 404:
             return {"data": [], "meta": {"total": 0}}

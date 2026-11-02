@@ -16,8 +16,10 @@ somewhere in the unit, and that nothing points at an error the design does not l
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any, cast
 
 import yaml
 
@@ -30,7 +32,7 @@ OPTION_RE = re.compile(r"^\s*[-*]\s+\[( |x|X)\]\s+(.*)$")
 
 
 def path(course: dict) -> Path:
-    return course["_dir"] / FILE
+    return cast("Path", course["_dir"] / FILE)
 
 
 def strip_tag(text: str) -> tuple[str, str | None]:
@@ -97,7 +99,7 @@ class Uses:
         self.used.setdefault(eid, []).append(place)
 
 
-def question_uses(file: str, directives, choice_directives: tuple[str, ...], uses: Uses) -> None:
+def question_uses(file: str, directives: Iterable[tuple[int, str, str]], choice_directives: tuple[str, ...], uses: Uses) -> None:
     """The tags of the options of the choice questions among some directives (line, name, body)."""
     for line_no, name, body in directives:
         if name not in choice_directives:
@@ -119,7 +121,7 @@ def question_uses(file: str, directives, choice_directives: tuple[str, ...], use
             uses.untagged.append(t("misconceptions", "untagged_distractors", place=f"{file}:{line_no}", count=untagged))
 
 
-def simulation_uses(sim, uses: Uses) -> None:
+def simulation_uses(sim: Any, uses: Uses) -> None:
     """The `error` of the decisions of a simulation; a decision that loses points without one is noted."""
     untagged = 0
     for sid, scene in (sim.data.get("scenes") or {}).items():

@@ -23,6 +23,7 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import cast
 
 from coursekit import approve, capture, clientreview, config, fixes, identity, launch, localdesign, new, ttsbatch, verify
 from coursekit import assemble as assemblemod
@@ -174,7 +175,7 @@ def _cannot(ctx: Context, log: Path | None, role: str) -> bool:
     return bool(log and (launch.mcp_blocker(ctx.project, log) or launch.permission_blocker(ctx.project, log, role)))
 
 
-def _stuck(ctx: Context, key: str, log: Path | None = None, why: str = "", **values) -> HandoffError:
+def _stuck(ctx: Context, key: str, log: Path | None = None, why: str = "", **values: object) -> HandoffError:
     return HandoffError(t("handoff", key, code=ctx.code, **values) + _where(log, ctx.project) + why)
 
 
@@ -556,7 +557,7 @@ def write_report(course: dict, stopped: str | None = None) -> Path | None:
         capture.review_all(course)  # the page to look at them all at once
     path = course["_dir"] / REPORT
     path.write_text("\n".join(lines), encoding="utf-8", newline="\n")
-    return path
+    return cast("Path | None", path)
 
 
 def unchecked_videos(course: dict) -> list[dict]:

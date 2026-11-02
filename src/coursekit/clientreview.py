@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import datetime as dt
 from pathlib import Path
+from typing import Any
 
 from coursekit import config, identity
 from coursekit.errors import CoursekitError
@@ -59,7 +60,7 @@ def gate(course: dict) -> str | None:
     return t("clientreview", "gate_waiting", code=course["code"], round=last["round"], to=last.get("to") or "-")
 
 
-def _edit(course: dict):
+def _edit(course: dict) -> tuple[Path, Any, Any]:
     path: Path = course["_dir"] / "course.yaml"
     ry, data = edit_yaml(path)
     return path, ry, data
@@ -71,8 +72,9 @@ def _now() -> str:
 
 def send(course: dict, to: str | None, where: str | None) -> str:
     ensure_active(course)
-    if open_round(course):
-        raise ClientReviewError(t("clientreview", "round_open", round=open_round(course)["round"]))
+    current = open_round(course)
+    if current:
+        raise ClientReviewError(t("clientreview", "round_open", round=current["round"]))
     if course["status"] != "assembly":
         raise ClientReviewError(t("clientreview", "send_needs_assembly", code=course["code"], status=course["status"]))
     links = {"link": where} if where else review_links(course)
@@ -126,8 +128,9 @@ def skip(course: dict, reason: str) -> str:
     ensure_active(course)
     if course["status"] not in ("assembly", "client_review"):
         raise ClientReviewError(t("clientreview", "send_needs_assembly", code=course["code"], status=course["status"]))
-    if open_round(course):
-        raise ClientReviewError(t("clientreview", "round_open", round=open_round(course)["round"]))
+    current = open_round(course)
+    if current:
+        raise ClientReviewError(t("clientreview", "round_open", round=current["round"]))
     who = identity.display_name()
     path, ry, data = _edit(course)
     if data.get("client_review") is None:

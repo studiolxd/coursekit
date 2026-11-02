@@ -19,6 +19,7 @@ import sys
 import urllib.request
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -321,6 +322,7 @@ def remotion(project: Project, say: Say) -> None:
     if not shutil.which("npm"):
         say(t("setup", "npm_missing"))
         return
+    npm = shutil.which("npm") or "npm"
     workspace = store.ensure_workspace("remotion", target / "package.json", say)
     state = store.link_node_modules(target, workspace) if workspace else "failed"
     if state == "linked":
@@ -328,7 +330,7 @@ def remotion(project: Project, say: Say) -> None:
     elif state == "kept":
         say(t("setup", "remotion_kept"))
     else:  # no store or no link possible here: install in the project, as a project of its own
-        code = subprocess.run([shutil.which("npm"), "install", "--silent"], cwd=target, check=False).returncode
+        code = subprocess.run([npm, "install", "--silent"], cwd=target, check=False).returncode
         say(t("setup", "remotion_deps_ok" if code == 0 else "remotion_deps_fail"))
 
 
@@ -390,7 +392,7 @@ def agent_roles(project: Project, say: Say, ask: Ask | None, confirm: Callable[[
 
     It runs when asked (`--roles`) or while some role has no model that we have a default for."""
     values = envfile.parse(project.env_file.read_text(encoding="utf-8")) if project.env_file.exists() else {}
-    plan = {}
+    plan: dict[str, Any] = {}
     following = {}  # roles that take another role's tool and model while their own variables are empty (same_as)
     for role in agentsmod.ROLES:
         key = role.upper()

@@ -59,7 +59,7 @@ class Server:
 
     def _dispatch(self, method: str | None, params: dict) -> dict:
         if method == "initialize":
-            info = {"protocolVersion": params.get("protocolVersion") or PROTOCOL, "capabilities": {"tools": {}},
+            info: dict[str, Any] = {"protocolVersion": params.get("protocolVersion") or PROTOCOL, "capabilities": {"tools": {}},
                     "serverInfo": {"name": self.name, "version": self.version}}
             if self.instructions:
                 info["instructions"] = self.instructions
@@ -90,7 +90,7 @@ class Server:
             try:
                 message: Any = json.loads(line)
             except ValueError:
-                answer = {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "parse error"}}
+                answer: dict | None = {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "parse error"}}
             else:
                 answer = self.handle(message) if isinstance(message, dict) else None
             if answer is not None:

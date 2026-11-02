@@ -103,7 +103,7 @@ def _range(start: int, frames: int, fps: int) -> dict:
 
 def otio(tl: Timeline) -> str:
     """OpenTimelineIO (JSON): one track per track, with a gap wherever there is no clip, and the markers on the main track."""
-    tracks = []
+    tracks: list[dict] = []
     for n, track in enumerate(tl.tracks):
         children, cursor = [], 0
         for clip in sorted(track.clips, key=lambda c: c.start):

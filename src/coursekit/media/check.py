@@ -20,6 +20,7 @@ import subprocess
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
+from typing import cast
 
 from coursekit import config as configmod
 from coursekit import external
@@ -79,7 +80,7 @@ def loudness(path: Path, filters: str = "") -> dict:
     match = re.search(r"\{[^{}]*\"input_i\"[^{}]*\}", done.stderr, re.S)
     if not match:
         raise CheckError(t("mediacheck", "no_audio", name=path.name))
-    return json.loads(match.group(0))
+    return cast("dict", json.loads(match.group(0)))
 
 
 def loudness_finding(asset: dict, path: Path, cfg: dict) -> Finding | None:
@@ -209,4 +210,4 @@ def sheet(course: dict, asset_id: str, frames: int | None = None) -> Path:
                               capture_output=True, check=False)
     if done.returncode != 0 or not out.exists():
         raise CheckError(t("mediacheck", "sheet_failed", name=path.name))
-    return out
+    return cast("Path", out)

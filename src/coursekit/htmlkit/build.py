@@ -6,6 +6,11 @@ The preview (a folder that opens from the disk) is `courses/<CODE>/assembly/html
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from coursekit.project import Project
+
 import json
 import os
 import re
@@ -16,6 +21,7 @@ from dataclasses import dataclass, field
 from html import escape
 from importlib import resources
 from pathlib import Path
+from typing import cast
 
 from coursekit import assemble as assemblemod
 from coursekit import course as coursemod
@@ -63,7 +69,7 @@ def _local(course: dict, path: object) -> Path | None:
     for base in (course["_dir"], course["_dir"] / "media"):
         candidate = base / str(path)
         if candidate.exists():
-            return candidate
+            return cast("Path | None", candidate)
     return None
 
 
@@ -146,7 +152,7 @@ def prepare_assets(course: dict, out_dir: Path) -> tuple[dict[str, dict], list[s
 
 # ── pieces ───────────────────────────────────────────────────────────────────────────────────
 
-def project_css(project, course: dict) -> str:
+def project_css(project: Project, course: dict) -> str:
     parts = [(template_dir() / "styles" / "base.css").read_text(encoding="utf-8")]
     found = thememod.status(project, course)
     if found.state != "missing":
@@ -162,7 +168,7 @@ def project_css(project, course: dict) -> str:
     return "\n".join(parts)
 
 
-def bundle_player(project, out_file: Path, say: Say) -> None:
+def bundle_player(project: Project, out_file: Path, say: Say) -> None:
     """The player (SCORM runtime and behaviour of the components) as one script, bundled with esbuild from the store workspace."""
     template = template_dir()
     workspace = store.ensure_workspace("html-builder", template / "package.json", say)

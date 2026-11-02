@@ -12,6 +12,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from typing import cast
 
 from coursekit import __version__, envfile
 from coursekit import agents as agentsmod
@@ -41,7 +42,7 @@ def fingerprint() -> str:
 def recorded(root: Path) -> dict:
     path = root / STAMP_FILE
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        return cast("dict", json.loads(path.read_text(encoding="utf-8")))
     except (OSError, ValueError):
         return {}
 
