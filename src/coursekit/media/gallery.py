@@ -19,9 +19,11 @@ import re
 import threading
 import time
 import webbrowser
+from collections.abc import Callable
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler
 from pathlib import Path
+from typing import Any, cast
 from urllib.parse import unquote, urlsplit
 
 import yaml
@@ -43,7 +45,7 @@ class GalleryError(Exception):
 
 def gallery_dir(course: dict) -> Path:
     """Where the page is written: .cache/media/<CODE>/resources/ (the video gallery has its own folder, `gallery/`)."""
-    return course["_project"].cache_dir / "media" / course["code"] / "resources"
+    return cast("Path", course["_project"].cache_dir / "media" / course["code"] / "resources")
 
 
 def _read(path: Path) -> str:
@@ -333,7 +335,7 @@ def stamp(paths: list[Path]) -> tuple:
     return tuple(sorted(out))
 
 
-def _handler(course: dict, state: dict):
+def _handler(course: dict, state: dict) -> type[SimpleHTTPRequestHandler]:
     """Serves the page and what the cards point at, and nothing else of the project: the gallery folder and `media/` and
     `content/` of the course (not `.env`, not other courses). It answers Range requests: audio and video need them to seek."""
     folder = gallery_dir(course).resolve()
@@ -341,7 +343,7 @@ def _handler(course: dict, state: dict):
     base = course["_project"].root.resolve()
 
     class Handler(SimpleHTTPRequestHandler):
-        def log_message(self, format, *args):  # noqa: A002 - the signature of the standard library
+        def log_message(self, format: str, *args: Any) -> None:  # noqa: A002 - the signature of the standard library
             pass
 
         def _send(self, body: bytes, kind: str, status: HTTPStatus = HTTPStatus.OK) -> None:
@@ -372,10 +374,10 @@ def _handler(course: dict, state: dict):
             except (BrokenPipeError, ConnectionResetError):
                 pass
 
-        def do_HEAD(self):  # noqa: N802
+        def do_HEAD(self) -> None:  # noqa: N802
             self.do_GET()
 
-        def do_GET(self):  # noqa: N802
+        def do_GET(self) -> None:  # noqa: N802
             import mimetypes
 
             path = unquote(urlsplit(self.path).path)
@@ -394,7 +396,8 @@ def _handler(course: dict, state: dict):
     return Handler
 
 
-def serve(course: dict, reload, port: int = 8767, open_browser: bool = True, say=print) -> int:
+def serve(course: dict, reload: Callable[[], dict], port: int = 8767, open_browser: bool = True,
+          say: Callable[[str], None] = print) -> int:
     """Serve the page on 127.0.0.1 (the port asked for, else a free one) until Ctrl+C, building it again when the course changes.
     `reload` gives the course read anew."""
     build(course)

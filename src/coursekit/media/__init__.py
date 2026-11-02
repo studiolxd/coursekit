@@ -14,8 +14,10 @@ from __future__ import annotations
 import os
 import re
 import shutil
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
+from typing import TYPE_CHECKING, Any, cast
 
 import yaml
 
@@ -27,6 +29,13 @@ from coursekit import theme as thememod
 from coursekit.errors import CoursekitError
 from coursekit.i18n import t
 from coursekit.util import LockTimeout, character_asset_id, file_lock, roundtrip_yaml, save_yaml_atomic
+
+if TYPE_CHECKING:
+    from ruamel.yaml import YAML
+
+    from coursekit.project import Project
+
+Say = Callable[[str], None]
 
 FIELD_KEYS = ("title", "description", "how", "specs")  # in the order of the language's placeholder_fields
 
@@ -40,15 +49,15 @@ def in_media_tools(name: str) -> bool:
     return shutil.which(name) is not None
 
 
-def config(project=None, course: dict | None = None) -> dict:
+def config(project: Project | None = None, course: dict | None = None) -> dict:
     return configmod.effective("media", project or (course or {}).get("_project"), course).value
 
 
-def requirement_met(needs, root: Path | None = None) -> bool | None:
+def requirement_met(needs: Any, root: Path | None = None) -> bool | None:
     """True/False for env/bin requirements; None when only the agent can tell (mcp)."""
     if needs in (None, "none"):
         return True
-    results = []
+    results: list[bool | None] = []
     for kind, value in needs.items():
         if kind == "env":
             names = [value] if isinstance(value, str) else list(value)
@@ -283,7 +292,7 @@ def scan_simulations(course: dict) -> list[dict]:
     return list(found.values())
 
 
-def load_manifest(course_dir):
+def load_manifest(course_dir: Path) -> tuple[YAML, Path, Any]:
     ry = roundtrip_yaml()
     path = course_dir / "media" / "manifest.yaml"
     data = ry.load(path.read_text(encoding="utf-8")) if path.exists() else None
@@ -294,13 +303,13 @@ def load_manifest(course_dir):
     return ry, path, data
 
 
-def save_manifest(ry, path: Path, data) -> None:
+def save_manifest(ry: YAML, path: Path, data: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     save_yaml_atomic(ry, data, path)
 
 
 @contextmanager
-def editing_manifest(course_dir: Path):
+def editing_manifest(course_dir: Path) -> Iterator[Any]:
     """The manifest to change, locked from the read to the write: agents working in parallel (`media set` from several at once)
     each change it on top of what the others saved, and none loses what another wrote. Saved when the block ends without an error."""
     try:
@@ -465,7 +474,8 @@ def plan(course: dict) -> tuple[list[str], list[str]]:
     guide = mediastyle.path(course)
     missing = mediastyle.missing_notes(guide) if guide else []
     if missing:
-        warnings.append(t("media", "media_style_notes_missing", count=len(missing), path=guide.parent.name + "/notes.md"))
+        warnings.append(t("media", "media_style_notes_missing", count=len(missing),
+                          path=cast("Path", guide).parent.name + "/notes.md"))  # missing is empty without a guide
     required, real = depicts_rules(cfg)
     from coursekit import capture as capturemod
 
@@ -501,9 +511,9 @@ def plan(course: dict) -> tuple[list[str], list[str]]:
     return warnings, lines
 
 
-def providers(project) -> list[str]:
+def providers(project: Project | None) -> list[str]:
     cfg = config(project)
-    seen = {}
+    seen: dict[str, dict] = {}
     for group in [*cfg["types"].values(), cfg["voice"], cfg["subtitles"]]:
         for option in group:
             seen.setdefault(option["id"], option)
@@ -535,8 +545,8 @@ def embed(course: dict, asset_id: str) -> str:
                       if b["type"] == "SIMULATION" and b["data"].get("id") == asset.get("simulation")), None)
         if brick is None:
             raise MediaError(t("media", "package_not_found", asset=asset_id))
-        page = simpackage.build(course, brick, course["_dir"] / "media" / "src" / asset_id)
-        return t("media", "embed_written", path=page.as_posix(), asset=asset_id)
+        built = simpackage.build(course, brick, course["_dir"] / "media" / "src" / asset_id)
+        return t("media", "embed_written", path=built.as_posix(), asset=asset_id)
     source = course["_dir"] / "media" / str(asset.get("file") or "").removeprefix("media/")
     if not str(asset.get("file") or "").lower().endswith(".svg") or not source.is_file():
         raise MediaError(t("media", "embed_needs_svg", asset=asset_id))
@@ -554,7 +564,7 @@ def embed(course: dict, asset_id: str) -> str:
     return t("media", "embed_written", path=(folder / "index.html").as_posix(), asset=asset_id)
 
 
-def narrate(course: dict, ids: list[str] | None = None, again: bool = False, say=print, batch: bool = False) -> int:
+def narrate(course: dict, ids: list[str] | None = None, again: bool = False, say: Say = print, batch: bool = False) -> int:
     """Produce the narration of the scenes (`VO-…`, simulations with `audio: true`) with the configured voices: the character
     of a conversation with its own voice (`coursekit voice set --character`), the rest with the voice of the course. Only the
     ones still pending, unless they are named or `again`. Returns how many were produced (with `batch`, how many were put in the
@@ -608,14 +618,15 @@ def stock(course: dict, asset_id: str, find: str | None = None, take: int | None
     sources = illustrations.load(brand.folder(course["_project"], course))
     if not any(s.get("author_id") for s in sources):
         raise MediaError(t("illustrations", "no_sources"))
+    taken = cast("int", take)  # without find, take was required above
     try:
         if find:
             found = illustrations.search(sources, find, color if color is not None else cfg.get("color"), limit)
             return [t("illustrations", "candidate", id=f["id"], title=f["title"], author=f["author"],
                       licenses=", ".join(f["licenses"]) or "?", preview=f["preview"] or "—") for f in found] \
                 or [t("illustrations", "none_found", term=find)]
-        svg, _ = illustrations.download_svg(int(take))
-        about = illustrations.detail(int(take))
+        svg, _ = illustrations.download_svg(int(taken))
+        about = illustrations.detail(int(taken))
     except illustrations.IllustrationError as exc:
         raise MediaError(str(exc)) from None
     if cfg.get("color") == "black" and not illustrations.is_line_art(svg):  # a colour version: the line one is another resource
@@ -634,7 +645,7 @@ def stock(course: dict, asset_id: str, find: str | None = None, take: int | None
         if saved is None:
             raise MediaError(t("media", "asset_not_found", asset_id=asset_id))
         saved.update(file=f"media/files/{out.name}", recipe="magnific-stock",
-                     source={"provider": "magnific", "resource": int(take), "author": author, "url": about.get("url"),
+                     source={"provider": "magnific", "resource": int(taken), "author": author, "url": about.get("url"),
                              "license": about.get("license"), "license_url": about.get("license_url")})
     return [t("illustrations", "taken", asset=asset_id, path=f"media/files/{out.name}", resource=take, author=author or "?", ink=ink)]
 
@@ -655,7 +666,7 @@ def image_tool(course: dict, asset_id: str | None, action: str, size: str | None
         if asset is None:
             raise MediaError(t("media", "asset_not_found", asset_id=asset_id))
         if asset["type"] == JOB_AID and action == "render":  # made from its text, not from a file
-            return render_job_aid(course, asset_id)
+            return render_job_aid(course, cast("str", asset_id))  # found in the manifest, so not None
         path = next((base / str(asset.get("file") or "") for base in bases[:2]
                      if asset.get("file") and (base / str(asset["file"])).is_file()), None)
         if path is None:
@@ -865,13 +876,13 @@ def _redo(course: dict, data: dict, ids: list[str] | None, everything: bool, cle
     return chosen
 
 
-def set_asset(course: dict, asset_id: str, **values) -> str:
+def set_asset(course: dict, asset_id: str, **values: Any) -> str:
     """Update an asset of the manifest. `download` adds or updates an extra downloadable file."""
     with editing_manifest(course["_dir"]) as data:
         return _set_asset(course, data, asset_id, **values)
 
 
-def _set_asset(course: dict, data: dict, asset_id: str, **values) -> str:
+def _set_asset(course: dict, data: dict, asset_id: str, **values: Any) -> str:
     asset = next((a for a in data["assets"] if a["id"] == asset_id), None)
     if asset is None:
         raise MediaError(t("media", "asset_not_found", asset_id=asset_id))

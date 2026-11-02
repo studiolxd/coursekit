@@ -39,8 +39,10 @@ subtract points (`score`); the grade of a scored simulation is the points of its
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any, cast
 
 import yaml
 
@@ -57,6 +59,7 @@ VAR_RE = re.compile(r"^[a-z_][a-z0-9_]*$")
 OBJECTIVE_RE = re.compile(r"^U\d+\.\d+$")
 MAX_STATES = 20000  # states explored per simulation before giving up (a loop that keeps changing the state)
 MAX_PATHS = 500  # complete paths listed for the review
+Err = Callable[..., None]  # reports a problem: its message key and the values of the message
 
 
 class ExpressionError(Exception):
@@ -117,8 +120,9 @@ class _Parser:
         if not self.items:
             raise ExpressionError(t("simulation", "expr_empty"))
         node = self.or_()
-        if self.peek() is not None:
-            raise ExpressionError(t("simulation", "expr_unexpected", token=self.peek()[1], text=self.text))
+        left = self.peek()
+        if left is not None:
+            raise ExpressionError(t("simulation", "expr_unexpected", token=left[1], text=self.text))
         return node
 
     def or_(self) -> tuple:
@@ -254,12 +258,14 @@ def evaluate(node: tuple, env: dict) -> object:
     if kind == "!":
         return not evaluate(node[1], env)
     if kind == "neg":
-        return -evaluate(node[1], env)
+        operand: Any = evaluate(node[1], env)
+        return -operand
     if kind == "&&":
         return bool(evaluate(node[1], env)) and bool(evaluate(node[2], env))
     if kind == "||":
         return bool(evaluate(node[1], env)) or bool(evaluate(node[2], env))
-    a, b = evaluate(node[1], env), evaluate(node[2], env)
+    a: Any = evaluate(node[1], env)
+    b: Any = evaluate(node[2], env)
     return {"==": lambda: a == b, "!=": lambda: a != b, "<": lambda: a < b, "<=": lambda: a <= b, ">": lambda: a > b,
             ">=": lambda: a >= b, "+": lambda: a + b, "-": lambda: a - b}[kind]()
 
@@ -423,7 +429,8 @@ def parse(kind: str, body: list[str], where: str, line: int = 0) -> Simulation:
     if data.get("skin") is not None and data.get("skin") not in SKINS:
         err("bad_skin", value=data.get("skin"), valid=", ".join(SKINS))
     _check_screen(data.get("screen"), data.get("skin"), "screen", err)
-    scenes_data = data.get("scenes") if isinstance(data.get("scenes"), dict) else {}
+    scenes_found = data.get("scenes")
+    scenes_data = scenes_found if isinstance(scenes_found, dict) else {}
     if data.get("skin") in SCREEN_KEYS and not data.get("screen") and not any(isinstance(sc, dict) and sc.get("screen")
                                                                             and sc.get("skin", data.get("skin")) == data.get("skin")
                                                                             for sc in scenes_data.values()):
@@ -441,8 +448,8 @@ def parse(kind: str, body: list[str], where: str, line: int = 0) -> Simulation:
         if data.get("scored") is not True:
             err("pass_requires_unscored")
         else:
-            _check_condition(data["pass_requires"], data.get("state") if isinstance(data.get("state"), dict) else {}, err,
-                             "pass_requires")
+            declared = data.get("state")
+            _check_condition(data["pass_requires"], declared if isinstance(declared, dict) else {}, err, "pass_requires")
     if "weight" in data and (isinstance(data["weight"], bool) or not isinstance(data["weight"], (int, float)) or data["weight"] <= 0):
         err("bad_weight", value=data["weight"])
     state = data.get("state") or {}
@@ -495,7 +502,7 @@ def consequence_warnings(scenes: dict) -> list[str]:
     return out
 
 
-def _check_condition(value: object, variables: dict, err, where: str) -> None:
+def _check_condition(value: object, variables: dict, err: Err, where: str) -> None:
     try:
         node = parse_expression(value)
     except ExpressionError as exc:
@@ -505,7 +512,7 @@ def _check_condition(value: object, variables: dict, err, where: str) -> None:
         err("undeclared", place=where, name=name)
 
 
-def _check_scene(sid: str, scene: object, scenes: dict, state: dict, kind: str, err, skin: object = None) -> None:
+def _check_scene(sid: str, scene: object, scenes: dict, state: dict, kind: str, err: Err, skin: object = None) -> None:
     where = f"scenes.{sid}"
     if isinstance(scene, dict) and scene.get("skin") is not None:  # a scene may happen in another application
         if scene["skin"] not in SKINS:
@@ -577,7 +584,7 @@ def _number(value: object) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
-def _check_mechanics(scene: dict, where: str, state: dict, err) -> None:
+def _check_mechanics(scene: dict, where: str, state: dict, err: Err) -> None:
     """symptoms, clues, inbox and allocation: their shape, and a task (inbox, allocation) goes on only by `next`."""
     symptoms = scene.get("symptoms")
     if symptoms is not None and (not isinstance(symptoms, list) or not symptoms or not all(str(s or "").strip() for s in symptoms)):
@@ -640,7 +647,7 @@ def _check_mechanics(scene: dict, where: str, state: dict, err) -> None:
                 if not ok:
                     err("bad_option", place=f"{place}.options[{i}]", total=total)
                 else:
-                    lows += target[0]
+                    lows += cast("list", target)[0]  # ok: a list of two
             if lows > total:
                 err("targets_over_total", place=place, total=total, sum=lows)
 
@@ -658,7 +665,7 @@ def task_size(task: str, body: dict) -> int:
     return len(body.get("items") or []) if task == "inbox" else len(body.get("options") or [])
 
 
-def _check_screen(screen: object, skin: object, place: str, err) -> None:
+def _check_screen(screen: object, skin: object, place: str, err: Err) -> None:
     """The `screen` of a skin: only the keys of that skin, lists of mappings with their keys."""
     if screen is None:
         return
@@ -692,7 +699,7 @@ def _check_screen(screen: object, skin: object, place: str, err) -> None:
         err("bad_phone_state", place=f"{place}.state", value=screen.get("state"), valid=", ".join(PHONE_STATES))
 
 
-def _check_target(value: object, skin: object, place: str, err) -> None:
+def _check_target(value: object, skin: object, place: str, err: Err) -> None:
     targets = TARGETS.get(str(skin)) if skin else None
     if targets is None:
         err("target_without_skin", place=place)
@@ -704,20 +711,20 @@ def _check_target(value: object, skin: object, place: str, err) -> None:
         err("bad_target", place=place, value=value, valid=", ".join(f"{t_}N" if t_.endswith(":") else t_ for t_ in targets))
 
 
-def _check_area(value: object, place: str, err) -> None:
+def _check_area(value: object, place: str, err: Err) -> None:
     if (not isinstance(value, list) or len(value) not in (2, 4)
             or not all(isinstance(v, (int, float)) and not isinstance(v, bool) and 0 <= v <= 100 for v in value)):
         err("bad_area", place=place)
 
 
-def _check_goto(target: object, place: str, scenes: dict, err) -> None:
+def _check_goto(target: object, place: str, scenes: dict, err: Err) -> None:
     if not target:
         err("missing", key=f"{place}.goto")
     elif target not in scenes:
         err("unknown_scene", place=place, scene=target)
 
 
-def _check_decision(item: object, place: str, keys: set, label: str, scenes: dict, state: dict, err) -> None:
+def _check_decision(item: object, place: str, keys: set, label: str, scenes: dict, state: dict, err: Err) -> None:
     if not isinstance(item, dict):
         err("bad_decision", place=place)
         return
@@ -765,8 +772,9 @@ def _next_states(scene: dict, env: dict) -> list[tuple[str, dict, float, str | N
     found = task_of(scene)
     if found and scene.get("next"):
         task, body = found
-        points = float(body.get("points") if body.get("points") is not None else 1)
-        out = []
+        given = body.get("points")
+        points = float(given if given is not None else 1)
+        out: list[tuple[str, dict, float, str | None]] = []
         for k in range(task_size(task, body) + 1):
             after = {**env, str(body.get("store")): k}
             step = next((s for s in scene["next"] if test(s.get("if"), after)), None)
@@ -785,7 +793,7 @@ def _next_states(scene: dict, env: dict) -> list[tuple[str, dict, float, str | N
     return [(d["goto"], _apply(d, env), float(d.get("score") or 0), str(d.get("text") or d.get("label"))) for d in available]
 
 
-def _walk(sim: Simulation, scenes: dict, start: str, state: dict, err) -> None:
+def _walk(sim: Simulation, scenes: dict, start: str, state: dict, err: Err) -> None:
     """Every state reachable from the start: unreachable scenes, dead ends, endings and points; then the paths themselves."""
     reached: set[str] = set()
     endings: set[str] = set()
@@ -860,7 +868,7 @@ def _paths(sim: Simulation, scenes: dict, start: str, state: dict) -> None:
     """The complete paths, in the order of the decisions (up to MAX_PATHS), and the one that takes longest (most words read,
     then most decisions). A path that comes back to a scene with the same state is a loop and is not followed."""
     longest = (0, 0)
-    stack = [(start, dict(state), 0.0, (), frozenset(), 0)]
+    stack: list[tuple[str, dict, float, tuple, frozenset, int]] = [(start, dict(state), 0.0, (), frozenset(), 0)]
     while stack:
         sid, env, score, steps, visited, words = stack.pop()
         key = (sid, tuple(sorted(env.items())))
@@ -964,14 +972,14 @@ def scan_conditionals(lines: list[str], start: int = 1) -> tuple[list[Conditiona
             if current is not None:
                 problems.append((i, "nested_if"))
                 continue
-            current = Conditional(line=i, condition=IF_RE.match(stripped).group(1))
+            current = Conditional(line=i, condition=cast("re.Match[str]", IF_RE.match(stripped)).group(1))
         elif ELIF_RE.match(stripped):
             if current is None:
                 problems.append((i, "elif_without_if"))
             elif current.else_line is not None:
                 problems.append((i, "elif_after_else"))
             else:
-                current.elifs.append((i, ELIF_RE.match(stripped).group(1)))
+                current.elifs.append((i, cast("re.Match[str]", ELIF_RE.match(stripped)).group(1)))
         elif ELSE_RE.match(stripped):
             if current is None:
                 problems.append((i, "else_without_if"))

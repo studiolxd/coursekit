@@ -35,9 +35,11 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from collections.abc import Callable
 from dataclasses import dataclass
 from importlib import resources
 from pathlib import Path
+from typing import TYPE_CHECKING, Any, cast
 
 import yaml
 
@@ -50,6 +52,11 @@ from coursekit.i18n import t
 from coursekit.media import access as mediaaccess
 from coursekit.media import check as mediacheck
 from coursekit.media import tools as mediatools
+
+if TYPE_CHECKING:
+    from coursekit.project import Project
+
+Say = Callable[[str], None]
 
 VERSION = 1
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,47}$")
@@ -83,13 +90,13 @@ class Finding:
 # ── where things are ─────────────────────────────────────────────────────────────────────────
 
 def montage_file(course: dict, asset_id: str) -> Path:
-    return course["_dir"] / "media" / "scripts" / f"{asset_id}.video.yaml"
+    return cast("Path", course["_dir"] / "media" / "scripts" / f"{asset_id}.video.yaml")
 
 
 PROJECT_SCOPE = "project"  # the folder in .cache/media/ of the gallery of the project (the codes of the courses are in capitals)
 
 
-def project_scope(project) -> dict:
+def project_scope(project: Project) -> dict:
     """The project as a course with nothing of its own, for the gallery and the catalog of the project: its theme, its style
     (config/video.yaml), its scenes and those of the library, before any course exists or changes them."""
     data = configmod.project_data(project)
@@ -98,11 +105,11 @@ def project_scope(project) -> dict:
 
 
 def workspace(course: dict) -> Path:
-    return course["_project"].root / "tools" / "remotion"
+    return cast("Path", course["_project"].root / "tools" / "remotion")
 
 
 def voice_dir(course: dict, asset_id: str) -> Path:
-    return course["_dir"] / "media" / "files" / asset_id
+    return cast("Path", course["_dir"] / "media" / "files" / asset_id)
 
 
 def kit_source() -> Path:
@@ -241,11 +248,11 @@ def migrate(data: dict) -> dict:
     return data
 
 
-def _text(value) -> str:
+def _text(value: object) -> str:
     return "" if value is None else str(value)
 
 
-def _walk(value, rule: dict, path: str, out: list) -> None:
+def _walk(value: object, rule: dict, path: str, out: list) -> None:
     rule = rule if isinstance(rule, dict) else {}
     kind = rule.get("type")
     if kind == "object" and isinstance(value, dict):
@@ -551,7 +558,8 @@ def _check_transition(course: dict, scene: dict, before: object, where: str, fmt
         found.append(Finding(level, "NOT_ALLOWED", where, t("video", "not_allowed", prop="transition", value=kind,
                                                             allowed=", ".join(setting["allow"]))))
     look = style(course)
-    pad = float(look.get("pad_seconds") if look.get("pad_seconds") is not None else 0.5)
+    pad_seconds = look.get("pad_seconds")
+    pad = float(pad_seconds if pad_seconds is not None else 0.5)
     frames = setting["frames"] if setting["frames"] is not None else motion(course, {})["fade"]
     said_before = isinstance(before, dict) and _text(before.get("says")).strip()
     if said_before and kind != "cut" and frames > pad * int(fmt["fps"]):
@@ -577,7 +585,8 @@ def transition_for(course: dict, before: dict, scene: dict, fade: int) -> dict:
 
 def _progress(look: dict) -> dict:
     """The bars that show an advance (config/video.yaml › progress)."""
-    cfg = look.get("progress") if isinstance(look.get("progress"), dict) else {}
+    progress = look.get("progress")
+    cfg = progress if isinstance(progress, dict) else {}
     height = cfg.get("height")
     return {"track": str(cfg.get("track") or "border"), "fill": str(cfg.get("fill") or "accent-ink"), "outline": cfg.get("outline") is True,
             "height": float(height) if isinstance(height, (int, float)) and not isinstance(height, bool) and height > 0 else 10}
@@ -585,7 +594,8 @@ def _progress(look: dict) -> dict:
 
 def _chart(look: dict) -> dict:
     """The look of the charts (config/video.yaml › chart), with what is missing or wrong left to the defaults of the package."""
-    cfg = look.get("chart") if isinstance(look.get("chart"), dict) else {}
+    chart = look.get("chart")
+    cfg = chart if isinstance(chart, dict) else {}
     series = [str(c) for c in (cfg.get("series") or []) if c] or ["accent"]
     number = lambda v, fallback: float(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else fallback  # noqa: E731
     return {"series": series, "single": str(cfg["single"]) if cfg.get("single") else series[0],
@@ -599,7 +609,8 @@ def _look(course: dict) -> dict:
     found_fonts = fonts(course)
     text, base = text_roles(course, (found_fonts or {}).get("families") or [])
     stress = str(look.get("stress") or "underline")
-    veil = look.get("photo_veil") if isinstance(look.get("photo_veil"), dict) else {}
+    photo_veil = look.get("photo_veil")
+    veil = photo_veil if isinstance(photo_veil, dict) else {}
     opacity = veil.get("opacity")
     return {"background": str(look.get("background") or "shape"), "logo": _logo(course),
             "stress": stress if stress in STRESSES else "underline", "chart": _chart(look), "progress": _progress(look),
@@ -658,7 +669,7 @@ def _weights(course: dict, look: dict) -> dict:
     return {**theme, **own}
 
 
-def _numbers(block, numbers: tuple[str, ...], words: tuple[str, ...] = ()) -> dict:
+def _numbers(block: object, numbers: tuple[str, ...], words: tuple[str, ...] = ()) -> dict:
     """The keys of a block of the style that are set: numbers as numbers, words as text."""
     block = block if isinstance(block, dict) else {}
     out = {k: float(block[k]) for k in numbers if block.get(k) is not None}
@@ -740,12 +751,12 @@ def _hash(*parts: str) -> str:
 def _voice_record(course: dict, asset_id: str) -> dict:
     path = voice_dir(course, asset_id) / "voice.json"
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        return cast("dict", json.loads(path.read_text(encoding="utf-8")))
     except (OSError, ValueError):
         return {}
 
 
-def voice(course: dict, asset_id: str, say=print, batch: bool = False) -> int:
+def voice(course: dict, asset_id: str, say: Say = print, batch: bool = False) -> int:
     """The narration of each scene, with the timings of its words; only what changed is made again. How many were made (with
     `batch`, how many were put in the queue of the Gemini batch: `coursekit tts-batch collect` finishes them)."""
     from coursekit import ttsbatch, voices
@@ -796,7 +807,7 @@ def voice(course: dict, asset_id: str, say=print, batch: bool = False) -> int:
     return made
 
 
-def voice_collected(course: dict, asset_id: str, sid: str, key: str, audio: Path, says: str, say=print) -> None:
+def voice_collected(course: dict, asset_id: str, sid: str, key: str, audio: Path, says: str, say: Say = print) -> None:
     """A scene whose narration came in the Gemini batch: the timings of its words and its length, as `voice` leaves them."""
     folder = voice_dir(course, asset_id)
     text = folder / f"{sid}.txt"
@@ -830,7 +841,8 @@ def resolve(course: dict, asset_id: str) -> dict:
     look = style(course)
     fmt = {**DEFAULT_FORMAT, **(look.get("format") or {}), **(data.get("format") or {})}
     fps = int(fmt["fps"])
-    pad = float(look.get("pad_seconds") if look.get("pad_seconds") is not None else 0.5)
+    pad_seconds = look.get("pad_seconds")
+    pad = float(pad_seconds if pad_seconds is not None else 0.5)
     record = _voice_record(course, asset_id)
     folder = voice_dir(course, asset_id)
     try:
@@ -838,7 +850,8 @@ def resolve(course: dict, asset_id: str) -> dict:
     except thememod.ThemeError as exc:
         raise VideoError(str(exc)) from None
     moving = motion(course, data)
-    resolved, cursor = [], 0
+    resolved: list[dict[str, Any]] = []
+    cursor = 0
     for scene in data["scenes"]:
         sid = str(scene["id"])
         says = _text(scene.get("says")).strip()
@@ -859,7 +872,7 @@ def resolve(course: dict, asset_id: str) -> dict:
         if scene.get("duration") and says:
             seconds = max(seconds, float(scene["duration"]))
         frames = max(1, round(seconds * fps))
-        entry = {"id": sid, "type": str(scene["type"]), "from": cursor, "frames": frames, "props": props, "audio": audio,
+        entry: dict[str, Any] = {"id": sid, "type": str(scene["type"]), "from": cursor, "frames": frames, "props": props, "audio": audio,
                  "words": words, "says": says, "layers": _resolve_layers(scene, words, frames, fps, course), "transition": None}
         if resolved:  # it enters over the end of the one before: they overlap for the frames of the transition
             entry["transition"] = transition_for(course, resolved[-1], {**scene, "props": props}, moving["fade"])
@@ -924,15 +937,15 @@ def sync(course: dict) -> Path:
         names = []
         for name, piece in sorted(pieces(course, kind).items()):
             if piece["origin"] == "library":
-                path = f"./{kind}/{name}"
+                module = f"./{kind}/{name}"
             elif piece["origin"] == "project":
-                path = f"../src/{kind}/{name}"
+                module = f"../src/{kind}/{name}"
             else:
                 target = copies / f"{course['code'].lower()}-{kind}-{name}"
                 shutil.copytree(piece["folder"], target)
-                path = f"../{COURSE_COPY.as_posix()}/{target.name}"
+                module = f"../{COURSE_COPY.as_posix()}/{target.name}"
             ident = prefix + re.sub(r"[^a-z0-9]", "_", name)
-            lines.append(f'import {ident} from "{path}";')
+            lines.append(f'import {ident} from "{module}";')
             names.append(f'"{name}": {ident}')
         tables[kind] = ", ".join(names)
     (kit / "registry.generated.ts").write_text(
@@ -945,7 +958,7 @@ def sync(course: dict) -> Path:
     return root
 
 
-def require_current(project) -> None:
+def require_current(project: Project) -> None:
     """The Remotion workspace at the versions of coursekit, before rendering: otherwise stop and say to run `coursekit setup
     --media`. In the handoff (nobody to run it) it goes on with what is installed and warns."""
     from coursekit import setup
@@ -977,7 +990,7 @@ def _props_file(course: dict, asset_id: str, resolved: dict) -> Path:
     path = course["_project"].cache_dir / "video" / course["code"] / f"{asset_id}.props.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(resolved, ensure_ascii=False), encoding="utf-8")
-    return path
+    return cast("Path", path)
 
 
 def preview(course: dict, asset_id: str) -> Path:
@@ -1004,7 +1017,7 @@ def preview(course: dict, asset_id: str) -> Path:
         for i, frame in enumerate(frames):
             sheet.paste(frame, (8 + (i % columns) * (width + 8), 8 + (i // columns) * (height + 8)))
         sheet.save(out)
-    return out
+    return cast("Path", out)
 
 
 GALLERY_SECONDS = 3.5  # each piece in the gallery: enough to enter and settle
@@ -1100,7 +1113,7 @@ def _gallery_entries(course: dict, language: str) -> list[dict]:
 LIVE_ENTRY = "kit/gallery/live.tsx"  # the app of the galleries, inside the workspace once the kit is synced
 
 
-def live_gallery(course: dict, say=print, code: bool = True, fresh: bool = True) -> Path:
+def live_gallery(course: dict, say: Say = print, code: bool = True, fresh: bool = True) -> Path:
     """The live gallery: a page that plays every scene and layer with the player of Remotion, with a control for each prop, in
     .cache/media/<CODE>/gallery-live/. Served by `serve_gallery`, which builds it again when something changes: `code: False`
     writes only the data (a change of the configuration or the theme), `fresh: False` writes over the files the page is
@@ -1113,7 +1126,7 @@ def live_gallery(course: dict, say=print, code: bool = True, fresh: bool = True)
     return _gallery_app(course, out, {}, code, say)
 
 
-def _gallery_app(course: dict, out: Path, extra: dict, code: bool, say) -> Path:
+def _gallery_app(course: dict, out: Path, extra: dict, code: bool, say: Say) -> Path:
     """The interface of the galleries in a folder: the data of the pieces in the theme and the style of the course (data.js),
     the app bundled with the design system of Studio LXD (app.js, app.css and its fonts) and its two pages: index.html, the
     interface, and stage.html, where a piece is drawn with no CSS of Studio LXD. `extra` goes into the data (the clips of the
@@ -1201,7 +1214,7 @@ def _write(path: Path, text: str) -> None:
 def _course_images(course: dict, out: Path, limit: int = 40) -> list[str]:
     """The images of a course (media/files/), copied next to the live gallery, to try a piece with them."""
     files = course["_dir"] / "media" / "files"
-    found = []
+    found: list[str] = []
     for path in sorted(files.glob("*")) if files.is_dir() else []:
         if path.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp") and path.stat().st_size < 8_000_000 and len(found) < limit:
             (out / "files").mkdir(exist_ok=True)
@@ -1236,7 +1249,8 @@ def stamp(paths: list[Path]) -> tuple:
     return tuple(sorted(out))
 
 
-def serve_gallery(page: Path, port: int = 8766, open_browser: bool = True, say=print, reload=None) -> int:
+def serve_gallery(page: Path, port: int = 8766, open_browser: bool = True, say: Say = print,
+                  reload: Callable[[], dict] | None = None) -> int:
     """Serve the live gallery on 127.0.0.1 (the port asked for, else a free one) until Ctrl+C. With `reload` (what gives the
     course again, read anew), it watches what the gallery is made from and builds it again when it changes: the page asks for
     version.json every second and reloads itself, keeping the piece and the values it had."""
@@ -1249,7 +1263,7 @@ def serve_gallery(page: Path, port: int = 8766, open_browser: bool = True, say=p
     from coursekit.preview import Server
 
     class Quiet(SimpleHTTPRequestHandler):
-        def log_message(self, *args) -> None:
+        def log_message(self, *args: Any) -> None:
             pass
 
         def end_headers(self) -> None:
@@ -1257,16 +1271,18 @@ def serve_gallery(page: Path, port: int = 8766, open_browser: bool = True, say=p
             super().end_headers()
 
     folder = page.parent
-    state = {"version": 1, "error": None}
+    state: dict[str, Any] = {"version": 1, "error": None}
     _write(folder / "version.json", json.dumps(state))
     stop = threading.Event()
 
+    again = cast("Callable[[], dict]", reload)  # watch runs only with reload
+
     def watch() -> None:
-        course = reload()
+        course = again()
         before = {kind: stamp(paths) for kind, paths in watched(course).items()}
         while not stop.wait(1):
             try:
-                course = reload()
+                course = again()
                 now = {kind: stamp(paths) for kind, paths in watched(course).items()}
             except Exception:  # a file half written: next second
                 continue
@@ -1313,7 +1329,7 @@ def html_escape(text: str) -> str:
     return html.escape(text)
 
 
-def gallery(course: dict, say=print) -> Path:
+def gallery(course: dict, say: Say = print) -> Path:
     """Every scene and layer the course can use, drawn with its example (and each of its variants) in the theme and the style of
     the course and rendered: one short video with all of them (`gallery.mp4`), a clip and a frame of each, and the interface of
     the galleries to look at them (`index.html`, the same as the live gallery's, with the clips in place of the player), in
@@ -1330,11 +1346,13 @@ def gallery(course: dict, say=print) -> Path:
     frames = round(GALLERY_SECONDS * fps)
     entries = _gallery_entries(course, language)
     base = example(pieces(course, "scenes").get(GALLERY_BASE) or {"meta": {}}, language) or {"title": ""}
-    drawn, cursor = [], 0
+    drawn: list[dict[str, Any]] = []
+    cursor = 0
     for entry in entries:
         props = entry["props"]
         if props is None:
             continue
+        scene: dict[str, Any]
         if entry["kind"] == "scenes":
             scene = {"id": entry["key"], "type": entry["name"], "props": props, "layers": []}
         else:
@@ -1346,7 +1364,9 @@ def gallery(course: dict, say=print) -> Path:
         raise VideoError(t("video", "gallery_empty", code=course.get("_label") or course["code"]))
     ahead = example(pieces(course, "scenes").get(GALLERY_NEXT) or {"meta": {}}, language) or {"text": ""}
     shown = _gallery_transitions(course)
-    pairs = {}  # transition-<type>: (its first frame, its last), the cover giving way to the next scene
+    first: dict[str, Any]
+    second: dict[str, Any]
+    pairs: dict[str, tuple[int, int, int]] = {}  # transition-<type>: (its first frame, its last), the cover giving way to the next scene
     for kind in (k["name"] for k in shown["types"]):
         overlap = 0 if kind == "cut" else min(shown["frames"], frames - 1)
         first = {"id": f"transition-{kind}-from", "type": GALLERY_BASE, "props": base, "layers": [], "from": cursor, "frames": frames,
@@ -1357,7 +1377,7 @@ def gallery(course: dict, say=print) -> Path:
         drawn += [first, second]
         pairs[f"transition-{kind}"] = (first["from"], second["from"] + frames, second["from"] + overlap // 2)
         cursor = second["from"] + frames
-    resolved = {"fps": fps, "width": int(fmt["width"]), "height": int(fmt["height"]), "frames": cursor,
+    resolved: dict[str, Any] = {"fps": fps, "width": int(fmt["width"]), "height": int(fmt["height"]), "frames": cursor,
                 "tokens": {k: tokens[k] for k in ("color", "font", "radius", "space", "shadow") if k in tokens},
                 "motion": motion(course, {}), "style": _look(course), "scenes": drawn}
     out = course["_project"].cache_dir / "media" / course["code"] / "gallery"
@@ -1372,7 +1392,7 @@ def gallery(course: dict, say=print) -> Path:
     video_file = out / "gallery.mp4"
     _remotion(root, ["render", f"{KIT}/entry.ts", "Montage", str(video_file), f"--props={props_file}", f"--public-dir={out}", "--muted",
                      "--scale=0.5", "--log=error"])
-    starts = {}
+    starts: dict[str, tuple[float, float]] = {}
     for name, (begin, end, middle) in pairs.items():  # the clip of a transition: both scenes, its poster in the middle of it
         starts[name] = (begin / fps, end / fps)
         mediatools.run(["ffmpeg", "-loglevel", "error", "-y", "-ss", f"{middle / fps:.3f}", "-i", str(video_file), "-frames:v", "1",
@@ -1489,10 +1509,10 @@ def new(course: dict, asset_id: str) -> Path:
 # ── for an editor ────────────────────────────────────────────────────────────────────────────
 
 def export_dir(course: dict, asset_id: str) -> Path:
-    return course["_dir"] / "media" / "edit" / asset_id
+    return cast("Path", course["_dir"] / "media" / "edit" / asset_id)
 
 
-def export(course: dict, asset_id: str, say=print) -> dict:
+def export(course: dict, asset_id: str, say: Say = print) -> dict:
     """The pieces of the video, apart, and its timeline for an editor (DaVinci Resolve, Final Cut, Premiere): each scene clean
     (without its layers, without sound), each layer alone with transparency (ProRes 4444), the voice of each scene, the
     captions in SRT, and the timeline in FCPXML 1.10 and OpenTimelineIO, in media/edit/<id>/."""

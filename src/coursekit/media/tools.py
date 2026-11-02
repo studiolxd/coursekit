@@ -19,7 +19,9 @@ import tempfile
 import time
 import urllib.request
 import wave
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any, cast
 
 from coursekit import course as coursemod
 from coursekit import http
@@ -36,7 +38,7 @@ class ToolError(CoursekitError):
         self.status = status  # the HTTP status of the answer, when the failure was one
 
 
-def run(command: list[str], **kwargs) -> None:
+def run(command: list[str], **kwargs: Any) -> None:
     """subprocess.run that reports a missing program or a failed run as a ToolError (a message, not a traceback)."""
     try:
         subprocess.run(command, check=True, **kwargs)
@@ -130,7 +132,10 @@ def write_words(words: list[dict], out: Path) -> None:
 
 
 def words_from_characters(chars: list[str], starts: list[float], ends: list[float]) -> list[dict]:
-    words, current, start, end = [], "", None, None
+    words: list[dict] = []
+    current = ""
+    start: float | None = None
+    end: float | None = None
     for ch, st, en in zip(chars, starts, ends, strict=False):
         if ch.isspace():
             if current:
@@ -287,17 +292,17 @@ def gemini_request(text: str, voice: str | None, language: str, style: str, tier
 FLEX_WAITS = (5, 20, 60)  # seconds between the attempts when the flex tier has no capacity
 
 
-def gemini_post(url: str, payload: dict, key: str, settings: dict, sleep=time.sleep) -> dict:
+def gemini_post(url: str, payload: dict, key: str, settings: dict, sleep: Callable[[float], None] = time.sleep) -> dict:
     """One request of the Gemini voice, in the tier of the settings. When flex has no capacity (429, 503) it tries again a few
     times and then, with `flex_fallback`, in the standard tier (the full price, but the work goes on)."""
     headers = {"Content-Type": "application/json", "x-goog-api-key": key}
     tier = str(settings.get("tier") or "standard")
     if tier != "flex":
-        return json.loads(post(url, json.dumps(payload).encode(), headers))
+        return cast("dict", json.loads(post(url, json.dumps(payload).encode(), headers)))
     flex = json.dumps({**payload, "serviceTier": "flex"}).encode()
     for wait in (*FLEX_WAITS, None):
         try:
-            return json.loads(post(url, flex, headers, timeout=960))  # flex answers in up to 15 minutes
+            return cast("dict", json.loads(post(url, flex, headers, timeout=960)))  # flex answers in up to 15 minutes
         except ToolError as exc:
             if exc.status not in (429, 503):
                 raise
@@ -305,7 +310,7 @@ def gemini_post(url: str, payload: dict, key: str, settings: dict, sleep=time.sl
             sleep(wait)
     if settings.get("flex_fallback", True) is False:
         raise ToolError(t("mediatools", "gemini_flex_busy"))
-    return json.loads(post(url, json.dumps(payload).encode(), headers))
+    return cast("dict", json.loads(post(url, json.dumps(payload).encode(), headers)))
 
 
 def gemini_audio(response: dict) -> tuple[bytes, int]:
@@ -404,7 +409,7 @@ def fit(path: Path, size: tuple[int, int]) -> str:
         before = im.size
         width, height = size
         scale = max(width / im.width, height / im.height)
-        resized = im.resize((max(width, round(im.width * scale)), max(height, round(im.height * scale))), Image.LANCZOS)
+        resized = im.resize((max(width, round(im.width * scale)), max(height, round(im.height * scale))), Image.Resampling.LANCZOS)
         left, top = (resized.width - width) // 2, (resized.height - height) // 2
         out = resized.crop((left, top, left + width, top + height))
         out.save(path)

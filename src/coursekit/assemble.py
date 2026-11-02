@@ -27,7 +27,9 @@ import hashlib
 import json
 import re
 import unicodedata
+from collections.abc import Iterator
 from pathlib import Path
+from typing import Any, cast
 
 from markdown_it import MarkdownIt
 
@@ -113,13 +115,13 @@ class Syntax:
         return lang.directive_key(self.t, name)
 
     def word(self, name: str) -> str:
-        return self.t["directive_words"][name]
+        return cast("str", self.t["directive_words"][name])
 
     def media_type(self, label: str) -> str | None:
         return lang.media_type_id(self.t, label)
 
     def media_label(self, type_id: str) -> str:
-        return self.t["media_types"].get(type_id, type_id)
+        return cast("str", self.t["media_types"].get(type_id, type_id))
 
     def check_keys(self, values: dict[str, str]) -> None:
         """A key that belongs to another language (`pregunta:` in an English course) is an error, not an ignored line."""
@@ -137,7 +139,7 @@ class PlanError(Exception):
 # ── Markdown helpers ─────────────────────────────────────────────────────────
 
 def html(md_text: str) -> str:
-    return MD.render(md_text.strip()).strip()
+    return cast("str", MD.render(md_text.strip()).strip())
 
 
 def inline(md_text: str) -> str:
@@ -181,13 +183,15 @@ def without_links(value: str) -> str:
     return re.sub(r"</?a\b[^>]*>", "", value)
 
 
-def field_values(data: dict, path: str):
+def field_values(data: dict, path: str) -> Iterator[tuple[dict, str]]:
     """(container, key) of each value of a field written as in richText (`items[].content`, `content.title`)."""
     head, _, key = path.rpartition(".")
+    containers: list[dict]
     if head.endswith("[]"):
         containers = [c for c in data.get(head[:-2]) or [] if isinstance(c, dict)]
     else:
-        containers = [data.get(head)] if isinstance(data.get(head), dict) else []
+        found = data.get(head)
+        containers = [found] if isinstance(found, dict) else []
     for container in containers:
         if isinstance(container.get(key), str):
             yield container, key
@@ -203,7 +207,7 @@ def creator_fields(bricks: list[dict], where: str) -> list[str]:
             continue
         data = brick.get("data") or {}
         for fields, fit in ((SINGLE_LINE_FIELDS, single_line), (REDUCED_FIELDS, without_links)):
-            for path in fields.get(brick.get("type"), ()):
+            for path in fields.get(cast("str", brick.get("type")), ()):
                 for container, key in field_values(data, path):
                     fitted = fit(container[key])
                     if fitted != container[key]:
@@ -351,7 +355,8 @@ def simulation_blocks(lines: list[str], ctx: dict) -> list[str]:
 def conditional_parts(lines: list[str], start: int) -> tuple[list[tuple[str, list[str]]], list[str], int]:
     """From the `:::if` line at `start`: ([(condition, lines) of the :::if branch and of each :::elif], lines of the :::else
     branch, index of the closing line). Directives inside the branches are kept whole."""
-    branches: list[tuple[str, list[str]]] = [(simulation.IF_RE.match(lines[start].strip()).group(1), [])]
+    opening = cast("re.Match[str]", simulation.IF_RE.match(lines[start].strip()))  # the caller found the `:::if` there
+    branches: list[tuple[str, list[str]]] = [(opening.group(1), [])]
     other: list[str] = []
     target = branches[0][1]
     i = start + 1
@@ -364,7 +369,7 @@ def conditional_parts(lines: list[str], start: int) -> tuple[list[tuple[str, lis
             if in_directive:
                 in_directive = not DIRECTIVE_CLOSE_RE.match(stripped)
             elif simulation.ELIF_RE.match(stripped):
-                branches.append((simulation.ELIF_RE.match(stripped).group(1), []))
+                branches.append((cast("re.Match[str]", simulation.ELIF_RE.match(stripped)).group(1), []))
                 target = branches[-1][1]
                 i += 1
                 continue
@@ -391,7 +396,13 @@ def directive_brick(name: str, body: list[str], ctx: dict) -> dict:
     syntax: Syntax = ctx["syntax"]
     values, rest = key_values(body)
     syntax.check_keys(values)
-    meta = {"directive": name}
+    meta: dict[str, Any] = {"directive": name}
+    data: dict[str, Any]
+    items: list[dict[str, Any]]
+    lines: list[Any]
+    options: list[Any]
+    x: float
+    y: float
     if brick_type == "LABELLED_GRAPHIC":
         meta["image"] = values.get(syntax.key("image"), "")
     if values.get(syntax.key("objective")):
@@ -555,7 +566,7 @@ def shuffled(name: str, brick_type: str, values: dict[str, str], ctx: dict) -> b
                               directives=", ".join(n for n, d in ctx["registry"].items() if d.get("brick") in SHUFFLED_BRICKS)))
         return None
     if written is None:
-        return ctx["shuffle"]["assessment" if ctx.get("in_test") else "practice"]
+        return cast("bool | None", ctx["shuffle"]["assessment" if ctx.get("in_test") else "practice"])
     plain = unicodedata.normalize("NFKD", written.strip().casefold()).encode("ascii", "ignore").decode()
     words = {unicodedata.normalize("NFKD", syntax.word(w).casefold()).encode("ascii", "ignore").decode(): w == "yes"
              for w in ("yes", "no")}
@@ -573,7 +584,7 @@ def content_path(asset: dict, ctx: dict) -> str | None:
     in each other one (`uploads`, by content id); in another unit without its copy there is none (html: always `asset_path`)."""
     uploads = asset.get("uploads") or {}
     if ctx.get("content_id") and uploads.get(str(ctx["content_id"])):
-        return uploads[str(ctx["content_id"])]
+        return cast("str", uploads[str(ctx["content_id"])])
     course = ctx.get("course")
     creator = bool(course and course.get("_project") and coursemod.backend(course) == "creator")
     if creator and ctx.get("unit") is not None and asset.get("unit") not in (None, ctx["unit"]):
@@ -683,7 +694,7 @@ def parse_blocks(lines: list[str], ctx: dict, section_key: str) -> list[dict]:
                 "else": parse_blocks(other, ctx, section_key)}, "meta": {}})
         elif DIRECTIVE_OPEN_RE.match(stripped):
             close_text()
-            name = DIRECTIVE_OPEN_RE.match(stripped).group(1)
+            name = cast("re.Match[str]", DIRECTIVE_OPEN_RE.match(stripped)).group(1)
             body = []
             i += 1
             while i < len(lines) and not DIRECTIVE_CLOSE_RE.match(lines[i].strip()):
@@ -695,7 +706,7 @@ def parse_blocks(lines: list[str], ctx: dict, section_key: str) -> list[dict]:
                 ctx["errors"].append(f"{section_key}: {exc}")
         elif syntax.placeholder.match(stripped):
             close_text()
-            written = syntax.placeholder.match(stripped).group(1).strip()
+            written = cast("re.Match[str]", syntax.placeholder.match(stripped)).group(1).strip()
             kind = syntax.media_type(written) or written
             fields: dict = {"_names": {v: k for k, v in syntax.field_key.items()}}
             while i + 1 < len(lines) and lines[i + 1].startswith(">"):
@@ -735,9 +746,9 @@ def parse_blocks(lines: list[str], ctx: dict, section_key: str) -> list[dict]:
             bricks.append({"type": "TABLE", "data": {"properties": {"rowCount": len(cells), "columnCount": max(map(len, cells)),
                                                                     "headerRow": True}, "items": items}, "meta": {}})
             continue
-        elif LIST_ITEM_RE.match(line) and not LIST_ITEM_RE.match(line).group(1):
+        elif LIST_ITEM_RE.match(line) and not cast("re.Match[str]", LIST_ITEM_RE.match(line)).group(1):
             close_text()
-            numbered = LIST_ITEM_RE.match(line).group(2)[0].isdigit()
+            numbered = cast("re.Match[str]", LIST_ITEM_RE.match(line)).group(2)[0].isdigit()
             block = []
             while i < len(lines) and (LIST_ITEM_RE.match(lines[i]) or (lines[i].startswith(("  ", "\t")) and lines[i].strip())):
                 block.append(lines[i])
@@ -780,7 +791,7 @@ def content_title(course: dict, unit: dict) -> str:
     if unit.get("kind") in ("assessment", "bank"):
         return f"{course['title']}. {unit['title']}"
     if len(course.get("units") or []) == 1:
-        return course["title"]
+        return cast("str", course["title"])
     return f"{coursemod.tokens(course)['unit']} {unit['n']}. {unit['title']}"
 
 
@@ -800,7 +811,7 @@ def quiz_settings(course: dict, unit: dict, number: str, title: str) -> dict:
         found = items[int(position) - 1] if position.isdigit() and 0 < int(position) <= len(items) else {}
     grading = course["design"].get("grading") or {}
 
-    def pick(own, fallback):
+    def pick(own: Any, fallback: Any) -> Any:
         return fallback if own is None else own
 
     return {"passingGrade": pick(found.get("passing_score"), grading.get("passing_score")),
@@ -838,7 +849,7 @@ def fold_labelled_images(bricks: list[dict]) -> list[dict]:
     return keep(bricks) if named else bricks
 
 
-def walk(bricks: list[dict]):
+def walk(bricks: list[dict]) -> Iterator[dict]:
     """The bricks, and those inside the branches of the adaptive blocks."""
     for brick in bricks:
         yield brick
@@ -1005,7 +1016,7 @@ def _read(path: Path, default: dict | None = None) -> dict:
         if default is None:
             raise AssembleError(t("assemble", "plan_missing", name=path.name))
         return default
-    return json.loads(path.read_text(encoding="utf-8"))
+    return cast("dict", json.loads(path.read_text(encoding="utf-8")))
 
 
 def write_plan(course: dict, unit: dict) -> tuple[dict | None, list[str], list[str], dict[str, int]]:
@@ -1152,7 +1163,7 @@ def unit_checked(course_dir: Path, n: int) -> bool:
     if not applied_path.exists():
         return False
     applied = json.loads(applied_path.read_text(encoding="utf-8"))
-    return applied.get("checked") == _fingerprint(applied)
+    return cast("bool", applied.get("checked") == _fingerprint(applied))
 
 
 def mark_assembled(course: dict) -> str:

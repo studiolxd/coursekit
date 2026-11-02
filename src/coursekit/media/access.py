@@ -24,6 +24,7 @@ import json
 import re
 import unicodedata
 from pathlib import Path
+from typing import cast
 
 import yaml
 
@@ -39,7 +40,7 @@ class AccessError(Exception):
 
 
 def scenes_file(course: dict, asset_id: str) -> Path:
-    return course["_dir"] / "media" / "scripts" / f"{asset_id}.scenes.yaml"
+    return cast("Path", course["_dir"] / "media" / "scripts" / f"{asset_id}.scenes.yaml")
 
 
 def read_scenes(course: dict, asset_id: str) -> dict | None:
@@ -62,7 +63,7 @@ def _normal(text: str) -> str:
     return re.sub(r"[^a-z0-9 ]+", " ", text.lower())
 
 
-def _texts(value) -> list[str]:
+def _texts(value: object) -> list[str]:
     if value is None:
         return []
     return [str(v) for v in value] if isinstance(value, list) else [str(value)]
@@ -112,7 +113,8 @@ def starts(scenes: list[dict], words: list[dict]) -> list[float | None]:
     """When each scene starts: its `at` (seconds), else the first words of its narration, the first time they are said after
     the scene before."""
     said_words = [_normal(w["w"]).strip() for w in words]
-    out, cursor = [], 0
+    out: list[float | None] = []
+    cursor = 0
     for scene in scenes:
         if scene.get("at") is not None:
             out.append(float(scene["at"]))
@@ -145,15 +147,16 @@ def transcript(course: dict, asset: dict) -> tuple[str, str]:
     end_of_all = float(words[-1]["end"]) if words else None
     for i, scene in enumerate(scenes):
         seen = str(scene.get("shows") or "") or ". ".join([*_texts(scene.get("labels")), *_texts(scene.get("text"))])
-        lines = [f"[{_minute(times[i])}]"] if times[i] is not None else []
+        at = times[i]
+        lines = [f"[{_minute(at)}]"] if at is not None else []
         if seen:
             lines.append(f"{label}: {seen}")
         if scene.get("says"):
             lines.append(str(scene["says"]).strip())
         parts.append("\n".join(lines))
-        if seen and times[i] is not None:
+        if seen and at is not None:
             following = next((x for x in times[i + 1:] if x is not None), end_of_all)
-            cues.append((times[i], max(times[i] + 1.0, following or times[i] + 3.0), seen))
+            cues.append((at, max(at + 1.0, following or at + 3.0), seen))
     vtt = ["WEBVTT", ""]
     for n, (a, b, text) in enumerate(cues, 1):
         vtt += [str(n), f"{vtt_time(a)} --> {vtt_time(b)}", text, ""]
