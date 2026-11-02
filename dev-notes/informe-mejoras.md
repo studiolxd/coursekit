@@ -30,10 +30,6 @@ Nada pendiente: ver [Hecho](#hecho).
 
 ## 5. Documentación
 
-- **`docs/` suma más de 6 000 líneas por idioma** y `08-assembly-and-delivery.md` mezcla ensamblado,
-  entrega, banco de preguntas, revisión de cliente y límites de creator. Partirlo en
-  `08-assembly.md`, `09-delivery.md` (con el banco de preguntas) y `10-client-review.md`, y renumerar
-  `troubleshooting`. `tests/test_docs.py` ya protege los enlaces.
 - **Las notas de `dev-notes/`** (`assessment-delivery`, `capture`, `field-feedback`, `gemini-tts`,
   `pedagogical-criteria`, `research`, `terminal-capture`, `video`) corresponden a funciones que el
   README ya da por publicadas. Según las reglas del repositorio, lo que ya está en `docs/` debe
@@ -45,7 +41,7 @@ Sigue las fases del [plan](plan-mejoras.md).
 
 1. Marcador de pruebas lentas, si lo pide una medida de duraciones de la suite completa (sección 2).
 2. Ampliar `mypy` a más módulos, uno a uno (sección 2).
-3. Reparto de `08-assembly-and-delivery.md` y limpieza de `dev-notes/` (sección 5; fase 6).
+3. Limpieza de `dev-notes/` (sección 5; fase 6).
 4. OCR de `capture` con `rapidocr` para Python 3.13 y 3.14 (sección 4; fuera del plan, necesita probarse con capturas reales).
 
 ## Hecho
@@ -113,3 +109,10 @@ Sigue las fases del [plan](plan-mejoras.md).
   `language`, `readability`, `media`, `activities`, `simulations`, `assembly`) con `--only` e `--ignore`; una comprobación
   parcial no cambia el estado. Resumen por unidad al final. Las skills de redacción y revisión lo mencionan, sin obligar a
   usar JSON: el texto ya les sirve.
+
+### Documentación (fase 6 del plan)
+
+- ~~**`docs/` suma más de 6 000 líneas por idioma.**~~ Hecho el 2 de noviembre de 2026: `08-assembly.md`,
+  `09-delivery.md` y `10-client-review.md`, y la resolución de problemas pasa a `11`. El banco de preguntas se queda en
+  Montaje, dentro de «Dónde van las evaluaciones», porque es parte del plan de montaje; mover solo ese apartado partía en
+  dos una explicación. Los enlaces se rehicieron por el fichero donde vive cada ancla.
