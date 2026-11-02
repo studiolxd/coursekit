@@ -11,7 +11,9 @@ from __future__ import annotations
 import ctypes
 import sys
 import time
+from collections.abc import Callable
 from ctypes import wintypes
+from typing import Any
 
 from PIL import Image
 
@@ -25,7 +27,7 @@ VK = {"Enter": 0x0D, "Tab": 0x09, "Space": 0x20, "Backspace": 0x08, "Escape": 0x
 MODIFIERS = {"Shift": 0x10, "Control": 0x11, "Alt": 0x12, "Meta": 0x5B, "ControlOrMeta": 0x11}
 
 
-def virtual_keys(combo: str, scan=None) -> list[int]:
+def virtual_keys(combo: str, scan: Callable[[str], int] | None = None) -> list[int]:
     """`Control+Shift+A` → the virtual keys to hold, in order (the last one is the key). `scan` gives the key of a symbol."""
     parts = combo.split("+")
     keys = []
@@ -80,7 +82,11 @@ KEYEVENTF_KEYUP, KEYEVENTF_UNICODE, MOUSEEVENTF_WHEEL, MOUSEEVENTF_HWHEEL = 0x00
 class _Win:
     """user32, dwmapi and kernel32, loaded once."""
 
-    def __init__(self):
+    user32: Any  # ctypes.WinDLL, which exists only on Windows
+    dwm: Any
+    kernel32: Any
+
+    def __init__(self) -> None:
         if sys.platform != "win32":
             raise ToolError(t("capture", "desktop_unsupported", system=sys.platform))
         self.user32 = ctypes.WinDLL("user32", use_last_error=True)
@@ -99,9 +105,9 @@ class _Win:
     def windows(self) -> list[dict]:
         """The visible top-level windows, front to back."""
         out = []
-        proc = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+        proc = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)  # type: ignore[attr-defined]  # Windows only
 
-        def each(hwnd, _):
+        def each(hwnd: int, _: int) -> bool:
             if self.user32.IsWindowVisible(hwnd) and not self.user32.IsIconic(hwnd) and not self.cloaked(hwnd):
                 out.append(self.describe(hwnd))
             return True
@@ -109,12 +115,12 @@ class _Win:
         self.user32.EnumWindows(proc(each), 0)
         return [w for w in out if w["bounds"][2] > 0 and w["bounds"][3] > 0]
 
-    def cloaked(self, hwnd) -> bool:
+    def cloaked(self, hwnd: int) -> bool:
         value = wintypes.DWORD()
         self.dwm.DwmGetWindowAttribute(hwnd, 14, ctypes.byref(value), ctypes.sizeof(value))  # DWMWA_CLOAKED
         return bool(value.value)
 
-    def describe(self, hwnd) -> dict:
+    def describe(self, hwnd: int) -> dict:
         length = self.user32.GetWindowTextLengthW(hwnd)
         buffer = ctypes.create_unicode_buffer(length + 1)
         self.user32.GetWindowTextW(hwnd, buffer, length + 1)
@@ -123,7 +129,7 @@ class _Win:
         return {"id": int(hwnd), "pid": int(pid.value), "owner": self.program(pid.value), "title": buffer.value,
                 "bounds": self.rect(hwnd)}
 
-    def rect(self, hwnd) -> Bounds:
+    def rect(self, hwnd: int) -> Bounds:
         rect = wintypes.RECT()
         if self.dwm.DwmGetWindowAttribute(hwnd, 9, ctypes.byref(rect), ctypes.sizeof(rect)) != 0:  # without the shadow
             self.user32.GetWindowRect(hwnd, ctypes.byref(rect))
@@ -179,7 +185,8 @@ class WindowsBackend(WindowBackend):
         if not w.user32.IsWindow(self.window["id"]):
             raise ToolError(t("capture", "window_gone", name=self.name))
         self.window["bounds"] = w.rect(self.window["id"])
-        return self.window["bounds"]
+        bounds: Bounds = self.window["bounds"]
+        return bounds
 
     def front(self) -> None:
         w, hwnd = win(), self.window["id"]
@@ -190,7 +197,7 @@ class WindowsBackend(WindowBackend):
             w.user32.SetForegroundWindow(hwnd)
             time.sleep(0.15)
 
-    def owner_at(self, x, y):
+    def owner_at(self, x: float, y: float) -> tuple[int, str] | None:
         w = win()
         hwnd = w.user32.WindowFromPoint(wintypes.POINT(int(x), int(y)))
         if not hwnd:
@@ -219,20 +226,20 @@ class WindowsBackend(WindowBackend):
             hwnd = w.user32.GetWindow(hwnd, 3)
         return above
 
-    def mouse_move(self, x, y) -> None:
+    def mouse_move(self, x: float, y: float) -> None:
         win().user32.SetCursorPos(int(x), int(y))
 
-    def mouse_button(self, button, down, x, y, clicks=1) -> None:
+    def mouse_button(self, button: str, down: bool, x: float, y: float, clicks: int = 1) -> None:
         win().user32.SetCursorPos(int(x), int(y))
         win().send(_mouse_input(MOUSE[(button, down)]))
 
-    def wheel(self, x, y, dx, dy) -> None:
+    def wheel(self, x: float, y: float, dx: float, dy: float) -> None:
         if dy:
             win().send(_mouse_input(MOUSEEVENTF_WHEEL, int(-dy)))  # positive goes up there
         if dx:
             win().send(_mouse_input(MOUSEEVENTF_HWHEEL, int(dx)))
 
-    def type_text(self, text, delay_ms) -> None:
+    def type_text(self, text: str, delay_ms: int) -> None:
         units = text.encode("utf-16-le")
         for i in range(0, len(units), 2):
             code = int.from_bytes(units[i:i + 2], "little")
@@ -240,7 +247,7 @@ class WindowsBackend(WindowBackend):
                        _key_input(scan=code, flags=KEYEVENTF_UNICODE | KEYEVENTF_KEYUP))
             time.sleep(delay_ms / 1000)
 
-    def press(self, combo) -> None:
+    def press(self, combo: str) -> None:
         keys = virtual_keys(combo, lambda ch: win().user32.VkKeyScanW(ord(ch)))
         win().send(*[_key_input(vk) for vk in keys], *[_key_input(vk, flags=KEYEVENTF_KEYUP) for vk in reversed(keys)])
 

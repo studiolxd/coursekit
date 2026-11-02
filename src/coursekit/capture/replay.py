@@ -28,7 +28,9 @@ import shutil
 import subprocess
 import tempfile
 import time
+from collections.abc import Callable
 from pathlib import Path
+from typing import TYPE_CHECKING, Protocol, cast
 
 from coursekit import capture as capturemod
 from coursekit import external
@@ -36,6 +38,9 @@ from coursekit import redact as redactmod
 from coursekit.capture import session as sessionmod
 from coursekit.i18n import t
 from coursekit.mcpserver import ToolError
+
+if TYPE_CHECKING:
+    from coursekit.project import Project
 
 KINDS = ("click", "fill", "point", "move", "drag", "scroll", "type", "key", "wait", "navigate", "shot", "record")
 
@@ -104,13 +109,23 @@ class ReplayError(Exception):
     pass
 
 
+class ReplayBackend(sessionmod.Backend, Protocol):
+    """What a replay also asks of a backend (the browser and the window have it; the terminal is never replayed)."""
+
+    def glide(self, x: float, y: float, ms: float) -> None: ...
+    def locate(self, target: dict) -> tuple[float, float] | None: ...
+    def type_slowly(self, text: str, delay: float) -> None: ...
+    def start_recording(self) -> None: ...
+    def stop_recording(self) -> Path | list[tuple[float, bytes]]: ...
+
+
 def _target(step: dict) -> dict:
     return {k: step[k] for k in ("role", "name", "label") if step.get(k)} | dict(step.get("target") or {})
 
 
-def _point(session, step: dict, n: int) -> tuple[float, float]:
+def _point(session: sessionmod.Session, step: dict, n: int) -> tuple[float, float]:
     """Where a step acts, in css pixels: the element it names, else the position it was recorded at."""
-    found = session.backend.locate(_target(step)) if _target(step) else None
+    found = cast("ReplayBackend", session.backend).locate(_target(step)) if _target(step) else None
     if found:
         return found
     if "x" in step and "y" in step:
@@ -152,7 +167,7 @@ def _join(parts: list[Path], target: Path) -> None:
     if len(parts) == 1:
         shutil.move(str(parts[0]), target)
         return
-    ffmpeg = shutil.which("ffmpeg")
+    ffmpeg = shutil.which("ffmpeg") or "ffmpeg"  # found already: the parts were recorded with it
     listing = target.with_suffix(".parts.txt")
     listing.write_text("".join(f"file '{p.as_posix()}'\n" for p in parts), encoding="utf-8")
     try:
@@ -171,10 +186,11 @@ def _label(spec: dict) -> str:
     return str(spec.get("note") or target.get("name") or target.get("label") or "")
 
 
-def run_steps(session, steps: list, pace: dict, record, timeline: Timeline | None = None) -> list[Path]:
+def run_steps(session: sessionmod.Session, steps: list, pace: dict, record: Callable[[bool], None],
+              timeline: Timeline | None = None) -> list[Path]:
     """Does every step at the pace of a person. `record(on)` starts or stops a stretch of video; returns the shots saved."""
     pause, move_ms, delay = int(pace.get("pause_ms") or 0), int(pace.get("move_ms") or 0), int(pace.get("type_delay_ms") or 0)
-    backend, shots = session.backend, []
+    backend, shots = cast("ReplayBackend", session.backend), []
     timeline = timeline or Timeline(backend.viewport)
     for n, raw in enumerate(steps, 1):
         if not isinstance(raw, dict) or len(raw) != 1 or next(iter(raw)) not in KINDS:
@@ -225,7 +241,8 @@ def run_steps(session, steps: list, pace: dict, record, timeline: Timeline | Non
     return shots
 
 
-def replay(project, code: str, asset_id: str, backend_factory=None, part: str = "") -> dict:
+def replay(project: Project, code: str, asset_id: str, backend_factory: Callable[..., sessionmod.Backend] | None = None,
+           part: str = "") -> dict:
     """Repeats the steps of the brief of a resource, records its video and leaves the result waiting for a person."""
     cfg = capturemod.settings(project)
     pace = dict(cfg.get("replay") or {})
@@ -254,14 +271,16 @@ def replay(project, code: str, asset_id: str, backend_factory=None, part: str = 
     timeline = Timeline(session.backend.viewport)
     fps = int(pace.get("fps") or 30)
 
+    backend = cast("ReplayBackend", session.backend)
+
     def record(on: bool) -> None:
         if on and not recording["on"]:
-            session.backend.start_recording()
+            backend.start_recording()
             timeline.start()
         elif not on and recording["on"]:
             piece = recordings / f"{session.name}.part{len(parts)}.mp4"
             stopped = time.time()
-            recorded = session.backend.stop_recording()
+            recorded = backend.stop_recording()
             first = None
             if isinstance(recorded, Path):  # the desktop records a video by itself
                 piece.parent.mkdir(parents=True, exist_ok=True)
@@ -282,7 +301,7 @@ def replay(project, code: str, asset_id: str, backend_factory=None, part: str = 
                 record(False)  # a record: start with no stop records until the end
         except ToolError as exc:
             raise ReplayError(str(exc)) from None
-        video = None
+        video: Path | None = None
         if parts:
             video = recordings / f"{session.name}.mp4"
             _join(parts, video)
@@ -303,8 +322,8 @@ def replay(project, code: str, asset_id: str, backend_factory=None, part: str = 
             else:
                 _sample_frames(video, capturemod.review_dir(course, asset_id))
     finally:
-        for part in parts:
-            part.unlink(missing_ok=True)
+        for piece in parts:
+            piece.unlink(missing_ok=True)
         session.close()
     findings = {kind: len(values) for kind, values in sorted(session.seen.items())}
     if session.redactor is not None:
@@ -331,7 +350,7 @@ def replay(project, code: str, asset_id: str, backend_factory=None, part: str = 
 
 def _sample_frames(video: Path, folder: Path) -> None:
     """A frame per second of the video for the review sheet (when the video was not read on the pixels)."""
-    ffmpeg = shutil.which("ffmpeg")
+    ffmpeg = shutil.which("ffmpeg") or "ffmpeg"  # found already: the video was made with it
     folder.mkdir(parents=True, exist_ok=True)
     for old in folder.glob("t*.png"):
         old.unlink()

@@ -25,10 +25,11 @@ import io
 import json
 import re
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from importlib import resources
 from pathlib import Path
-from typing import Protocol
+from typing import TYPE_CHECKING, Any, Literal, Protocol, cast
 from urllib.parse import urljoin, urlsplit
 
 import yaml
@@ -43,6 +44,14 @@ from coursekit.mcpserver import ToolError
 from coursekit.media import script as mediascript
 from coursekit.util import slugify
 
+if TYPE_CHECKING:
+    from http.server import ThreadingHTTPServer
+
+    from playwright.sync_api import BrowserContext, Page, Playwright, Route
+
+    from coursekit.capture.terminal import TerminalBackend
+    from coursekit.project import Project
+
 RECIPES = capturemod.MODE_RECIPES["browser"]
 SHAPES = ("rect", "round", "ellipse")  # the mark around what a point shows: a rectangle, a rounded one or an ellipse
 
@@ -55,7 +64,8 @@ BLOCK_RE = mediascript.BLOCK_RE
 # ── the capture block of the brief ───────────────────────────────────────────────────────────
 
 def brief_file(course: dict, asset_id: str) -> Path:
-    return course["_dir"] / "media" / "scripts" / f"{asset_id}.md"
+    path: Path = course["_dir"] / "media" / "scripts" / f"{asset_id}.md"
+    return path
 
 
 def read_block(course: dict, asset_id: str, part: str = "") -> dict:
@@ -73,8 +83,8 @@ def read_block(course: dict, asset_id: str, part: str = "") -> dict:
         data = data.get("capture") if isinstance(data, dict) else {}
     data = data if isinstance(data, dict) else {}
     if part:
-        parts = data.get("parts") if isinstance(data.get("parts"), dict) else {}
-        own = parts.get(part) if isinstance(parts.get(part), dict) else {}
+        parts = cast("dict", data.get("parts")) if isinstance(data.get("parts"), dict) else {}
+        own = cast("dict", parts.get(part)) if isinstance(parts.get(part), dict) else {}
         data = {**{k: v for k, v in data.items() if k not in ("parts", "steps")}, **own}
     return data
 
@@ -137,7 +147,7 @@ def normalize_key(combo: str) -> str:
 
 @dataclass
 class Session:
-    project: object
+    project: Project
     course: dict
     asset_id: str
     grant: dict
@@ -153,7 +163,7 @@ class Session:
     warnings: list[str] = field(default_factory=list)
     redactor: redactmod.Redactor | None = None
     started_at: str = ""
-    server: object | None = None  # the local server of the package of the course, when it is what is recorded
+    server: ThreadingHTTPServer | None = None  # the local server of the package of the course, when it is what is recorded
     terminal: dict | None = None  # terminal mode: the stage, its folder and what covers its output
     part: str = ""  # a recording made in several parts (a terminal and a browser): this one
 
@@ -202,7 +212,7 @@ class Session:
 
     def frame(self) -> Image.Image:
         """The screen as it is, cleaned, at full size (and covered on the pixels with `pixel_check`)."""
-        image = Image.open(io.BytesIO(self.backend.screenshot()))
+        image: Image.Image = Image.open(io.BytesIO(self.backend.screenshot()))
         image.load()
         if self.redactor is not None:
             boxes = self.redactor.boxes(image)
@@ -248,7 +258,7 @@ class Session:
         cx, cy = self._to_css(x, y)
         target = self.backend.target_at(cx, cy)
         self.backend.click(cx, cy, button, count)
-        step = {"x": round(cx), "y": round(cy)}
+        step: dict[str, Any] = {"x": round(cx), "y": round(cy)}
         if target:
             step["target"] = target
         if button != "left":
@@ -261,7 +271,7 @@ class Session:
         """Marks a place of the screen without touching it: on replay it is written down, for a zoom of the video."""
         self.check()
         cx, cy = self._to_css(x, y)
-        step = {"x": round(cx), "y": round(cy)}
+        step: dict[str, Any] = {"x": round(cx), "y": round(cy)}
         target = self.backend.target_at(cx, cy)
         if target:
             step["target"] = target
@@ -324,14 +334,15 @@ class Session:
         self.check()
         if not hasattr(self.backend, "screen_text"):
             raise ToolError(t("capture", "terminal_only"))
-        return self.backend.screen_text()
+        screen: str = self.backend.screen_text()
+        return screen
 
     def wait_for(self, text: str, timeout_ms: int) -> bool:
         self.check()
         if not hasattr(self.backend, "wait_for"):
             raise ToolError(t("capture", "terminal_only"))
         ms = max(0, min(int(timeout_ms), 600000))
-        found = self.backend.wait_for(text, ms)
+        found: bool = self.backend.wait_for(text, ms)
         self.steps.append({"wait_for": {"text": text, "found": found}})
         return found
 
@@ -386,7 +397,7 @@ class Session:
     def save_shot(self) -> Path:
         self.check()
         image = self.frame()
-        target = self.course["_dir"] / "media" / "recordings" / f"{self.name}.png"
+        target: Path = self.course["_dir"] / "media" / "recordings" / f"{self.name}.png"
         target.parent.mkdir(parents=True, exist_ok=True)
         image.convert("RGB").save(target)
         sheet = capturemod.review_dir(self.course, self.asset_id)
@@ -449,7 +460,7 @@ class Session:
         """Terminal mode: the recording becomes the file the resource needs, and the capture waits for a review."""
         from coursekit.capture import terminal as capture_terminal
 
-        info = self.terminal
+        info = cast("dict", self.terminal)  # a terminal session: `end` came here because it has one
         previous = read_block(self.course, self.asset_id, self.part)
         block = {"mode": "terminal", **{k: previous[k] for k in ("stage", "prepare", "terminal") if k in previous},
                  "steps": self.steps}
@@ -464,8 +475,8 @@ class Session:
         recordings = self.course["_dir"] / "media" / "recordings"
         if recipe == "screenshot" and not self.shots:
             self.save_shot()  # the screen as it ended
-        out = capture_terminal.finish(self.backend, self.name, recipe, recordings, review, capturemod.settings(self.project),
-                                      self.rules, info["who"], info["terms"], self.part)
+        out = capture_terminal.finish(cast("TerminalBackend", self.backend), self.name, recipe, recordings, review,
+                                      capturemod.settings(self.project), self.rules, info["who"], info["terms"], self.part)
         self.warnings += out["warnings"]
         main = out["file"] or (self.shots and recordings / f"{self.name}.png") or None
         findings = {kind: len(values) for kind, values in sorted(self.seen.items())}
@@ -495,7 +506,8 @@ def _now() -> str:
 
 # ── starting one ─────────────────────────────────────────────────────────────────────────────
 
-def start(project, code: str, asset_id: str, backend_factory=None, cursor: bool = False, part: str = "") -> Session:
+def start(project: Project, code: str, asset_id: str, backend_factory: Callable[..., Backend] | None = None,
+          cursor: bool = False, part: str = "") -> Session:
     cfg = capturemod.settings(project)
     if not cfg.get("enabled"):
         raise ToolError(t("capture", "not_enabled"))
@@ -548,7 +560,8 @@ def start(project, code: str, asset_id: str, backend_factory=None, cursor: bool 
     rules, who, terms = _rules(cfg, course, asset, block)
     selectors = [*(rules.get("selectors") or []), *(str(m["selector"]) for m in block.get("mask") or []
                                                       if isinstance(m, dict) and m.get("selector"))]
-    session = Session(project, course, asset_id, grant, None, rules, int((cfg.get("screenshot") or {}).get("max_edge") or 1920),
+    session = Session(project, course, asset_id, grant, cast("Backend", None),  # the backend is opened below
+                      rules, int((cfg.get("screenshot") or {}).get("max_edge") or 1920),
                       start_url, profile["allow_domains"], profile["login_url"], started_at=_now(), server=server)
     if rules.get("pixel_check"):
         try:
@@ -576,7 +589,7 @@ def _started(session: Session, part: str) -> Session:
     return session
 
 
-def chosen_grant(project, course: dict, asset: dict, block: dict) -> dict | None:
+def chosen_grant(project: Project, course: dict, asset: dict, block: dict) -> dict | None:
     """The permission a session of a resource uses: the mode its capture block says; else a terminal demo is recorded in the
     terminal, and a resource with one mode in force uses it. None when that mode has no permission in force."""
     found = capturemod.grants(project, course["code"], str(asset["id"]))
@@ -588,7 +601,7 @@ def chosen_grant(project, course: dict, asset: dict, block: dict) -> dict | None
     return next(iter(found.values()), None)
 
 
-def serve_stage(project, course: dict, block: dict):
+def serve_stage(project: Project, course: dict, block: dict) -> tuple[str, list[str], ThreadingHTTPServer]:
     """A site of a stage of the course (a web written with invented data, `stage:` in the block of a browser session): mounted
     from scratch with its setup and the `prepare` of the block, and served on this machine while the session lasts."""
     from coursekit.capture import stage as capture_stage
@@ -601,7 +614,7 @@ def serve_stage(project, course: dict, block: dict):
     return f"http://127.0.0.1:{server.server_address[1]}/{str(block.get('start') or '').lstrip('/')}", ["127.0.0.1"], server
 
 
-def resolve_start(course: dict, profile: dict, start: str):
+def resolve_start(course: dict, profile: dict, start: str) -> tuple[str, list[str], ThreadingHTTPServer | None]:
     """Where a session opens: (address, domains it adds, the local server it started, if any).
 
     `unit:N` (optionally followed by a path) is the course itself: with the html backend, the package of unit N
@@ -627,14 +640,14 @@ def resolve_start(course: dict, profile: dict, start: str):
     return (urljoin(link, rest) if rest else link), [domain_of(link)], None
 
 
-def serve_folder(folder: Path):
+def serve_folder(folder: Path) -> ThreadingHTTPServer:
     """A quiet HTTP server of a folder on 127.0.0.1 (a free port), in a thread; `shutdown()` stops it."""
     import functools
     import http.server
     import threading
 
     class Quiet(http.server.SimpleHTTPRequestHandler):
-        def log_message(self, *args) -> None:
+        def log_message(self, *args: Any) -> None:
             pass
 
     server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Quiet, directory=str(folder)))
@@ -655,7 +668,8 @@ def _redactor(rules: dict, course: dict, who: pii.People, terms: list[str]) -> r
     return redactmod.Redactor(rules, who, terms, read, engine)
 
 
-def _start_desktop(project, cfg, course, asset, asset_id, grant, backend_factory, block: dict) -> Session:
+def _start_desktop(project: Project, cfg: dict, course: dict, asset: dict, asset_id: str, grant: dict,
+                   backend_factory: Callable[..., Backend] | None, block: dict) -> Session:
     """A window of a program: there is no page to clean, so every screen is covered on the pixels and an OCR is required."""
     rules, who, terms = _rules(cfg, course, asset, block)
     try:
@@ -663,15 +677,19 @@ def _start_desktop(project, cfg, course, asset, asset_id, grant, backend_factory
     except redactmod.RedactError:
         raise ToolError(t("capture", "desktop_needs_ocr")) from None
     if backend_factory is None:
-        from coursekit.capture.window import make_backend as backend_factory
-    session = Session(project, course, asset_id, grant, None, rules, int((cfg.get("screenshot") or {}).get("max_edge") or 1920),
+        from coursekit.capture.window import make_backend
+
+        backend_factory = make_backend
+    session = Session(project, course, asset_id, grant, cast("Backend", None),  # the backend is opened below
+                      rules, int((cfg.get("screenshot") or {}).get("max_edge") or 1920),
                       "", [], started_at=_now(), redactor=redactor, warnings=list(redactor.report.warnings))
     session.backend = backend_factory(str(grant["window"]))
     session.frame()  # the scale of the screen of the window (a Retina screen has two pixels per point)
     return session
 
 
-def _start_terminal(project, cfg, course, asset, asset_id, grant, backend_factory, block: dict) -> Session:
+def _start_terminal(project: Project, cfg: dict, course: dict, asset: dict, asset_id: str, grant: dict,
+                    backend_factory: Callable[..., Backend] | None, block: dict) -> Session:
     """A shell of its own in the stage the brief names: its output covered in the text, its screen drawn."""
     from coursekit.capture import stage as capture_stage
     from coursekit.capture import terminal as termmod
@@ -694,7 +712,8 @@ def _start_terminal(project, cfg, course, asset, asset_id, grant, backend_factor
         raise ToolError(str(exc)) from None
     rules, who, terms = _rules(cfg, course, asset, block)
     terms += termmod.secret_terms(workspace.env)
-    session = Session(project, course, asset_id, grant, None, rules, int((cfg.get("screenshot") or {}).get("max_edge") or 1920),
+    session = Session(project, course, asset_id, grant, cast("Backend", None),  # the backend is opened below
+                      rules, int((cfg.get("screenshot") or {}).get("max_edge") or 1920),
                       workspace.folder.name, [], started_at=_now())
     session.terminal = {"stage": block["stage"], "folder": workspace.folder, "who": who, "terms": terms}
     painter = termmod.Painter(cols, rows, int(settings.get("width") or 1920), font, dict(settings.get("palette") or {}))
@@ -739,7 +758,7 @@ class BrowserBackend:
     """The Chrome, Edge or Chromium of the machine, visible, with the profile of the application."""
 
     def __init__(self, profile: Path, start_url: str, allow_domains: list[str], viewport: tuple[int, int], scale: float,
-                 redact, page_config: dict):
+                 redact: Callable[[list[str]], list[str]], page_config: dict):
         try:
             from playwright.sync_api import sync_playwright
         except ImportError:
@@ -756,11 +775,11 @@ class BrowserBackend:
         self.scale = scale
         self._blocked: str | None = None
         self._frames: list[tuple[float, bytes]] = []
-        self._cdp = None
+        self._cdp: Any = None  # a CDPSession while recording
         self._pointer = (0.0, 0.0)
-        self._pw = sync_playwright().start()
+        self._pw: Playwright = sync_playwright().start()
         try:
-            self.context = self._pw.chromium.launch_persistent_context(
+            self.context: BrowserContext = self._pw.chromium.launch_persistent_context(
                 str(profile), executable_path=executable, headless=not visible, viewport={"width": viewport[0], "height": viewport[1]},
                 device_scale_factor=scale)
             self.context.expose_function("__ckRedact", redact)
@@ -769,13 +788,13 @@ class BrowserBackend:
             if page_config.get("cursor"):
                 self.context.add_init_script(path=str(resources.files("coursekit.tools").joinpath("capture-cursor.js")))
             self.context.route("**/*", self._guard)
-            self.page = self.context.pages[0] if self.context.pages else self.context.new_page()
+            self.page: Page = self.context.pages[0] if self.context.pages else self.context.new_page()
             self.navigate(start_url)
         except Exception:
             self.close()
             raise
 
-    def _guard(self, route) -> None:
+    def _guard(self, route: Route) -> None:
         request = route.request
         if request.is_navigation_request() and request.frame.parent_frame is None \
                 and not capturemod.domain_allowed(domain_of(request.url), self.allow_domains):
@@ -803,41 +822,41 @@ class BrowserBackend:
         self._settle()
         return self.page.screenshot(type="png")
 
-    def click(self, x, y, button, count) -> None:
-        self.page.mouse.click(x, y, button=button, click_count=count)
+    def click(self, x: float, y: float, button: str, count: int) -> None:
+        self.page.mouse.click(x, y, button=cast("Literal['left', 'middle', 'right']", button), click_count=count)
         self._pointer = (x, y)
         self.page.wait_for_timeout(250)  # a navigation starts a moment after the click: so a blocked one is seen
         self._settle()
 
-    def move(self, x, y) -> None:
+    def move(self, x: float, y: float) -> None:
         self.page.mouse.move(x, y, steps=8)
 
-    def drag(self, x1, y1, x2, y2) -> None:
+    def drag(self, x1: float, y1: float, x2: float, y2: float) -> None:
         self.page.mouse.move(x1, y1)
         self.page.mouse.down()
         self.page.mouse.move(x2, y2, steps=12)
         self.page.mouse.up()
         self._settle()
 
-    def scroll(self, x, y, dx, dy) -> None:
+    def scroll(self, x: float, y: float, dx: float, dy: float) -> None:
         self.page.mouse.move(x, y)
         self.page.mouse.wheel(dx, dy)
         self.page.wait_for_timeout(300)
 
-    def type(self, text) -> None:
+    def type(self, text: str) -> None:
         self.page.keyboard.type(text, delay=20)
 
-    def key(self, combo) -> None:
+    def key(self, combo: str) -> None:
         self.page.keyboard.press(combo)
         self._settle()
 
-    def type_slowly(self, text, delay) -> None:
+    def type_slowly(self, text: str, delay: float) -> None:
         self.page.keyboard.type(text, delay=delay)
 
-    def wait(self, ms) -> None:
+    def wait(self, ms: float) -> None:
         self.page.wait_for_timeout(ms)
 
-    def navigate(self, url) -> None:
+    def navigate(self, url: str) -> None:
         from playwright.sync_api import Error as PlaywrightError
 
         try:
@@ -848,7 +867,7 @@ class BrowserBackend:
 
     # ── what only the replay uses ──
 
-    def glide(self, x, y, ms) -> None:
+    def glide(self, x: float, y: float, ms: float) -> None:
         """Moves the pointer to (x, y) in about `ms` milliseconds, so the video shows it travel."""
         x0, y0 = self._pointer
         steps = max(1, int(ms) // 16)
@@ -905,8 +924,9 @@ class BrowserBackend:
         self._cdp = None
         return frames
 
-    def target_at(self, x, y) -> dict:
-        return self.page.evaluate(TARGET_JS, [x, y]) or {}
+    def target_at(self, x: float, y: float) -> dict:
+        found: dict = self.page.evaluate(TARGET_JS, [x, y]) or {}
+        return found
 
     def focused_is_secret(self) -> bool:
         return bool(self.page.evaluate(SECRET_JS))
@@ -938,15 +958,16 @@ INSTRUCTIONS = (
 class Manager:
     """The tools of the server, around the one session there can be at a time."""
 
-    def __init__(self, project, backend_factory=None):
-        self.project, self.factory, self.session = project, backend_factory, None
+    def __init__(self, project: Project, backend_factory: Callable[..., Backend] | None = None) -> None:
+        self.project, self.factory = project, backend_factory
+        self.session: Session | None = None
 
     def _current(self) -> Session:
         if self.session is None:
             raise ToolError(t("capture", "no_session_started"))
         return self.session
 
-    def _guarded(self, action):
+    def _guarded[T](self, action: Callable[[], T]) -> T:
         """Runs an action; when the permission or the profile session is gone, the session ends with it."""
         try:
             return action()
@@ -962,7 +983,7 @@ class Manager:
         num, string = {"type": "number"}, {"type": "string"}
         xy = {"x": num, "y": num}
 
-        def start_tool(args):
+        def start_tool(args: dict) -> list:
             if self.session is not None:
                 raise ToolError(t("capture", "session_running", id=self.session.asset_id))
             self.session = start(self.project, str(args["code"]), str(args["asset_id"]), self.factory, part=str(args.get("part") or ""))
@@ -980,19 +1001,19 @@ class Manager:
                 return [text(s.read_screen())]
             return [image(s.screenshot())]
 
-        def act(fn, *names, shot=True):
-            def run(args):
+        def act(fn: Callable[[Session], Callable[..., object]], *names: str, shot: bool = True) -> Callable[[dict], list]:
+            def run(args: dict) -> list:
                 values = [args[n] for n in names]
                 self._guarded(lambda: fn(self._current())(*values))
                 return self._guarded(lambda: after(self._current())) if shot else [text("OK")]
             return run
 
-        def wait_for_tool(args):
+        def wait_for_tool(args: dict) -> list:
             found = self._guarded(lambda: self._current().wait_for(str(args["text"]), int(args.get("timeout_ms") or 30000)))
             note = t("capture", "terminal_found" if found else "terminal_not_found", text=args["text"])
             return [text(note + "\n\n" + self._guarded(lambda: self._current().read_screen()))]
 
-        def end_tool(args):
+        def end_tool(args: dict) -> list:
             s = self._current()
             self.session = None
             out = s.end(str(args.get("notes") or ""))
@@ -1070,7 +1091,7 @@ class Manager:
         ]
 
 
-def serve(project) -> None:
+def serve(project: Project) -> None:
     from coursekit import __version__
     from coursekit.mcpserver import Server
 

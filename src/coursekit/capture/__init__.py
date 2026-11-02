@@ -25,6 +25,7 @@ import re
 import shutil
 from collections.abc import Callable
 from pathlib import Path
+from typing import TYPE_CHECKING, cast
 from urllib.parse import urlsplit
 
 from coursekit import config, extras, identity, pii, store
@@ -34,6 +35,9 @@ from coursekit import redact as redactmod
 from coursekit.i18n import t
 from coursekit.project import Project
 from coursekit.util import git, slugify
+
+if TYPE_CHECKING:
+    from coursekit.capture.stage import Workspace
 
 MODES = ("browser", "desktop", "terminal")
 MODE_RECIPES = {"browser": ("screenshot", "screen-recording"), "desktop": ("screenshot", "screen-recording"),
@@ -105,7 +109,7 @@ def _write_json(path: Path, data: dict) -> None:
 
 def _read_json(path: Path) -> dict | None:
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        return cast("dict | None", json.loads(path.read_text(encoding="utf-8")))
     except (OSError, ValueError):
         return None
 
@@ -153,7 +157,7 @@ def profile_config(cfg: dict, name: str) -> dict:
     domains = [str(d) for d in (profile.get("allow_domains") or []) if str(d).strip()]
     if not domains:
         raise CaptureError(t("capture", "no_domains", name=name))
-    if url and not domain_allowed(parts.hostname, domains):
+    if url and not domain_allowed(parts.hostname or "", domains):  # a url without a host was refused above
         raise CaptureError(t("capture", "start_outside", name=name, host=parts.hostname))
     login = str(profile.get("login_url") or "").strip()
     if login and urlsplit(login).scheme not in ("https", "http"):
@@ -224,7 +228,7 @@ def profiles(project: Project) -> list[dict]:
     out = []
     for name in sorted(set(configured) | stored):
         meta = _read_json(_profile_meta(project, name)) or {}
-        entry = configured.get(name) if isinstance(configured.get(name), dict) else {}
+        entry = cast("dict", configured.get(name)) if isinstance(configured.get(name), dict) else {}
         out.append({"name": name, "configured": name in configured, "start_url": entry.get("start_url") or meta.get("start_url", ""),
                     "account": entry.get("account") or meta.get("account", ""), "login": entry.get("login", True) is not False,
                     "logged_in_at": meta.get("logged_in_at") if profile_dir(project, name).exists() else None})
@@ -311,7 +315,7 @@ def capturable(course: dict) -> list[str]:
     return out
 
 
-def mount_stage(project: Project, course: dict, name: str, prepare: list[str]):
+def mount_stage(project: Project, course: dict, name: str, prepare: list[str]) -> Workspace:
     """Mounts a stage of the course to look at it or try it (`coursekit capture stage`): it runs the commands of the stage, so
     it needs the permission of a person to capture in terminal mode."""
     from coursekit.capture import stage as capture_stage
@@ -347,7 +351,7 @@ def _in_force(grant: dict, now: dt.datetime | None) -> bool:
 def _modes_of(grant: dict) -> dict[str, dict]:
     """The modes of a permission (one written before a permission could have several names only its `mode`)."""
     if isinstance(grant.get("modes"), dict):
-        return grant["modes"]
+        return cast("dict[str, dict]", grant["modes"])
     if grant.get("mode") in MODES:
         return {grant["mode"]: {"profile": grant.get("profile"), "window": grant.get("window")}}
     return {}
@@ -396,7 +400,8 @@ def _raw_file(project: Project, code: str, asset_id: str) -> Path | None:
 
 
 def review_dir(course: dict, asset_id: str) -> Path:
-    return course["_project"].cache_dir / "capture" / course["code"] / asset_id
+    folder: Path = course["_project"].cache_dir / "capture" / course["code"] / asset_id
+    return folder
 
 
 def purge_raw(project: Project, now: dt.datetime | None = None) -> int:
@@ -519,7 +524,7 @@ def review_all(course: dict) -> Path:
     import html
 
     _, _, data = mediamod.load_manifest(course["_dir"])
-    folder = course["_project"].cache_dir / "capture" / course["code"]
+    folder: Path = course["_project"].cache_dir / "capture" / course["code"]
     folder.mkdir(parents=True, exist_ok=True)
     blocks = []
     for asset in data["assets"]:

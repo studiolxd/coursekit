@@ -33,14 +33,20 @@ import subprocess
 import sys
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 from PIL import Image, ImageDraw, ImageFont
 
 from coursekit import external
 from coursekit.i18n import t
 from coursekit.mcpserver import ToolError
+
+if TYPE_CHECKING:
+    from coursekit import pii
+    from coursekit.capture.stage import Workspace
 
 # an escape sequence: CSI, OSC (ended by BEL or ST), DCS/SOS/PM/APC (ended by ST), or a two-character one
 ESCAPE = re.compile(r"\x1b(?:\[[0-?]*[ -/]*[@-~]|\][^\x07\x1b]*(?:\x07|\x1b\\)|[PX^_][^\x1b]*\x1b\\|(?![\[\]PX^_])[ -/]*[0-~])")
@@ -56,8 +62,10 @@ KEYS = {"enter": "\r", "return": "\r", "tab": "\t", "escape": "\x1b", "esc": "\x
 ANSI = ("black", "red", "green", "brown", "blue", "magenta", "cyan", "white")  # the names pyte gives the 8 colors
 # the block elements (U+2580–U+259F), drawn as rectangles of the cell (left, top, right, bottom, as fractions) so the logos and
 # the bars of a TUI have no seams between cells; the shades are the whole cell at a share of the color
-_Q = {"ul": (0, 0, .5, .5), "ur": (.5, 0, 1, .5), "ll": (0, .5, .5, 1), "lr": (.5, .5, 1, 1)}
-BLOCKS = {"\u2580": [(0, 0, 1, .5)], "\u2584": [(0, .5, 1, 1)], "\u2588": [(0, 0, 1, 1)], "\u258c": [(0, 0, .5, 1)],
+_Box = tuple[float, float, float, float]
+_Q: dict[str, _Box] = {"ul": (0, 0, .5, .5), "ur": (.5, 0, 1, .5), "ll": (0, .5, .5, 1), "lr": (.5, .5, 1, 1)}
+BLOCKS: dict[str, list[_Box]] = {
+          "\u2580": [(0, 0, 1, .5)], "\u2584": [(0, .5, 1, 1)], "\u2588": [(0, 0, 1, 1)], "\u258c": [(0, 0, .5, 1)],
           "\u2590": [(.5, 0, 1, 1)], "\u2594": [(0, 0, 1, .125)], "\u2595": [(.875, 0, 1, 1)],
           **{chr(0x2580 + n): [(0, 1 - n / 8, 1, 1)] for n in range(1, 8)},
           **{chr(0x2588 + n): [(0, 0, (8 - n) / 8, 1)] for n in range(1, 8)},
@@ -92,8 +100,8 @@ def key_bytes(combo: str) -> str:
     parts = [p.strip().lower() for p in str(combo).replace(" ", "").split("+") if p.strip()]
     if not parts:
         raise ToolError(t("capture", "terminal_bad_key", key=combo))
-    *mods, name = parts
-    mods = {"control" if m in ("ctrl", "control") else "alt" if m in ("alt", "option", "meta") else m for m in mods}
+    *modifiers, name = parts
+    mods = {"control" if m in ("ctrl", "control") else "alt" if m in ("alt", "option", "meta") else m for m in modifiers}
     if name == "tab" and "shift" in mods:
         return "\x1b[Z"
     if name in KEYS:
@@ -111,7 +119,7 @@ def key_bytes(combo: str) -> str:
     return base
 
 
-def cover_text(text: str, cover) -> str:
+def cover_text(text: str, cover: Callable[[str], str]) -> str:
     """The output with its personal data replaced in the text only: the escape sequences go through as they are."""
     out, last = [], 0
     for match in ESCAPE.finditer(text):
@@ -156,7 +164,8 @@ def secret_terms(env: dict[str, str]) -> list[str]:
 class Terminal:
     """A program in a pseudo-terminal: its screen, kept by an emulator, and its output with the time it came out."""
 
-    def __init__(self, argv: list[str], cwd: Path, env: dict[str, str], cols: int, rows: int, cover=lambda text: text):
+    def __init__(self, argv: list[str], cwd: Path, env: dict[str, str], cols: int, rows: int,
+                 cover: Callable[[str], str] = lambda text: text):
         import fcntl
         import pty
         import struct
@@ -231,7 +240,7 @@ class Terminal:
             self.send(ch)
             time.sleep(max(0, delay_ms) / 1000)
 
-    def mark(self, kind: str, **data) -> None:
+    def mark(self, kind: str, **data: Any) -> None:
         self.marks.append((round(self.now(), 4), {"kind": kind, **data}))
 
     def lines(self) -> list[str]:
@@ -285,7 +294,7 @@ class Snapshot:
     cursor: tuple[int, int] | None
 
     @classmethod
-    def of(cls, screen) -> Snapshot:
+    def of(cls, screen: Any) -> Snapshot:  # a pyte.Screen
         rows = []
         for y in range(screen.lines):
             line = screen.buffer[y]
@@ -355,16 +364,16 @@ class Painter:
             return self.ansi[value]
         return _rgb(value, default)
 
-    def _ink(self, font, ch: str) -> bytes:
+    def _ink(self, font: ImageFont.FreeTypeFont, ch: str) -> bytes:
         image = Image.new("L", (round(self.cell_w * 2), self.cell_h))
         ImageDraw.Draw(image).text((0, 0), ch, font=font, fill=255)
         return image.tobytes()
 
-    def _has(self, font, ch: str) -> bool:
+    def _has(self, font: ImageFont.FreeTypeFont, ch: str) -> bool:
         """Whether the font draws the character (and not the box of a missing one)."""
         return self._ink(font, ch) != self._ink(font, "\U0010fffd")
 
-    def _font_for(self, ch: str, bold: bool):
+    def _font_for(self, ch: str, bold: bool) -> ImageFont.FreeTypeFont:
         font = self.bold if bold else self.font
         if ch.isascii():
             return font
@@ -416,7 +425,7 @@ class Painter:
         return out.getvalue()
 
 
-def _rgb(value, default: tuple[int, int, int]) -> tuple[int, int, int]:
+def _rgb(value: object, default: tuple[int, int, int]) -> tuple[int, int, int]:
     text = str(value or "").lstrip("#")
     if re.fullmatch(r"[0-9a-fA-F]{6}", text):
         return int(text[0:2], 16), int(text[2:4], 16), int(text[4:6], 16)
@@ -505,7 +514,9 @@ def cut(events: list[tuple[float, str]], marks: list[tuple[float, dict]], end: f
     kept = stretches(marks, end)
     items = sorted([(at, 0, data) for at, data in events] + [(at, 1, mark) for at, mark in marks if mark["kind"] in ("point", "chapter")],
                    key=lambda item: (item[0], item[1]))
-    out, points, new, last, index = [], [], 0.0, None, 0
+    out: list[tuple[float, Any]] = []
+    points: list[tuple[float, Any]] = []
+    new, last, index = 0.0, None, 0
     for at, kind, data in items:
         while index < len(kept) and at > kept[index][1]:
             if last is not None:
@@ -588,7 +599,8 @@ def screens(recording: Cut, cols: int, rows: int, every: float) -> list[tuple[fl
 class TerminalBackend:
     """What a capture session drives in terminal mode: the shell of the stage, its screen drawn by the painter."""
 
-    def __init__(self, workspace, cols: int, rows: int, painter: Painter, type_delay_ms: int, cover):
+    def __init__(self, workspace: Workspace, cols: int, rows: int, painter: Painter, type_delay_ms: int,
+                 cover: Callable[[str], str]):
         self.workspace, self.painter, self.type_delay_ms = workspace, painter, type_delay_ms
         self.viewport = painter.size
         self.term = Terminal(workspace.argv, workspace.folder, workspace.env, cols, rows, cover)
@@ -600,7 +612,7 @@ class TerminalBackend:
     def screen_text(self) -> str:
         return self.term.text()
 
-    def _no_pointer(self, *args) -> None:
+    def _no_pointer(self, *args: object) -> None:
         raise ToolError(t("capture", "terminal_no_pointer"))
 
     click = move = drag = scroll = _no_pointer
@@ -656,7 +668,7 @@ class TerminalBackend:
         light = sum(0.2126 * r + 0.7152 * g + 0.0722 * b for r, g, b in grounds) / max(1, len(grounds))
         return left, top, right, bottom, "dark" if light < 128 else "light"
 
-    def mark(self, kind: str, **data) -> None:
+    def mark(self, kind: str, **data: Any) -> None:
         self.term.mark(kind, **data)
 
     def focused_is_secret(self) -> bool:
@@ -670,7 +682,7 @@ class TerminalBackend:
 
 
 def finish(backend: TerminalBackend, asset_id: str, recipe: str, recordings: Path, review: Path, cfg: dict, rules: dict,
-           who, terms: list[str], part: str = "") -> dict:
+           who: pii.People, terms: list[str], part: str = "") -> dict:
     """The end of a terminal session: the recording cut and written as the resource needs it (`.cast` for a terminal demo,
     `.mp4` and its events for a video), the review sampled, and what still looks like personal data, as warnings."""
     from coursekit import pii
@@ -709,7 +721,7 @@ def finish(backend: TerminalBackend, asset_id: str, recipe: str, recordings: Pat
         except capture_replay.ReplayError as exc:
             raise ToolError(str(exc)) from None
         width, height = painter.size
-        events = []
+        zooms = []
         for at, mark in recording.points:
             if mark.get("kind") != "point":
                 continue
@@ -720,8 +732,8 @@ def finish(backend: TerminalBackend, asset_id: str, recipe: str, recordings: Pat
                 x, y, w, h = mark["box"]
                 event.update(box=[round(x / width, 4), round(y / height, 4), round(w / width, 4), round(h / height, 4)],
                              shape=mark.get("shape") or "round", tone=mark.get("tone") or "light")
-            events.append(event)
-        data = {"video": video.name, "width": width, "height": height, "duration": recording.duration, "events": events}
+            zooms.append(event)
+        data = {"video": video.name, "width": width, "height": height, "duration": recording.duration, "events": zooms}
         capture_replay.events_path(video).write_text(json.dumps(data, ensure_ascii=False, indent=1) + "\n", encoding="utf-8",
                                                      newline="\n")
         out["file"] = video

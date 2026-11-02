@@ -26,6 +26,7 @@ import shutil
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import yaml
 
@@ -34,6 +35,9 @@ from coursekit import course as coursemod
 from coursekit import external, lang, pii
 from coursekit.i18n import t
 from coursekit.util import slugify
+
+if TYPE_CHECKING:
+    from coursekit.project import Project
 
 NAME_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789-"
 
@@ -51,7 +55,8 @@ class Workspace:
 
 
 def stage_dir(course: dict, name: str) -> Path:
-    return course["_dir"] / "media" / "stages" / name
+    folder: Path = course["_dir"] / "media" / "stages" / name
+    return folder
 
 
 def check_name(name: str) -> str:
@@ -79,25 +84,25 @@ def load(course: dict, name: str) -> dict:
     return spec
 
 
-def _registry(project) -> Path:
+def _registry(project: Project) -> Path:
     return capturemod.base_dir(project) / "stages.json"
 
 
-def _ours(project) -> set[str]:
+def _ours(project: Project) -> set[str]:
     try:
         return set(json.loads(_registry(project).read_text(encoding="utf-8")))
     except (OSError, ValueError):
         return set()
 
 
-def _remember(project, folder: Path) -> None:
+def _remember(project: Project, folder: Path) -> None:
     folders = _ours(project) | {str(folder)}
     path = _registry(project)
     capturemod._private_dir(path.parent)
     path.write_text(json.dumps(sorted(folders), indent=1) + "\n", encoding="utf-8")
 
 
-def _clear(project, folder: Path) -> None:
+def _clear(project: Project, folder: Path) -> None:
     """Empties a folder coursekit made before; refuses one that exists and is not its own."""
     if folder.exists() or folder.is_symlink():
         if str(folder) not in _ours(project):
@@ -138,7 +143,7 @@ def author(course: dict) -> tuple[str, str]:
     return f"{first} {last}", f"{pii._ascii(first)}.{pii._ascii(last)}@{who.email_domain}"
 
 
-def environment(project, course: dict, name: str, spec: dict, home: Path) -> dict[str, str]:
+def environment(project: Project, course: dict, name: str, spec: dict, home: Path) -> dict[str, str]:
     """What the shell of the stage starts with: the variables of this machine (none of coursekit or of the AI tool), the home
     of the stage, a short prompt, the language of the course, an invented git author and the PATH without what it hides."""
     env = {k: v for k, v in os.environ.items()  # the marks of the AI tool that runs coursekit, which the program would see
@@ -169,7 +174,7 @@ def _run(command: str, folder: Path, env: dict[str, str], timeout: int) -> None:
         raise StageError(t("capture", "stage_failed", command=command, code=done.returncode, reason=last[0]))
 
 
-def mount(project, course: dict, name: str, prepare: list[str] | None = None) -> Workspace:
+def mount(project: Project, course: dict, name: str, prepare: list[str] | None = None) -> Workspace:
     """Mounts the stage from scratch: its files in `<home>/<folder>/<name>`, its setup and the prepare of the resource."""
     cfg = capturemod.settings(project)
     terminal = dict(cfg.get("terminal") or {})

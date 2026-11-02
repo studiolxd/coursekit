@@ -136,7 +136,7 @@ class WindowBackend:
         image.save(out, "PNG")
         return out.getvalue()
 
-    def click(self, x, y, button, count) -> None:
+    def click(self, x: float, y: float, button: str, count: int) -> None:
         self.front()
         point = self._global(x, y)
         self._ours_at(point)
@@ -147,11 +147,11 @@ class WindowBackend:
         self._pointer = (x, y)
         time.sleep(0.3)
 
-    def move(self, x, y) -> None:
+    def move(self, x: float, y: float) -> None:
         self.mouse_move(*self._global(x, y))
         self._pointer = (x, y)
 
-    def glide(self, x, y, ms) -> None:
+    def glide(self, x: float, y: float, ms: float) -> None:
         x0, y0 = self._pointer
         steps = max(1, int(ms) // 16)
         for i in range(1, steps + 1):
@@ -159,7 +159,7 @@ class WindowBackend:
             time.sleep(0.016)
         self._pointer = (x, y)
 
-    def drag(self, x1, y1, x2, y2) -> None:
+    def drag(self, x1: float, y1: float, x2: float, y2: float) -> None:
         self.front()
         start, end = self._global(x1, y1), self._global(x2, y2)
         self._ours_at(start)
@@ -172,42 +172,42 @@ class WindowBackend:
         self.mouse_button("left", False, *end)
         self._pointer = (x2, y2)
 
-    def scroll(self, x, y, dx, dy) -> None:
+    def scroll(self, x: float, y: float, dx: float, dy: float) -> None:
         point = self._global(x, y)
         self._ours_at(point)
         self.mouse_move(*point)
         self.wheel(*point, dx, dy)
         time.sleep(0.3)
 
-    def type(self, text) -> None:
+    def type(self, text: str) -> None:
         self.type_slowly(text, 20)
 
-    def type_slowly(self, text, delay) -> None:
+    def type_slowly(self, text: str, delay: float) -> None:
         self.front()
         self.type_text(text, max(0, int(delay)))
 
-    def key(self, combo) -> None:
+    def key(self, combo: str) -> None:
         self.front()
         self.press(combo)
         time.sleep(0.3)
 
-    def wait(self, ms) -> None:
+    def wait(self, ms: float) -> None:
         time.sleep(ms / 1000)
 
-    def navigate(self, url) -> None:
+    def navigate(self, url: str) -> None:
         raise ToolError(t("capture", "desktop_no_navigate"))
 
     def url(self) -> str:
         return ""
 
-    def target_at(self, x, y) -> dict:
+    def target_at(self, x: float, y: float) -> dict:
         return self.element_at(*self._global(x, y))
 
     def focused_is_secret(self) -> bool:
         secret = self.focused_secret()
         return self.when_unknown_secret if secret is None else secret
 
-    def locate(self, target: dict):
+    def locate(self, target: dict) -> tuple[float, float] | None:
         return None  # on the desktop a replay goes by the position inside the window
 
     def start_recording(self) -> None:
@@ -233,7 +233,7 @@ class WindowBackend:
         try:
             process.communicate(b"q", timeout=15)
         except subprocess.TimeoutExpired:
-            process.send_signal(signal.CTRL_C_EVENT if sys.platform == "win32" else signal.SIGINT)
+            process.send_signal(signal.CTRL_C_EVENT if sys.platform == "win32" else signal.SIGINT)  # type: ignore[attr-defined,unused-ignore]  # CTRL_C_EVENT exists only on Windows
             process.wait(timeout=10)
         if not video.exists() or video.stat().st_size == 0:
             raise ToolError(t("capture", "replay_no_frames"))

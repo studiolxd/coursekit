@@ -46,7 +46,12 @@ class CGRect(ctypes.Structure):
 class _Quartz:
     """CoreGraphics, CoreFoundation and Accessibility through ctypes, loaded once."""
 
-    def __init__(self):
+    cf: ctypes.CDLL
+    cg: ctypes.CDLL
+    ax: ctypes.CDLL
+    key: dict[str, int | None]
+
+    def __init__(self) -> None:
         if sys.platform != "darwin":
             raise ToolError(t("capture", "desktop_unsupported", system=sys.platform))
         self.cf = ctypes.CDLL(f"{FRAMEWORKS}/CoreFoundation.framework/CoreFoundation")
@@ -87,16 +92,17 @@ class _Quartz:
         self.key = {name: ctypes.c_void_p.in_dll(self.cg, name).value for name in (
             "kCGWindowNumber", "kCGWindowOwnerName", "kCGWindowName", "kCGWindowBounds", "kCGWindowLayer", "kCGWindowOwnerPID")}
 
-    def cfstring(self, text: str):
-        return self.cf.CFStringCreateWithCString(None, text.encode("utf-8"), 0x08000100)
+    def cfstring(self, text: str) -> int | None:
+        ref: int | None = self.cf.CFStringCreateWithCString(None, text.encode("utf-8"), 0x08000100)
+        return ref
 
-    def string(self, ref) -> str:
+    def string(self, ref: int | None) -> str:
         if not ref or self.cf.CFGetTypeID(ref) != self.cf.CFStringGetTypeID():
             return ""
         buffer = ctypes.create_string_buffer(4096)
         return buffer.value.decode("utf-8", "replace") if self.cf.CFStringGetCString(ref, buffer, 4096, 0x08000100) else ""
 
-    def number(self, ref) -> int:
+    def number(self, ref: int | None) -> int:
         value = ctypes.c_int64()
         return int(value.value) if ref and self.cf.CFNumberGetValue(ref, 4, ctypes.byref(value)) else 0
 
@@ -110,8 +116,9 @@ class _Quartz:
             for i in range(self.cf.CFArrayGetCount(listing)):
                 info = self.cf.CFArrayGetValueAtIndex(listing, i)
 
-                def get(key, info=info):
-                    return self.cf.CFDictionaryGetValue(info, self.key[key])
+                def get(key: str, info: int | None = info) -> int | None:
+                    value: int | None = self.cf.CFDictionaryGetValue(info, self.key[key])
+                    return value
 
                 rect = CGRect()
                 bounds = get("kCGWindowBounds")
@@ -125,12 +132,12 @@ class _Quartz:
             self.cf.CFRelease(listing)
         return out
 
-    def post(self, event) -> None:
+    def post(self, event: int | None) -> None:
         if event:
             self.cg.CGEventPost(0, event)
             self.cf.CFRelease(event)
 
-    def text(self, element, name: str) -> str:
+    def text(self, element: int | None, name: str) -> str:
         """A text attribute of an element of Accessibility ("" when it has none)."""
         value = self.attribute(element, name)
         if not value:
@@ -140,7 +147,7 @@ class _Quartz:
         finally:
             self.cf.CFRelease(value)
 
-    def attribute(self, element, name: str):
+    def attribute(self, element: int | None, name: str) -> int | None:
         value = ctypes.c_void_p()
         attr = self.cfstring(name)
         try:
@@ -239,14 +246,15 @@ class MacBackend(WindowBackend):
         if current is None:
             raise ToolError(t("capture", "window_gone", name=self.name))
         self.window = current
-        return current["bounds"]
+        bounds: Bounds = current["bounds"]
+        return bounds
 
     def front(self) -> None:
         script = f'tell application "System Events" to set frontmost of (first process whose unix id is {self.window["pid"]}) to true'
         subprocess.run(["osascript", "-e", script], capture_output=True, check=False)
         time.sleep(0.15)
 
-    def owner_at(self, x, y):
+    def owner_at(self, x: float, y: float) -> tuple[int, str] | None:
         for w in covering(quartz().windows(), self.window["pid"]):
             wx, wy, ww, wh = w["bounds"]
             if wx <= x < wx + ww and wy <= y < wy + wh:
@@ -281,16 +289,16 @@ class MacBackend(WindowBackend):
             q.cg.CGEventSetIntegerValueField(event, 1, clicks)  # kCGMouseEventClickState
         q.post(event)
 
-    def mouse_move(self, x, y) -> None:
+    def mouse_move(self, x: float, y: float) -> None:
         dragged = {"left": 6, "right": 7}.get(self._held or "")
         self._mouse(dragged or 5, x, y, 1 if self._held == "right" else 0)
 
-    def mouse_button(self, button, down, x, y, clicks=1) -> None:
+    def mouse_button(self, button: str, down: bool, x: float, y: float, clicks: int = 1) -> None:
         kind = {("left", True): 1, ("left", False): 2, ("right", True): 3, ("right", False): 4}[(button, down)]
         self._mouse(kind, x, y, 1 if button == "right" else 0, clicks)
         self._held = button if down else None
 
-    def wheel(self, x, y, dx, dy) -> None:
+    def wheel(self, x: float, y: float, dx: float, dy: float) -> None:
         q = quartz()
         q.post(q.cg.CGEventCreateScrollWheelEvent2(None, 0, 2, int(-dy), int(-dx), 0))  # pixels; positive goes up there
 
@@ -305,18 +313,18 @@ class MacBackend(WindowBackend):
             q.cg.CGEventKeyboardSetUnicodeString(event, len(units) // 2, chars)
         q.post(event)
 
-    def type_text(self, text, delay_ms) -> None:
+    def type_text(self, text: str, delay_ms: int) -> None:
         for ch in text:
             self._key_event(0, 0, True, ch)
             self._key_event(0, 0, False, ch)
             time.sleep(delay_ms / 1000)
 
-    def press(self, combo) -> None:
+    def press(self, combo: str) -> None:
         code, flags = parse_combo(combo)
         self._key_event(code, flags, True)
         self._key_event(code, flags, False)
 
-    def _element(self, point: tuple[float, float] | None = None):
+    def _element(self, point: tuple[float, float] | None = None) -> int | None:
         q = quartz()
         system = q.ax.AXUIElementCreateSystemWide()
         try:
@@ -328,7 +336,7 @@ class MacBackend(WindowBackend):
         finally:
             q.cf.CFRelease(system)
 
-    def element_at(self, x, y) -> dict:
+    def element_at(self, x: float, y: float) -> dict:
         q = quartz()
         element = self._element((x, y))
         if not element:

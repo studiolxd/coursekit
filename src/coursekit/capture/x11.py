@@ -63,9 +63,10 @@ class X11Backend(WindowBackend):
             raise ToolError(t("capture", "wayland_unsupported"))
         if not os.environ.get("DISPLAY"):
             raise ToolError(t("capture", "desktop_unsupported", system="linux without DISPLAY"))
-        self.xdotool = shutil.which("xdotool")
-        if not self.xdotool:
+        xdotool = shutil.which("xdotool")
+        if not xdotool:
             raise ToolError(t("capture", "xdotool_missing"))
+        self.xdotool: str = xdotool
         super().__init__(window_name)
 
     def _run(self, *args: str, check: bool = True) -> str:
@@ -96,13 +97,14 @@ class X11Backend(WindowBackend):
         if current is None:
             raise ToolError(t("capture", "window_gone", name=self.name))
         self.window["bounds"] = current["bounds"]
-        return current["bounds"]
+        bounds: Bounds = current["bounds"]
+        return bounds
 
     def front(self) -> None:
         self._run("windowactivate", "--sync", self.window["id"], check=False)
         time.sleep(0.15)
 
-    def owner_at(self, x, y):
+    def owner_at(self, x: float, y: float) -> tuple[int, str] | None:
         self.mouse_move(x, y)  # X11 says which window is under the pointer, not under any point
         where = shell_values(self._run("getmouselocation", "--shell", check=False))
         wid = where.get("WINDOW")
@@ -122,23 +124,23 @@ class X11Backend(WindowBackend):
         x, y, width, height = area
         return ImageGrab.grab(bbox=(int(x), int(y), int(x + width), int(y + height)))
 
-    def mouse_move(self, x, y) -> None:
+    def mouse_move(self, x: float, y: float) -> None:
         self._run("mousemove", str(int(x)), str(int(y)), check=False)
 
-    def mouse_button(self, button, down, x, y, clicks=1) -> None:
+    def mouse_button(self, button: str, down: bool, x: float, y: float, clicks: int = 1) -> None:
         self.mouse_move(x, y)
         self._run("mousedown" if down else "mouseup", "3" if button == "right" else "1", check=False)
 
-    def wheel(self, x, y, dx, dy) -> None:
+    def wheel(self, x: float, y: float, dx: float, dy: float) -> None:
         for amount, (less, more) in ((dy, ("4", "5")), (dx, ("6", "7"))):
             notches = round(abs(amount) / 50)
             if notches:
                 self._run("click", "--repeat", str(notches), more if amount > 0 else less, check=False)
 
-    def type_text(self, text, delay_ms) -> None:
+    def type_text(self, text: str, delay_ms: int) -> None:
         self._run("type", "--delay", str(int(delay_ms)), "--", text, check=False)
 
-    def press(self, combo) -> None:
+    def press(self, combo: str) -> None:
         self._run("key", "--clearmodifiers", xdotool_keys(combo), check=False)
 
     def record_args(self, area: Bounds) -> tuple[list[str], str]:
