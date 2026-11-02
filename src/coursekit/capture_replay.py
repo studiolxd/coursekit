@@ -32,6 +32,7 @@ from pathlib import Path
 
 from coursekit import capture as capturemod
 from coursekit import capture_session as sessionmod
+from coursekit import external
 from coursekit import redact as redactmod
 from coursekit.i18n import t
 from coursekit.mcpserver import ToolError
@@ -91,8 +92,8 @@ def duration_of(video: Path) -> float | None:
     probe = shutil.which("ffprobe")
     if not probe:
         return None
-    done = subprocess.run([probe, "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(video)],
-                          capture_output=True, text=True, check=False)
+    done = external.run([probe, "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(video)],
+                          capture_output=True, check=False)
     try:
         return float(done.stdout.strip())
     except ValueError:
@@ -139,10 +140,10 @@ def encode(frames: list[tuple[float, bytes]], target: Path, fps: int) -> None:
         (folder / "list.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
         target.parent.mkdir(parents=True, exist_ok=True)
         total = max(1 / fps, frames[-1][0] - shown[0][0])  # the repeated last image would add its own length: cut it
-        done = subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(folder / "list.txt"),
+        done = external.run([ffmpeg, "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(folder / "list.txt"),
                                "-t", f"{total:.3f}",
                                "-vf", f"fps={fps},scale=trunc(iw/2)*2:trunc(ih/2)*2", "-c:v", "libx264", "-crf", "20",
-                               "-pix_fmt", "yuv420p", str(target)], capture_output=True, text=True, check=False)
+                               "-pix_fmt", "yuv420p", str(target)], capture_output=True, check=False)
         if done.returncode != 0:
             raise ReplayError(t("redact", "encode_failed", reason=redactmod._last_line(done.stderr)))
 
@@ -155,8 +156,8 @@ def _join(parts: list[Path], target: Path) -> None:
     listing = target.with_suffix(".parts.txt")
     listing.write_text("".join(f"file '{p.as_posix()}'\n" for p in parts), encoding="utf-8")
     try:
-        done = subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(listing), "-c", "copy",
-                               str(target)], capture_output=True, text=True, check=False)
+        done = external.run([ffmpeg, "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(listing), "-c", "copy",
+                               str(target)], capture_output=True, check=False)
     finally:
         listing.unlink(missing_ok=True)
         for part in parts:

@@ -22,6 +22,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from coursekit import config as configmod
+from coursekit import external
 from coursekit import media as mediamod
 from coursekit.i18n import t
 
@@ -105,8 +106,8 @@ def fix_loudness(path: Path, cfg: dict) -> None:
         video = path.suffix.lower() in VIDEO
         codec = ["-c:v", "copy", "-c:a", "aac", "-b:a", "192k"] if video else \
             {".mp3": ["-c:a", "libmp3lame", "-q:a", "2"], ".wav": ["-c:a", "pcm_s16le"]}.get(path.suffix.lower(), [])
-        done = subprocess.run([_ffmpeg(), "-y", "-loglevel", "error", "-i", str(path), "-af", second, "-ar", "48000", *codec,
-                               str(out)], capture_output=True, text=True, check=False)
+        done = external.run([_ffmpeg(), "-y", "-loglevel", "error", "-i", str(path), "-af", second, "-ar", "48000", *codec,
+                               str(out)], capture_output=True, check=False)
         if done.returncode != 0 or not out.exists():
             raise CheckError(t("mediacheck", "fix_failed", name=path.name))
         shutil.move(str(out), path)
@@ -176,8 +177,8 @@ def duration(path: Path) -> float:
     probe = shutil.which("ffprobe")
     if not probe:
         raise CheckError(t("mediacheck", "ffmpeg_missing"))
-    done = subprocess.run([probe, "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(path)],
-                          capture_output=True, text=True, check=False)
+    done = external.run([probe, "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(path)],
+                          capture_output=True, check=False)
     try:
         return float(done.stdout.strip())
     except ValueError:
@@ -200,12 +201,12 @@ def sheet(course: dict, asset_id: str, frames: int | None = None) -> Path:
     width = int(cfg.get("sheet_width") or 480)
     label = "drawtext=text='%{pts\\:hms}':x=8:y=8:fontsize=22:fontcolor=white:box=1:boxcolor=black@0.6"
     graph = f"fps={n}/{max(0.1, length):.3f},scale={width}:-2,{label},tile={columns}x{rows}:padding=6:margin=6"
-    done = subprocess.run([_ffmpeg(), "-y", "-loglevel", "error", "-i", str(path), "-vf", graph, "-frames:v", "1", str(out)],
-                          capture_output=True, text=True, check=False)
+    done = external.run([_ffmpeg(), "-y", "-loglevel", "error", "-i", str(path), "-vf", graph, "-frames:v", "1", str(out)],
+                          capture_output=True, check=False)
     if done.returncode != 0 or not out.exists():  # drawtext needs a font: without one, the sheet without the seconds
         graph = f"fps={n}/{max(0.1, length):.3f},scale={width}:-2,tile={columns}x{rows}:padding=6:margin=6"
-        done = subprocess.run([_ffmpeg(), "-y", "-loglevel", "error", "-i", str(path), "-vf", graph, "-frames:v", "1", str(out)],
-                              capture_output=True, text=True, check=False)
+        done = external.run([_ffmpeg(), "-y", "-loglevel", "error", "-i", str(path), "-vf", graph, "-frames:v", "1", str(out)],
+                              capture_output=True, check=False)
     if done.returncode != 0 or not out.exists():
         raise CheckError(t("mediacheck", "sheet_failed", name=path.name))
     return out

@@ -16,7 +16,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from coursekit import store
+from coursekit import external, store
 from coursekit.i18n import t
 from coursekit.setup import MEDIA_TOOLS, SHELL_MARKER
 
@@ -75,7 +75,7 @@ def _uv_tools() -> set[str]:
     uv = shutil.which("uv")
     if not uv:
         return set()
-    result = subprocess.run([uv, "tool", "list"], capture_output=True, text=True, check=False)
+    result = external.run([uv, "tool", "list"], capture_output=True, check=False)
     return {line.split()[0] for line in result.stdout.splitlines() if line.strip() and not line.startswith(("-", " "))}
 
 

@@ -25,7 +25,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter
 
-from coursekit import extras, pii
+from coursekit import external, extras, pii
 from coursekit.i18n import t
 
 TESSERACT_LANGUAGES = {"es": "spa+eng", "en": "eng"}
@@ -369,9 +369,9 @@ def redact_video(source: Path, target: Path, redactor: Redactor, fps: float, rev
         if writer is not None:
             writer.release()
         target.parent.mkdir(parents=True, exist_ok=True)
-        done = subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-i", str(silent), "-i", str(source), "-map", "0:v", "-map",
+        done = external.run([ffmpeg, "-y", "-loglevel", "error", "-i", str(silent), "-i", str(source), "-map", "0:v", "-map",
                                "1:a?", "-c:v", "libx264", "-crf", "20", "-pix_fmt", "yuv420p", "-c:a", "aac", str(target)],
-                              capture_output=True, text=True, check=False)
+                              capture_output=True, check=False)
         if done.returncode != 0:
             raise RedactError(t("redact", "encode_failed", reason=_last_line(done.stderr)))
     return redactor.report

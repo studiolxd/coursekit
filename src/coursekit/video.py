@@ -43,7 +43,7 @@ import yaml
 
 from coursekit import config as configmod
 from coursekit import course as coursemod
-from coursekit import i18n, lang, mediaaccess, mediacheck, mediatools
+from coursekit import external, i18n, lang, mediaaccess, mediacheck, mediatools
 from coursekit import media as mediamod
 from coursekit import theme as thememod
 from coursekit.i18n import t
@@ -1519,9 +1519,9 @@ def export(course: dict, asset_id: str, say=print) -> dict:
         following = resolved["scenes"][n] if n < len(resolved["scenes"]) else None  # up to the next: the transitions are in the render
         first, last = scene["from"], (following["from"] if following else scene["from"] + scene["frames"]) - 1  # by the number of the frame
         length = last - first + 1
-        done = subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-i", str(clean), "-vf",
+        done = external.run([ffmpeg, "-y", "-loglevel", "error", "-i", str(clean), "-vf",
                                f"select='between(n\\,{first}\\,{last})',setpts=N/FRAME_RATE/TB", "-r", str(fps), "-c:v", "libx264",
-                               "-crf", "16", "-pix_fmt", "yuv420p", "-an", str(piece)], capture_output=True, text=True, check=False)
+                               "-crf", "16", "-pix_fmt", "yuv420p", "-an", str(piece)], capture_output=True, check=False)
         if done.returncode != 0:
             raise VideoError(t("redact", "encode_failed", reason=([*(done.stderr or "?").strip().splitlines(), "?"])[0]))
         scenes_track.clips.append(videoedit.Clip(scene["id"], piece, scene["from"], length))

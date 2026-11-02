@@ -19,6 +19,7 @@ from pathlib import Path
 
 from PIL import Image
 
+from coursekit import external
 from coursekit.capture_window import Bounds, WindowBackend, one_program, paint_out
 from coursekit.i18n import t
 from coursekit.mcpserver import ToolError
@@ -363,8 +364,9 @@ class MacBackend(WindowBackend):
                 or by + bh > screen.origin.y + screen.size.height:
             raise ToolError(t("capture", "window_off_main_screen", name=self.name))
         scale = q.cg.CGDisplayPixelsWide(display) / screen.size.width
-        listing = subprocess.run([shutil.which("ffmpeg"), "-hide_banner", "-f", "avfoundation", "-list_devices", "true", "-i", ""],
-                                 capture_output=True, text=True, check=False).stderr
+        ffmpeg = shutil.which("ffmpeg") or "ffmpeg"
+        listing = external.run([ffmpeg, "-hide_banner", "-f", "avfoundation", "-list_devices", "true", "-i", ""],
+                               capture_output=True, check=False).stderr
         index = next((m.group(1) for m in re.finditer(r"\[(\d+)\] Capture screen 0", listing)), None)
         if index is None:
             raise ToolError(t("capture", "need_screen_permission"))

@@ -10,7 +10,6 @@ import json
 import os
 import re
 import shutil
-import subprocess
 import zipfile
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -21,8 +20,8 @@ from pathlib import Path
 from coursekit import assemble as assemblemod
 from coursekit import course as coursemod
 from coursekit import delivery as deliverymod
+from coursekit import external, mediaopt, store
 from coursekit import media as mediamod
-from coursekit import mediaopt, store
 from coursekit import theme as thememod
 from coursekit.htmlkit import check, manifest, render
 from coursekit.i18n import t
@@ -176,8 +175,8 @@ def bundle_player(project, out_file: Path, say: Say) -> None:
     entry.write_text("".join(f'import "{p.resolve().as_posix()}";\n' for p in extra) + 'import "./player/entry.js";\n', encoding="utf-8")
     binary = workspace / "node_modules" / ".bin" / ("esbuild.cmd" if os.name == "nt" else "esbuild")
     out_file.parent.mkdir(parents=True, exist_ok=True)
-    result = subprocess.run([str(binary), str(entry), "--bundle", "--minify", "--format=iife", "--target=es2018", f"--outfile={out_file}",
-                             "--log-level=warning"], cwd=workspace, capture_output=True, text=True, check=False)
+    result = external.run([str(binary), str(entry), "--bundle", "--minify", "--format=iife", "--target=es2018", f"--outfile={out_file}",
+                             "--log-level=warning"], cwd=workspace, capture_output=True, check=False)
     if result.returncode != 0 or not out_file.exists():
         raise HtmlBuildError(t("htmlkit", "bundle_failed", error=(result.stderr or result.stdout).strip()[:500]))
 

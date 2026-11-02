@@ -31,7 +31,7 @@ import yaml
 
 from coursekit import capture as capturemod
 from coursekit import course as coursemod
-from coursekit import lang, pii
+from coursekit import external, lang, pii
 from coursekit.i18n import t
 from coursekit.util import slugify
 
@@ -160,8 +160,8 @@ def environment(project, course: dict, name: str, spec: dict, home: Path) -> dic
 
 def _run(command: str, folder: Path, env: dict[str, str], timeout: int) -> None:
     try:
-        done = subprocess.run(["bash", "--noprofile", "--norc", "-c", command], cwd=str(folder), env=env, capture_output=True,
-                              text=True, timeout=timeout, check=False)
+        done = external.run(["bash", "--noprofile", "--norc", "-c", command], cwd=str(folder), env=env, capture_output=True,
+                            timeout=timeout, check=False)
     except subprocess.TimeoutExpired:
         raise StageError(t("capture", "stage_timeout", command=command, seconds=timeout)) from None
     if done.returncode != 0:

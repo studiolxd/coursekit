@@ -38,6 +38,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
+from coursekit import external
 from coursekit.i18n import t
 from coursekit.mcpserver import ToolError
 
@@ -144,7 +145,7 @@ def secret_terms(env: dict[str, str]) -> list[str]:
 
     terms = [str(Path.home()), getpass.getuser(), socket.gethostname().split(".")[0]]
     for key in ("user.name", "user.email"):
-        done = subprocess.run(["git", "config", "--global", key], capture_output=True, text=True, check=False)
+        done = external.run(["git", "config", "--global", key], capture_output=True, check=False)
         terms.append(done.stdout.strip())
     terms += [value for name, value in env.items() if SECRET_NAME.search(name) and len(value) >= 6]
     return sorted({term for term in terms if len(term.strip()) >= 3}, key=len, reverse=True)
@@ -304,7 +305,7 @@ def find_font(configured: str = "") -> str | None:
         if path and Path(path).expanduser().is_file():
             return str(Path(path).expanduser())
     if sys.platform.startswith("linux"):
-        done = subprocess.run(["fc-match", "-f", "%{file}", "monospace"], capture_output=True, text=True, check=False) \
+        done = external.run(["fc-match", "-f", "%{file}", "monospace"], capture_output=True, check=False) \
             if _which("fc-match") else None
         if done and done.stdout.strip() and Path(done.stdout.strip()).is_file():
             return done.stdout.strip()
