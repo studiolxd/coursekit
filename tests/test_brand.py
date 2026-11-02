@@ -283,7 +283,9 @@ def test_a_package_of_the_design_system_gives_its_fonts_icons_logos_and_tokens_n
     (base / "sources" / "icons").mkdir()
     (base / "sources" / "icons" / "home.svg").write_text("<svg/>", encoding="utf-8")
     done = brand.build(find_project())
-    assert sorted(p.name for p in (base / "icons").iterdir()) == ["home.svg", "logout.svg", "search.svg"]
+    icons = sorted(p.name for p in (base / "icons").iterdir() if p.name not in ("index.json", "sheet.svg"))
+    assert icons == ["home.svg", "logout.svg", "search.svg"]
+    assert [e["name"] for e in json.loads((base / "icons" / "index.json").read_text(encoding="utf-8"))] == ["home", "logout", "search"]
     assert sorted(p.name for p in (base / "logo").iterdir()) == ["logo.svg"]  # logout is an icon, not a logo
     assert sorted(p.name for p in (base / "tokens").iterdir()) == ["tokens.json"]  # not the stylesheet of a component
     assert done["fonts"] == ["Acme Sans"] and (base / "fonts" / "assets" / "fonts" / "acme.woff2").exists()
@@ -319,7 +321,8 @@ def test_the_npm_page_of_the_package_of_the_design_system_gives_its_icons(course
     monkeypatch.setattr(brand, "npm_fetch", fake_fetch)
     done = brand.build(find_project())
     assert calls[0] == "https://registry.npmjs.org/@acme%2Fbrand"
-    assert [p.name for p in (base / "icons").iterdir()] == ["search.svg"] and (base / "packages" / "acme-brand-2.0.0.tgz").exists()
+    assert sorted(p.name for p in (base / "icons").iterdir()) == ["index.json", "search.svg", "sheet.svg"]  # with its index
+    assert (base / "packages" / "acme-brand-2.0.0.tgz").exists()
     index = (base / "index.md").read_text(encoding="utf-8")
     assert "`packages/acme-brand-2.0.0.tgz`" in index and "@acme/private" in index and done["failed"] == 1
     assert not (base / "text" / "web").exists() or not any("npmjs" in p.name for p in (base / "text" / "web").iterdir())
@@ -401,8 +404,12 @@ def test_an_author_of_magnific_becomes_an_illustration_source_and_its_illustrati
 
 
 def test_media_stock_says_what_it_needs(course, capsys, monkeypatch):  # noqa: F811
+    from coursekit import illustrations
+
     prepare_asset(course, capsys)
     assert main(["media", "stock", "PWD", "U1-S2-M1"]) == 2
     monkeypatch.setenv("MAGNIFIC_API_KEY", "mk")
-    assert main(["media", "stock", "PWD", "U1-S2-M1", "--find", "lock"]) == 1
-    assert "there are no illustration sources" in capsys.readouterr().err
+    asked = []
+    monkeypatch.setattr(illustrations, "get", lambda path, params=None: asked.append(params) or {"data": []})
+    assert main(["media", "stock", "PWD", "U1-S2-M1", "--find", "lock"]) == 0  # without sources of the brand: the whole catalogue
+    assert asked and "filters[author]" not in asked[0] and asked[0]["filters[vector][type]"] == "svg"

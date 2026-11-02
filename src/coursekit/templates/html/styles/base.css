@@ -134,7 +134,7 @@ body:not(.ck-js) .ck-card .ck-back { display: block; margin-top: var(--space-sm)
 .ck-video-link { font-size: 0.85rem; margin: var(--space-xs) 0 0; }
 .ck-image-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: var(--space-md); }
 .ck-panel-body .ck-media { margin: var(--space-md) 0; }
-@media (max-width: 40rem) { .ck-image-text { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .ck-image-text { grid-template-columns: 1fr; } }
 .ck-embed iframe { width: 100%; min-height: 28rem; border: 1px solid var(--color-border); border-radius: var(--radius); }
 .ck-attachment a { font-weight: 600; }
 .ck-attachment-info { color: var(--color-text-muted); }

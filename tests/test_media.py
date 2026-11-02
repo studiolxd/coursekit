@@ -471,9 +471,10 @@ def test_a_decorative_image_comes_from_the_catalog_first_and_the_rest_is_generat
     monkeypatch.setenv("MAGNIFIC_API_KEY", "mg")
     chain = media.options_for("image", media.config())
     ids = [o["id"] for o in chain]
-    assert ids[:2] == ["creator-stock", "magnific-api"] and ids.count("creator-stock") == 2
+    assert ids[:5] == ["creator-stock", "magnific-stock", "stock-photo", "creator-stock", "magnific-api"]
     assert chain[0]["only"] == "decorative" and "only for decorative content" in chain[0]["available"]
-    assert "only" not in chain[ids.index("creator-stock", 1)]  # lower down, for any image
+    assert chain[2]["only"] == "photo" and chain[3]["only"] == "photo"  # a photograph of the situation: licensed stock first
+    assert "only" not in chain[len(ids) - 1 - ids[::-1].index("creator-stock")]  # lower down, for any image
     i18n.use("es")
     try:
         assert "solo para contenido decorativo" in media.options_for("image", media.config())[0]["available"]
