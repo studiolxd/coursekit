@@ -36,7 +36,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -252,7 +252,7 @@ class Terminal:
 
     def cursor_line(self) -> str:
         with self.lock:
-            return self.screen.display[self.screen.cursor.y]
+            return cast("str", self.screen.display[self.screen.cursor.y])
 
     def snapshot(self) -> Snapshot:
         with self.lock:

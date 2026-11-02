@@ -857,7 +857,7 @@ class BrowserBackend:
 
     def screenshot(self) -> bytes:
         self._settle()
-        return self.page.screenshot(type="png")
+        return cast("bytes", self.page.screenshot(type="png"))
 
     def click(self, x: float, y: float, button: str, count: int) -> None:
         self.page.mouse.click(x, y, button=cast("Literal['left', 'middle', 'right']", button), click_count=count)
@@ -969,7 +969,7 @@ class BrowserBackend:
         return bool(self.page.evaluate(SECRET_JS))
 
     def url(self) -> str:
-        return self.page.url
+        return cast("str", self.page.url)
 
     def close(self) -> None:
         with contextlib.suppress(Exception):  # closing must never fail the end of a session
