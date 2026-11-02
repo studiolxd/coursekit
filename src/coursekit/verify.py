@@ -22,7 +22,8 @@ from __future__ import annotations
 
 import math
 import re
-from collections.abc import Callable
+import typing
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import urlparse
@@ -51,6 +52,9 @@ PICTOGRAPH_RE = re.compile("[\U0001f000-\U0001faff\U0001f1e6-\U0001f1ff⌀-⏿�
 
 # Extra checks registered by the assembly backends: (course, unit) -> list of error messages.
 BACKEND_CHECKS: list[Callable[[dict, dict], list[str]]] = []
+
+# A directive of a text: (line, name, lines of its body).
+Directive = tuple[int, str, list[str]]
 
 
 @dataclass
@@ -81,7 +85,8 @@ class Syntax:
         return self.media_types.get(written.strip().casefold())
 
 
-def check_visuals(sec, spec: dict, rules: dict, syntax, tokens: dict, label: str, report, shortfall) -> None:
+def check_visuals(sec: Section, spec: dict, rules: dict, syntax: Syntax, tokens: dict, label: str, report: Report,
+                  shortfall: Callable[[str], None]) -> None:
     """The visual support of a section: an introduction or a summary always carries a visual resource; a content section
     carries one or says why not (`<!-- NO IMAGE: reason -->`), so the writer always asks whether it would read better with one."""
     kinds = set(rules.get("visual_types") or [])
@@ -216,7 +221,7 @@ def check_inclusive(label: str, lines: list[str], mode: str, tokens: dict, repor
         report.warn(t("verify", "inclusive_generic", label=label, lines=shown, word=word, alternative=generic[word]))
 
 
-def check_bank_format(course: dict, path: Path, directives, rules: dict, report: Report) -> None:
+def check_bank_format(course: dict, path: Path, directives: Iterable[Directive], rules: dict, report: Report) -> None:
     """With a question-bank format (`delivery › assessment › format`), the questions of the tests must be of a type it takes."""
     fmt = coursemod.assessment_delivery(course)[1]
     if fmt == "platform":
@@ -272,7 +277,7 @@ def titled_item(item: str, bullet: bool) -> bool:
     if m:
         return len(m.group(2).split()) >= 4
     m = PLAIN_LEAD_RE.match(item) if bullet else None
-    return bool(m) and len(m.group(1).split()) <= 6 and len(m.group(2).split()) >= 6
+    return m is not None and len(m.group(1).split()) <= 6 and len(m.group(2).split()) >= 6
 
 
 def check_lists(path: Path, text: str, report: Report) -> None:
@@ -316,12 +321,13 @@ def check_pictographs(path: Path, text: str, allowed: str, report: Report) -> No
             report.error(t("verify", "pictograph", file=path.name, line=i, chars=chars))
 
 
-def parse_directives(path: Path, lines: list[str], rules: dict, report: Report, start: int = 1):
+def parse_directives(path: Path, lines: list[str], rules: dict, report: Report, start: int = 1
+                     ) -> Iterator[Directive]:
     """Yield (line_no, name, body_lines) for each directive, reporting malformed ones."""
     known = (set(rules["interactive_directives"]) | set(rules["non_interactive_directives"]) | set(rules["question_directives"])
              | set(rules.get("simulation_directives") or ()))
     in_code = False
-    current = None
+    current: Directive | None = None
     for i, line in enumerate(lines, start):
         if line.lstrip().startswith("```"):
             in_code = not in_code
@@ -352,7 +358,7 @@ def parse_directives(path: Path, lines: list[str], rules: dict, report: Report, 
         report.error(t("verify", "directive_not_closed", file=path.name, line=current[0], name=current[1]))
 
 
-def check_questions(path: Path, directives, rules: dict, syntax: Syntax, report: Report) -> int:
+def check_questions(path: Path, directives: Iterable[Directive], rules: dict, syntax: Syntax, report: Report) -> int:
     count = 0
     for line_no, name, body in directives:
         if name in rules["question_directives"]:
@@ -362,7 +368,7 @@ def check_questions(path: Path, directives, rules: dict, syntax: Syntax, report:
     return count
 
 
-def check_positional_feedback(path: Path, directives, rules: dict, tokens: dict, report: Report) -> None:
+def check_positional_feedback(path: Path, directives: Iterable[Directive], rules: dict, tokens: dict, report: Report) -> None:
     """Feedback that names an option by its place or letter ("the third one", "option b", "all of the above") in a question
     whose options the platform may shuffle (`directives › shuffled_options`): after shuffling it points at another one."""
     words = tokens.get("positional_feedback") or {}
@@ -378,7 +384,7 @@ def check_positional_feedback(path: Path, directives, rules: dict, tokens: dict,
         if not context.search(text):
             return None
         for m in ordinal.finditer(text):
-            after = re.match(r"\s*(\w*)", text[m.end():]).group(1)
+            after = typing.cast("re.Match[str]", re.match(r"\s*(\w*)", text[m.end():])).group(1)  # it always matches
             if not after or after.casefold() in follows:  # "la tercera." / "la primera y la segunda", not "la primera vez"
                 return m
         return None
@@ -439,7 +445,7 @@ def check_bank_overlap(course: dict, practice: list, bank: list, rules: dict, sy
 CARD_DIRECTIVES = ("flashcards", "flashcard-gallery")
 
 
-def check_card_lengths(path: Path, directives, rules: dict, report: Report) -> None:
+def check_card_lengths(path: Path, directives: Iterable[Directive], rules: dict, report: Report) -> None:
     """A card whose back is longer than `content.card_max_words` does not fit: a glossary with long definitions goes as an
     accordion."""
     limit = int(rules.get("card_max_words") or 0)
@@ -521,7 +527,8 @@ def split_sections(text: str, syntax: Syntax) -> list[Section]:
     return sections
 
 
-def parse_simulations(path: Path, directives, rules: dict, report: Report, passing: float = 50) -> list[simmod.Simulation]:
+def parse_simulations(path: Path, directives: Iterable[Directive], rules: dict, report: Report,
+                      passing: float = 50) -> list[simmod.Simulation]:
     """Read and check the simulations among some directives; their problems go to the report (`passing`: the pass mark the
     scored ones are checked against)."""
     found = []
@@ -568,10 +575,10 @@ def analyse_section(path: Path, sec: Section, rules: dict, syntax: Syntax, repor
                 current.body += len(line.lstrip(">").split())
 
 
-def course_simulations(course: dict, rules: dict) -> list[tuple[int, str, int, str, set[str], bool]]:
+def course_simulations(course: dict, rules: dict) -> list[tuple[int, str, int, str, dict[str, str], bool]]:
     """Every simulation of the course, read without checking it: (unit, file, line, id, what an adaptive block can read of
     it: its variables and the fields of its result, scored)."""
-    found = []
+    found: list[tuple[int, str, int, str, dict[str, str], bool]] = []
     for other in course.get("units") or []:
         folder = coursemod.unit_dir(course["_dir"], other["n"])
         for name in ("content.md", "assessment.md"):
@@ -586,7 +593,7 @@ def course_simulations(course: dict, rules: dict) -> list[tuple[int, str, int, s
                 except yaml.YAMLError:
                     continue
                 if isinstance(data, dict) and data.get("id"):
-                    state = data.get("state") if isinstance(data.get("state"), dict) else {}
+                    state = data["state"] if isinstance(data.get("state"), dict) else {}
                     found.append((other["n"], name, line_no, str(data["id"]), simmod.variable_types(state),
                                   data.get("scored") is True))
     return found
@@ -982,9 +989,9 @@ def verify_unit(course: dict, unit: dict) -> Report:
         report.error(t("verify", "file_missing", path=assessment_path.name))
 
     report.family = "simulations"
-    places = {}
-    for n, name, line, sid, _, _ in sims:
-        places.setdefault(sid, []).append(f"{t('verify', 'unit_word')} {n} {name}:{line}")
+    places: dict[str, list[str]] = {}
+    for n, sim_file, sim_line, sid, _, _ in sims:
+        places.setdefault(sid, []).append(f"{t('verify', 'unit_word')} {n} {sim_file}:{sim_line}")
     for sid in sorted({sim.id for sim in unit_sims if sim.id}):
         if len(places.get(sid, [])) > 1:
             report.error(t("verify", "duplicate_simulation", id=sid, places=", ".join(places[sid])))

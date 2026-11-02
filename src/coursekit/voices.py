@@ -11,13 +11,17 @@ from __future__ import annotations
 
 import os
 import shutil
+from typing import TYPE_CHECKING, Any, cast
 
 from coursekit import course as coursemod
 from coursekit.errors import CoursekitError
 from coursekit.i18n import t
 from coursekit.util import edit_yaml, save_yaml
 
-PROVIDERS = {
+if TYPE_CHECKING:
+    from coursekit.project import Project
+
+PROVIDERS: dict[str, dict[str, Any]] = {
     "elevenlabs": {
         "label": "ElevenLabs", "env": ["ELEVENLABS_API_KEY"], "voice_env": "ELEVENLABS_VOICE_ID",
         "default_voice": {}, "note_key": "note_elevenlabs",
@@ -57,7 +61,7 @@ def available() -> list[str]:
     return [p for p in PROVIDERS if is_available(p)]
 
 
-def project_voice(project) -> dict:
+def project_voice(project: Project | None) -> dict:
     """The voice of the project (project.yaml › media.voice), which every course without its own inherits."""
     from coursekit import config
 
@@ -75,7 +79,7 @@ def course_voice(course: dict) -> dict:
 
 
 def default_voice(provider: str, language: str) -> str | None:
-    return PROVIDERS[provider]["default_voice"].get(language)
+    return cast("str | None", PROVIDERS[provider]["default_voice"].get(language))
 
 
 def character_voices(course: dict | None) -> dict:
@@ -144,7 +148,7 @@ def resolve(course: dict | None, engine: str | None = None) -> tuple[str, str | 
     return provider, voice, None if speaker is None else str(speaker)
 
 
-def listing(course: dict | None, project=None) -> list[str]:
+def listing(course: dict | None, project: Project | None = None) -> list[str]:
     found = available()
     status = {True: t("voices", "status_available"), False: t("voices", "status_missing")}
     width = max(len(w) for w in status.values())
@@ -187,7 +191,7 @@ def set_voice(course: dict, provider: str, voice: str | None, speaker: str | Non
     if data.get("media") is None:
         data["media"] = {}
     spec = PROVIDERS[provider]
-    entry = {"provider": provider,
+    entry: dict[str, Any] = {"provider": provider,
              "voice": voice or os.environ.get(spec["voice_env"], "").strip() or default_voice(provider, coursemod.language(course))}
     if speaker is not None:
         entry["speaker"] = int(speaker)
@@ -220,7 +224,7 @@ def set_voice(course: dict, provider: str, voice: str | None, speaker: str | Non
     return t("voices", "voice_set", **shown), warning
 
 
-def set_project_voice(project, provider: str, voice: str | None, speaker: str | None) -> tuple[str, str | None]:
+def set_project_voice(project: Project, provider: str, voice: str | None, speaker: str | None) -> tuple[str, str | None]:
     """Fix the voice of the project (project.yaml › media.voice), which every course without its own inherits."""
     from coursekit import config
 
@@ -232,7 +236,8 @@ def set_project_voice(project, provider: str, voice: str | None, speaker: str | 
         data["media"] = {}
     language = str(data.get("content_language") or "es").split("-")[0]
     spec = PROVIDERS[provider]
-    entry = {"provider": provider, "voice": voice or os.environ.get(spec["voice_env"], "").strip() or default_voice(provider, language)}
+    entry: dict[str, Any] = {"provider": provider,
+                             "voice": voice or os.environ.get(spec["voice_env"], "").strip() or default_voice(provider, language)}
     if speaker is not None:
         entry["speaker"] = int(speaker)
     if provider == "gemini":  # the courses keep the model the project starts with: a new default does not change it
@@ -244,9 +249,10 @@ def set_project_voice(project, provider: str, voice: str | None, speaker: str | 
     return t("voices", "project_voice_set", provider=provider, voice=entry["voice"] or t("voices", "default_voice_set")), warning
 
 
-def unset_voice(course: dict | None, project=None) -> str:
+def unset_voice(course: dict | None, project: Project | None = None) -> str:
     """Take away the voice fixed in a course (it inherits the project's again), or the voice of the project."""
-    path = course["_dir"] / "course.yaml" if course else project.file
+    # without a course, the caller passes the project
+    path = course["_dir"] / "course.yaml" if course else cast("Project", project).file
     ry, data = edit_yaml(path)
     media = data.get("media")
     if not isinstance(media, dict) or not media.get("voice"):

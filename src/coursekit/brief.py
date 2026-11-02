@@ -23,8 +23,10 @@ import shutil
 import subprocess
 import tempfile
 import urllib.parse
+from collections.abc import Callable
 from importlib import resources
 from pathlib import Path
+from typing import Any, cast
 
 from coursekit import config as configmod
 from coursekit import exelearning, http, i18n
@@ -115,7 +117,8 @@ EXELEARNING = {".elp"}
 REPORT = "import-report.md"
 
 
-def exe_convert(src: Path, rel: str, brief: Path, target: Path, options: dict):
+def exe_convert(src: Path, rel: str, brief: Path, target: Path, options: dict
+                ) -> tuple[str | None, tuple[str, dict] | None, exelearning.Report | None]:
     """A package of eXeLearning as Markdown (its images go to text/media/<name>/): (text, error, report)."""
     media = brief / "text" / "media" / re.sub(r"[^\w.-]+", "-", rel).strip("-")
     shutil.rmtree(media, ignore_errors=True)
@@ -140,7 +143,7 @@ def convert_files(brief: Path, state: dict, options: dict | None = None) -> tupl
         rel = src.relative_to(sources).as_posix()
         ext = src.suffix.lower()
         size_mb = src.stat().st_size / 1_000_000
-        row = {"source": f"sources/{rel}", "text": None, "title": src.stem, "words": 0, "notes": []}
+        row: dict[str, Any] = {"source": f"sources/{rel}", "text": None, "title": src.stem, "words": 0, "notes": []}
         if size_mb > MAX_MB:
             row["notes"].append(note("heavy", mb=f"{size_mb:.0f}"))
         if ext in IMAGES:
@@ -175,7 +178,7 @@ def convert_files(brief: Path, state: dict, options: dict | None = None) -> tupl
                 row["notes"].append(error)
                 rows.append(row)
                 continue
-            body = strip_frontmatter(body).strip() + "\n"
+            body = strip_frontmatter(cast("str", body)).strip() + "\n"  # without an error, there is a body
             front = (f"---\ntitle: {json.dumps(title_of(body, src.stem), ensure_ascii=False)}\n"
                      f"source: {json.dumps(row['source'], ensure_ascii=False)}\nconverted: {today}\n"
                      f"words: {words(body)}\n---\n\n")
@@ -213,7 +216,7 @@ def write_import_report(brief: Path, state: dict, lang: str) -> None:
     path.write_text(exelearning.render_report(reports, lang), encoding="utf-8", newline="\n")
 
 
-def browser_args(log=None) -> list[str]:
+def browser_args(log: Callable[[str], None] | None = None) -> list[str]:
     """`--browser` and `--playwright` for web2md: the Chrome or Edge of the machine and the store workspace with playwright-core
     (installed the first time a blocked page needs it). Empty when there is no browser or the workspace cannot be installed."""
     from coursekit import store
@@ -267,11 +270,12 @@ def save_document(url: str, body: bytes, suffix: str, folder: Path) -> tuple[str
         return problem
     if not (text or "").strip():
         return note("document_no_text")
-    (folder / f"{name}.md").write_text(f"<!-- {url} -->\n\n{text.strip()}\n", encoding="utf-8", newline="\n")
+    (folder / f"{name}.md").write_text(f"<!-- {url} -->\n\n{(text or '').strip()}\n", encoding="utf-8", newline="\n")
     return None
 
 
-def download_links(brief: Path, state: dict, refresh: bool, log=None, links: list[tuple[str, str]] | None = None
+def download_links(brief: Path, state: dict, refresh: bool, log: Callable[[str], None] | None = None,
+                   links: list[tuple[str, str]] | None = None
                    ) -> tuple[list[dict], int]:
     """Each link of links.md (or the `links` given) as Markdown in text/web/<site>/: a Storybook read whole from its manifests,
     a link to a document (PDF, Office) with MarkItDown, any other site with web2md."""
@@ -400,7 +404,8 @@ def write_index(brief: Path, code: str, files: list[dict], webs: list[dict], gen
     (brief / "index.md").write_text("\n".join(out), encoding="utf-8")
 
 
-def build(brief: Path, title: str, refresh: bool = False, general: str | None = None, log=None, language: str = "es",
+def build(brief: Path, title: str, refresh: bool = False, general: str | None = None, log: Callable[[str], None] | None = None,
+          language: str = "es",
           importing: dict | None = None, forbidden: dict | None = None) -> dict:
     """Convert sources and links of one brief folder and write its index in `language` (the content's). Returns a summary."""
     (brief / "sources").mkdir(parents=True, exist_ok=True)

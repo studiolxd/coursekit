@@ -5,10 +5,11 @@ Generated output, never edited by hand. Written in the project's ui_language (es
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from openpyxl.styles import PatternFill
+    from openpyxl.worksheet.worksheet import Worksheet
 
 import datetime as dt
 import hashlib
@@ -25,7 +26,7 @@ from coursekit.verify import Syntax, learner_words, split_sections
 CATALOG_NAME = {"es": "catalogo-cursos.xlsx", "en": "course-catalog.xlsx"}
 LINK_COLOR = "0563C1"
 
-TEXT = {
+TEXT: dict[str, dict[str, Any]] = {
     "es": {
         "sheets": ("Cursos", "Unidades", "Información"),
         "course": [("Código", 12), ("Título", 45), ("Estado", 20), ("Horas", 8), ("Unidades", 10),
@@ -86,7 +87,7 @@ def header_color(project: Project) -> str:
             colors = json.loads(path.read_text(encoding="utf-8")).get("color") or {}
             value = colors.get("accent-ink") or colors.get("accent")
             if value:
-                return value.lstrip("#").upper()
+                return cast("str", value.lstrip("#").upper())
         except ValueError:
             pass
     return "333333"
@@ -110,7 +111,8 @@ def content_approval(course: dict, n: int) -> dict | None:
     return found[-1] if found else None
 
 
-def _sheet(ws, headers, rows, fill: PatternFill, link_columns=()):
+def _sheet(ws: Worksheet, headers: list[tuple[str, int]], rows: list[list], fill: PatternFill,
+           link_columns: tuple[int, ...] = ()) -> None:
     from openpyxl.styles import Alignment, Font
     from openpyxl.utils import get_column_letter
 
@@ -171,7 +173,8 @@ def _write_json(path: Path, data: dict) -> None:
         pass
 
 
-def course_rows_of(project: Project, folder: Path, text: dict, link: str | None, folder_url) -> tuple[list, list]:
+def course_rows_of(project: Project, folder: Path, text: dict, link: str | None,
+                   folder_url: Callable[[str], str] | None) -> tuple[list, list]:
     """The row of a course in the catalog and those of its units: from the cache while its files have not changed, else
     computed (this is the only place that reads a course)."""
     fingerprint = course_fingerprint(project, folder, ui_language(project), link)

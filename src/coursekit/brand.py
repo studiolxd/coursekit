@@ -6,7 +6,9 @@ from __future__ import annotations
 import base64
 import json
 import re
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any, cast
 
 from coursekit import config as configmod
 from coursekit import i18n
@@ -24,7 +26,7 @@ class BrandError(Exception):
 def folder(project: Project, course: dict | None = None) -> Path:
     """The brand folder of a course when it has one of its own, else the project's."""
     if course is not None:
-        own = course["_dir"] / "theme" / "branding"
+        own: Path = course["_dir"] / "theme" / "branding"
         if own.is_dir() and any(p for p in own.iterdir() if not p.name.startswith(".")):
             return own
     return project.theme_dir / "branding"
@@ -39,7 +41,7 @@ def fonts_stylesheet(project: Project, course: dict | None = None) -> Path | Non
         return None
     if str(value) != "auto":
         return project.root / str(value)
-    for base in ([course["_dir"] / "theme" / "branding"] if course is not None else []) + [project.theme_dir / "branding"]:
+    for base in ([cast("Path", course["_dir"]) / "theme" / "branding"] if course is not None else []) + [project.theme_dir / "branding"]:
         if (base / FONTS_SHEET).is_file():
             return base / FONTS_SHEET
     return None
@@ -53,7 +55,7 @@ def inline_fonts(sheet: Path, root: Path) -> tuple[str, list[str]]:
         raise BrandError(t("video", "fonts_missing", path=name))
     css = re.sub(r"/\*.*?\*/", "", sheet.read_text(encoding="utf-8"), flags=re.S)
 
-    def inline(match: re.Match) -> str:
+    def inline(match: re.Match[str]) -> str:
         ref = match.group(2).strip()
         if ref.startswith("data:"):
             return match.group(0)
@@ -90,7 +92,7 @@ MAX_TEXT = 200_000  # characters of a token file copied into the text
 
 
 def course_folder(course: dict) -> Path:
-    return course["_dir"] / "theme" / "branding"
+    return cast("Path", course["_dir"]) / "theme" / "branding"
 
 
 def target_folder(project: Project, course: dict | None) -> Path:
@@ -122,7 +124,7 @@ def parse_links(path: Path) -> tuple[list[tuple[str, str]], list[tuple[str, str]
 
     if not path.exists():
         return [], [], []
-    found_by = {"content": [], "style": [], "illustrations": []}
+    found_by: dict[str, list[tuple[str, str]]] = {"content": [], "style": [], "illustrations": []}
     section = "content"
     text = re.sub(r"<!--.*?-->", "", path.read_text(encoding="utf-8"), flags=re.S)
     style, illustrations = style_headings(), illustration_headings()
@@ -148,7 +150,7 @@ def _illustration_sources(base: Path, links: list[tuple[str, str]], refresh: boo
     known = {s["url"]: s for s in illustrations.load(base)}
     sources = []
     for url, comment in links:
-        source = {"url": url, "note": comment, "provider": None, "author": None, "author_id": None, "error": None}
+        source: dict[str, Any] = {"url": url, "note": comment, "provider": None, "author": None, "author_id": None, "error": None}
         slug = illustrations.author_of(url)
         if slug:
             source.update(provider="magnific", author=slug)
@@ -222,7 +224,7 @@ def _family_of(path: Path) -> tuple[str, str, str]:
     return family or path.stem, style, weight
 
 
-def _google_fonts(urls: list[str], fonts_dir: Path, known: set[str] = frozenset()) -> list[dict]:
+def _google_fonts(urls: list[str], fonts_dir: Path, known: set[str] | frozenset[str] = frozenset()) -> list[dict]:
     """The font files of some Google Fonts stylesheets (open licences), in fonts/<family>/, and their @font-face rules."""
     from coursekit import storybook
 
@@ -244,7 +246,7 @@ def _google_fonts(urls: list[str], fonts_dir: Path, known: set[str] = frozenset(
                 continue
             folder = fonts_dir / storybook.slug(name)
             folder.mkdir(parents=True, exist_ok=True)
-            style = (re.search(r"font-style:\s*([^;]+)", block) or [None, "normal"])[1].strip()
+            style = cast("str", (re.search(r"font-style:\s*([^;]+)", block) or [None, "normal"])[1]).strip()
             file = folder / f"{storybook.slug(name)}-{style}-{subset or 'all'}.woff2"
             file.write_bytes(body)
             (folder / "LICENSE.txt").write_text(i18n.t_in("en", "brand", "google_licence", family=name), encoding="utf-8")
@@ -268,8 +270,8 @@ def _font_rules(base: Path, found: dict[str, list[Path]], google: list[str]) -> 
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(source.read_bytes())
         for block in re.findall(r"@font-face\s*\{[^}]*\}", css):
-            family = re.search(r"font-family:\s*['\"]?([^;'\"]+)", block)
-            rules.append({"family": family.group(1).strip() if family else "?", "origin": "sheet", "css": block})
+            declared = re.search(r"font-family:\s*['\"]?([^;'\"]+)", block)
+            rules.append({"family": declared.group(1).strip() if declared else "?", "origin": "sheet", "css": block})
     sheet_files = {p.resolve() for s in found.get("font_sheet", []) for p in s.parent.rglob("*")}
     for file in found.get("font", []):
         if file.resolve() in sheet_files:
@@ -307,7 +309,8 @@ def _document(src: Path, rel: str, base: Path, state: dict) -> dict:
 
     target = brief.text_path(base / "text" / "files", rel)
     digest = sha256_file(src)
-    row = {"source": f"sources/{rel}", "text": None, "words": 0, "notes": []}
+    row: dict[str, Any] = {"source": f"sources/{rel}", "text": None, "words": 0, "notes": []}
+    body: str | None
     if state.get(rel) != digest or not target.exists():
         if src.suffix.lower() in brief.COPY:
             body, error = src.read_text(encoding="utf-8", errors="replace"), None
@@ -317,7 +320,8 @@ def _document(src: Path, rel: str, base: Path, state: dict) -> dict:
             row["notes"].append(error)
             return row
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(f"---\nsource: sources/{rel}\n---\n\n" + brief.strip_frontmatter(body).strip() + "\n", encoding="utf-8")
+        cleaned = brief.strip_frontmatter(cast("str", body)).strip()  # without an error, there is a body
+        target.write_text(f"---\nsource: sources/{rel}\n---\n\n" + cleaned + "\n", encoding="utf-8")
     state[rel] = digest
     text = target.read_text(encoding="utf-8")
     row.update(text=target.relative_to(base).as_posix(), words=brief.words(text))
@@ -331,7 +335,7 @@ def _copy(src: Path, folder: Path) -> Path:
     return target
 
 
-def build(project: Project, course: dict | None = None, refresh: bool = False, log=None) -> dict:
+def build(project: Project, course: dict | None = None, refresh: bool = False, log: Callable[[str], None] | None = None) -> dict:
     """Read what a person left in the brand folder (sources/, links.md, notes.md): documents and pages as Markdown in text/,
     a whole Storybook, the style observed on a website, the fonts (fonts/fonts.css), logos (logo/), token files (tokens/), and
     the index of all of it (index.md) that the agents read first. Returns a summary."""
@@ -414,7 +418,7 @@ def _package(url: str, note: str, base: Path, state: dict, refresh: bool) -> dic
 
     from coursekit import http
 
-    name, pinned = NPM_URL.match(url).groups()
+    name, pinned = cast("re.Match[str]", NPM_URL.match(url)).groups()  # the caller passes only npm links
     row = {"url": url, "note": note, "name": name, "version": pinned, "file": None, "error": None}
     try:
         meta = json.loads(npm_fetch(f"{NPM_REGISTRY}/{urllib.parse.quote(name, safe='@')}"))
@@ -487,7 +491,7 @@ def write_index(base: Path, lang: str, documents: list[dict], webs: list[dict], 
                 icons: list[Path] | None = None, sources: list[dict] | None = None, packages: list[dict] | None = None) -> None:
     from coursekit import brief
 
-    def say(key: str, **values) -> str:
+    def say(key: str, **values: object) -> str:
         return i18n.t_in(lang, "brand", key, **values)
 
     rel = lambda p: p.relative_to(base).as_posix()  # noqa: E731
@@ -548,7 +552,7 @@ GENERIC_FONTS = {"serif", "sans-serif", "monospace", "system-ui", "ui-sans-serif
                  "-apple-system", "blinkmacsystemfont", "segoe ui", "arial", "helvetica", "helvetica neue", "times new roman", "georgia"}
 
 
-def observe(url: str, base: Path, refresh: bool = False, log=None) -> dict:
+def observe(url: str, base: Path, refresh: bool = False, log: Callable[[str], None] | None = None) -> dict:
     """The style of a website as a browser draws it, in text/observed/<site>.md (and .json), with its screenshots in style/: clues
     for the agent, never rules of the brand. Run again only with --refresh."""
     import shutil

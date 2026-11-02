@@ -13,10 +13,11 @@ exports what the rest of coursekit reads, the same three files a design made in 
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from openpyxl import Workbook
+    from openpyxl.worksheet.worksheet import Worksheet
 
 import json
 import re
@@ -70,7 +71,7 @@ def is_local(course: dict) -> bool:
 
 
 def path(course: dict) -> Path:
-    return course["_dir"] / FILE
+    return cast("Path", course["_dir"]) / FILE
 
 
 def load(course: dict) -> dict:
@@ -128,14 +129,14 @@ class Builder:
         self.findings: list[Finding] = []
         self.unit_word = coursemod.tokens(course)["unit"]
 
-    def add(self, check: str, severity: str, key: str, kind: str = "matriz", ref: str | None = None, **values) -> None:
+    def add(self, check: str, severity: str, key: str, kind: str = "matriz", ref: str | None = None, **values: object) -> None:
         self.findings.append(Finding(check, severity, t("design", key, **values), kind, ref))
 
     # ── reading ─────────────────────────────────────────────────────────────────────────
 
     def build(self) -> dict:
         design = self.course.get("design") or {}
-        profile = self.data.get("profile") if isinstance(self.data.get("profile"), dict) else {}
+        profile = self.data["profile"] if isinstance(self.data.get("profile"), dict) else {}
         audience = coursemod.audience(self.course)  # the project's, changed by the course
         structure = str(design.get("structure") or "sin_modulos")
         cfg = coursemod.rules(self.course)
@@ -335,7 +336,7 @@ class Builder:
         hours = [c.get("horas") for c in children]
         if not children or any(h is None for h in hours):
             return
-        total = round(sum(hours), 2)
+        total = round(sum(cast("list[float]", hours)), 2)  # none is None (checked above)
         if node["horas"] is None:
             node["horas"] = _number(total)
         elif abs(node["horas"] - total) > 0.01:
@@ -484,7 +485,7 @@ def export(course: dict) -> tuple[list[Finding], list[Path]]:
 HEAD_COLOR = "1F3A5F"
 
 
-def _sheet(book: Workbook, title: str, columns: list[tuple[str, int]], first: bool = False):
+def _sheet(book: Workbook, title: str, columns: list[tuple[str, int]], first: bool = False) -> Worksheet:
     from openpyxl.styles import Alignment, Font, PatternFill
     from openpyxl.utils import get_column_letter
 
@@ -499,7 +500,7 @@ def _sheet(book: Workbook, title: str, columns: list[tuple[str, int]], first: bo
     return sheet
 
 
-def _row(sheet, values: list, bold: bool = False) -> None:
+def _row(sheet: Worksheet, values: list, bold: bool = False) -> None:
     from openpyxl.styles import Alignment, Font
 
     sheet.append(values)
@@ -659,7 +660,7 @@ def write_excel(course: dict, graph: dict, findings: list[Finding], target: Path
                                                     for n in ([top] if top["tipo"] == "unidad" else ordered(children.get(top["id"], []))))}
     def unit_of(node_id: str) -> dict:
         """The unit a node belongs to (an activity hangs from its unit or, in slxd, from one of its sections)."""
-        node = nodes[node_id]
+        node: dict = nodes[node_id]
         while node.get("parentId") and node["tipo"] != "unidad":
             node = nodes[node["parentId"]]
         return node

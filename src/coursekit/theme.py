@@ -17,6 +17,7 @@ import json
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import cast
 
 from coursekit import config
 from coursekit.errors import CoursekitError
@@ -45,7 +46,7 @@ class ThemeError(CoursekitError):
 
 
 def course_theme_dir(course: dict) -> Path:
-    return course["_dir"] / "theme"
+    return cast("Path", course["_dir"]) / "theme"
 
 
 def tokens_path(project: Project, course: dict | None = None) -> Path:
@@ -197,8 +198,9 @@ def check(tokens: dict) -> list[tuple[bool, str]]:
     colors = tokens.get("color") or {}
     out = []
     for fg, bg, minimum, use in PAIRS:
-        if to_hex(colors.get(fg)) and to_hex(colors.get(bg)):
-            ratio = contrast(to_hex(colors[fg]), to_hex(colors[bg]))
+        fg_hex, bg_hex = to_hex(colors.get(fg)), to_hex(colors.get(bg))
+        if fg_hex and bg_hex:
+            ratio = contrast(fg_hex, bg_hex)
             out.append((ratio >= minimum, t("theme", "pair_line", fg=fg, bg=bg, use=t("theme", use), ratio=ratio, minimum=minimum)))
     return out
 
@@ -240,7 +242,7 @@ def _config(response: dict) -> dict:
     return node
 
 
-def _resolve(ref: object, palette: dict[str, str], semantic: dict, seen: tuple[str, ...] = ()) -> str | None:
+def _resolve(ref: object, palette: dict[str, object], semantic: dict, seen: tuple[str, ...] = ()) -> str | None:
     if not isinstance(ref, dict):
         return None
     if ref.get("custom"):
@@ -270,7 +272,7 @@ def from_creator(response: dict) -> dict:
     """The tokens of a `get_theme` result of the authoring platform, with their origin."""
     cfg = _config(response)
     colors = cfg["colors"]
-    palette = {str(p.get("id")): p.get("value") for p in colors.get("palette") or [] if isinstance(p, dict)}
+    palette: dict[str, object] = {str(p.get("id")): p.get("value") for p in colors.get("palette") or [] if isinstance(p, dict)}
     semantic = colors.get("semantic") or {}
     notes: list[str] = []
 
@@ -282,8 +284,9 @@ def from_creator(response: dict) -> dict:
             notes.append(t("theme", "note_color", role=name))
         return fallback
 
-    text = role("text", DEFAULT_ROLES["text"])
-    background = role("background", DEFAULT_ROLES["background"])
+    # with a fallback, a role is always a colour
+    text = cast("str", role("text", DEFAULT_ROLES["text"]))
+    background = cast("str", role("background", DEFAULT_ROLES["background"]))
     accent = role("accent") or to_hex(palette.get("accent")) or "#0A58CA"
     chosen = {
         "background": background,
@@ -381,7 +384,7 @@ def css_variables(text: str) -> dict[str, str]:
 
 
 def _resolve_css(value: str, variables: dict[str, str], seen: tuple[str, ...] = ()) -> str:
-    def replace(match: re.Match) -> str:
+    def replace(match: re.Match[str]) -> str:
         name = match.group(1).lower()
         if name in seen or name not in variables:
             return match.group(0)
@@ -443,7 +446,7 @@ def settings(project: Project, course: dict | None = None) -> dict:
         for key in ("radius", "shadow", "border"):
             if block.get(key) is not None:
                 out[key] = block[key]
-        weights = block.get("weights") if isinstance(block.get("weights"), dict) else {}
+        weights = block["weights"] if isinstance(block.get("weights"), dict) else {}
         for key in ("normal", "strong"):
             if weights.get(key) is not None:
                 out.setdefault("weights", {})[key] = weights[key]
