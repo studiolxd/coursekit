@@ -279,6 +279,10 @@ def approval_problem(course: dict) -> str | None:
         story = course["_dir"] / "design" / "story.md"
         if not story.exists() or sha256_file(story) != approval["story_sha256"]:
             return t("course", "story_changed")
+    if approval.get("visuals_sha256"):
+        visuals = course["_dir"] / "design" / "visuals.yaml"
+        if not visuals.exists() or sha256_file(visuals) != approval["visuals_sha256"]:
+            return t("course", "visuals_changed")
     if approval.get("misconceptions_sha256"):
         errors = course["_dir"] / "design" / "misconceptions.yaml"
         if not errors.exists() or sha256_file(errors) != approval["misconceptions_sha256"]:

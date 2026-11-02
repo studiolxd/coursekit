@@ -1,0 +1,5 @@
+# The visual plan of a course: design/visuals.yaml (coursekit/visualplan.py).
+bad_yaml: {es: "{path} no es YAML válido: {error}", en: "{path} is not valid YAML: {error}"}
+bad_key: {es: "{path}: «{key}» no es un apartado (escribe U<unidad>.S<apartado>, como U1.S2)", en: "{path}: «{key}» is not a section (write U<unit>.S<section>, such as U1.S2)"}
+bad_type: {es: "design/visuals.yaml › {key}: «{type}» no es un tipo de recurso visual (usa: {types})", en: "design/visuals.yaml › {key}: «{type}» is not a visual resource type (use: {types})"}
+below_plan: {es: "{label}: el plan visual del diseño pide {planned} recurso(s) visual(es) ({what}) y el apartado lleva {count}", en: "{label}: the visual plan of the design asks for {planned} visual resource(s) ({what}) and the section carries {count}"}

@@ -111,8 +111,11 @@ def highlight(brick: dict, ctx: Ctx) -> str:
 
 def note(brick: dict, ctx: Ctx) -> str:
     title = inline(content(brick, "title"))
-    head = f'<p class="ck-note-title">{title}</p>' if title else ""
-    return f'<aside class="ck-note" role="note">{head}{block(content(brick))}</aside>'
+    icon = str(prop(brick, "customIconPath") or "")
+    # an icon of the set of the project, painted in the colour of the text (a mask), as creator tints it
+    mark = f'<span class="ck-icon" aria-hidden="true" style="--ck-icon:url({a(icon)})"></span>' if icon else ""
+    head = f'<p class="ck-note-title">{mark}{title}</p>' if title or mark else ""
+    return f'<aside class="ck-note{" ck-note-icon" if icon else ""}" role="note">{head}{block(content(brick))}</aside>'
 
 
 def quote(brick: dict, ctx: Ctx) -> str:
@@ -123,16 +126,34 @@ def quote(brick: dict, ctx: Ctx) -> str:
 
 # ── panels ───────────────────────────────────────────────────────────────────────────────────
 
+def item_media(item: dict) -> str:
+    """The medium of a panel (an image or a video of its own), as the item of creator carries it."""
+    kind = item.get("mediaType")
+    if kind == "image" and item.get("imagePath"):
+        return f'<figure class="ck-media"><img src="{a(item["imagePath"])}" alt="{a(item.get("imageAlt") or "")}" loading="lazy"></figure>'
+    if kind == "video" and item.get("videoPath"):
+        track = (f'<track kind="captions" src="{a(item["subtitlesPath"])}" default>' if item.get("subtitlesPath") else "")
+        return f'<figure class="ck-media"><video controls preload="metadata" src="{a(item["videoPath"])}">{track}</video></figure>'
+    return ""
+
+
+def item_body(item: dict) -> str:
+    """The text of a panel with its medium above or below it (`mediaPosition`, below by default)."""
+    media = item_media(item)
+    text = block(item.get("content"))
+    return media + text if item.get("mediaPosition") == "above" else text + media
+
+
 def accordion(brick: dict, ctx: Ctx) -> str:
     rows = "".join(
-        f"<details class=\"ck-details\"><summary>{inline(i.get('title'))}</summary><div>{block(i.get('content'))}</div></details>"
+        f"<details class=\"ck-details\"><summary>{inline(i.get('title'))}</summary><div>{item_body(i)}</div></details>"
         for i in items(brick))
     return f'<div class="ck-accordion">{rows}</div>'
 
 
 def panels(brick: dict, widget: str, ctx: Ctx) -> str:
     rows = "".join(f"<section class=\"ck-panel\"><h4 class=\"ck-panel-title\">{inline(i.get('title'))}</h4>"
-                   f"<div class=\"ck-panel-body\">{block(i.get('content'))}</div></section>" for i in items(brick))
+                   f"<div class=\"ck-panel-body\">{item_body(i)}</div></section>" for i in items(brick))
     return f'<div class="ck-{widget}" data-widget="{widget}" data-id="{a(ctx.next_id())}">{rows}</div>'
 
 
@@ -220,12 +241,60 @@ def image(brick: dict, ctx: Ctx) -> str:
     return f'<figure class="ck-media"><img src="{a(prop(brick, "imagePath"))}" alt="{a(alt)}" loading="lazy">{caption_of(brick)}</figure>'
 
 
+def image_text(brick: dict, ctx: Ctx) -> str:
+    """An image beside the paragraph it supports (IMAGE_TEXT)."""
+    alt = prop(brick, "imageAlt", "") or ""
+    caption = inline(content(brick, "caption"))
+    figure = (f'<figure class="ck-media"><img src="{a(prop(brick, "imagePath"))}" alt="{a(alt)}" loading="lazy">'
+              f'{f"<figcaption>{caption}</figcaption>" if caption else ""}</figure>')
+    return f'<div class="ck-image-text">{figure}<div class="ck-image-text-body">{block(content(brick))}</div></div>'
+
+
+def image_figures(brick: dict) -> list[str]:
+    figures = []
+    for i in items(brick):
+        caption = inline(i.get("content"))
+        figures.append(f'<figure class="ck-media"><img src="{a(i.get("imagePath"))}" alt="{a(i.get("imageAlt") or "")}" '
+                       f'loading="lazy">{f"<figcaption>{caption}</figcaption>" if caption else ""}</figure>')
+    return figures
+
+
+def image_gallery(brick: dict, ctx: Ctx) -> str:
+    return f'<div class="ck-image-gallery">{"".join(image_figures(brick))}</div>'
+
+
+def image_carousel(brick: dict, ctx: Ctx) -> str:
+    rows = "".join(f'<section class="ck-panel">{figure}</section>' for figure in image_figures(brick))
+    return f'<div class="ck-carousel" data-widget="carousel" data-id="{a(ctx.next_id())}">{rows}</div>'
+
+
 def transcript(brick: dict, ctx: Ctx) -> str:
     body = block(content(brick, "transcription"))
     return f'<details class="ck-details"><summary>{a(ctx.say("transcript"))}</summary><div>{body}</div></details>' if body else ""
 
 
+def external_player(url: str) -> str | None:
+    """The address of the player of a video of YouTube or Vimeo (the privacy-enhanced one of YouTube), or None for a file."""
+    from coursekit import videos
+
+    ident = videos.key(url)
+    if ident.startswith("youtube:"):
+        return f"https://www.youtube-nocookie.com/embed/{ident.split(':', 1)[1]}"
+    found = re.search(r"vimeo\.com/(?:video/)?(\d+)", url)
+    return f"https://player.vimeo.com/video/{found.group(1)}" if found else None
+
+
 def video(brick: dict, ctx: Ctx) -> str:
+    url = str(prop(brick, "videoUrl") or "")
+    if url:  # a video of an official channel: its player, and the address for an LMS without internet
+        player = external_player(url)
+        caption = inline(content(brick))
+        link = f'<p class="ck-video-link"><a href="{a(url)}" target="_blank" rel="noopener">{a(url)}</a></p>'
+        body = (f'<div class="ck-video-frame"><iframe src="{a(player)}" title="{a(re.sub(r"<[^>]+>", "", caption) or url)}" '
+                f'loading="lazy" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div>' if player
+                else f'<video controls preload="metadata" src="{a(url)}"></video>')
+        figcaption = f"<figcaption>{caption}</figcaption>" if caption else ""
+        return f'<figure class="ck-media">{body}{figcaption}{link}{transcript(brick, ctx)}</figure>'
     subs = prop(brick, "subtitlesPath")
     track = f'<track kind="captions" src="{a(subs)}" srclang="und" label="Captions" default>' if subs else ""
     return (f'<figure class="ck-media"><video controls preload="metadata" src="{a(prop(brick, "videoPath"))}">{track}</video>'
@@ -474,7 +543,8 @@ RENDERERS: dict[str, Callable[[dict, Ctx], str]] = {
     "TEXT": text, "HEADING": heading, "CODE": code, "LIST": bullets, "TABLE": table, "HIGHLIGHT": highlight, "NOTE": note, "QUOTE": quote,
     "ACCORDION": accordion, "TABS": tabs, "CAROUSEL": carousel, "CAROUSEL_QUOTES": carousel_quotes, "TIMELINE": timeline,
     "FLASHCARD_CAROUSEL": flashcards, "FLASHCARD_GALLERY": flashcard_gallery, "LABELLED_GRAPHIC": labelled_graphic, "DIALOG": dialog,
-    "IMAGE": image, "VIDEO": video, "AUDIO": audio, "EMBED": embed, "ATTACHMENT": attachment,
+    "IMAGE": image, "IMAGE_TEXT": image_text, "IMAGE_GALLERY": image_gallery, "IMAGE_CAROUSEL": image_carousel,
+    "VIDEO": video, "AUDIO": audio, "EMBED": embed, "ATTACHMENT": attachment,
     "SINGLE_CHOICE": single_choice, "MULTI_SELECT": multi_select, "TRUE_FALSE": true_false, "SORTING": sorting, "MATCH": match,
     "SORTING_GROUPS": sorting_groups, "FILL_IN_THE_BLANK": fill_in_the_blank, "ORDER_WORDS": order_words, "SHORT_ANSWER": short_answer,
     "SIMULATION": simulation, "CONDITIONAL": conditional, **{brick: game for brick in GAMES},

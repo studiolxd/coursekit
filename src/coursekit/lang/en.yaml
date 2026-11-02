@@ -4,6 +4,8 @@ objective: Objective
 assessment_activity: ASSESSMENT ACTIVITY
 placeholder: MEDIA ASSET
 placeholder_fields: [Title, Description, How it is made, Specifications]
+# An optional fifth field of an image placeholder: `beside the text` puts the image beside the paragraph that follows it
+placeholder_layout: {field: Layout, beside: beside the text}
 intro_title: Introduction and objectives
 summary_title: Summary
 intro_pattern: '^\s*introduction'
@@ -64,6 +66,8 @@ directive_keys:
   position: position
   title: title
   shuffle: shuffle
+  kind: kind
+  icon: icon
 # ... and the words some of them take.
 directive_words:
   "true": "true"
@@ -72,6 +76,10 @@ directive_words:
   contains: contains
   "yes": "yes"
   "no": "no"
+  tip: tip
+  warning: warning
+  info: info
+  example: example
 
 # Feedback that names an option by its place or letter (`coursekit verify`, in the directives of `directives › shuffled_options`):
 # a line of feedback is an error when it matches `always`, or `ordinal` followed by the end of the sentence or one of the
@@ -240,6 +248,13 @@ player:
 # first names and last names that help to find a person's name in a capture (the lists of every language are used to find
 # them). First names go apart for women and men, so the invented name keeps the gender of the real one.
 no_visual: NO IMAGE                  # <!-- NO IMAGE: reason -->: a section left without a visual resource, and why
+# The provisional image of a visual resource still to produce (`coursekit media provisional`): what it says, by what is missing
+photo_credit: "Photo: {author} ({provider})"           # the credit of a photograph whose licence asks for it, in its caption
+interface_words: [capture, captures, screenshot, screenshots, recording, recordings, screen, screens, interface, tutorial]  # what a placeholder says when it shows a real interface (coursekit capture plan)
+provisional:
+  image: "Pending: image"
+  capture: "Pending: capture of the application"
+  video: "Pending: video"
 locale: en_US.UTF-8                    # the locale of a terminal capture (LANG)
 capture_people:
   women: [Emma, Olivia, Amelia, Isla, Ava, Mia, Grace, Lily, Sophie, Chloe, Emily, Hannah, Sarah, Laura, Jessica,

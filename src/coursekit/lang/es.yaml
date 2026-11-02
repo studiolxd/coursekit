@@ -4,6 +4,8 @@ objective: Objetivo                   # "*[Objetivo U1.2 — Verbo]*"
 assessment_activity: ACTIVIDAD DE EVALUACIÓN
 placeholder: RECURSO MULTIMEDIA       # "> **[RECURSO MULTIMEDIA — Imagen]**"
 placeholder_fields: [Título, Descripción, Cómo se elabora, Especificaciones]
+# An optional fifth field of an image placeholder: `junto al texto` puts the image beside the paragraph that follows it
+placeholder_layout: {field: Disposición, beside: junto al texto}
 intro_title: Introducción y objetivos
 summary_title: Resumen
 intro_pattern: '^\s*introducci[oó]n'
@@ -64,6 +66,8 @@ directive_keys:
   position: posición
   title: título
   shuffle: barajar
+  kind: tipo
+  icon: icono
 # ... and the words some of them take.
 directive_words:
   "true": verdadero
@@ -72,6 +76,10 @@ directive_words:
   contains: contiene
   "yes": sí
   "no": "no"
+  tip: consejo
+  warning: aviso
+  info: información
+  example: ejemplo
 
 # Feedback that names an option by its place or letter (`coursekit verify`, in the directives of `directives › shuffled_options`):
 # a line of feedback is an error when it matches `always`, or `ordinal` followed by the end of the sentence or one of the
@@ -240,6 +248,13 @@ player:
 # y los nombres y apellidos que ayudan a encontrar el nombre de una persona en una captura (se usan las listas de todos los
 # idiomas para encontrarlos). Los nombres van aparte para mujeres y hombres, para que el inventado conserve el género del real.
 no_visual: SIN IMAGEN                # <!-- SIN IMAGEN: motivo -->: un apartado que se queda sin recurso visual, y por qué
+# The provisional image of a visual resource still to produce (`coursekit media provisional`): what it says, by what is missing
+photo_credit: "Foto: {author} ({provider})"           # the credit of a photograph whose licence asks for it, in its caption
+interface_words: [captura, capturas, grabación, grabaciones, pantalla, pantallas, interfaz, tutorial]  # what a placeholder says when it shows a real interface (coursekit capture plan)
+provisional:
+  image: "Pendiente: imagen"
+  capture: "Pendiente: captura de la aplicación"
+  video: "Pendiente: vídeo"
 locale: es_ES.UTF-8                    # the locale of a terminal capture (LANG)
 capture_people:
   women: [Lucía, María, Paula, Laura, Carmen, Ana, Sara, Marta, Elena, Isabel, Cristina, Raquel, Silvia, Patricia,

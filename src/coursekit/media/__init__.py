@@ -215,6 +215,81 @@ def scan_characters(course: dict) -> list[dict]:
     return list(found.values())
 
 
+ICON_PANELS = ("accordion", "tabs", "carousel")  # the directives whose panels may carry an icon (`icon: name` under its title)
+
+
+def icon_asset_id(name: str) -> str:
+    return f"ICON-{name}"
+
+
+def note_icons(course: dict) -> dict[str, str]:
+    """The icon of each kind of note (`media › icons › note`): kind id -> name of the icon in the set of the project."""
+    return {str(k): str(v) for k, v in ((config(course=course).get("icons") or {}).get("note") or {}).items()}
+
+
+def icons_used(course: dict, text: str) -> list[str]:
+    """The names of the icons a content uses: the `icon:` of a note or of a panel, and the icon of the `kind:` of a note."""
+    tk = coursemod.tokens(course)
+    icon_key, kind_key = lang.directive_key(tk, "icon"), lang.directive_key(tk, "kind")
+    kinds = {str(tk["directive_words"].get(k, k)).casefold(): k for k in ("tip", "warning", "info", "example")}
+    by_kind = note_icons(course)
+    found: list[str] = []
+    directive = None
+    for line in text.splitlines():
+        stripped = line.strip()
+        opened = re.match(r"^:::([a-z][a-z-]*)\s*$", stripped)
+        if opened:
+            directive = opened.group(1)
+            continue
+        if stripped == ":::":
+            directive = None
+            continue
+        if directive not in ("note", *ICON_PANELS):
+            continue
+        m = re.match(rf"^({re.escape(icon_key)}|{re.escape(kind_key)}):\s*(\S.*)$", stripped)
+        if not m:
+            continue
+        value = m.group(2).strip()
+        name = value if m.group(1) == icon_key else by_kind.get(kinds.get(value.casefold(), ""), "")
+        if name and name not in found:
+            found.append(name)
+    return found
+
+
+def scan_icons(course: dict) -> list[dict]:
+    """An asset per icon the content uses (`ICON-<name>`, kind `glyph`), with the units that show it: creator takes an image
+    only from the content that shows it, so each of those units needs its own upload (`missing_uploads`)."""
+    from coursekit import brand
+    from coursekit import icons as iconsmod
+
+    folder = iconsmod.folder(brand.folder(course["_project"], course)) if course.get("_project") else None
+    found: dict[str, dict] = {}
+    for unit in course.get("units") or []:
+        path = coursemod.unit_dir(course["_dir"], unit["n"]) / "content.md"
+        if not path.exists():
+            continue
+        for name in icons_used(course, path.read_text(encoding="utf-8")):
+            entry = found.setdefault(icon_asset_id(name), {
+                "id": icon_asset_id(name), "unit": unit["n"], "section": 0, "type": "icon", "kind": "glyph", "title": name,
+                "description": t("media", "glyph_description", name=name), "specs": t("media", "glyph_specs"), "units": []})
+            if unit["n"] not in entry["units"]:
+                entry["units"].append(unit["n"])
+            source = folder / f"{name}.svg" if folder else None
+            entry["source_icon"] = source.relative_to(course["_project"].root).as_posix() if source and source.is_file() else None
+    return list(found.values())
+
+
+def _take_glyph(course: dict, asset: dict) -> None:
+    """An icon of the set of the project: its SVG, copied as the produced asset (with creator, the media agent draws its PNG
+    with `media render` and uploads it to the content of each unit that shows it)."""
+    source = course["_project"].root / str(asset["source_icon"])
+    target = course["_dir"] / "media" / "files" / "icons" / f"{asset['title']}.svg"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source, target)
+    asset.update(status="produced", recipe="icon-set", file=f"media/files/icons/{target.name}", alt="")
+    asset.pop("note", None)
+
+
 STYLES = ("flat", "pixel-art", "3d", "isometric", "illustration", "photo")
 SIMULATION_KINDS = ("background", "layer", "portrait")  # the images of the simulations (their `kind` in the manifest)
 
@@ -337,7 +412,7 @@ def _extract(course: dict, data: dict) -> dict[str, int]:
         speaks = next((c["dialogue_units"] for c in characters if c["id"] == asset["id"]), None)
         if speaks:
             asset["dialogue_units"] = speaks
-    found = scan(course) + [a for a in characters if a["id"] not in of_simulations] + simulations
+    found = scan(course) + [a for a in characters if a["id"] not in of_simulations] + simulations + scan_icons(course)
     merged = []
     for asset in found:
         old = existing.pop(asset["id"], None)
@@ -348,6 +423,8 @@ def _extract(course: dict, data: dict) -> dict[str, int]:
                 old[k] = v
             if "dialogue_units" not in asset:
                 old.pop("dialogue_units", None)
+            if old.get("kind") == "glyph" and old.get("source_icon") and old.get("status") == "pending":
+                old.pop("note", None)
             if changed and old.get("status") not in (None, "pending"):
                 old["status"] = "pending"
                 old["note"] = "The placeholder changed in the content: produce it again"
@@ -370,6 +447,11 @@ def _extract(course: dict, data: dict) -> dict[str, int]:
     for asset in merged:
         if asset.get("avatar") and asset.get("status") in (None, "pending"):
             _take_avatar(course, asset)
+        if asset.get("kind") == "glyph" and asset.get("status") in (None, "pending"):
+            if asset.get("source_icon"):
+                _take_glyph(course, asset)
+            else:  # not in the set yet: drawn with the rules of the guide for icons, and added to the set
+                asset["note"] = t("media", "glyph_missing", name=asset["title"])
     by_status: dict[str, int] = {}
     for a in merged:
         by_status[a["status"]] = by_status.get(a["status"], 0) + 1
@@ -415,7 +497,7 @@ def missing_uploads(course: dict, asset: dict) -> list[int]:
         return []
     uploads = asset.get("uploads") or {}
     missing = []
-    for n in asset.get("dialogue_units") or []:
+    for n in asset.get("dialogue_units") or asset.get("units") or []:
         if n == asset.get("unit"):
             if not asset.get("asset_path"):
                 missing.append(n)
@@ -602,7 +684,7 @@ def narrate(course: dict, ids: list[str] | None = None, again: bool = False, say
     return done
 
 
-def stock(course: dict, asset_id: str, find: str | None = None, take: int | None = None, color: str | None = None,
+def stock(course: dict, asset_id: str, find: str | None = None, take: int | str | None = None, color: str | None = None,
           limit: int = 12) -> list[str]:
     """`coursekit media stock`: the illustrations of the illustration sources of the brand for a resource (`find`, in English),
     or one of them taken as its SVG (`take`), recoloured to the brand and recorded with where it comes from."""
@@ -615,10 +697,9 @@ def stock(course: dict, asset_id: str, find: str | None = None, take: int | None
     if not find and not take:
         raise MediaError(t("illustrations", "stock_needs"))
     cfg = config(course=course).get("stock") or {}
-    sources = illustrations.load(brand.folder(course["_project"], course))
-    if not any(s.get("author_id") for s in sources):
-        raise MediaError(t("illustrations", "no_sources"))
-    taken = cast("int", take)  # without find, take was required above
+    sources = [s for s in illustrations.load(brand.folder(course["_project"], course)) if s.get("author_id")]
+    # without sources of the brand, the whole catalogue of line illustrations (the guide and the previews of style/ say which fit)
+    taken = cast("int | str", take)  # without find, take was required above
     try:
         if find:
             found = illustrations.search(sources, find, color if color is not None else cfg.get("color"), limit)
@@ -648,6 +729,75 @@ def stock(course: dict, asset_id: str, find: str | None = None, take: int | None
                      source={"provider": "magnific", "resource": int(taken), "author": author, "url": about.get("url"),
                              "license": about.get("license"), "license_url": about.get("license_url")})
     return [t("illustrations", "taken", asset=asset_id, path=f"media/files/{out.name}", resource=take, author=author or "?", ink=ink)]
+
+
+def stock_photos(course: dict, asset_id: str, find: str | None = None, take: str | None = None) -> list[str]:
+    """`coursekit media stock --photos`: licensed photographs for a resource (`find`), or one of them taken as its file (`take`,
+    `provider:id`), with where it comes from and whether its licence asks for a credit (`media › photos`)."""
+    from coursekit import photos
+
+    _, _, data = load_manifest(course["_dir"])
+    if not any(a["id"] == asset_id for a in data["assets"]):
+        raise MediaError(t("media", "asset_not_found", asset_id=asset_id))
+    cfg = config(course=course).get("photos") or {}
+    providers = [str(p) for p in cfg.get("providers") or ["pexels", "magnific"]]
+    try:
+        if find:
+            found = photos.search(providers, find, coursemod.language(course), int(cfg.get("results") or 12),
+                                  cfg.get("orientation"), str(cfg.get("attribution") or "avoid"))
+            return [t("photos", "candidate", ref=f.ref, title=f.title or "—", author=f.author or "?", license=f.license,
+                      credit=t("photos", "credit_yes" if f.attribution else "credit_no"), preview=f.preview or f.url or "—")
+                    for f in found] or [t("photos", "none_found", term=find)]
+        if not take:
+            raise MediaError(t("photos", "stock_needs"))
+        url, source = photos.download_url(take)
+        body = photos.fetch(url)
+    except photos.PhotoError as exc:
+        raise MediaError(str(exc)) from None
+    suffix = ".png" if body[:8] == b"\x89PNG\r\n\x1a\n" else ".webp" if body[8:12] == b"WEBP" else ".jpg"
+    out = course["_dir"] / "media" / "files" / f"{asset_id}{suffix}"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_bytes(body)
+    with editing_manifest(course["_dir"]) as fresh:
+        saved = next((a for a in fresh["assets"] if a["id"] == asset_id), None)
+        if saved is None:
+            raise MediaError(t("media", "asset_not_found", asset_id=asset_id))
+        saved.update(file=f"media/files/{out.name}", recipe="stock-photo",
+                     source={k: source[k] for k in ("provider", "id", "title", "author", "author_url", "url", "license",
+                                                    "attribution")})
+    return [t("photos", "taken", asset=asset_id, path=f"media/files/{out.name}", ref=take, author=source.get("author") or "?",
+              credit=t("photos", "credit_yes" if source.get("attribution") else "credit_no"))]
+
+
+def icons(course: dict, find: str | None = None, base: bool = False, take: str | None = None) -> list[str]:
+    """`coursekit media icons`: the icons of the set of the project that say a term, or, with `base`, the shapes of the free set
+    to start from when the set lacks one (`take` downloads one to .cache/icons/base/, to be redrawn with the rules of the
+    brand)."""
+    from coursekit import brand
+    from coursekit import icons as iconsmod
+
+    brand_folder = brand.folder(course["_project"], course)
+    cfg = iconsmod.settings(config(course=course))
+    root = course["_project"].root
+    try:
+        if base and take:
+            out = iconsmod.base_take(cfg, take, brand_folder, root / ".cache" / "icons" / "base" / f"{take}.svg")
+            return [t("icons", "base_taken", name=take, path=out.relative_to(root).as_posix(),
+                      folder=iconsmod.folder(brand_folder).relative_to(root).as_posix())]
+        if not find:
+            raise MediaError(t("icons", "needs"))
+        if base:
+            found = iconsmod.base_find(cfg, find)
+            return [t("icons", "base_candidate", name=f["name"], tags=", ".join(f["tags"])) for f in found] \
+                or [t("icons", "none_found", term=find)]
+        entries = iconsmod.find(brand_folder, find)
+    except iconsmod.IconError as exc:
+        raise MediaError(str(exc)) from None
+    folder = iconsmod.folder(brand_folder)
+    if not entries:
+        return [t("icons", "none_in_set", term=find, sheet=(folder / iconsmod.SHEET).relative_to(root).as_posix())]
+    return [t("icons", "candidate", name=e["name"], path=(folder / e["file"]).relative_to(root).as_posix(),
+              words=", ".join(e["words"][:8])) for e in entries]
 
 
 def image_tool(course: dict, asset_id: str | None, action: str, size: str | None = None, file: str | None = None) -> str:
@@ -790,9 +940,11 @@ def optimize(course: dict, ids: list[str] | None = None) -> list[str]:
     return lines
 
 
-def adopt(course: dict, asset_id: str, source: str, alt: str | None = None) -> str:
-    """Takes a file that already exists (an image of an imported package, in the brief) as the produced asset `asset_id`:
-    it is copied to media/files/<id>.<ext> and the asset is marked produced, so it is not made again."""
+def adopt(course: dict, asset_id: str, source: str, alt: str | None = None, depicts: str | None = None) -> str:
+    """Takes a file that already exists (an image of an imported package, of a document or a website of the brief, or one a
+    person left in it) as the produced asset `asset_id`: it is copied to media/files/<id>.<ext> and the asset is marked
+    produced, so it is not made again. With `depicts: interface` it is a capture of a real application: real material, the
+    same as one a person provides. Where it comes from is recorded (`source`)."""
     _, _, data = load_manifest(course["_dir"])
     if not any(a["id"] == asset_id for a in data["assets"]):
         raise MediaError(t("media", "asset_not_found", asset_id=asset_id))
@@ -804,9 +956,18 @@ def adopt(course: dict, asset_id: str, source: str, alt: str | None = None) -> s
     target = course["_dir"] / "media" / "files" / f"{asset_id}{origin.suffix.lower()}"
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(origin, target)
+    with editing_manifest(course["_dir"]) as fresh:
+        saved = next((a for a in fresh["assets"] if a["id"] == asset_id), None)
+        if saved is not None:
+            where = origin.resolve()
+            for base in (course["_dir"], course["_project"].root):
+                if where.is_relative_to(base.resolve()):
+                    where = where.relative_to(base.resolve())
+                    break
+            saved["source"] = {"provider": "brief", "file": where.as_posix()}
     # a file that already exists was not made with the tokens of the theme: the guard of the media that use it does not apply
     return set_asset(course, asset_id, status="produced", recipe="imported", file=f"media/files/{target.name}", alt=alt,
-                     made_with="imported", force=True)
+                     made_with="imported", force=True, depicts=depicts)
 
 
 STALE = ("file", "alt", "transcript", "subtitles_path", "made_with")
@@ -946,6 +1107,8 @@ def _set_asset(course: dict, data: dict, asset_id: str, **values: Any) -> str:
     for key in ("status", "recipe", "asset_path", "file", "alt", "transcript", "subtitles_path", "made_with"):
         if values.get(key) is not None:
             asset[key] = values[key]
+    if values.get("provisional_path") is not None:  # the provisional image uploaded to creator, shown until the real one is
+        asset["provisional_path"] = values["provisional_path"]
     if values.get("file") and asset["type"] == JOB_AID:  # its weight goes under the title of the download
         local = course["_dir"] / "media" / str(values["file"]).removeprefix("media/")
         if local.is_file():

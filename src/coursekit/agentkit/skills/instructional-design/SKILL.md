@@ -110,6 +110,22 @@ sections the course needs, and justify it.
      reuse: <the error, as the learner would think it>
      year: <…>
    ```
+7b. **The visual plan** in `courses/<CODE>/design/visuals.yaml`: what the learner will *see* in each section, signed with the
+   design, so the writer does not decide it alone. One entry per visual resource, keyed by the section as
+   `coursekit sync <CODE> --check` prints it (`U1.S2`), with its type id and what it shows:
+
+   ```yaml
+   U1.S2:
+     - {type: image, what: <a capture of the screen of the step, or a photo of the situation>}
+     - {type: infographic, what: <the comparison it lays out>}
+   ```
+
+   By the kind of content: a procedure on a real screen, a capture per step (`image`); a situation of work, a photo
+   (`image`); an idea, an `illustration`; one sign, an `icon`; a comparison or a structure, an `infographic` or a `diagram`;
+   what moves, a `video`. Every unit carries at least {{photos_per_unit}} photograph or capture, and no more than
+   {{visual_mix_max_pct}} of its visuals are infographics or diagrams; about one visual for every {{visual_per_words}} words of
+   a section; the introduction and the summary, one each. Say in the proposal notes which applications the course will show
+   (their captures need a person to allow them before the media step: `coursekit capture plan <CODE>`).
 8. **Hours, last.** With the content defined, split the hours **by real load**: breadth, Bloom
    level (apply/analyse/evaluate need more time than remember), practice and activities. Never
    split evenly. `design_matrix_node_update_horas` on sections and units; the total must be

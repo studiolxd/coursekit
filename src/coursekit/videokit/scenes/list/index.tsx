@@ -5,14 +5,16 @@ import { SceneTitle } from "../../atoms/SceneTitle";
 import { Place, type Placing, type Titled } from "../../atoms/Place";
 import { Badge } from "../../atoms/Badge";
 import { Text } from "../../atoms/Text";
+import { Icon } from "../../atoms/Icon";
 import { useColor, useShapes } from "../../theme";
 import { useSteps } from "../../timing";
 import type { SceneProps } from "../../contract";
 
 // A list (steps, rules, keys): each item enters when the narration says it. Each item is marked with its number (`marker:
-// number`, by default), a bullet in the accent (`bullet`) or nothing (`none`).
-export type ListItem = { text: string; say?: string };
-export type ListProps = { kicker?: string; title: string; items: ListItem[]; marker?: "number" | "bullet" | "none" } & Placing & Titled;
+// number`, by default), a bullet in the accent (`bullet`), its icon of the set of the project (`icon`, each item its `icon`) or
+// nothing (`none`).
+export type ListItem = { text: string; say?: string; icon?: string };
+export type ListProps = { kicker?: string; title: string; items: ListItem[]; marker?: "number" | "bullet" | "icon" | "none" } & Placing & Titled;
 
 export default function List({ props }: SceneProps<ListProps>) {
   const times = useSteps(props.items.map((i) => i.say), 20, 14);
@@ -27,6 +29,7 @@ export default function List({ props }: SceneProps<ListProps>) {
           {props.items.map((item, i) => (
             <Enter key={i} at={times[i]} from="left" style={{ display: "flex", gap: 32, alignItems: "center" }}>
               {marker === "number" ? <Badge size={88}>{i + 1}</Badge> : null}
+              {marker === "icon" && item.icon ? <Icon src={item.icon} size={88} /> : null}
               {marker === "bullet" ? (
                 <div style={{ width: 26, height: 26, borderRadius: shapes.corner(13), background: color("accent-ink"), flex: "none" }} />
               ) : null}

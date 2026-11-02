@@ -142,3 +142,13 @@ media_style_not_approved: {es: "la guía de estilo de los recursos no está firm
 decorative_type:
   es: "{asset}: un recurso de tipo {type} no puede ser decorativo (solo {types}): explica algo, así que lleva texto alternativo"
   en: "{asset}: a resource of type {type} cannot be decorative (only {types}): it explains something, so it carries alternative text"
+provisional_made: {es: "{asset}: imagen provisional en {file}", en: "{asset}: provisional image in {file}"}
+provisional_none: {es: "ningún recurso visual pendiente: no hace falta ninguna imagen provisional", en: "no visual resource pending: no provisional image is needed"}
+glyph_description: {es: "El icono «{name}» del juego del proyecto, en las notas y los paneles del contenido", en: "The icon «{name}» of the set of the project, in the notes and panels of the content"}
+glyph_specs: {es: "SVG del juego de iconos del proyecto; con creator, su PNG (coursekit media render) subido al contenido de cada unidad que lo muestra", en: "SVG of the icon set of the project; with creator, its PNG (coursekit media render) uploaded to the content of each unit that shows it"}
+glyph_missing: {es: "el icono «{name}» no está en el juego del proyecto: dibújalo con las reglas de la guía para iconos, guárdalo en theme/branding/icons/{name}.svg y vuelve a ejecutar coursekit media extract", en: "the icon «{name}» is not in the set of the project: draw it with the rules of the guide for icons, save it in theme/branding/icons/{name}.svg and run coursekit media extract again"}
+coverage_line: {es: "U{n}: {seen}/{sections} apartados con un recurso visual producido · {done} producidos · {pending} por producir (van como imagen provisional)", en: "U{n}: {seen}/{sections} sections with a visual resource produced · {done} produced · {pending} to produce (they go in as provisional images)"}
+report_unit: {es: "Unidad {n} — {title}: {seen}/{sections} apartados se ven", en: "Unit {n} — {title}: {seen}/{sections} sections are seen"}
+report_type: {es: "  {type}: {done} producido(s), {pending} por producir, {planned} en el plan visual", en: "  {type}: {done} produced, {pending} to produce, {planned} in the visual plan"}
+report_no_visuals: {es: "  ningún recurso visual", en: "  no visual resource"}
+report_provisional: {es: "  con imagen provisional: {ids}", en: "  with a provisional image: {ids}"}

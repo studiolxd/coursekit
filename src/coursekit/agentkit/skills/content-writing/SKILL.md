@@ -41,7 +41,10 @@ Mandatory format: `.coursekit/docs/content-format.md`. Write in {{language_name}
 8. `courses/<CODE>/decisions.md`: what a person has already decided or checked in this course. Respect it and do not
    reopen it. Its **checked interface labels** are the texts of the real interface (menus, buttons, options): write them
    exactly as they are there. A label that is neither there nor in the brief gets a `<!-- VERIFICAR -->`.
-9. The style guide of the media (`theme/branding/media-style.md`, or the course's own in `courses/<CODE>/theme/branding/`):
+9. The visual plan of the design (`courses/<CODE>/design/visuals.yaml`, signed with it; the skeleton of each section shows it
+   after `visuals:`): write a placeholder for each visual it plans, in its section, next to the paragraph it supports. You may
+   add more; `coursekit verify` warns when a section carries fewer than its plan.
+10. The style guide of the media (`theme/branding/media-style.md`, or the course's own in `courses/<CODE>/theme/branding/`):
    read it before describing any resource, so that a placeholder never asks for what it forbids or advises against.
 
 **When the design is out of date** (it contradicts the brief, the notes, `decisions.md` or the real interface), do not
@@ -124,29 +127,55 @@ final summary under "Design out of date" so that a person decides.
   (they come out as checkboxes), at most one page. It is the procedure of the section summed up for the moment of doing it:
   short sentences in the imperative, no explanation of why (that is in the course), the same terms as the content. It does
   not count as words of the section. `coursekit verify` fails when it has no text.
-- **The visual support of every section.** Before you write a section, ask how the learner would *see* its idea, not only
-  read it, and pick what supports it best:
-  - an `{{t_image}}` that conveys the concept: a real scene, a place, an object that says the idea (never a generic one, a
-    person at a laptop): it comes from licensed stock or is generated;
-  - a **capture of the application** (also an `{{t_image}}`), when the section talks about a real screen (see below);
-  - an `{{t_illustration}}` of the concept, in the line of the reference illustrations of the brand. **One idea per
+- **The visual support of every section.** A course is seen, not only read: interactives order the text, but they are
+  not images. Before you write a section, decide what the learner will *see* in it, by the kind of content of each part:
+  - a **procedure on a real screen** (steps in an application): a **capture of the application** for each step that changes
+    the screen (an `{{t_image}}`; see the real-interface rule below), or a video of an official channel;
+  - a **situation of work** (a place, people doing the task, an object, a document): a **photograph** of that situation, an
+    `{{t_image}}` that shows the scene the text describes (licensed stock or generated), never a generic picture that could
+    go anywhere (a person at a laptop);
+  - an **idea or a concept**: an `{{t_illustration}}` in the line of the reference illustrations of the brand. **One idea per
     illustration, and its description defines everything that appears**: who (a person, or none) and each symbol, with what
     each one represents (a magnifying glass: the review; a padlock: the limit). The media agent draws that and nothing else,
     so leave no room for it to invent: do not write "some symbols" or "a few elements", name them, and do not stack several
     scenes or more symbols than the idea of the paragraph needs. Do not ask for facial expressions (the people of the
     illustration may have no face): express it with posture;
-  - an `{{t_icon}}`: one idea in one sign (a padlock, a checklist, a shield), made large and placed as an image;
-  - or something that explains: an infographic, a diagram, a video.
-  The introduction and the summary always carry one. A content section with an infographic, a diagram or a video needs no
-  more. A content section left without one says why, where it would have gone: `<!-- {{t_no_visual}}: reason -->` (for
-  example, the interactive already lays the ideas out). Interactives do not count: they are something else. Never one for its
-  own sake: one or two per section, each next to the paragraph it supports, and its description names the idea of that
-  paragraph, so the media agent can make it. `coursekit verify` checks it (the visual resources: {{visual_types}}).
+  - **one idea in one sign** (a rule, a warning, a category): an `{{t_icon}}`, made large and placed as an image;
+  - a **comparison, a structure or a process at a glance**: an infographic or a diagram; a **figure**, the figure made large
+    in an infographic;
+  - a **demonstration that moves** (how something is done, a change over time): a video or an animated GIF.
+  **Icons in the text**, from the icon set of the project (`coursekit media icons <CODE> --find "<words>"` lists it): a
+  `:::note` says its kind (`{{k_kind}}: {{w_tip}}`, `{{w_warning}}`, `{{w_info}}`, `{{w_example}}`) and gets the icon of that
+  kind; the panels of an accordion, tabs or a carousel whose items are of the same nature (the channels, the roles, the
+  tools) may each carry `{{k_icon}}: <name>` right under their `#### Title`. One icon per item when it says what the item
+  is, never as an ornament, and the same icon for the same thing in the whole course.
+  Lay them out with the text (`.coursekit/docs/content-format.md`, section 4): a capture goes **inside the slide of the
+  `:::carousel` of its step** (one per slide), a photo **beside the paragraph** it supports (`{{t_layout_field}}: {{t_layout_beside}}`),
+  several images of the same thing one after the other (they go together as a grid).
+  **A video of an official channel** (the maker of the application, the body behind a regulation) often shows a procedure
+  better than anything made for the course: before writing a placeholder for a tutorial of a real application, run
+  `coursekit videos find <CODE> "<what it shows>"` (the official channels of `rules › videos › channels`) and, when one shows
+  the same steps in the version the course teaches, write it on a line of its own, `> **[{{t_video}}]** <address> <what it
+  shows>`: it becomes a player in the course. On a site `rules › forbidden` lists, register it as below (`coursekit videos
+  propose`). Its language does not matter: the platform subtitles and translates.
+  Mix them: a unit that only carries infographics and diagrams reads as a manual. Every unit carries at least
+  {{photos_per_unit}} photograph(s) or capture(s) (`{{t_image}}`), and no more than {{visual_mix_max_pct}} of its visuals
+  are infographics or diagrams. A content section carries one visual for about every {{visual_per_words}} words of its own,
+  each next to the paragraph it supports. The introduction and the summary always carry one; a content section left without
+  any says why, where it would have gone: `<!-- {{t_no_visual}}: reason -->`, and only when no picture would help (never
+  "the interactive already lays it out": the interactive is not an image). Interactives do not count. Its description names
+  the idea of its paragraph, so the media agent can make it. `coursekit verify` warns of what falls short (the visual
+  resources: {{visual_types}}).
+  An image that only sets the scene is still worth having: "decorative" is only how its alternative text is written (the
+  media agent marks it), never a reason to leave it out.
 - Media placeholders with all their fields and accessibility; verify gives the minimum per unit (by hours) and of types.
-  **A resource that shows the screen of a real
-  application (a tutorial, a capture, a menu) comes from real material**: in "how it is made" say that it is a recording or
-  capture of the real application that a person provides (or a video of an official channel), never a drawing, animation or
-  recreation of its interface. Diagrams, infographics and scenes of ideas can be drawn.
+  **A resource that shows the screen of a real application (a tutorial, a capture, a menu) comes from real material**: in
+  "how it is made" say where it comes from, in this order: an image of the brief (`brief/images.md` lists those of the
+  documents, of the websites and those a person left, marking the ones that look like a screen: name its file) or of the official documentation of the maker; else a capture of the application installed on this machine (the
+  media agent makes it when a person allowed it) or one a person provides; or a video of an official channel. Never a
+  drawing, an animation or a recreation of its interface. When none exists yet, the placeholder stays: the course is built
+  with a provisional image in its place until the real one arrives, so never leave a capture out because it is hard to get.
+  Diagrams, infographics and scenes of ideas can be drawn.
 - Assessment: present each activity of `activities.assessment` in the relevant section (what it
   assesses, how it is graded, attempts). The detail and the question bank go in
   `assessment.md`: {{questions_per_objective}} questions per objective assessed by questionnaire. Of each activity the
@@ -207,7 +236,9 @@ The learner's working memory is small: the text spends it on understanding, not 
   a long one is grouped in phases, a slide each. Never a numbered list in the text (`coursekit verify` warns); a job aid
   keeps its numbered steps.
 - **Terms before the procedure:** the terms a procedure uses are defined before it, not halfway through.
-- **Nothing decorative:** no anecdote or medium that does not explain; the text that explains a medium goes next to it.
+- **Nothing that distracts:** no anecdote that does not explain, and every medium next to the paragraph it supports, with the
+  text that explains it beside it. A photo of the situation or a capture of the screen is not a distraction: it is how the
+  learner recognises it at work.
 - **Video and audio:** the voice does not read the text that is on screen; the screen shows what the voice explains.
 - **From the example to the problem:** for objectives of *apply* and above, a worked example, then a practice to complete,
   then the whole problem (the *demonstration* and *application* of the cycle).

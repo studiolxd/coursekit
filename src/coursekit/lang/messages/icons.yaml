@@ -1,0 +1,10 @@
+# The icon set of the project and the shapes of the free set (`coursekit media icons`, coursekit/icons.py).
+needs: {es: "media icons necesita --find TÉRMINOS (o --base --take NOMBRE)", en: "media icons needs --find TERMS (or --base --take NAME)"}
+candidate: {es: "{name} · {path} · {words}", en: "{name} · {path} · {words}"}
+none_in_set: {es: "ningún icono del juego del proyecto dice «{term}» (mira {sheet}): dibújalo con las reglas de la guía para iconos, partiendo si quieres de una forma del juego libre (coursekit media icons CODE --base --find …)", en: "no icon of the set of the project says «{term}» (look at {sheet}): draw it with the rules of the guide for icons, starting if you want from a shape of the free set (coursekit media icons CODE --base --find …)"}
+base_candidate: {es: "{name} · {tags}", en: "{name} · {tags}"}
+none_found: {es: "ninguna forma del juego libre para «{term}»: prueba con otras palabras en inglés", en: "no shape of the free set for «{term}»: try other words in English"}
+base_taken: {es: "{name}: forma de partida en {path}; redibújala con el trazo, las esquinas y la rejilla de la marca y guárdala en {folder}/{name}.svg (su licencia queda en {folder}/LICENSES.md)", en: "{name}: starting shape in {path}; redraw it with the stroke, corners and grid of the brand and save it in {folder}/{name}.svg (its licence is in {folder}/LICENSES.md)"}
+bad_name: {es: "«{name}» no es el nombre de un icono (minúsculas, cifras y guiones)", en: "«{name}» is not the name of an icon (lower case, digits and hyphens)"}
+not_in_base: {es: "«{name}» no está en {package}: búscalo antes con --find", en: "«{name}» is not in {package}: search it first with --find"}
+download_failed: {es: "no se pudo descargar {url}: {reason}", en: "could not download {url}: {reason}"}

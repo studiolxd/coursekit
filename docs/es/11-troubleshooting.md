@@ -75,7 +75,7 @@ La comprobación mira los tokens del proyecto (`theme/`); un curso con theme pro
 
 ### Multimedia
 
-Opcional. Instala lo que falte con `coursekit setup --media`: `ffmpeg`, `vhs`, `asciinema` (no disponible en Windows; las demos de terminal usan VHS), `piper`, `stable-ts` y `PIPER_VOICE` (ruta de la voz de borrador). Las cinco claves de API (`ELEVENLABS_API_KEY`, `AZURE_SPEECH_KEY`, `GOOGLE_TTS_API_KEY`, `GEMINI_API_KEY`, `MAGNIFIC_API_KEY`) muestran `ok` si están definidas e `info` si no; con `AZURE_SPEECH_KEY` definida y sin `AZURE_SPEECH_REGION`, una línea `falta` `AZURE_SPEECH_REGION` pide la región de tu recurso de Azure Speech. Además muestra dos líneas sobre lo que se instala una vez por equipo ([Dónde están las herramientas](07-media.md#dónde-están-las-herramientas)):
+Opcional. Instala lo que falte con `coursekit setup --media`: `ffmpeg`, `vhs`, `asciinema` (no disponible en Windows; las demos de terminal usan VHS), `piper`, `stable-ts` y `PIPER_VOICE` (ruta de la voz de borrador). Las siete claves de API (`ELEVENLABS_API_KEY`, `AZURE_SPEECH_KEY`, `GOOGLE_TTS_API_KEY`, `GEMINI_API_KEY`, `MAGNIFIC_API_KEY`, `PEXELS_API_KEY`, `YOUTUBE_API_KEY`) muestran `ok` si están definidas e `info` si no; con `AZURE_SPEECH_KEY` definida y sin `AZURE_SPEECH_REGION`, una línea `falta` `AZURE_SPEECH_REGION` pide la región de tu recurso de Azure Speech. Además muestra dos líneas sobre lo que se instala una vez por equipo ([Dónde están las herramientas](07-media.md#dónde-están-las-herramientas)):
 
 | Comprobación | Significado y solución |
 |---|---|

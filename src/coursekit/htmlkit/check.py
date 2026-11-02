@@ -82,7 +82,7 @@ def page_words(page: str) -> set[str]:
 
 def learner_text(path: Path, tokens: dict, assessment: bool) -> str:
     """The text of a content file as the learner reads it, without the syntax of the format."""
-    ignored_keys = {lang.directive_key(tokens, name) for name in ("objective", "image", "position")}
+    ignored_keys = {lang.directive_key(tokens, name) for name in ("objective", "image", "position", "kind", "icon")}
     key_re = re.compile(r"^\s*([a-zà-ÿ][a-zà-ÿ-]*):\s*(.*)$")
     kept: list[str] = []
     in_fence = in_placeholder = False
@@ -120,6 +120,10 @@ def learner_text(path: Path, tokens: dict, assessment: bool) -> str:
             if stripped.startswith(">"):
                 continue
             in_placeholder = False
+        video = re.match(r"^>\s*\*\*\[[^\]]+\]\*\*\s+https://\S+\s*(.*)$", stripped)
+        if video:  # a video of an official channel: its player, with its caption (its label is syntax)
+            kept.append(re.sub(r"\s*\(forbidden host:.*\)\s*$", "", video.group(1)))
+            continue
         if assessment and stripped.startswith("## "):
             in_published = False
         if re.match(r"^#{1,2} ", stripped) or stripped.startswith(":::") or stripped == "---":

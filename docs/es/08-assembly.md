@@ -102,6 +102,11 @@ El backend html construye sus páginas a partir de este mismo plan. Las claves d
 | Bloques de código | `CODE` (el lenguaje si se conoce y, si no, automático) |
 | Cita simple `> …` | `HIGHLIGHT` |
 | Directiva `:::nombre` | El brick del registro (tabla en [06-content.md](06-content.md)) |
+| Marcador de imagen con `Disposición: junto al texto`, seguido de un párrafo | `IMAGE_TEXT`: la imagen al lado de ese párrafo, con su pie |
+| Una línea `> **[Vídeo]** <dirección> <pie>` de YouTube, Vimeo o un fichero de vídeo | `VIDEO` con `videoUrl` y su pie ([Vídeos de canales oficiales](06-content.md#vídeos-de-canales-oficiales)) |
+| Dos o más marcadores de imagen seguidos, sin nada entre ellos | `IMAGE_GALLERY` (hasta cuatro) o `IMAGE_CAROUSEL` (más), cada imagen con su texto alternativo y su pie |
+| Un marcador dentro de un panel de `:::accordion`, `:::tabs` o `:::carousel` | El medio de ese panel (`mediaType`, `imagePath` e `imageAlt`, o `videoPath`), o su imagen provisional; mientras no hay ninguno, una línea en su texto |
+| Recurso visual sin subir, con su imagen provisional subida | `IMAGE` con la imagen provisional ([Imágenes provisionales](07-media.md#imágenes-provisionales)) |
 | Recurso multimedia sin subir | `NOTE` titulada `Recurso multimedia — <tipo>: <título>` (las primeras palabras son las del idioma del curso, y el tipo se escribe como en el contenido, por ejemplo `Infografía`), con descripción y especificaciones |
 | Recurso multimedia subido | Según el id del tipo: `image`, `infographic`, `diagram` y `animated_gif` pasan a `IMAGE`; `video` pasa a `VIDEO` (con subtítulos y transcripción si están registrados); `audio` pasa a `AUDIO`; `simulation` y `terminal_demo` pasan a `EMBED`; `job_aid` pasa a un `ATTACHMENT` (el PDF). Más un `ATTACHMENT` por cada descarga subida |
 | Etiquetas de objetivo, `---`, comentarios HTML | No se publican |
@@ -282,6 +287,8 @@ La página se construye con mejora progresiva. Las lecciones (una por apartado d
 | `scenario`, `conversation` | `SIMULATION` | La simulación jugada escena a escena: el fondo con sus capas y las zonas que se pueden pulsar (botones enfocables con la etiqueta como nombre), los retratos de los personajes, el texto con las variantes que se cumplen, las opciones como botones, el feedback de una decisión antes de seguir y, al final, el final, el debriefing, las decisiones tomadas, la puntuación (las evaluables) y los botones para volver al último punto de control (`decision_based.rewind`) y empezar de nuevo. Con una `skin`, la aplicación ([Pieles](06-content.md#pieles)) ocupa el lugar del fondo. Una `conversation` muestra el intercambio como un chat. Sin JavaScript: la situación inicial y sus opciones. Las imágenes aún sin producir se omiten (los retratos se sustituyen por iniciales) |
 | `:::if` / `:::else` | `CONDITIONAL` | Las dos ramas están en la página; el reproductor muestra la de `:::if` cuando todas las simulaciones que lee se han jugado y su condición se cumple, y si no la neutra (también sin JavaScript) |
 | Marcador de imagen, infografía, esquema o GIF animado (producido) | `IMAGE` | Figura con texto alternativo y pie |
+| Imagen junto a su texto, imágenes seguidas | `IMAGE_TEXT`, `IMAGE_GALLERY`, `IMAGE_CAROUSEL` | La imagen al lado del párrafo (una encima de otro en una pantalla estrecha); una rejilla de figuras; un carrusel de figuras |
+| Recurso visual aún sin producir | `IMAGE` | Su imagen provisional, dibujada con el tema ([Imágenes provisionales](07-media.md#imágenes-provisionales)) |
 | Marcador de vídeo (producido) | `VIDEO` | Vídeo con controles, pista de subtítulos (si hay un `.vtt`) y la transcripción en un `details` |
 | Marcador de audio (producido) | `AUDIO` | Audio con controles y la transcripción |
 | Marcador de simulación y de demo de terminal (producido) | `EMBED` | Un `iframe` de la carpeta del paquete (`media/<id>/index.html`) |

@@ -16,6 +16,7 @@ courses/PWD/
 │   ├── PWD-instructional-design.xlsx   the file people review
 │   ├── proposal-notes.md        notes of the design agent
 │   ├── misconceptions.yaml      common errors per objective, signed with the design
+│   ├── visuals.yaml             the visual plan: what the learner sees in each section, signed with the design
 │   └── validation.json          validation findings (optional)
 ├── content/
 │   └── unit-01/
@@ -154,13 +155,25 @@ A placeholder reserves the place of an image, video or other resource until it i
 
 The four fields are mandatory. The `<type>` is one of eleven resource types, written with the word of the course language (in English: `Image`, `Illustration`, `Icon`, `Video`, `Animated GIF`, `Infographic`, `Diagram`, `Interactive simulation`, `Interactive terminal demo`, `Audio`, `Job aid`; the Spanish words are in the table below). Each type also has an id (`image`, `illustration`, `icon`, `video`, `animated_gif`, `infographic`, `diagram`, `simulation`, `terminal_demo`, `audio`, `job_aid`) used in the configuration and the manifest. A **job aid** (a checklist or a quick guide the learner downloads as a PDF) has, after the four fields, its text in Markdown on lines that also start with `>` (`> ## Check`, `> - [ ] …` for a checkbox, `> 1. …`); its words do not count, and `verify` fails when it has none (see [Job aids](07-media.md#job-aids)). Production is explained in [07-media.md](07-media.md).
 
-**Visual support.** Every section is seen, not only read. Before writing one, the writer asks what would support its idea: an `Image` that conveys the concept (a real scene, a place, an object, never a generic one), a capture of the application when the section talks about a real screen, an `Illustration` in the line of the reference illustrations of the brand, an `Icon` made large (one idea in one sign), or an infographic, a diagram or a video. The introduction and the summary always carry one; a content section with an infographic, a diagram or a video needs no more; a content section left without one says why, with a comment where it would have gone:
+**Where a resource goes and how it is laid out.** Alone between paragraphs, it is a figure with its caption. An image placeholder with a fifth field, `> **Layout:** beside the text` (in a Spanish course `> **Disposición:** junto al texto`), goes beside the paragraph written right after it. Several placeholders in a row, with nothing between them, go together: as a grid up to four images, as a carousel of images beyond. Inside a panel of `:::accordion`, `:::tabs` or `:::carousel` (among the text of a `#### ` panel) a placeholder becomes the medium of that panel, one per panel: a procedure on a screen is a carousel whose every step carries its capture. In any other directive it would be lost, and `coursekit verify` fails; it fails too with two placeholders in one panel. Placeholders inside panels are numbered with those of their section, in the order they are written.
 
-```markdown
-<!-- NO IMAGE: the accordion already lays the three ideas out -->
+**The visual plan.** The design decides what the learner will see in each section, in `design/visuals.yaml`, signed with it by `coursekit approve design` (a later change asks for a new signature, as one of `matrix.json`):
+
+```yaml
+U1.S2:                         # unit 1, section 2, as `coursekit sync CODE --check` prints it
+  - {type: image, what: Capture of the settings window, with the minimum length field}
+  - {type: infographic, what: Length against complexity, side by side}
 ```
 
-(in a Spanish course, `<!-- SIN IMAGEN: … -->`). Interactives do not count. `coursekit verify` checks it (`content.visual_types`, `visual_sections` and `visual_decision`, see [Rules and real numbers](#rules-and-real-numbers)); the AI review judges whether each one carries its idea.
+`coursekit sync` shows each section's plan in its skeleton (`<!-- kind: content · … · visuals: Image: …; Infographic: … -->`), the writer writes a placeholder for each one, and `coursekit verify` warns when a section carries fewer visual resources than its plan, or when a key is not a section or a type is not visual.
+
+**Visual support.** Every section is seen, not only read, and interactives are not images. Before writing one, the writer decides what the learner will see in it, by the kind of content: a capture of the application for each step of a procedure on a real screen; a photograph (an `Image`) of a situation of work, a place or an object, never a generic one; an `Illustration` of an idea, in the line of the reference illustrations of the brand; an `Icon` made large for one idea in one sign; an infographic or a diagram for a comparison, a structure or a process at a glance; a video or an animated GIF for what moves. The introduction and the summary always carry one; a content section left without any says why, with a comment where it would have gone, only when no picture would help:
+
+```markdown
+<!-- NO IMAGE: a definition of three lines -->
+```
+
+(in a Spanish course, `<!-- SIN IMAGEN: … -->`). Interactives do not count. `coursekit verify` checks it (`content.visual_types`, `visual_sections` and `visual_decision`) and warns, never fails, when a unit falls short: a content section with one visual for more than `visual_per_words` words of its own, a unit with fewer than `photos_per_unit` photographs or captures (`photo_types`), and a unit with three visuals or more of which over `visual_mix_max` are infographics or diagrams (`drawn_types`); see [Rules and real numbers](#rules-and-real-numbers). The AI review adds the placeholders that are missing and judges whether each one carries its idea. An image that only sets the scene is worth having too: "decorative" only means it has no alternative text ([Decorative images](07-media.md#decorative-images)).
 
 ### What counts as a word
 
@@ -201,12 +214,23 @@ The keys of the `key: value` lines inside directives, and the few words some of 
 | Image of `labelled-graphic` | `image:` | `imagen:` |
 | Position of a point | `position:` | `posición:` |
 | Title of `note` | `title:` | `título:` |
+| Kind of `note` and icon of a note or a panel | `kind:` (`tip`, `warning`, `info`, `example`) · `icon:` | `tipo:` (`consejo`, `aviso`, `información`, `ejemplo`) · `icono:` |
 | Objective of a question | `objective:` | `objetivo:` |
 | Shuffle the options of a question (`single-choice`, `multi-select`, `sorting-groups`) | `shuffle: yes` · `shuffle: no` | `barajar: sí` · `barajar: no` |
 | Value of `true-false` | `true` · `false` | `verdadero` · `falso` |
 | Mode of a `pasapalabra` item | `(starts)` · `(contains)` | `(empieza)` · `(contiene)` |
 
 The directive **names** (`:::single-choice`, `:::tabs`…) are the same in both languages. A key that belongs to the other language is not ignored: `coursekit assemble plan` and `coursekit verify` fail with `the key 'pregunta:' belongs to the language 'es'; this course uses: …` and list the valid ones. The format reference that the agents read (`.coursekit/docs/content-format.md`) shows the words of the course language. A new language needs `media_types`, `directive_keys` and `directive_words` in its `lang/<code>.yaml` (see `CONTRIBUTING.md`).
+
+### Videos of official channels
+
+A video of an official channel (the maker of the application, the body behind a regulation) is written as a line of its own, not as a placeholder:
+
+```markdown
+> **[Video]** https://www.youtube.com/watch?v=abc123 How to set the minimum length of a password
+```
+
+The label is `Video` or the word of the course language (`Vídeo`); the text after the address is its caption. A YouTube or Vimeo address, or the address of a video file, becomes a player in the course (`VIDEO` with `videoUrl` in creator; the privacy-enhanced player of YouTube, `youtube-nocookie.com`, in the html backend, with the address under it for an LMS without internet); any other address stays as text. The writer finds them with [`coursekit videos find`](03-commands.md#coursekit-videos) among the official channels of `rules › videos › channels`; on a site `rules › forbidden` lists, the video has to be approved or proposed in `coursekit videos`, or `verify` fails.
 
 ### Doubts and VERIFICAR markers
 
@@ -310,13 +334,13 @@ Anything that does not follow these shapes fails when the unit is converted (`ve
 
 | Directive | Internal structure |
 |---|---|
-| `accordion`, `tabs`, `carousel` | One `#### Title` per panel, tab or slide, followed by Markdown text |
+| `accordion`, `tabs`, `carousel` | One `#### Title` per panel, tab or slide, followed by Markdown text; optionally `icon: <name>` right under the title (an icon of the set of the project, small above the text when the panel carries no other medium) and one media placeholder |
 | `timeline` | `#### <date> — <title>` per milestone (without ` — `, the whole line is the title) + text |
 | `flashcards`, `flashcard-gallery` | `#### Front` + text of the back |
 | `labelled-graphic` | `image: <exact title of the image placeholder>`, then `#### Point` + text; optional `position: x,y` (0–100) under each point |
 | `dialog` | `**Character:** line`, one per line |
 | `carousel-quotes` | One quote per paragraph, with `— author` on its last line |
-| `note` | Optional `title: …` line (default title: `Note`) + text |
+| `note` | Optional `title: …` line (default title: `Note`), optional `kind: tip`, `warning`, `info` or `example` (the icon of that kind of note, `media › icons › note`) or `icon: <name>` (an icon of the set of the project) + text |
 | `highlight` | Text |
 | `quote` | Quote + `— author` on the last line |
 | `reflection` | Optional `title: …` line (default title: `Think it over`) + two or three open questions; it goes in the summary section |
@@ -750,6 +774,7 @@ The numbers are the package defaults (`src/coursekit/defaults/rules.yaml`). A pr
 | Placeholder types | At least `min(min_placeholder_types, placeholders required)` different types | 4 (1 h needs 3) | error |
 | Placeholder form | Known type (a word of the course language) and the four fields present | 11 types | error |
 | Visual support | An introduction and a summary carry a visual resource; a content section carries one or a `<!-- NO IMAGE: reason -->` | `visual_sections: [intro, summary]`, `visual_decision: true` | error |
+| Amount and mix of visuals | A content section carries one visual for every `visual_per_words` words; a unit carries `photos_per_unit` photographs or captures, and no more than `visual_mix_max` of its visuals are infographics or diagrams | `visual_per_words: 1500`, `photos_per_unit: 1`, `visual_mix_max: 0.6` | warning |
 | Directives | Known name, closed, not nested | — | error |
 | Question objective | Every question directive has the objective key (`objective:` / `objetivo:`) | — | warning |
 | Common errors | Every error of `design/misconceptions.yaml` of the unit's objectives is in a distractor (`‹id›`) or a decision (`error:`); every id exists; no right option carries one | — | error (a distractor or a decision that loses points without one: warning) |

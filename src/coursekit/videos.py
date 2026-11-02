@@ -64,6 +64,14 @@ def forbidden_rules(course: dict) -> dict:
     return coursemod.rules(course).get("forbidden") or {}
 
 
+def official_channels(course: dict) -> list[str]:
+    """The official channels of the course: `rules › videos › channels` and `rules › forbidden › allow_channels`."""
+    rules = coursemod.rules(course)
+    found = [str(c).strip() for c in [*((rules.get("videos") or {}).get("channels") or []),
+                                       *((rules.get("forbidden") or {}).get("allow_channels") or [])] if str(c).strip()]
+    return list(dict.fromkeys(found))
+
+
 def load(course_dir: Path) -> list[dict]:
     path = course_dir / REGISTRY
     if not path.is_file():
@@ -163,7 +171,7 @@ def check(course: dict) -> list[dict]:
     """Registers every video of the content on a forbidden host: `approved` when its channel is official, else `pending`."""
     rules = forbidden_rules(course)
     hosts = [str(h).strip().lower().lstrip(".") for h in rules.get("hosts") or [] if str(h).strip()]
-    allowed = list(rules.get("allow_channels") or [])
+    allowed = official_channels(course)
     ids = allowed_ids(allowed)
     registry = {key(v["url"]): v for v in load(course["_dir"])}
     present = set()
@@ -255,3 +263,85 @@ def report(course: dict, lang: str) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(out), encoding="utf-8", newline="\n")
     return cast("Path", path)
+
+
+# ── finding a video on an official channel ─────────────────────────────────────────────────────
+
+YOUTUBE_API = "https://www.googleapis.com/youtube/v3"
+DURATION = re.compile(r"^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$")
+
+
+def _youtube(path: str, params: dict) -> dict:
+    import os
+
+    query = urllib.parse.urlencode({**params, "key": os.environ.get("YOUTUBE_API_KEY", "").strip()})
+    try:
+        return cast("dict", json.loads(http.request(f"{YOUTUBE_API}/{path}?{query}", timeout=30).body))
+    except http.HttpError as exc:
+        raise VideoError(t("videos", "youtube_failed", status=exc.status, detail=exc.detail(200))) from None
+    except http.NetworkError as exc:
+        raise VideoError(t("videos", "youtube_failed", status="-", detail=exc.reason)) from None
+
+
+def _minutes(iso: str) -> str:
+    m = DURATION.match(iso or "")
+    if not m:
+        return "?"
+    h, mi, se = (int(x or 0) for x in m.groups())
+    return f"{h * 60 + mi}:{se:02d}"
+
+
+def _channel_ids(channels: list[str]) -> list[str]:
+    """The ids (`UC…`) of the channels, by id, address or handle (a handle is asked to the YouTube API)."""
+    ids = list(allowed_ids(channels))
+    for entry in channels:
+        handle = entry.rsplit("/", 1)[-1] if entry.startswith("http") else entry
+        if handle.startswith("@") and not CHANNEL_ID.fullmatch(handle):
+            items = _youtube("channels", {"part": "id", "forHandle": handle}).get("items") or []
+            ids += [str(i["id"]) for i in items if i.get("id")]
+    return list(dict.fromkeys(ids))
+
+
+def find(course: dict, query: str, limit: int = 5) -> list[dict]:
+    """Videos of the official channels of the course that match `query`: with `YOUTUBE_API_KEY`, the search of YouTube inside each
+    channel; without it, the search provider of `coursekit research`, keeping only the videos whose channel is official."""
+    import os
+
+    channels = official_channels(course)
+    if not channels:
+        raise VideoError(t("videos", "no_channels"))
+    language = coursemod.language(course)
+    found: list[dict] = []
+    if os.environ.get("YOUTUBE_API_KEY", "").strip():
+        for channel in _channel_ids(channels):
+            items = _youtube("search", {"part": "snippet", "channelId": channel, "q": query, "type": "video", "maxResults": limit,
+                                        "relevanceLanguage": language}).get("items") or []
+            found += [{"url": f"https://www.youtube.com/watch?v={i['id']['videoId']}", "title": i["snippet"].get("title", ""),
+                       "channel": i["snippet"].get("channelTitle", ""), "date": str(i["snippet"].get("publishedAt", ""))[:10]}
+                      for i in items if (i.get("id") or {}).get("videoId")]
+        if found:
+            details = _youtube("videos", {"part": "contentDetails,snippet", "id": ",".join(key(v["url"]).split(":")[1] for v in found)})
+            by_id = {str(i["id"]): i for i in details.get("items") or []}
+            for v in found:
+                item = by_id.get(key(v["url"]).split(":")[1]) or {}
+                v["duration"] = _minutes((item.get("contentDetails") or {}).get("duration", ""))
+                v["language"] = (item.get("snippet") or {}).get("defaultAudioLanguage") or "?"
+        return found
+    from coursekit import research
+
+    try:
+        results = research.search(course, f"{query} YouTube", fact=False).results
+    except research.NoProvider:
+        raise VideoError(t("videos", "no_search")) from None
+    ids = allowed_ids(channels)
+    for result in results:
+        if not on_host(result.url, ["youtube.com", "youtu.be", "vimeo.com"]):
+            continue
+        info = oembed(result.url)
+        owner = {"name": info["name"], "url": info["url"]} if info else None
+        if owner and ids and not official(owner, channels):
+            owner["id"] = channel_id(owner["url"]) or ""
+        if official(owner, channels, ids):
+            found.append({"url": result.url, "title": (info or {}).get("title", ""), "channel": (owner or {}).get("name", ""),
+                          "date": result.date or "", "duration": "?", "language": result.language or "?"})
+    return found

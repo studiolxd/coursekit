@@ -315,6 +315,50 @@ def capturable(course: dict) -> list[str]:
     return out
 
 
+def interface_waiting(course: dict) -> list[dict]:
+    """The resources that show (or, by what their placeholder says, will show) a real interface and have no real material yet:
+    what the captures of the course are for."""
+    _, _, data = mediamod.load_manifest(course["_dir"])
+    words = [str(w).casefold() for w in coursemod.tokens(course).get("interface_words") or []]
+    out = []
+    for asset in data["assets"]:
+        if asset.get("status") in ("produced", "uploaded", "orphaned") or asset.get("kind"):
+            continue
+        said = f"{asset.get('how') or ''} {asset.get('description') or ''}".casefold()
+        if asset.get("depicts") == "interface" or (not asset.get("depicts") and any(re.search(rf"\b{re.escape(w)}", said) for w in words)):
+            out.append(asset)
+    return out
+
+
+def plan(project: Project, course: dict) -> list[str]:
+    """`coursekit capture plan`: what the captures of a course need before the media step, so that a person gives it in time:
+    the resources that wait for a real interface, whether capture is on, the permission in force and the profiles to log in."""
+    waiting = interface_waiting(course)
+    if not waiting:
+        return [t("capture", "plan_nothing", code=course["code"])]
+    lines = [t("capture", "plan_resources", count=len(waiting), code=course["code"])]
+    lines += [t("capture", "plan_resource", id=a["id"], title=a.get("title") or "", how=a.get("how") or "—") for a in waiting]
+    cfg = settings(project)
+    if not cfg.get("enabled"):
+        return lines + [t("capture", "plan_disabled")]
+    found = grants(project, course["code"])
+    if found:
+        lines.append(t("capture", "plan_granted", modes=", ".join(sorted(found)),
+                       until=min((g["expires_at"] or "") for g in found.values()) or t("capture", "no_expiry")))
+        ready_ids = set(capturable(course))
+        if ready_ids:
+            lines.append(t("capture", "plan_capturable", ids=", ".join(sorted(ready_ids))))
+    else:
+        lines.append(t("capture", "plan_allow", code=course["code"]))
+    entries = [e for e in profiles(project) if e["configured"]]
+    for entry in entries:
+        if entry["login"] and not entry["logged_in_at"]:
+            lines.append(t("capture", "plan_login", name=entry["name"], url=entry["start_url"] or "—"))
+    if not entries:
+        lines.append(t("capture", "plan_no_profiles"))
+    return lines
+
+
 def mount_stage(project: Project, course: dict, name: str, prepare: list[str]) -> Workspace:
     """Mounts a stage of the course to look at it or try it (`coursekit capture stage`): it runs the commands of the stage, so
     it needs the permission of a person to capture in terminal mode."""

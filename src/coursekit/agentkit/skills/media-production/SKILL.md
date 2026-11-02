@@ -26,10 +26,14 @@ produced: when `coursekit media plan` warns that it is not, stop and ask the per
 Read also the `notes.md` next to the guide (the person's indications the guide was written from): where they and the guide
 differ, the notes win; say so in your report, so that the guide is written again.
 
-**An icon the brand's library lacks.** Look for it in the library first (also under other names). If it is not there, draw
-it with the rules of the guide for icons (grid, stroke, joins, corners, live area), measured on the icons of the library,
-never with another set; save it in `media/files/icons/<name>.svg` and list it in your report under "Icons drawn", so that a
-person can add it to the library of the brand.
+**Icons come from the set of the project**, never from a generic set: `coursekit media icons <CODE> --find "<words>"` lists
+the icons of `theme/branding/icons/` that say it (also under other names; its contact sheet, `icons/sheet.svg`, shows them
+all). When the set lacks one, draw it with the rules of the guide for icons (grid, stroke, joins, corners, live area),
+measured on the icons of the set. You may start from the shape of a free icon: `coursekit media icons <CODE> --base --find
+"<words in English>"` lists them and `--base --take <name>` downloads one to `.cache/icons/base/`; redraw it with the stroke,
+corners and grid of the brand (never use it as it is). Save it in the set, `theme/branding/icons/<name>.svg` (the course's
+own brand folder when it has one), with a `<title>` that says what it means, so the next course finds it, and list it in
+your report under "Icons drawn".
 
 {{> _slxd-tools}}
 
@@ -54,6 +58,10 @@ person can add it to the library of the brand.
 
 ## 1.1 What a resource shows: the interface of a real application is never invented
 
+`coursekit capture plan <CODE>` says which resources wait for a capture of a real application and what is missing to make
+them (capture turned on, the permission, the session of a profile): tell the person at the start of your work, so they can
+give it while you produce the rest.
+
 Before producing a resource of the types in `media › depicts › required_for` (image, infographic, diagram, GIF, video), decide
 what it shows and record it: `coursekit media set <CODE> <id> --depicts interface|concept`.
 
@@ -66,7 +74,18 @@ what it shows and record it: `coursekit media set <CODE> <id> --depicts interfac
   recipe. The decision-based simulations (`:::scenario`, `:::conversation`) are the only place where an invented interface is
   fine: there the application is fictional and the course says so.
 
-What you may do with an `interface` resource, in this order:
+What you may do with an `interface` resource, in this order (a resource is never left out: until one of these exists, the
+course carries its provisional image, section 4):
+
+0. **An image of the brief** that shows that screen: `brief/images.md` lists the images of the documents and of the
+   websites of the brief (the material of the client and the official documentation) and those a person left, and marks the
+   ones that look like a capture. When one shows what the resource needs, in the version the course teaches, adopt it:
+   `coursekit media adopt <CODE> <id> --file <its file> --depicts interface --alt "…"` (crop it and mark it as a capture,
+   never redraw it). Never an image of anywhere else: no blog, no forum, no documentation that is not official. When the
+   official documentation of the maker shows that screen and is not in the brief yet, add its page to
+   `courses/<CODE>/brief/links.md` after the comment `<!-- added by the media agent -->` (only the maker's own help or
+   manual), run `coursekit brief <CODE>`, and adopt its image from `brief/images.md`; list each page you added in your
+   report under "Sources added", for a person to check.
 
 1. **A video of an official channel** (the producer of the application): it is not an asset to produce but an address in the
    content (`coursekit videos`, see the writing skill), which you cannot change. Look for it (`WebSearch`, `WebFetch`) among the
@@ -102,7 +121,10 @@ What you may do with an `interface` resource, in this order:
    small text; `mark`, with a `note`, on the whole box of a detail the narration will name and the shape that fits it
    (`rect`, `round` or `ellipse`): the video zooms only as close as that box fits and draws the mark around all of it; only
    for a detail, as above, and never `point` alone for something larger than a word), `save_shot` when the screen is the one the resource needs (for a video, `record_start` and `record_stop`
-   around the steps it shows), and `session_end`. The personal data on screen is already replaced with invented data: never
+   around the steps it shows), and `session_end`. **One walk, every capture**: when several captures of the course show the
+   same application (the steps of a procedure), write their briefs together and start one session for the first; on the way,
+   `save_shot` with the `asset_id` of each other capture saves it as that one's (each needs the permission and its approved
+   script, as the first), so a unit is captured in one pass instead of one session per image. The personal data on screen is already replaced with invented data: never
    try to undo it, never log in or type a password or a code, never leave the application. If a tool says that the
    permission or the session is gone, stop and tell the person what to run. The capture then waits for a person
    (`coursekit capture review` and `approve`; in the handoff, coursekit approves it when your run ends, and you compose it in
@@ -147,8 +169,8 @@ What you may do with an `interface` resource, in this order:
    click or type, what must be on screen at each moment, with the labels as the application shows them); how long each one
    takes; the narration, sentence by sentence, ready to be spoken over the recording; the file name and format to deliver
    (`media/recordings/<id>.mp4`, 1920 × 1080, no personal data on screen; for a terminal demo `media/recordings/<id>.cast`) and, for a video, what to highlight and where to
-   zoom. Never mark it `produced`. The handoff does not stop for it: the course is assembled with the placeholder showing,
-   and the final report lists every resource that waits for a person.
+   zoom. Never mark it `produced`. The handoff does not stop for it: the course is assembled with its provisional image in
+   place (step 4), and the final report lists every resource that waits for a person.
 
 If you doubt whether a resource shows a real interface, it does: classify it `interface`.
 
@@ -216,6 +238,15 @@ credits.
     if it fits the visual style of the course (`visual.style`) and the other images of the unit (one stock photograph
     among illustrations stands out), shows nothing that contradicts the text and, when it shows people, varied people. If
     nothing fits, generate it as a necessary one. Record it with `--decorative`: no alt text and no caption.
+  - **A photograph** of a situation of work, a place, people or an object the text describes (`only: photo` in the plan):
+    look in licensed stock before generating anything. `coursekit media stock <CODE> <id> --photos --find "<terms>"` lists
+    the photographs of the providers with a key (Pexels, Magnific; terms in the language of the course or in English), those
+    that ask for no credit first; look at their previews and take the one that shows what the description asks with
+    `--take <provider:id>`. **Prefer a photograph that asks for no credit**; take one that asks for it only when none of the
+    others fits, and say so in your report: its credit goes in its caption by itself. Then the alternative text and
+    `coursekit media set … --status produced --recipe stock-photo --depicts concept`. With creator, `search_stock_images` is
+    one more source. A photograph that fits the text and the other images of the unit (people as varied as the audience,
+    nothing that contradicts the content) is never generated instead.
   - **Necessary**: it shows something specific of the content. The style guide says how each kind of illustration looks;
     the script of the resource says which kind it is (the guide of a course can add kinds):
     - a **concept illustration** goes with a concept of the content and reinforces it. When the brand has illustration
@@ -243,9 +274,14 @@ credits.
   each illustration, whether it was taken or generated and, if generated, what you searched and why you discarded it. The
   description defines what appears (people and symbols): draw that and nothing else, no extra accessories or objects. It
   tells the idea its description names; never a generic picture.
-- **Icon (`icon`)** — one idea in one sign, large: the icon of the library of the brand that says it (also under other
-  names), or one of the catalogue of creator (`search_stock_icons`) in the line of the brand, or one you draw with the rules
-  of the guide for icons (above). Place it large, centred, in the theme colours, on a soft shape of the accent with room
+- **Icons of the text (`ICON-<name>`, kind `glyph`)** — the icons the notes and the panels of the content use. `coursekit
+  media extract` takes each one from the set of the project as it is (produced); one the set lacks waits with a note: draw
+  it (above), save it in the set and run `extract` again. With creator, draw its PNG (`coursekit media render <CODE>
+  ICON-<name> --size 96x96`, in the colour of the text), upload it to the content of every unit that shows it (`units` in
+  the manifest; `--unit N --asset-path` for each other unit, as a portrait) and record it `uploaded`. With html nothing
+  more is needed.
+- **Icon (`icon`)** — one idea in one sign, large: the icon of the set of the project that says it (`coursekit media icons`,
+  also under other names), or one you draw with the rules of the guide for icons and add to the set (above). Place it large, centred, in the theme colours, on a soft shape of the accent with room
   around it, and export it as PNG (`media/src/<id>.svg` as the source); the alt text says the idea, not "icon of".
 - **Infographic, Diagram** — SVG written by you, with the colours and fonts of `tokens.json`,
   real text in {{language_name}}, `<title>` and `<desc>` for accessibility, readable at 1280 px.
@@ -270,7 +306,7 @@ credits.
      (`config/video.yaml › scenes`): the values of each prop and its default; a scene it leaves out is not used, and
      `coursekit video check` refuses a value it does not allow;
   2. none does: **create one**, composed from the atoms and molecules of the library (`Heading`, `Text`, `Enter`, `Stagger`,
-     `Underline`, `Counter`, `MediaSlot`, `Ring`, `Background`, `Card`, `Badge`, `Arrow`, `TitleBlock`, `BulletList`,
+     `Underline`, `Counter`, `MediaSlot`, `Ring`, `Background`, `Card`, `Badge`, `Arrow`, `Icon` (an icon of the set of the project, `files/icons/<name>.svg`), `TitleBlock`, `BulletList`,
      `StatBlock`, `CompareColumn`, `StepNode`, `ScreenRecording`;
      read the scenes of `tools/remotion/kit/scenes/` to see how they are put together). A scene is a folder with
      `index.tsx` (`export default` a component that receives `{props}`, importing from `"../../../kit"`) and `scene.yaml`
@@ -398,5 +434,13 @@ Assets are **not approved one by one**: they are validated in the assembled cour
    `media/<file>`), all of them before the folder is written in a brick (creator reads the manifest then), then `coursekit media set <CODE> SIM-<id> --status uploaded --asset-path
    <embedFolderPrefix> --file media/src/SIM-<id>/index.html`. Build and upload it again whenever the simulation or its images
    change.
-2. `/assemble <CODE> <N>` replaces each placeholder with its media block.
-3. Summarise for the person what was produced and with what, to review it in the preview.
+2. **Provisional images (creator).** A visual resource you could not produce (it waits for a capture, a recording or a
+   person) is never left out of the course: `coursekit media provisional <CODE>` writes, for each one still pending, a
+   provisional image in the theme of the course (`media/placeholders/<id>.png`: its type, its title and what is missing).
+   Upload each PNG to the content of its unit like any image (`request_asset_upload`, kind image, and `coursekit media
+   upload`) and record it with `coursekit media set <CODE> <id> --provisional-path <path>`: the asset stays pending, and the
+   assembly shows that image until the real one is uploaded. With the html backend there is nothing to do: the build draws
+   them. List them in your report.
+3. `/assemble <CODE> <N>` replaces each placeholder with its media block (or its provisional image).
+4. Summarise for the person what was produced and with what, and what went in as a provisional image, to review it in
+   the preview.

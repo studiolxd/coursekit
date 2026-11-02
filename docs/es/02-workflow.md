@@ -230,6 +230,7 @@ Qué hace la conversión:
 |---|---|
 | Árbol de páginas | Un encabezado por página (`##`, `###`…); las páginas sin contenido se omiten |
 | Texto, listas, tablas, imágenes | Markdown; las imágenes se copian a `brief/text/media/<paquete>/` |
+| Una galería de imágenes (imágenes una al lado de otra, cada una enlazada a sí misma) | Las imágenes en su orden, una por párrafo, sin los enlaces de dentro del paquete |
 | `exe-accordion`, `exe-tabs`, `exe-carousel` (en cualquier iDevice) | `:::accordion`, `:::tabs`, `:::carousel`, un `#### Título` por panel (una diapositiva sin título recibe su número) |
 | Tarjetas, juego de relacionar, mapa | `:::flashcards`, `:::match`, `:::labelled-graphic` (con la posición de cada punto) |
 | Elección múltiple, selección múltiple, verdadero o falso | `:::single-choice`, `:::multi-select`, `:::true-false`, con el feedback de las opciones; las preguntas llegan sin objetivo, que asigna el diseño |

@@ -15,6 +15,7 @@ courses/PWD/
 │   ├── matrix.json              diseño instruccional, tal como se exporta de la plataforma
 │   ├── PWD-instructional-design.xlsx   el fichero que revisan las personas
 │   ├── proposal-notes.md        notas del agente de diseño
+│   ├── visuals.yaml             el plan visual: lo que ve el alumnado en cada apartado, firmado con el diseño
 │   ├── misconceptions.yaml      errores típicos por objetivo, firmados con el diseño
 │   └── validation.json          hallazgos de la validación (opcional)
 ├── content/
@@ -154,13 +155,25 @@ Un recurso multimedia reserva el sitio de una imagen, un vídeo u otro recurso h
 
 Los cuatro campos son obligatorios. El `<tipo>` es uno de once tipos de recurso, escrito con la palabra del idioma del curso (en español: `Imagen`, `Ilustración`, `Icono`, `Vídeo`, `GIF animado`, `Infografía`, `Esquema/Diagrama`, `Simulación interactiva`, `Demo interactiva en terminal`, `Audio`, `Ayuda de trabajo`; las palabras en inglés están en la tabla siguiente). Cada tipo tiene además un id (`image`, `illustration`, `icon`, `video`, `animated_gif`, `infographic`, `diagram`, `simulation`, `terminal_demo`, `audio`, `job_aid`) que se usa en la configuración y en el manifiesto. Una **ayuda de trabajo** (una lista de comprobación o una guía rápida que el alumno descarga en PDF) lleva, después de los cuatro campos, su texto en Markdown en líneas que también empiezan por `>` (`> ## Comprueba`, `> - [ ] …` para una casilla, `> 1. …`); sus palabras no cuentan, y `verify` falla cuando no tiene texto (ver [Ayudas de trabajo](07-media.md#ayudas-de-trabajo)). La producción se explica en [07-media.md](07-media.md).
 
-**Apoyo visual.** Cada apartado se ve, no solo se lee. Antes de escribirlo, quien redacta se pregunta qué apoyaría su idea: una `Imagen` que transmita el concepto (una escena real, un lugar, un objeto, nunca uno genérico), una captura de la aplicación cuando el apartado habla de una pantalla real, una `Ilustración` en la línea de las ilustraciones de referencia de la marca, un `Icono` en grande (una idea en un signo), o una infografía, un esquema o un vídeo. La introducción y el resumen llevan siempre uno; un apartado de contenido con una infografía, un esquema o un vídeo no necesita más; un apartado de contenido que se queda sin ninguno dice por qué, con un comentario donde habría ido:
+**Dónde va un recurso y cómo se maqueta.** Solo entre párrafos, es una figura con su pie. Un marcador de imagen con un quinto campo, `> **Disposición:** junto al texto` (en un curso en inglés `> **Layout:** beside the text`), va al lado del párrafo que se escribe justo después. Varios marcadores seguidos, sin nada entre ellos, van juntos: en rejilla hasta cuatro imágenes y, si son más, en un carrusel de imágenes. Dentro de un panel de `:::accordion`, `:::tabs` o `:::carousel` (entre el texto de un panel `#### `), un marcador pasa a ser el medio de ese panel, uno por panel: un procedimiento sobre una pantalla es un carrusel en el que cada paso lleva su captura. En cualquier otra directiva se perdería, y `coursekit verify` falla; también falla con dos marcadores en un mismo panel. Los marcadores de dentro de los paneles se numeran con los de su apartado, en el orden en que se escriben.
 
-```markdown
-<!-- SIN IMAGEN: el acordeón ya ordena las tres ideas -->
+**El plan visual.** El diseño decide qué verá el alumnado en cada apartado, en `design/visuals.yaml`, firmado con él por `coursekit approve design` (un cambio posterior pide una firma nueva, como uno de `matrix.json`):
+
+```yaml
+U1.S2:                         # unidad 1, apartado 2, como lo imprime `coursekit sync CODE --check`
+  - {type: image, what: Captura de la ventana de configuración, con el campo de longitud mínima}
+  - {type: infographic, what: Longitud frente a complejidad, una al lado de otra}
 ```
 
-(en un curso en inglés, `<!-- NO IMAGE: … -->`). Las interactividades no cuentan. `coursekit verify` lo comprueba (`content.visual_types`, `visual_sections` y `visual_decision`, mira [Reglas y cifras reales](#reglas-y-cifras-reales)); la revisión con IA juzga si cada uno lleva su idea.
+`coursekit sync` muestra el plan de cada apartado en su esqueleto (`<!-- kind: content · … · visuals: Imagen: …; Infografía: … -->`), quien redacta escribe un marcador para cada uno, y `coursekit verify` avisa cuando un apartado lleva menos recursos visuales que su plan, o cuando una clave no es un apartado o un tipo no es visual.
+
+**Apoyo visual.** Cada apartado se ve, no solo se lee, y las interactividades no son imágenes. Antes de escribirlo, quien redacta decide qué verá el alumnado, según el tipo de contenido: una captura de la aplicación para cada paso de un procedimiento sobre una pantalla real; una fotografía (una `Imagen`) de una situación de trabajo, un lugar o un objeto, nunca una genérica; una `Ilustración` de una idea, en la línea de las ilustraciones de referencia de la marca; un `Icono` en grande para una idea en un signo; una infografía o un esquema para una comparación, una estructura o un proceso de un vistazo; un vídeo o un GIF animado para lo que se mueve. La introducción y el resumen llevan siempre uno; un apartado de contenido que se queda sin ninguno dice por qué, con un comentario donde habría ido, solo cuando ninguna imagen ayudaría:
+
+```markdown
+<!-- SIN IMAGEN: una definición de tres líneas -->
+```
+
+(en un curso en inglés, `<!-- NO IMAGE: … -->`). Las interactividades no cuentan. `coursekit verify` lo comprueba (`content.visual_types`, `visual_sections` y `visual_decision`) y avisa, sin fallar nunca, cuando una unidad se queda corta: un apartado de contenido con un visual para más de `visual_per_words` palabras suyas, una unidad con menos de `photos_per_unit` fotografías o capturas (`photo_types`), y una unidad con tres visuales o más de los que más de `visual_mix_max` son infografías o esquemas (`drawn_types`); mira [Reglas y cifras reales](#reglas-y-cifras-reales). La revisión con IA añade los marcadores que faltan y juzga si cada uno lleva su idea. Una imagen que solo ambienta también merece la pena: «decorativa» solo quiere decir que no lleva texto alternativo ([Imágenes decorativas](07-media.md#imágenes-decorativas)).
 
 ### Qué cuenta como palabra
 
@@ -201,12 +214,23 @@ Las claves de las líneas `clave: valor` dentro de las directivas, y las pocas p
 | Imagen de `labelled-graphic` | `image:` | `imagen:` |
 | Posición de un punto | `position:` | `posición:` |
 | Título de `note` | `title:` | `título:` |
+| Tipo de `note` e icono de una nota o un panel | `kind:` (`tip`, `warning`, `info`, `example`) · `icon:` | `tipo:` (`consejo`, `aviso`, `información`, `ejemplo`) · `icono:` |
 | Objetivo de una pregunta | `objective:` | `objetivo:` |
 | Barajar las opciones de una pregunta (`single-choice`, `multi-select`, `sorting-groups`) | `shuffle: yes` · `shuffle: no` | `barajar: sí` · `barajar: no` |
 | Valor de `true-false` | `true` · `false` | `verdadero` · `falso` |
 | Modo de un elemento de `pasapalabra` | `(starts)` · `(contains)` | `(empieza)` · `(contiene)` |
 
 Los **nombres** de las directivas (`:::single-choice`, `:::tabs`…) son los mismos en los dos idiomas. Una clave que pertenece al otro idioma no se ignora: `coursekit assemble plan` y `coursekit verify` fallan con `la clave 'question:' es del idioma «en»; en este curso se usan: …` y enumeran las válidas. La referencia de formato que leen los agentes (`.coursekit/docs/content-format.md`) muestra las palabras del idioma del curso. Un idioma nuevo necesita `media_types`, `directive_keys` y `directive_words` en su `lang/<código>.yaml` (consulta `CONTRIBUTING.md`).
+
+### Vídeos de canales oficiales
+
+Un vídeo de un canal oficial (quien hace la aplicación, el organismo que publica una norma) se escribe en una línea propia, no como marcador:
+
+```markdown
+> **[Vídeo]** https://www.youtube.com/watch?v=abc123 Cómo fijar la longitud mínima de una contraseña
+```
+
+La etiqueta es `Vídeo` o `Video`; el texto después de la dirección es su pie. Una dirección de YouTube o de Vimeo, o la de un fichero de vídeo, pasa a ser un reproductor en el curso (`VIDEO` con `videoUrl` en creator; el reproductor de YouTube con privacidad mejorada, `youtube-nocookie.com`, en el backend html, con la dirección debajo para un LMS sin internet); cualquier otra dirección queda como texto. Quien redacta los busca con [`coursekit videos find`](03-commands.md#coursekit-videos) en los canales oficiales de `rules › videos › channels`; en un sitio que `rules › forbidden` lista, el vídeo tiene que estar aprobado o propuesto en `coursekit videos`, o `verify` falla.
 
 ### Dudas y marcas VERIFICAR
 
@@ -310,13 +334,13 @@ Lo que no siga estas formas falla al convertir la unidad (`verify` lo indica).
 
 | Directiva | Estructura interna |
 |---|---|
-| `accordion`, `tabs`, `carousel` | Un `#### Título` por panel, pestaña o diapositiva, seguido de texto Markdown |
+| `accordion`, `tabs`, `carousel` | Un `#### Título` por panel, pestaña o diapositiva, seguido de texto Markdown; opcionalmente `icono: <nombre>` justo bajo el título (un icono del juego del proyecto, pequeño encima del texto cuando el panel no lleva otro medio) y un marcador multimedia |
 | `timeline` | `#### <fecha> — <título>` por hito (sin ` — `, toda la línea es el título) + texto |
 | `flashcards`, `flashcard-gallery` | `#### Anverso` + texto del reverso |
 | `labelled-graphic` | `imagen: <título exacto del recurso de imagen>`, después `#### Punto` + texto; opcional `posición: x,y` (0–100) bajo cada punto |
 | `dialog` | `**Personaje:** línea`, una por línea |
 | `carousel-quotes` | Una cita por párrafo, con `— autor` en su última línea |
-| `note` | Línea opcional `título: …` (título por defecto: `Nota`) + texto |
+| `note` | Línea opcional `título: …` (título por defecto: `Nota`), opcional `tipo: consejo`, `aviso`, `información` o `ejemplo` (el icono de ese tipo de nota, `media › icons › note`) o `icono: <nombre>` (un icono del juego del proyecto) + texto |
 | `highlight` | Texto |
 | `quote` | Cita + `— autor` en la última línea |
 | `reflection` | Línea opcional `título: …` (título por defecto: `Para reflexionar`) + dos o tres preguntas abiertas; va en el apartado de resumen |
@@ -756,6 +780,7 @@ Las cifras son los valores por defecto del paquete (`src/coursekit/defaults/rule
 | Tipos de recurso | Al menos `min(min_placeholder_types, recursos exigidos)` tipos distintos | 4 (1 h exige 3) | error |
 | Forma del recurso | Tipo conocido (una palabra del idioma del curso) y los cuatro campos presentes | 11 tipos | error |
 | Apoyo visual | La introducción y el resumen llevan un recurso visual; un apartado de contenido lleva uno o un `<!-- SIN IMAGEN: motivo -->` | `visual_sections: [intro, summary]`, `visual_decision: true` | error |
+| Cantidad y mezcla de visuales | Un apartado de contenido lleva un visual por cada `visual_per_words` palabras; una unidad lleva `photos_per_unit` fotografías o capturas, y no más de `visual_mix_max` de sus visuales son infografías o esquemas | `visual_per_words: 1500`, `photos_per_unit: 1`, `visual_mix_max: 0.6` | aviso |
 | Directivas | Nombre conocido, cerrada y sin anidar | — | error |
 | Objetivo de la pregunta | Toda directiva de pregunta lleva la clave de objetivo (`objetivo:` / `objective:`) | — | aviso |
 | Errores típicos | Cada error de `design/misconceptions.yaml` de los objetivos de la unidad está en un distractor (`‹id›`) o una decisión (`error:`); cada id existe; ninguna opción correcta lleva uno | — | error (un distractor o una decisión que resta puntos sin él: aviso) |

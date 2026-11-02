@@ -5,7 +5,7 @@ import yaml
 
 from coursekit import config, exelearning, importer
 from coursekit.cli import main
-from tests.exe_fixture import node, package, sample
+from tests.exe_fixture import js_game, node, package, png, sample
 from tests.test_assemble import course  # noqa: F401 — project with a course
 
 
@@ -29,6 +29,21 @@ def test_text_images_and_embeds(tmp_path):
     assert "![A padlock](media/photo.png)" in text and (tmp_path / "media" / "photo.png").is_file()
     assert report.embeds == [("video", "https://www.youtube.com/embed/abc", "www.youtube.com")]
     assert "Empty cover" not in text and report.empty_pages == ["Empty cover"]
+
+
+def test_a_gallery_keeps_every_image_one_per_paragraph(tmp_path):
+    """A gallery is images side by side, each a link to itself inside the package: they come as images, in their order, one per
+    paragraph, so the writer writes a placeholder for each and the assembly lays them out together."""
+    html = ('<div class="imageGallery"><a href="resources/one.png"><img src="resources/one.png" alt="Step one" /></a>'
+            '<a href="resources/two.png"><img src="resources/two.png" alt="Step two" /></a>'
+            '<a href="resources/three.png"><img src="resources/three.png" alt="" /></a></div>')
+    path = package(tmp_path / "g.elp", "Gallery", [node("Screens", [js_game("image-gallery", html)])],
+                   {"one.png": png(), "two.png": png(), "three.png": png()})
+    text, report = exelearning.convert(path, tmp_path / "media", "media", [], "en")
+    assert "![Step one](media/one.png)\n\n![Step two](media/two.png)\n\n![](media/three.png)" in text
+    assert "resources/" not in text  # the links to the images inside the package are gone
+    assert report.images == 3 and not report.missing_images
+    assert sorted(p.name for p in (tmp_path / "media").iterdir()) == ["one.png", "three.png", "two.png"]
 
 
 def test_the_notice_before_an_interactive_is_left_out_and_counted(tmp_path):

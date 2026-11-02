@@ -106,6 +106,20 @@ def cmd_videos(args: argparse.Namespace) -> int:
     project = common.project()
     course = coursemod.load(project, args.code)
     statesmod.ensure_active(course)
+    if args.action == "find":
+        if not args.url:
+            print(t("videos", "need_query"), file=sys.stderr)
+            return 2
+        try:
+            found = videosmod.find(course, args.url)
+        except videosmod.VideoError as exc:
+            print(t("commands", "error_line", text=exc), file=sys.stderr)
+            return 1
+        for v in found:
+            print(t("videos", "found_line", **{k: v.get(k) or "?" for k in ("url", "title", "channel", "duration", "date", "language")}))
+        if not found:
+            print(t("videos", "found_none", query=args.url))
+        return 0
     try:
         if args.action == "check":
             videosmod.check(course)

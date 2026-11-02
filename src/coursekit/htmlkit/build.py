@@ -33,6 +33,7 @@ from coursekit.errors import CoursekitError
 from coursekit.htmlkit import check, manifest, render
 from coursekit.i18n import t
 from coursekit.media import opt as mediaopt
+from coursekit.media import provisional
 
 Say = Callable[[str], None]
 
@@ -138,6 +139,12 @@ def prepare_assets(course: dict, out_dir: Path) -> tuple[dict[str, dict], list[s
                     entry["subtitles_path"] = f"media/{asset_id}.vtt"
                 elif asset.get("subtitles_path"):
                     entry.pop("subtitles_path", None)  # an upload path of another platform is no use here
+        elif provisional.applies(asset):  # never left out: its provisional image, drawn in the theme, keeps its place
+            name = f"{asset_id}.provisional.svg"
+            target = out_dir / "media" / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(provisional.svg(course, asset), encoding="utf-8")
+            entry["provisional_path"] = f"media/{name}"
         downloads = []
         for download in asset.get("downloads") or []:
             source = _local(course, download.get("file"))

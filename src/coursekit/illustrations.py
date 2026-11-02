@@ -78,10 +78,12 @@ def load(folder: Path) -> list[dict]:
 def search(sources: list[dict], term: str, color: str | None = None, limit: int = 12) -> list[dict]:
     """The illustrations of the sources that match a term (in English, the language of the catalog) and come as SVG."""
     found = []
-    for source in sources:
-        if not source.get("author_id"):
+    for source in sources or [{}]:  # without sources of the brand, the whole catalogue
+        if sources and not source.get("author_id"):
             continue
-        params = {"term": term, "filters[author]": source["author_id"], "filters[vector][type]": "svg", "limit": limit}
+        params = {"term": term, "filters[vector][type]": "svg", "limit": limit}
+        if source.get("author_id"):
+            params["filters[author]"] = source["author_id"]
         if color:
             params["filters[color]"] = color
         for item in get("resources", params).get("data") or []:

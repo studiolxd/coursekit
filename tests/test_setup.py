@@ -157,11 +157,12 @@ def test_illustration_left_as_media_keeps_following_it(project):
 
 def test_media_keys_are_asked_and_saved(project, monkeypatch):
     for key in ("ELEVENLABS_API_KEY", "ELEVENLABS_VOICE_ID", "AZURE_SPEECH_KEY", "GOOGLE_TTS_API_KEY", "GEMINI_API_KEY",
-                "MAGNIFIC_API_KEY"):
+                "MAGNIFIC_API_KEY", "PEXELS_API_KEY", "YOUTUBE_API_KEY"):
         monkeypatch.delenv(key, raising=False)
     p = find_project(project)
-    secrets = iter(["el-key", "", "", "", "mg-key"])
+    secrets = iter(["el-key", "", "", "", "mg-key", "px-key", ""])
     setup.media_keys(p, lambda m: None, lambda q, d: "voice-1", lambda q, d: next(secrets))
     text = (project / ".env").read_text(encoding="utf-8")
     assert "ELEVENLABS_API_KEY=el-key" in text and "ELEVENLABS_VOICE_ID=voice-1" in text
     assert "MAGNIFIC_API_KEY=mg-key" in text and "AZURE_SPEECH_KEY=\n" in text
+    assert "PEXELS_API_KEY=px-key" in text

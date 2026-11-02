@@ -2,14 +2,14 @@ label: {en: "Text and medium", es: "Texto y recurso"}
 description:
   en: Text and a medium side by side; the points enter when the narration names them (`say` of each point).
   es: Texto y un recurso uno al lado del otro; los puntos entran cuando la locución los nombra (`say` de cada punto).
-built_from: [Ground (Background), TitleBlock, BulletList (Stagger, Text), MediaSlot, Enter]
+built_from: [Ground (Background), TitleBlock, BulletList (Stagger, Text, Icon), MediaSlot, Enter]
 props:
   kicker: {type: text, max_chars: 40, on_screen: true, label: true, help: {en: "a label over the title: it need not be said", es: "una etiqueta sobre el título: no hace falta locutarla"}}
   title: {type: text, required: true, max_chars: 60, on_screen: true}
-  points: {type: list, max_items: 4, items: {text: {type: text, max_chars: 70, on_screen: true}, say: {type: text, help: {en: "the words of the narration that name it", es: "las palabras de la locución que lo nombran"}}}}
+  points: {type: list, max_items: 4, items: {text: {type: text, max_chars: 70, on_screen: true}, say: {type: text, help: {en: "the words of the narration that name it", es: "las palabras de la locución que lo nombran"}}, icon: {type: media, help: {en: "with marker icon: an icon of the set of the project (files/icons/<name>.svg), painted in the accent ink", es: "con marker icon: un icono del juego del proyecto (files/icons/<nombre>.svg), pintado con la tinta del acento"}}}}
   media: {type: media, help: {en: "a path inside the media folder of the course: files/… or recordings/…", es: "una ruta dentro de la carpeta media del curso: files/… o recordings/…"}}
   credit: {type: text, max_chars: 80, on_screen: true, help: {en: "the credit of the image of the scene (its author and its licence), small at the bottom right: a CC-BY photo requires it", es: "el crédito de la imagen de la escena (su autor y su licencia), pequeño abajo a la derecha: una foto CC-BY lo exige"}}
-  marker: {type: choice, values: [bullet, number, none], help: {en: "what marks each point: a bullet (default), its number or nothing", es: "qué marca cada punto: una viñeta (por defecto), su número o nada"}}
+  marker: {type: choice, values: [bullet, number, icon, none], help: {en: "what marks each point: a bullet (default), its number, its icon (the `icon` of each point) or nothing", es: "qué marca cada punto: una viñeta (por defecto), su número, su icono (el `icon` de cada punto) o nada"}}
   side: {type: choice, values: [left, right], help: {en: "where the medium goes (default right)", es: "dónde va el recurso (por defecto right)"}}
   background: {type: choice, values: [plain, surface, accent, inverse, photo], help: {en: "default: the background of the style of the project (config/video.yaml)", es: "por defecto: el fondo del estilo del proyecto (config/video.yaml)"}}
   photo: {type: media, when: {background: photo}, help: {en: "with background photo: a path inside the media folder of the course (files/…), under a veil (`veil`, `veil_opacity`); describe it in `shows` of the scene", es: "con background photo: una ruta dentro de la carpeta media del curso (files/…), bajo un velo (`veil`, `veil_opacity`); descríbela en `shows` de la escena"}}

@@ -18,5 +18,6 @@ export * from "./molecules/StatBlock";
 export * from "./atoms/Card";
 export * from "./atoms/Badge";
 export * from "./atoms/Arrow";
+export * from "./atoms/Icon";
 export * from "./molecules/CompareColumn";
 export * from "./molecules/StepNode";

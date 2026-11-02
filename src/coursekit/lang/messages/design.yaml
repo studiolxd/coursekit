@@ -170,6 +170,8 @@ col_min_words: {es: "Palabras mín.", en: "Min. words"}
 field_min_words: {es: "Palabras mínimas", en: "Minimum words"}
 sheet_misconceptions: {es: "Errores comunes", en: "Common errors"}
 no_misconceptions: {es: "Sin errores comunes (design/misconceptions.yaml)", en: "No common errors (design/misconceptions.yaml)"}
+sheet_visuals: {es: "Plan visual", en: "Visual plan"}
+no_visuals: {es: "Sin plan visual (design/visuals.yaml)", en: "No visual plan (design/visuals.yaml)"}
 field_title: {es: "Título", en: "Title"}
 field_code: {es: "Código", en: "Code"}
 field_hours: {es: "Horas", en: "Hours"}

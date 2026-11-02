@@ -369,6 +369,9 @@ def build(project: Project, course: dict | None = None, refresh: bool = False, l
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(f"---\nsource: {src.relative_to(base).as_posix()}\n---\n\n```{src.suffix[1:]}\n{text}\n```\n", encoding="utf-8")
     icons = [_copy(src, base / "icons") for src in found.get("icon", [])]
+    from coursekit import icons as iconsmod
+
+    iconsmod.index(base)  # every icon of the set, by the words it is found by, and their contact sheet
     logos = [_copy(src, base / "logo") for src in found.get("logo", []) if src.suffix.lower() in IMAGES]
     webs, failed = brief.download_links(base, state, refresh, log, links=content)
     google: list[str] = []

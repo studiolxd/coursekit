@@ -46,6 +46,8 @@ MEDIA_SERVICES = (
     ("Google TTS", "GOOGLE_TTS_API_KEY", ("GOOGLE_TTS_VOICE",)),
     ("Gemini TTS", "GEMINI_API_KEY", ("GEMINI_TTS_VOICE",)),
     ("Magnific", "MAGNIFIC_API_KEY", ()),
+    ("Pexels", "PEXELS_API_KEY", ()),
+    ("YouTube", "YOUTUBE_API_KEY", ()),
 )
 
 Say = Callable[[str], None]

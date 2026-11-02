@@ -130,3 +130,13 @@ sheet_state: {es: "Estado: {state} · aprobada por: {by}", en: "State: {state} �
 sheet_found: {es: "Tapado: {found}", en: "Covered: {found}"}
 sheet_more: {es: "Todos sus fotogramas", en: "All its frames"}
 sheet_none: {es: "Este curso no tiene capturas.", en: "This course has no captures."}
+plan_nothing: {es: "{code}: ningún recurso espera una captura de una aplicación real", en: "{code}: no resource waits for a capture of a real application"}
+plan_resources: {es: "{code}: {count} recurso(s) muestran una aplicación real y aún no tienen material real:", en: "{code}: {count} resource(s) show a real application and have no real material yet:"}
+plan_resource: {es: "  - {id} {title} ({how})", en: "  - {id} {title} ({how})"}
+plan_disabled: {es: "la captura está apagada en este proyecto: actívala en config/capture.yaml (enabled: true) y ejecuta coursekit agents; si no, una persona deja cada captura en media/recordings/<id>, y hasta entonces el curso lleva su imagen provisional", en: "capture is off in this project: turn it on in config/capture.yaml (enabled: true) and run coursekit agents; otherwise a person leaves each capture in media/recordings/<id>, and until then the course carries its provisional image"}
+plan_granted: {es: "permiso en vigor: {modes} (hasta {until})", en: "permission in force: {modes} (until {until})"}
+plan_capturable: {es: "el agente multimedia puede capturar ya: {ids}", en: "the media agent can capture now: {ids}"}
+plan_allow: {es: "sin permiso para capturar: dalo antes del paso multimedia, p. ej. coursekit capture allow {code} --mode all --minutes 0 (lo da una persona)", en: "no permission to capture: give it before the media step, e.g. coursekit capture allow {code} --mode all --minutes 0 (a person gives it)"}
+plan_login: {es: "el perfil {name} ({url}) necesita una sesión: coursekit capture login {name} (lo hace una persona)", en: "the profile {name} ({url}) needs a session: coursekit capture login {name} (a person does it)"}
+plan_no_profiles: {es: "ningún perfil de aplicación web configurado: añade el de la aplicación en config/capture.yaml › profiles (el modo terminal y el de escritorio no lo necesitan)", en: "no profile of a web application configured: add the one of the application in config/capture.yaml › profiles (the terminal and desktop modes need none)"}
+other_not_screenshot: {es: "{id} no es una captura (receta screenshot): solo las capturas se toman desde la sesión de otro recurso", en: "{id} is not a capture (recipe screenshot): only captures are taken from the session of another resource"}

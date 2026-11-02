@@ -299,6 +299,8 @@ class _Markup:
             href = node.attrs.get("href", "")
             if not href or href.startswith("#") or not inner.strip():
                 return inner
+            if inner.strip().startswith("![") and not re.match(r"^[a-z][a-z0-9+.-]*:", href, re.I):
+                return inner  # an image that opens itself larger (a gallery): its link points inside the package
             self.link(href)
             return _wrap("[", inner, f"]({href})")
         if tag == "img":
@@ -743,6 +745,7 @@ def convert(path: Path, media_dir: Path, media_rel: str, rules: list[dict], lang
 
     walk(cast(Page, package.root), 0)  # read() always sets the root
     text = "\n\n".join(x for x in out if x).strip() + "\n"
+    text = re.sub(r"(!\[[^\]]*\]\([^)\s]+\))[ \t]*(?=!\[)", "\\1\n\n", text)  # images side by side (a gallery): one per paragraph
     report = conv.report
     wanted: dict[str, int] = {}
     for w in conv.source_words:

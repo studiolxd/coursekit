@@ -48,6 +48,9 @@ def cmd_capture(args: argparse.Namespace) -> int:
         if not args.target and args.action not in ("allow", "revoke"):  # without a course: the permission of the project
             print(t("capture", "needs_target", action=args.action), file=sys.stderr)
             return 2
+        if args.action == "plan":
+            print("\n".join(capturemod.plan(project, coursemod.load(project, args.target))))
+            return 0
         if args.action == "login":
             print(t("capture", "login_open", name=args.target))
             meta = capturemod.login(project, args.target)
@@ -187,9 +190,12 @@ def cmd_media(args: argparse.Namespace) -> int:
         print(t("commands", "media_manifest", total=sum(counts.values()), detail=", ".join(f"{k} {v}" for k, v in counts.items())))
         return 0
     if args.action == "plan":
+        from coursekit.media import coverage
+
         warnings, lines = mediamod.plan(course)
         for w in warnings:
             print(t("commands", "warning_line", text=w))
+        print("\n".join(coverage.summary(course)))
         print("\n".join(lines) if lines else t("commands", "media_nothing"))
         return 0
     if args.action == "check":
@@ -238,7 +244,14 @@ def cmd_media(args: argparse.Namespace) -> int:
         if not args.id or not (args.find or args.take):
             print(t("illustrations", "stock_needs"), file=sys.stderr)
             return 2
-        print("\n".join(mediamod.stock(course, args.id, find=args.find, take=args.take, color=args.color)))
+        try:
+            if args.photos:
+                print("\n".join(mediamod.stock_photos(course, args.id, find=args.find, take=args.take)))
+            else:
+                print("\n".join(mediamod.stock(course, args.id, find=args.find, take=args.take, color=args.color)))
+        except mediamod.MediaError as exc:
+            print(t("commands", "error_line", text=exc), file=sys.stderr)
+            return 1
         return 0
     if args.action == "embed":
         if not args.id:
@@ -282,7 +295,7 @@ def cmd_media(args: argparse.Namespace) -> int:
             print(t("commands", "media_adopt_needs"), file=sys.stderr)
             return 2
         try:
-            print(mediamod.adopt(course, args.id, args.file, args.alt))
+            print(mediamod.adopt(course, args.id, args.file, args.alt, args.depicts))
         except mediamod.MediaError as exc:
             print(t("commands", "error_line", text=exc), file=sys.stderr)
             return 1
@@ -304,6 +317,25 @@ def cmd_media(args: argparse.Namespace) -> int:
         print(t("commands", "media_redo", assets=", ".join(chosen)) if chosen else t("commands", "media_redo_none"))
         common.mirror(course["_project"], course["code"])
         return 0
+    if args.action == "report":
+        from coursekit.media import coverage
+
+        print("\n".join(coverage.report(course)))
+        return 0
+    if args.action == "icons":
+        print("\n".join(mediamod.icons(course, find=args.find, base=args.base, take=args.take)))
+        return 0
+    if args.action == "provisional":
+        from coursekit.media import provisional
+
+        statesmod.ensure_active(course)
+        try:
+            lines = provisional.make(course, [args.id, *args.more] if args.id else None)
+        except (mediamod.MediaError, mediatools.ToolError) as exc:
+            print(t("commands", "error_line", text=exc), file=sys.stderr)
+            return 1
+        print("\n".join(lines) if lines else t("media", "provisional_none"))
+        return 0
     if args.action == "upload":
         if not (args.file and args.url and args.content_type):
             print(t("commands", "media_upload_needs"), file=sys.stderr)
@@ -321,7 +353,7 @@ def cmd_media(args: argparse.Namespace) -> int:
     statesmod.ensure_active(course)
     values = {k: getattr(args, k) for k in ("status", "recipe", "asset_path", "file", "alt", "transcript", "subtitles_path",
                                             "made_with", "download", "download_title", "download_asset_path", "force", "depicts",
-                                            "unit", "decorative")}
+                                            "unit", "decorative", "provisional_path")}
     print(mediamod.set_asset(course, args.id, **values))
     common.mirror(course["_project"], course["code"])
     return 0

@@ -75,6 +75,7 @@ def detail_data(course: dict) -> dict:
         "hold": course.get("hold") if course["status"] == "on_hold" else None,
         "client_review": (course.get("client_review") or [None])[-1],
         "next_step": t("status", key, code=course["code"]) if key else None,
+        "captures_needed": captures_needed(course),
     }
 
 
@@ -112,4 +113,20 @@ def detail(course: dict) -> str:
     key = next_step(course)
     if key:
         lines.append(t("status", "next_step_line", step=t("status", key, code=course["code"])))
+    captures = captures_needed(course)
+    if captures:
+        lines.append(t("status", "captures_line", count=captures, code=course["code"]))
     return "\n".join(lines)
+
+
+def captures_needed(course: dict) -> int:
+    """How many resources wait for a capture of a real application while no permission to capture is in force: a person gives
+    it before the media step (`coursekit capture plan`)."""
+    if course["status"] in ("delivered", "on_hold") or not course.get("_project") or not (course["_dir"] / "media").is_dir():
+        return 0
+    from coursekit import capture
+
+    waiting = capture.interface_waiting(course)
+    if not waiting or capture.grants(course["_project"], course["code"]):
+        return 0
+    return len(waiting)

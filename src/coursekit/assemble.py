@@ -27,17 +27,19 @@ import hashlib
 import json
 import re
 import unicodedata
+import urllib.parse
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, cast
 
 from markdown_it import MarkdownIt
 
-from coursekit import config, lang, simulation
+from coursekit import config, lang, photos, simulation
 from coursekit import course as coursemod
 from coursekit import story as storymod
 from coursekit.errors import CoursekitError
 from coursekit.i18n import t
+from coursekit.media import provisional
 from coursekit.misconceptions import strip_tag
 from coursekit.states import history_entry
 from coursekit.util import character_asset_id, edit_yaml, load_yaml, save_yaml
@@ -106,9 +108,13 @@ class Syntax:
         self.assessment = re.compile(rf"^## {re.escape(t['assessment_activity'])}\s+([\d.]+)\s*[—-]\s*(.+?)\s*$")
         self.objective_tag = re.compile(rf"^\*\[{re.escape(t['objective'])}[^\]]*\]\*\s*$")
         self.placeholder = re.compile(rf"^>\s*\*\*\[{re.escape(t['placeholder'])}\s*[—-]\s*(.+?)\]\*\*")
-        names = "|".join(re.escape(f) for f in t["placeholder_fields"])
+        layout = (t.get("placeholder_layout") or {}).get("field")
+        names = "|".join(re.escape(f) for f in [*t["placeholder_fields"], *([layout] if layout else [])])
         self.placeholder_field = re.compile(rf"^>\s*\*\*({names}):\*\*\s*(.*)$")
         self.field_key = dict(zip(t["placeholder_fields"], FIELD_KEYS, strict=False))
+        if layout:
+            self.field_key[layout] = "layout"
+        self.beside = str((t.get("placeholder_layout") or {}).get("beside") or "").casefold()
 
     def key(self, name: str) -> str:
         """How the key `name` of the directives is written in this language."""
@@ -386,6 +392,91 @@ def conditional_parts(lines: list[str], start: int) -> tuple[list[tuple[str, lis
     return branches, other, i
 
 
+PANEL_MEDIA = ("accordion", "tabs", "carousel")  # the directives whose panels carry a medium of their own (one each)
+
+
+def panel_media(lines: list[str], ctx: dict) -> tuple[list[str], dict, str]:
+    """The media placeholder inside a panel (a step and its capture): (the lines without it, the media fields of the item, HTML
+    added to its content). The item shows the uploaded asset, else its provisional image, else a note in its text; it is
+    numbered with the placeholders of its section, in the order they are written."""
+    syntax: Syntax | None = ctx.get("syntax")
+    if syntax is None:
+        return lines, {}, ""
+    kept: list[str] = []
+    media: dict = {}
+    extra = ""
+    i = 0
+    while i < len(lines):
+        m = syntax.placeholder.match(lines[i].strip())
+        if not m:
+            kept.append(lines[i])
+            i += 1
+            continue
+        written = m.group(1).strip()
+        kind = syntax.media_type(written) or written
+        fields: dict = {}
+        while i + 1 < len(lines) and lines[i + 1].startswith(">"):
+            i += 1
+            f = syntax.placeholder_field.match(lines[i])
+            if f:
+                fields[syntax.field_key[f.group(1)]] = f.group(2).strip()
+        i += 1
+        key = ctx.get("section_key", "")
+        counters = ctx.setdefault("placeholders", {})
+        counters[key] = counters.get(key, 0) + 1
+        asset_id = f"{key}-M{counters[key]}"
+        if media:
+            ctx["errors"].append(t("assemble", "panel_two_media", asset=asset_id))
+            continue
+        asset = ctx["assets"].get(asset_id) or {}
+        uploaded = asset.get("status") == "uploaded" and asset.get("asset_path")
+        media_kind = MEDIA_KIND.get(kind)
+        if media_kind == "image" and uploaded:
+            media = {"mediaType": "image", "imagePath": asset["asset_path"],
+                     "imageAlt": "" if asset.get("decorative") else asset.get("alt") or fields.get("title", "")}
+            credit = photos.credit(asset.get("source") or {}, syntax.t)
+            extra = html(f"*{credit}*") if credit else ""
+        elif media_kind == "video" and uploaded:
+            media = {"mediaType": "video", "videoPath": asset["asset_path"],
+                     **({"subtitlesPath": asset["subtitles_path"]} if asset.get("subtitles_path") else {})}
+            if asset.get("transcript"):
+                media["video_transcription"] = html(str(asset["transcript"]))
+        elif media_kind in ("image", "video") and asset.get("provisional_path") and provisional.applies(asset):
+            media = {"mediaType": "image", "imagePath": asset["provisional_path"], "imageAlt": provisional.alt(ctx["course"], asset)}
+            ctx["warnings"].append(t("assemble", "provisional_image", asset=asset_id))
+        else:  # not produced yet, or a kind a panel cannot hold: the note stays in its text
+            label = syntax.t["placeholder"].capitalize()
+            extra = html(f"*{label} — {written}: {fields.get('title', '')}*")
+            media = {"mediaType": "none"}
+    if media.get("mediaType") == "none":
+        media = {}
+    return kept, media, extra
+
+
+def icon_path(name: str, ctx: dict) -> str | None:
+    """The path of an icon of the set of the project in the content being assembled (its asset `ICON-<name>`), when uploaded."""
+    asset = ctx["assets"].get(f"ICON-{name}")
+    if not asset or asset.get("status") != "uploaded":
+        if name:
+            ctx["warnings"].append(t("assemble", "icon_not_uploaded", name=name))
+        return None
+    return content_path(asset, ctx)
+
+
+def note_icon(values: dict, ctx: dict) -> str:
+    """The icon of a note: its `icon:`, else the icon of its `kind:` (`media › icons › note`)."""
+    syntax: Syntax = ctx["syntax"]
+    if values.get(syntax.key("icon")):
+        return str(values[syntax.key("icon")]).strip()
+    kind = str(values.get(syntax.key("kind")) or "").strip().casefold()
+    if not kind:
+        return ""
+    words = {str(syntax.t["directive_words"].get(k, k)).casefold(): k for k in ("tip", "warning", "info", "example")}
+    from coursekit import media as mediamod
+
+    return mediamod.note_icons(ctx["course"]).get(words.get(kind, ""), "") if ctx.get("course") else ""
+
+
 def directive_brick(name: str, body: list[str], ctx: dict) -> dict:
     registry = ctx["registry"]
     if name not in registry:
@@ -410,7 +501,18 @@ def directive_brick(name: str, body: list[str], ctx: dict) -> dict:
     shuffle = shuffled(name, brick_type, values, ctx)
 
     if brick_type in ("ACCORDION", "TABS", "CAROUSEL"):
-        items = [{"title": inline(text), "content": html(c)} for text, c in panels(body)]
+        items = []
+        icon_re = re.compile(rf"^\s*{re.escape(syntax.key('icon'))}:\s*(\S+)\s*$")
+        for text, c in panels(body):
+            lines = c.split("\n")
+            icon = next((m.group(1) for m in map(icon_re.match, lines[:2]) if m), "")
+            lines = [ln for ln in lines if not icon_re.match(ln)]
+            lines, media, extra = panel_media(lines, ctx)
+            if icon and not media:  # the icon of the panel, small, above its text, when the panel carries no other medium
+                path = icon_path(icon, ctx)
+                if path:
+                    media = {"mediaType": "image", "imagePath": path, "imageAlt": "", "mediaPosition": "above", "horizontalAlign": "left"}
+            items.append({"title": inline(text), "content": html("\n".join(lines)) + extra, **media})
         data = {"items": items}
     elif brick_type == "TIMELINE":
         items = []
@@ -474,6 +576,11 @@ def directive_brick(name: str, body: list[str], ctx: dict) -> dict:
     elif brick_type == "NOTE":
         default = syntax.t["reflection"] if name == "reflection" else syntax.t["note"]
         data = {"content": {"title": inline(values.get(syntax.key("title"), default)), "content": html("\n".join(rest))}}
+        icon = note_icon(values, ctx) if name == "note" else ""
+        path = icon_path(icon, ctx) if icon else None
+        if path:  # an icon of the set of the project, painted in the colour of the text
+            data["properties"] = {"customIconPath": path, "customIconTint": True}
+            meta["icon"] = icon
     elif brick_type == "HIGHLIGHT":
         data = {"content": {"content": html("\n".join(rest))}}
     elif brick_type == "QUOTE":
@@ -616,9 +723,31 @@ def attachment_brick(path: str, file: str | None, stem: str | None, title: str, 
             "meta": meta}
 
 
+VIDEO_LINE_RE = re.compile(r"^>\s*\*\*\[([^\]]+)\]\*\*\s+(https://\S+)\s*(.*)$")
+VIDEO_FILES = (".mp4", ".webm", ".ogv", ".ogg", ".mov", ".m4v")
+
+
+def external_video(line: str, syntax: Syntax) -> dict | None:
+    """A video of an official channel written in the content as `> **[Video]** <address> <caption>` (the word of the course
+    language too): a player, not a link. Creator plays YouTube and Vimeo addresses and files; anything else stays as text."""
+    m = VIDEO_LINE_RE.match(line)
+    if not m or m.group(1).strip().casefold() not in {"video", str(syntax.t["media_types"].get("video", "video")).casefold()}:
+        return None
+    url = m.group(2).rstrip(".,;")
+    host = (urllib.parse.urlparse(url).hostname or "").lower().removeprefix("www.")
+    playable = host in ("youtube.com", "m.youtube.com", "youtu.be", "vimeo.com", "player.vimeo.com") \
+        or urllib.parse.urlparse(url).path.lower().endswith(VIDEO_FILES)
+    if not playable:
+        return None
+    caption = re.sub(r"\s*\(forbidden host:.*\)\s*$", "", m.group(3)).strip()
+    return {"type": "VIDEO", "data": {"properties": {"videoUrl": url}, "content": {"content": inline(caption) if caption else ""}},
+            "meta": {"external_video": url}}
+
+
 def placeholder_brick(kind: str, fields: dict, asset: dict | None, label: str, written: str | None = None,
-                      svg_as_image: bool = False) -> dict:
-    """`kind` is the id of the resource type; `written` how the content names it (for the note that stands for it)."""
+                      svg_as_image: bool = False, credit: str = "") -> dict:
+    """`kind` is the id of the resource type; `written` how the content names it (for the note that stands for it); `credit`
+    the credit its licence asks for (a photograph), which goes in its caption."""
     title = fields.get("title", "")
     media = MEDIA_KIND.get(kind)
     meta = {"placeholder": kind, "title": title}
@@ -628,8 +757,13 @@ def placeholder_brick(kind: str, fields: dict, asset: dict | None, label: str, w
         if media == "image" and not svg_as_image and str(asset.get("file") or "").lower().endswith(".svg"):
             media = "embed"  # creator does not take SVG as an image: it goes up as an EMBED package (`coursekit media embed`)
         if media == "image" and asset.get("decorative"):  # an empty alternative text is how creator and html know it decorates
-            return {"type": "IMAGE", "data": {"properties": {"imagePath": asset["asset_path"], "imageAlt": ""}}, "meta": meta}
+            data: dict = {"properties": {"imagePath": asset["asset_path"], "imageAlt": ""}}
+            if credit:  # the licence asks for it even when the image only sets the scene
+                data["content"] = {"content": inline(credit)}
+            return {"type": "IMAGE", "data": data, "meta": meta}
         if media == "image":
+            if credit:
+                caption = inline(f"{title} · {credit}" if title else credit)
             return {"type": "IMAGE", "data": {"properties": {"imagePath": asset["asset_path"], "imageAlt": asset.get("alt")},
                                               "content": {"content": caption}}, "meta": meta}
         if media == "video":
@@ -695,6 +829,7 @@ def parse_blocks(lines: list[str], ctx: dict, section_key: str) -> list[dict]:
         elif DIRECTIVE_OPEN_RE.match(stripped):
             close_text()
             name = cast("re.Match[str]", DIRECTIVE_OPEN_RE.match(stripped)).group(1)
+            ctx["section_key"] = section_key  # a placeholder inside a panel is numbered with those of its section
             body = []
             i += 1
             while i < len(lines) and not DIRECTIVE_CLOSE_RE.match(lines[i].strip()):
@@ -718,10 +853,24 @@ def parse_blocks(lines: list[str], ctx: dict, section_key: str) -> list[dict]:
             asset_id = f"{section_key}-M{counters[section_key]}"
             asset = ctx["assets"].get(asset_id)
             html_backend = bool(ctx.get("course") and ctx["course"].get("_project") and coursemod.backend(ctx["course"]) == "html")
-            bricks.append(placeholder_brick(kind, fields, asset, syntax.t["placeholder"].capitalize(), written,
-                                            svg_as_image=html_backend))  # a browser shows an SVG; only creator needs an EMBED
+            credit = photos.credit((asset or {}).get("source") or {}, syntax.t)
+            brick = placeholder_brick(kind, fields, asset, syntax.t["placeholder"].capitalize(), written,
+                                      svg_as_image=html_backend, credit=credit)  # a browser shows an SVG; only creator an EMBED
+            if brick["type"] == "NOTE" and asset and asset.get("provisional_path") and provisional.applies(asset):
+                # a visual resource still to produce is never left out: its provisional image keeps its place
+                brick = {"type": "IMAGE", "data": {"properties": {"imagePath": asset["provisional_path"],
+                                                                 "imageAlt": provisional.alt(ctx["course"], asset)},
+                                                  "content": {"content": html(fields.get("description") or "")}},
+                         "meta": {**brick["meta"], "provisional": True}}
+                ctx["warnings"].append(t("assemble", "provisional_image", asset=asset_id))
+            if syntax.beside and str(fields.get("layout") or "").strip().casefold() == syntax.beside:
+                brick["meta"]["layout"] = "beside"
+            bricks.append(brick)
             bricks[-1]["meta"]["placeholder_id"] = asset_id
             bricks.extend(download_bricks(asset, syntax.t["download"]))
+        elif (external := external_video(stripped, syntax)) is not None:
+            close_text()
+            bricks.append(external)
         elif stripped.startswith(">"):
             close_text()
             quote = []
@@ -849,6 +998,49 @@ def fold_labelled_images(bricks: list[dict]) -> list[dict]:
     return keep(bricks) if named else bricks
 
 
+GALLERY_MAX = 4  # up to this many images in a row go as a grid; more, as a carousel of images
+
+
+def arrange_media(bricks: list[dict]) -> list[dict]:
+    """How the images of a section are laid out: an image whose placeholder asks to go beside the text (`Layout: beside the
+    text`) takes the paragraph after it (IMAGE_TEXT), and two or more images written one after the other, with nothing between
+    them, go together: a grid (IMAGE_GALLERY) or, more than GALLERY_MAX, a carousel of images (IMAGE_CAROUSEL)."""
+    out: list[dict] = []
+    i = 0
+    while i < len(bricks):
+        brick = bricks[i]
+        if brick["type"] == "CONDITIONAL":
+            brick["data"]["branches"] = [{**b, "bricks": arrange_media(b["bricks"])} for b in brick["data"]["branches"]]
+            brick["data"]["else"] = arrange_media(brick["data"]["else"])
+        if brick["type"] == "IMAGE" and brick["meta"].get("layout") == "beside" and i + 1 < len(bricks) \
+                and bricks[i + 1]["type"] == "TEXT":
+            props = brick["data"]["properties"]
+            content = {"content": bricks[i + 1]["data"]["content"]["content"]}
+            caption = (brick["data"].get("content") or {}).get("content")
+            if caption:
+                content["caption"] = caption
+            out.append({"type": "IMAGE_TEXT", "data": {"properties": {"imagePath": props["imagePath"],
+                                                                      "imageAlt": props.get("imageAlt")}, "content": content},
+                        "meta": {**brick["meta"], "images": [brick["meta"].get("placeholder_id")]}})
+            i += 2
+            continue
+        run: list[dict] = []
+        while i + len(run) < len(bricks) and bricks[i + len(run)]["type"] == "IMAGE" and bricks[i + len(run)]["meta"].get("placeholder") \
+                and bricks[i + len(run)]["meta"].get("layout") != "beside":
+            run.append(bricks[i + len(run)])
+        if len(run) >= 2:
+            items = [{"imagePath": b["data"]["properties"]["imagePath"], "imageAlt": b["data"]["properties"].get("imageAlt"),
+                      "content": (b["data"].get("content") or {}).get("content") or ""} for b in run]
+            out.append({"type": "IMAGE_GALLERY" if len(run) <= GALLERY_MAX else "IMAGE_CAROUSEL", "data": {"items": items},
+                        "meta": {"placeholder": "image", "images": [b["meta"].get("placeholder_id") for b in run],
+                                 "title": " · ".join(str(b["meta"].get("title") or "") for b in run)}})
+            i += len(run)
+            continue
+        out.append(brick)
+        i += 1
+    return out
+
+
 def walk(bricks: list[dict]) -> Iterator[dict]:
     """The bricks, and those inside the branches of the adaptive blocks."""
     for brick in bricks:
@@ -936,7 +1128,8 @@ def build_plan(course: dict, unit: dict, assets: dict[str, dict] | None = None,
                 continue
             key = f"U{unit['n']}-S{n}"
             lessons.append({"key": key, "type": "content", "title": spec["title"], "kind": spec["kind"],
-                            "slxd_node_id": spec.get("slxd_id"), "bricks": fold_labelled_images(parse_blocks(lines, ctx, key))})
+                            "slxd_node_id": spec.get("slxd_id"),
+                            "bricks": arrange_media(fold_labelled_images(parse_blocks(lines, ctx, key)))})
         if placement == "unit":
             lessons += assessment_lessons(course, unit, ctx, fmt)
 

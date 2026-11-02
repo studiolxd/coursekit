@@ -144,6 +144,10 @@ def approve_design(course: dict, confirm: Confirm, do_commit: bool = True, who: 
         entry["story_sha256"] = sha256_file(storymod.path(course))
     if errors is not None:
         entry["misconceptions_sha256"] = sha256_file(misconmod.path(course))
+    from coursekit import visualplan
+
+    if visualplan.path(course).exists():  # what the learner will see, signed with the design
+        entry["visuals_sha256"] = sha256_file(visualplan.path(course))
     if via:
         entry["via"] = via
     _record(course_dir, entry, "design_approved", "Instructional design approved")

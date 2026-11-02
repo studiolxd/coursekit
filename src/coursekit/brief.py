@@ -28,8 +28,8 @@ from importlib import resources
 from pathlib import Path
 from typing import Any, cast
 
+from coursekit import briefimages, exelearning, http, i18n
 from coursekit import config as configmod
-from coursekit import exelearning, http, i18n
 from coursekit.lang import format_number
 from coursekit.util import sha256_file
 
@@ -184,6 +184,8 @@ def convert_files(brief: Path, state: dict, options: dict | None = None) -> tupl
                      f"words: {words(body)}\n---\n\n")
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(front + body, encoding="utf-8")
+            if ext not in EXELEARNING and ext not in COPY:  # its captures and figures: real material for the course
+                briefimages.extract(src, brief / "text" / "media" / re.sub(r"[^\w.-]+", "-", rel).strip("-"))
         text = target.read_text(encoding="utf-8")
         row.update(text=target.relative_to(brief).as_posix(), title=title_of(text, src.stem), words=words(text))
         if ext in EXELEARNING and rel in state.get("exe", {}):
@@ -194,8 +196,8 @@ def convert_files(brief: Path, state: dict, options: dict | None = None) -> tupl
     # Remove conversions of files that are no longer in sources/.
     for rel in set(previous) - present:
         text_path(out_root, rel).unlink(missing_ok=True)
+        shutil.rmtree(brief / "text" / "media" / re.sub(r"[^\w.-]+", "-", rel).strip("-"), ignore_errors=True)
         if Path(rel).suffix.lower() in EXELEARNING:
-            shutil.rmtree(brief / "text" / "media" / re.sub(r"[^\w.-]+", "-", rel).strip("-"), ignore_errors=True)
             state.get("exe", {}).pop(rel, None)
     if out_root.exists():
         for folder in sorted((d for d in out_root.rglob("*") if d.is_dir()), key=lambda d: len(d.parts), reverse=True):
@@ -362,7 +364,7 @@ def cell(text: str) -> str:
     return str(text).replace("|", "\\|").replace("\n", " ")
 
 
-def write_index(brief: Path, code: str, files: list[dict], webs: list[dict], general: str | None, lang: str) -> None:
+def write_index(brief: Path, code: str, files: list[dict], webs: list[dict], general: str | None, lang: str, images: int = 0) -> None:
     def say(key: str, **values: object) -> str:
         return i18n.t_in(lang, "brief", key, **values)
 
@@ -399,6 +401,8 @@ def write_index(brief: Path, code: str, files: list[dict], webs: list[dict], gen
         out += [say("section_other"), "", say("other_intro"), "", say("header_other"), "|---|---|---|"]
         out += [f"| `{cell(f['source'])}` | {say('kind_' + f['kind'])} | {warnings(f)} |" for f in other]
         out.append("")
+    if images:
+        out += [say("section_images"), "", say("images_line", count=images, path=briefimages.LIST), ""]
     if not (docs or webs or other):
         out += [say("index_empty"), ""]
     (brief / "index.md").write_text("\n".join(out), encoding="utf-8")
@@ -420,7 +424,8 @@ def build(brief: Path, title: str, refresh: bool = False, general: str | None = 
     if not (brief / "notes.md").exists():
         (brief / "notes.md").write_text("", encoding="utf-8")
     write_import_report(brief, state, language)
-    write_index(brief, title, files, webs, general, language)
+    images = briefimages.write_list(brief, language)
+    write_index(brief, title, files, webs, general, language, images)
     documents = [f for f in files if f["kind"] == "document"]
     return {
         "documents": len([f for f in documents if f["text"]]),

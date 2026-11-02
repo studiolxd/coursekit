@@ -1,0 +1,12 @@
+# Licensed photographs for the resources (`coursekit media stock CODE ID --photos`, coursekit/photos.py).
+no_provider: {es: "no hay ningún proveedor de fotografía con clave: añade {keys} al .env del proyecto (coursekit setup la pide)", en: "no photograph provider has a key: add {keys} to the .env of the project (coursekit setup asks for it)"}
+api_failed: {es: "{provider} respondió {status}: {detail}", en: "{provider} answered {status}: {detail}"}
+network_failed: {es: "no se pudo descargar: {reason}", en: "could not download: {reason}"}
+bad_ref: {es: "'{ref}' no es una fotografía de la búsqueda: usa el proveedor y el id que imprime --find (p. ej. pexels:123)", en: "'{ref}' is not a photograph of the search: use the provider and id --find prints (e.g. pexels:123)"}
+no_file: {es: "{ref} no tiene fichero para descargar", en: "{ref} has no file to download"}
+candidate: {es: "{ref} · {title} · {author} · {license} · {credit} · {preview}", en: "{ref} · {title} · {author} · {license} · {credit} · {preview}"}
+credit_yes: {es: "pide atribución", en: "asks for a credit"}
+credit_no: {es: "sin atribución", en: "no credit needed"}
+none_found: {es: "ninguna fotografía para «{term}»: prueba con otros términos", en: "no photograph for «{term}»: try other terms"}
+stock_needs: {es: "media stock --photos necesita el recurso y --find TÉRMINOS (buscar) o --take PROVEEDOR:ID (tomar una)", en: "media stock --photos needs the asset and --find TERMS (search) or --take PROVIDER:ID (take one)"}
+taken: {es: "{asset}: {path} ({ref}, de {author}; {credit}); revísala, ponle el texto alternativo y márcala producida con coursekit media set", en: "{asset}: {path} ({ref}, by {author}; {credit}); look at it, give it its alternative text and mark it produced with coursekit media set"}

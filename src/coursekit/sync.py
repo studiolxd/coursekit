@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from coursekit import course as coursemod
-from coursekit import localdesign
+from coursekit import localdesign, visualplan
 from coursekit.errors import CoursekitError
 from coursekit.i18n import t
 from coursekit.lang import format_number
@@ -227,6 +227,7 @@ def skeleton(unit: dict, cfg: dict, tokens: dict, language: str, course: dict | 
             hint += f" · objectives: {', '.join(s['objectives'])}"
         if s["subsections"]:
             hint += f" · subsections: {' | '.join(s['subsections'])}"
+        hint += visualplan.hint(course, unit["n"], s["n"], tokens)
         minimum = tokens["min_words"].format(words=fmt(s["min_words"]))
         if imported:
             page = importer.page_for(s, pages, intro, summary)

@@ -95,3 +95,6 @@ shuffle_value:
 shuffle_not_here:
   es: ":::{name} no tiene opciones que barajar: '{key}:' solo va en {directives}"
   en: ":::{name} has no options to shuffle: '{key}:' only goes in {directives}"
+provisional_image: {es: "{asset} se monta con su imagen provisional: falta el recurso real", en: "{asset} goes in with its provisional image: the real resource is missing"}
+panel_two_media: {es: "{asset}: un panel lleva un solo recurso; pasa el otro a otro panel o fuera de la directiva", en: "{asset}: a panel carries one resource only; move the other one to another panel or out of the directive"}
+icon_not_uploaded: {es: "el icono «{name}» no está subido al contenido de esta unidad (ICON-{name} en el manifiesto): va sin icono", en: "the icon «{name}» is not uploaded to the content of this unit (ICON-{name} in the manifest): it goes without its icon"}

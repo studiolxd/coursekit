@@ -23,6 +23,9 @@ that one judges quality, this one searches the web.
   by another with different rules, a procedure that no longer exists), it stays `proposed` for the person to decide. Never
   touch the objectives, the sections or the design.
 - In a **migrated course** (`design.origin: import`) the text is the client's: change only the outdated claim, nothing around it.
+- **Captures age too**: an image of the unit that shows a screen of an application (`brief/images.md` marks those of the
+  package) is out of date when the interface changed; list it as `proposed` with the id of its resource, so the media agent
+  captures it again (`coursekit media redo <CODE> <id> --recapture`).
 
 ## Preparation
 

@@ -394,7 +394,12 @@ class Session:
         parts = urlsplit(full)
         self.steps.append({"navigate": parts.path + (f"?{parts.query}" if parts.query else "")})
 
-    def save_shot(self) -> Path:
+    def save_shot(self, for_id: str = "") -> Path:
+        """The screen as it is now, as the capture of the resource of the session or, with `for_id`, of another capture of the
+        same course that the permission covers and whose script is approved: one walk through the application takes every
+        capture of a unit."""
+        if for_id and for_id != self.asset_id:
+            return self._save_other(for_id)
         self.check()
         image = self.frame()
         target: Path = self.course["_dir"] / "media" / "recordings" / f"{self.name}.png"
@@ -406,6 +411,38 @@ class Session:
         image.convert("RGB").save(copy)
         self.shots.append(copy)
         self.steps.append({"shot": True})
+        return target
+
+    def _save_other(self, other: str) -> Path:
+        self.check()
+        try:
+            _, _, _, asset = capturemod.find_asset(self.course, other)
+        except capturemod.CaptureError as exc:
+            raise ToolError(str(exc)) from None
+        if asset.get("recipe") != "screenshot":
+            raise ToolError(t("capture", "other_not_screenshot", id=other))
+        if capturemod.active_grant(self.project, self.course["code"], other, mode=self.grant.get("mode")) is None:
+            raise ToolError(t("capture", "no_grant", code=self.course["code"], id=other))
+        try:
+            mediascript.ready(self.course, other)
+        except mediascript.ScriptError as exc:
+            raise ToolError(str(exc)) from None
+        image = self.frame()
+        target: Path = self.course["_dir"] / "media" / "recordings" / f"{other}.png"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        image.convert("RGB").save(target)
+        sheet = capturemod.review_dir(self.course, other)
+        sheet.mkdir(parents=True, exist_ok=True)
+        image.convert("RGB").save(sheet / "t0000.00.png")
+        findings = {kind: len(values) for kind, values in sorted(self.seen.items())}
+        engine = "pixels" if self.grant.get("mode") == "desktop" else "page"
+        report = {"engine": engine, "findings": findings, "warnings": self.warnings, "frames": 1, "samples": []}
+        capturemod.write_review(self.course, other, report)
+        capturemod.save_capture(self.course, other, {
+            "state": "captured", "source": "session", "engine": engine, "at": _now(), "findings": findings,
+            "warnings": list(self.warnings), "file": f"media/recordings/{other}.png", "masks": (asset.get("capture") or {}).get("masks"),
+            "replay": None, "with": self.asset_id})
+        self.steps.append({"shot": other})  # the replay of this resource leaves it alone
         return target
 
     def record(self, on: bool) -> None:
@@ -1079,9 +1116,11 @@ class Manager:
             Tool("wait", "Wait some milliseconds (at most 10000).", schema({"ms": num}, ["ms"]), act(lambda s: s.wait, "ms")),
             Tool("navigate", "Open an address of the application (relative to the current one, or full on its domains).",
                  schema({"url": string}, ["url"]), act(lambda s: s.navigate, "url")),
-            Tool("save_shot", "Save the screen as it is now as the capture of the resource.", schema(),
-                 lambda a: [text(t("capture", "shot_saved", path=self._guarded(lambda: self._current().save_shot())
-                                   .relative_to(self.project.root).as_posix()))]),
+            Tool("save_shot", "Save the screen as it is now as the capture of the resource. With `asset_id`, as the capture of "
+                 "another resource of the same course (recipe screenshot, allowed and with its script approved): one walk through "
+                 "the application takes every capture of a unit.", schema({"asset_id": string}),
+                 lambda a: [text(t("capture", "shot_saved", path=self._guarded(
+                     lambda: self._current().save_shot(str(a.get("asset_id") or ""))).relative_to(self.project.root).as_posix()))]),
             Tool("record_start", "Mark where the video of the resource starts (it is recorded on replay).", schema(),
                  act(lambda s: lambda: s.record(True), shot=False)),
             Tool("record_stop", "Mark where the video of the resource stops.", schema(),

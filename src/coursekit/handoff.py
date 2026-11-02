@@ -553,6 +553,10 @@ def write_report(course: dict, stopped: str | None = None) -> Path | None:
         lines += [t("handoff", "report_nothing"), ""]
     if not course.get("_dir"):  # a course that is not on disk (nothing to report into)
         return None
+    if (course["_dir"] / "media" / "manifest.yaml").exists():  # how much of the course is seen, and what goes in provisional
+        from coursekit.media import coverage
+
+        lines += [f"## {t('handoff', 'report_coverage')}", "", *[f"- {line}" for line in coverage.summary(course)], ""]
     if approved_captures(course) and course.get("_project"):
         capture.review_all(course)  # the page to look at them all at once
     path = course["_dir"] / REPORT
@@ -590,6 +594,10 @@ def _media(ctx: Context, course: dict) -> None:
         ctx.log(t("handoff", "media_outdated_line", packages="; ".join(outdated)))
     _videos(ctx, course)
     mediamod.extract(course)
+    if not capture.grants(ctx.project, ctx.code) and capture.interface_waiting(ctx.course()):
+        # nobody can give the permission here: the person sees in time what it would capture, and how
+        for line in capture.plan(ctx.project, ctx.course()):
+            ctx.log(line)
     _tts_batch(ctx, course, send=False)
     _approve_captures(ctx)  # left by an earlier run
     if _pending_media(ctx.course()) or capturable(ctx.course()):

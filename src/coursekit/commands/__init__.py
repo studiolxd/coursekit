@@ -54,9 +54,9 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.set_defaults(func=_lazy("course", "cmd_import"))
 
     p = sub.add_parser("videos", help=t("commands", "help_videos"))
-    p.add_argument("action", choices=("check", "propose", "approve", "reject"))
+    p.add_argument("action", choices=("check", "propose", "approve", "reject", "find"))
     p.add_argument("code")
-    p.add_argument("url", nargs="?")
+    p.add_argument("url", nargs="?", help=t("commands", "help_videos_url"))
     p.add_argument("--why", help=t("commands", "help_videos_why"))
     p.add_argument("--replaces", help=t("commands", "help_videos_replaces"))
     p.add_argument("--for", dest="asset", metavar="ASSET", help=t("commands", "help_videos_for"))
@@ -183,7 +183,8 @@ def register(sub: argparse._SubParsersAction) -> None:
 
     p = sub.add_parser("media", help=t("commands", "help_media"))
     p.add_argument("action", choices=("extract", "plan", "providers", "set", "upload", "redo", "embed", "fit", "render", "narrate",
-                                      "optimize", "adopt", "check", "sheet", "transcript", "stock", "anchors", "gallery"))
+                                      "optimize", "adopt", "check", "sheet", "transcript", "stock", "anchors", "gallery",
+                                      "provisional", "icons", "report"))
     p.add_argument("code", nargs="?")
     p.add_argument("id", nargs="?")
     p.add_argument("more", nargs="*", help=t("commands", "help_media_more"))
@@ -191,7 +192,7 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--content-type", help=t("commands", "help_media_content_type"))
     p.add_argument("--method", default="PUT", help=t("commands", "help_media_method"))
     for key in ("status", "recipe", "asset-path", "file", "alt", "transcript", "subtitles-path", "made-with",
-                "download", "download-title", "download-asset-path"):
+                "download", "download-title", "download-asset-path", "provisional-path"):
         p.add_argument(f"--{key}")
     p.add_argument("--depicts", choices=("interface", "concept"), help=t("commands", "help_media_depicts"))
     p.add_argument("--decorative", action=argparse.BooleanOptionalAction, default=None, help=t("commands", "help_media_decorative"))
@@ -207,7 +208,9 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--frames", type=int, help=t("commands", "help_media_frames"))
     p.add_argument("--batch", action="store_true", help=t("commands", "help_media_batch"))
     p.add_argument("--find", help=t("commands", "help_media_find"))
-    p.add_argument("--take", type=int, help=t("commands", "help_media_take"))
+    p.add_argument("--take", help=t("commands", "help_media_take"))
+    p.add_argument("--photos", action="store_true", help=t("commands", "help_media_photos"))
+    p.add_argument("--base", action="store_true", help=t("commands", "help_media_base"))
     p.add_argument("--color", help=t("commands", "help_media_color"))
     p.add_argument("--serve", action="store_true", help=t("commands", "help_media_serve"))
     p.add_argument("--port", type=int, default=8767, help=t("commands", "help_media_port"))
@@ -226,7 +229,7 @@ def register(sub: argparse._SubParsersAction) -> None:
 
     p = sub.add_parser("capture", help=t("commands", "help_capture"))
     p.add_argument("action", choices=("login", "logout", "profiles", "allow", "revoke", "redact", "review", "approve", "reject",
-                                      "serve", "replay", "stage"))
+                                      "serve", "replay", "stage", "plan"))
     p.add_argument("target", nargs="?", help=t("commands", "help_capture_target"))
     p.add_argument("ids", nargs="*", help=t("commands", "help_capture_ids"))
     p.add_argument("--mode", action="append", choices=(*CAPTURE_MODES, "all"), help=t("commands", "help_capture_mode"))

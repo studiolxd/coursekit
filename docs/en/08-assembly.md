@@ -102,6 +102,11 @@ The html backend builds its pages from this same plan. Lesson keys are `U<unit>-
 | Code fences | `CODE` (the language if known, otherwise automatic) |
 | Plain blockquote `> …` | `HIGHLIGHT` |
 | `:::name` directive | The brick of the registry (table in [06-content.md](06-content.md)) |
+| Image placeholder with `Layout: beside the text`, followed by a paragraph | `IMAGE_TEXT`: the image beside that paragraph, with its caption |
+| A line `> **[Video]** <address> <caption>` of YouTube, Vimeo or a video file | `VIDEO` with `videoUrl` and its caption ([Videos of official channels](06-content.md#videos-of-official-channels)) |
+| Two or more image placeholders in a row, with nothing between them | `IMAGE_GALLERY` (up to four) or `IMAGE_CAROUSEL` (more), each image with its alt text and caption |
+| A placeholder inside a panel of `:::accordion`, `:::tabs` or `:::carousel` | The medium of that panel (`mediaType`, `imagePath` and `imageAlt`, or `videoPath`), or its provisional image; while neither exists, a line in its text |
+| Visual resource not uploaded, with its provisional image uploaded | `IMAGE` with the provisional image ([Provisional images](07-media.md#provisional-images)) |
 | Media placeholder not uploaded | `NOTE` titled `Media asset — <type>: <title>` (the first words are those of the course language, and the type is written as in the content, for example `Infographic`), with description and specifications |
 | Media placeholder uploaded | By type id: `image`, `infographic`, `diagram` and `animated_gif` become `IMAGE`; `video` becomes `VIDEO` (with captions and transcript if registered); `audio` becomes `AUDIO`; `simulation` and `terminal_demo` become `EMBED`; `job_aid` becomes an `ATTACHMENT` (the PDF). Plus an `ATTACHMENT` per uploaded download |
 | Objective tags, `---`, HTML comments | Not published |
@@ -282,6 +287,8 @@ The page is built with progressive enhancement. The lessons (one per section of 
 | `scenario`, `conversation` | `SIMULATION` | The simulation played scene by scene: the background with its layers and the areas that can be clicked (focusable buttons with the label as their name), the portraits of the characters, the text with the variants that hold, the choices as buttons, the feedback of a decision before going on, and at the end the ending, the debriefing, the decisions taken, the score (scored ones) and the buttons to go back to the last checkpoint (`decision_based.rewind`) and to start again. With a `skin`, the application ([Skins](06-content.md#skins)) takes the place of the background. A `conversation` shows the exchange as a chat. Without JavaScript: the opening situation and its options. Images not produced yet are left out (initials stand for the portraits) |
 | `:::if` / `:::else` | `CONDITIONAL` | Both branches are in the page; the player shows the `:::if` one when every simulation it reads has been played and its condition holds, else the neutral one (also without JavaScript) |
 | Image, infographic, diagram, animated GIF placeholder (produced) | `IMAGE` | Figure with alt text and caption |
+| Image beside its text, images in a row | `IMAGE_TEXT`, `IMAGE_GALLERY`, `IMAGE_CAROUSEL` | The image beside the paragraph (one above the other on a narrow screen); a grid of figures; a carousel of figures |
+| Visual resource not produced yet | `IMAGE` | Its provisional image, drawn in the theme ([Provisional images](07-media.md#provisional-images)) |
 | Video placeholder (produced) | `VIDEO` | Video with controls, captions track (if there is a `.vtt`) and the transcript in a `details` |
 | Audio placeholder (produced) | `AUDIO` | Audio with controls and the transcript |
 | Simulation and terminal demo placeholder (produced) | `EMBED` | An `iframe` of the package folder (`media/<id>/index.html`) |

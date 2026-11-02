@@ -56,13 +56,13 @@ Internal structure (anything else fails at assembly):
 
 | Directive | Internal structure |
 |---|---|
-| `accordion`, `tabs`, `carousel` | one `#### Title` per panel, tab or slide + Markdown text. A list whose items each have a title and a description is written as `tabs` (two items) or `accordion` (more), and a process (steps in order) as `carousel`, one slide per step: never as a list |
+| `accordion`, `tabs`, `carousel` | one `#### Title` per panel, tab or slide + Markdown text; optionally `{{k_icon}}: <name>` right under the title (an icon of the set of the project, shown small above the text when the panel carries no other medium) and one media placeholder (section 4). A list whose items each have a title and a description is written as `tabs` (two items) or `accordion` (more), and a process (steps in order) as `carousel`, one slide per step: never as a list |
 | `timeline` | `#### <date> — <title>` per milestone (without " — ", all of it is the title) + text |
 | `flashcards`, `flashcard-gallery` | `#### Front` + text of the back (at most {{card_max_words}} words). A glossary is a `flashcard-gallery`, never `flashcards`; with longer definitions, an `accordion` |
 | `labelled-graphic` | `{{k_image}}: <exact title of the placeholder, as in `media/manifest.yaml`>` + `#### Point` + text; optional `{{k_position}}: x,y` (0–100) under each point. The placeholder goes in the same section, right before: the graphic shows the image (it does not also go alone) |
 | `dialog` | `**Character:** line`, one per line |
 | `carousel-quotes` | one quote per paragraph, with `— author` on its last line |
-| `note` | optional `{{k_title}}: …` + text |
+| `note` | optional `{{k_title}}: …`, optional `{{k_kind}}: {{w_tip}}` / `{{w_warning}}` / `{{w_info}}` / `{{w_example}}` (the icon of that kind of note) or `{{k_icon}}: <name>` (an icon of the set of the project) + text |
 | `highlight` | text |
 | `quote` | quote + `— author` on the last line |
 | `reflection` | optional `{{k_title}}: …` + two or three open questions (summary section: what the learner did, what they would change, how they will apply it) |
@@ -248,6 +248,20 @@ Exact format (shown as a visible box until the asset is produced):
 
 A **job aid** (`{{t_job_aid}}`) has, after the fields, its text in Markdown on lines that start with `>` too (`> ## Check`,
 `> - [ ] …`, `> 1. …`): it is printed to the PDF the learner downloads.
+
+**Where it goes, and how it is laid out:**
+
+- Alone, between paragraphs: a figure with its caption.
+- **Beside its paragraph**: an image placeholder with a fifth field, `> **{{t_layout_field}}:** {{t_layout_beside}}`, goes beside
+  the paragraph written right after it (one paragraph).
+- **Several in a row**, with nothing between them: the images go together, as a grid (up to four) or a carousel of images.
+- **Inside a panel** of `:::accordion`, `:::tabs` or `:::carousel` (after the `#### Title` of the panel, among its text): it
+  becomes the medium of that panel, one per panel. A procedure on a screen is a carousel whose every step carries its capture.
+  In any other directive a placeholder would be lost: `coursekit verify` fails.
+
+**A video of an official channel** is not a placeholder: a line of its own, `> **[{{t_video}}]** <address> <what it shows>`
+(YouTube, Vimeo or the address of a video file), becomes a player in the course, with the text after the address as its
+caption.
 
 Allowed types (what is written in the placeholder, and its id in the configuration): {{placeholder_types}}. Per unit: {{placeholders_per_hour}} placeholders per hour
 of the unit and at least {{min_placeholder_types}} different types.

@@ -232,6 +232,8 @@ def run_steps(session: sessionmod.Session, steps: list, pace: dict, record: Call
             session.navigate(str(step))
             session.steps.pop()  # a replay writes down nothing
         elif kind == "shot":
+            if isinstance(step, str) and step and step != session.asset_id:
+                continue  # the capture of another resource, taken on the same walk: it has its own and is not taken again
             shots.append(session.save_shot())
             session.steps.pop()
         elif kind == "record":

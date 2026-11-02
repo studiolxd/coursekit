@@ -118,6 +118,12 @@ def add(course: dict, unit: int, version: str, file: str, job: str | None = None
         "snapshot": snapshot,
     }
     data["deliveries"].append(entry)
+    from coursekit.media import provisional
+
+    missing = provisional.waiting(course, unit)
+    if missing:  # it is delivered all the same: the images arrive later, in a new version
+        notice = t("delivery", "provisional_images", count=len(missing), assets=", ".join(missing), code=course["code"])
+        warning = f"{warning}\n{notice}" if warning else notice
     return _close(course, ry, data, version, path.name, warning)
 
 

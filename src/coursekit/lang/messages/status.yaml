@@ -66,3 +66,4 @@ assessment_unit: {es: "en cada unidad", en: "in each unit"}
 assessment_separate: {es: "aparte", en: "apart"}
 assessment_package: {es: " · paquete de evaluación: unidad {n}", en: " · package of the tests: unit {n}"}
 assessment_bank: {es: " · contenido del banco en creator: unidad {n}", en: " · bank content in creator: unit {n}"}
+captures_line: {es: "capturas: {count} recurso(s) esperan una captura de una aplicación real y no hay permiso para capturar; antes del paso multimedia: coursekit capture plan {code}", en: "captures: {count} resource(s) wait for a capture of a real application and there is no permission to capture; before the media step: coursekit capture plan {code}"}

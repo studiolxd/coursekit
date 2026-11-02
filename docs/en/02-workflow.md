@@ -230,6 +230,7 @@ What the conversion does:
 |---|---|
 | Tree of pages | A heading per page (`##`, `###`…); pages with no content are left out |
 | Text, lists, tables, images | Markdown; the images are copied to `brief/text/media/<package>/` |
+| An image gallery (images side by side, each a link to itself) | The images in their order, one per paragraph, without the links inside the package |
 | `exe-accordion`, `exe-tabs`, `exe-carousel` (in any iDevice) | `:::accordion`, `:::tabs`, `:::carousel`, one `#### Title` per panel (a slide without a title gets its number) |
 | Flip cards, relate game, map | `:::flashcards`, `:::match`, `:::labelled-graphic` (with the position of each point) |
 | Multiple choice, multi-select, true or false | `:::single-choice`, `:::multi-select`, `:::true-false`, with the feedback of the options; the questions come without objective, which the design assigns |

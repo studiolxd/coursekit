@@ -131,7 +131,7 @@ colours, `origin.derived`), and the radius and the shadow are its defaults. The 
    - typography: the families, their weights and what each one is for, and that the files are in `fonts/`;
    - shape: corners, borders, shadows;
    - icons: which set and where its files are (`icons/`, when the brand brings them), its rules measured on those files
-     (grid, stroke, joins, live area), and how to draw a missing one with the same criteria;
+     (grid, stroke, joins, live area), and how to draw a missing one with the same criteria (see step 6b);
    - motion: durations and curves, reduced motion;
    - videos: what the brand and `notes.md` say of the videos made as a montage: the background of the scenes, the shapes and
      the weights, the character of the motion (each with the value of `config/video.yaml` it becomes), how the text enters
@@ -147,6 +147,15 @@ colours, `origin.derived`), and the radius and the shadow are its defaults. The 
      `coursekit media plan` warn of the lines the guide does not quote.
    A rule you infer and the brand does not state is not written as a rule: it goes as a question. The person's
    `notes.md` weighs more than the rest.
+6b. **The icon set of the project.** Every icon of the courses comes from it, never from a generic set. `coursekit brand`
+   indexes the icons of the design system in `theme/branding/icons/` (`index.json`, and `sheet.svg` to see them all). When
+   the brand brings none, or lacks the ones the courses always need, **design them** with the rules of the guide for icons,
+   measured on what the brand does have (the stroke of its components, its corners, its weight, its type): at least the
+   kinds of note (`tip`, `warning`, `info`, `example`), a check and a cross, and the icons of the instructions of the bricks
+   (`coursekit config media › icons`). You may start from the shape of a free icon (`coursekit media icons <CODE> --base
+   --find "…"` and `--take <name>`), redrawn with the rules of the brand, never as it is. Save each one in
+   `theme/branding/icons/<name>.svg` with a `<title>` that says its meaning, and say in the guide which were drawn. The
+   person signs them with the guide.
 7. **Job aids** (the checklists and quick guides the learner downloads as a PDF) have a style of their own, because paper is
    not a screen: set it from the brand as you set the one of the videos (step 5), in `config/media.yaml › job_aid` (a course
    with its own brand: `course.yaml › media › job_aid`). `text`, the typography of each part of the page (`kicker`, the course

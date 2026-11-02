@@ -694,6 +694,21 @@ def write_excel(course: dict, graph: dict, findings: list[Finding], target: Path
     if not errors or not errors.by_id:
         _row(sheet, ["", "", head("no_misconceptions")])
 
+    from coursekit import sync as syncmod  # imports this module
+    from coursekit import visualplan
+
+    plan, _ = visualplan.load(course)
+    units, _ = syncmod.build_units(graph, course, rules, coursemod.tokens(course))
+    titles = {(u["n"], sec["n"]): sec["title"] for u in units for sec in u["sections"]}
+    labels = coursemod.tokens(course)["media_types"]
+    sheet = _sheet(book, head("sheet_visuals"), [(head("col_id"), 10), (head("col_section"), 40), (head("col_type"), 18),
+                                                 (head("col_text"), 90)])
+    for (un, sn), items in sorted(plan.items()):
+        for item in items:
+            _row(sheet, [f"U{un}.S{sn}", titles.get((un, sn), "?"), labels.get(item["type"], item["type"]), item["what"]])
+    if not plan:
+        _row(sheet, ["", "", "", head("no_visuals")])
+
     sheet = _sheet(book, head("sheet_validation"), [(head("col_severity"), 14), (head("col_element"), 40), (head("col_check"), 30),
                                                     (head("col_message"), 90)])
     unit_word = coursemod.tokens(course)["unit"]

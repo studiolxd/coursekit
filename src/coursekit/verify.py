@@ -30,7 +30,7 @@ from urllib.parse import urlparse
 
 import yaml
 
-from coursekit import config
+from coursekit import config, visualplan
 from coursekit import course as coursemod
 from coursekit import importer as importermod
 from coursekit import misconceptions as misconmod
@@ -91,6 +91,10 @@ def check_visuals(sec: Section, spec: dict, rules: dict, syntax: Syntax, tokens:
     carries one or says why not (`<!-- NO IMAGE: reason -->`), so the writer always asks whether it would read better with one."""
     kinds = set(rules.get("visual_types") or [])
     visual = [ph for ph in sec.placeholders if (syntax.media_type(ph.kind) or ph.kind) in kinds]
+    per_words = int(rules.get("visual_per_words") or 0)
+    if visual and per_words and spec["kind"] == "content" and sec.words > per_words * len(visual):
+        report.warn(t("verify", "few_visuals_for_words", label=label, words=sec.words, count=len(visual),
+                      needed=math.ceil(sec.words / per_words)))
     if visual or not kinds:
         return
     if spec["kind"] in (rules.get("visual_sections") or []):
@@ -102,6 +106,55 @@ def check_visuals(sec: Section, spec: dict, rules: dict, syntax: Syntax, tokens:
             shortfall(t("verify", "visual_undecided", label=label, marker=tokens.get("no_visual") or "NO IMAGE"))
         elif not any(r.strip() for r in reasons):
             report.error(t("verify", "visual_no_reason", label=label, marker=tokens.get("no_visual") or "NO IMAGE"))
+
+
+PANEL_MEDIA = ("accordion", "tabs", "carousel")  # the directives whose panels carry a medium of their own (assemble.panel_media)
+
+
+def check_panel_media(path: Path, text: str, syntax: Syntax, report: Report) -> None:
+    """A media placeholder inside a directive goes in a panel of an accordion, tabs or a carousel, one per panel (it becomes the
+    medium of that panel); in any other directive it would be lost."""
+    directive, panel_has, in_code = None, False, False
+    for n, line in enumerate(text.splitlines(), 1):
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            in_code = not in_code
+            continue
+        if in_code:
+            continue
+        opened = DIRECTIVE_OPEN_RE.match(stripped)
+        if opened and opened.group(1) not in ("else",):
+            directive, panel_has = opened.group(1), False
+            continue
+        if DIRECTIVE_CLOSE_RE.match(stripped):
+            directive = None
+            continue
+        if directive and line.startswith("#### "):
+            panel_has = False
+            continue
+        if directive and syntax.placeholder.match(stripped):
+            if directive not in PANEL_MEDIA:
+                report.error(t("verify", "placeholder_in_directive", file=path.name, line=n, name=directive,
+                               allowed=", ".join(PANEL_MEDIA)))
+            elif panel_has:
+                report.error(t("verify", "panel_two_media", file=path.name, line=n))
+            panel_has = True
+
+
+def check_visual_mix(placeholders: list, rules: dict, syntax: Syntax, report: Report) -> None:
+    """The visuals of a unit are not only what the agent draws: at least `photos_per_unit` photographs or captures (the types
+    of `photo_types`), and no more than `visual_mix_max` of the visuals infographics or diagrams. Warnings only."""
+    kinds = set(rules.get("visual_types") or [])
+    types = [syntax.media_type(ph.kind) or ph.kind for ph in placeholders]
+    visual = [k for k in types if k in kinds]
+    photos = sum(1 for k in types if k in set(rules.get("photo_types") or []))
+    needed = int(rules.get("photos_per_unit") or 0)
+    if visual and photos < needed:
+        report.warn(t("verify", "few_photos", count=photos, needed=needed))
+    drawn = sum(1 for k in visual if k in set(rules.get("drawn_types") or []))
+    share = rules.get("visual_mix_max")
+    if share is not None and len(visual) >= 3 and drawn / len(visual) > float(share):
+        report.warn(t("verify", "visuals_mostly_drawn", drawn=drawn, count=len(visual), share=round(float(share) * 100)))
 
 
 @dataclass
@@ -812,6 +865,9 @@ def verify_unit(course: dict, unit: dict) -> Report:
     check_pictographs(content_path, text, rules["allowed_symbols"], report)
     check_objective_ids(content_path, text, rules, syntax, report)
     check_lists(content_path, text, report)
+    report.family = "media"
+    check_panel_media(content_path, text, syntax, report)
+    report.family = "style"
     forbidden = all_rules.get("forbidden") or {}
     registry = videosmod.by_key(course["_dir"])
     report.family = "language"
@@ -826,6 +882,10 @@ def verify_unit(course: dict, unit: dict) -> Report:
         report.error(t("verify", "sections_mismatch", found=found, expected=expected))
 
     by_n = {s.n: s for s in sections}
+    visual_plan, plan_problems = visualplan.load(course, list(rules.get("visual_types") or []))
+    report.family = "media"
+    for problem in plan_problems:
+        report.warn(problem)
     total_words = 0
     placeholders: list[Placeholder] = []
     covered: set[str] = set()
@@ -900,6 +960,12 @@ def verify_unit(course: dict, unit: dict) -> Report:
                           margin=round(float(rules["word_margin_max"]) * 100)))
         report.family = "media"
         check_visuals(sec, spec, rules, syntax, tokens, label, report, shortfall)
+        planned = visual_plan.get((unit["n"], spec["n"])) or []
+        kinds = set(rules.get("visual_types") or [])
+        carried = [ph for ph in sec.placeholders if (syntax.media_type(ph.kind) or ph.kind) in kinds]
+        if len(carried) < len(planned):
+            report.warn(t("visualplan", "below_plan", label=label, planned=len(planned), count=len(carried),
+                          what="; ".join(i["what"] for i in planned)))
         report.family = "structure"
         if spec["kind"] == "content":
             tags = [line for line in sec.lines if syntax.objective_tag.match(line)]
@@ -939,6 +1005,7 @@ def verify_unit(course: dict, unit: dict) -> Report:
         shortfall(t("verify", "few_placeholders", count=len(placeholders), needed=needed_ph))
     if len(kinds) < needed_types:
         shortfall(t("verify", "few_placeholder_types", count=len(kinds), needed=needed_types))
+    check_visual_mix(placeholders, rules, syntax, report)
 
     report.family = "activities"
     quiet = list(parse_directives(Path("content.md"), text.splitlines(), rules, Report()))

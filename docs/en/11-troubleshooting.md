@@ -75,7 +75,7 @@ The check looks at the project's tokens (`theme/`); a course with its own theme 
 
 ### Media
 
-Optional. Install what is missing with `coursekit setup --media`: `ffmpeg`, `vhs`, `asciinema` (not available on Windows; terminal demos use VHS), `piper`, `stable-ts`, and `PIPER_VOICE` (path to the draft voice). The five API keys (`ELEVENLABS_API_KEY`, `AZURE_SPEECH_KEY`, `GOOGLE_TTS_API_KEY`, `GEMINI_API_KEY`, `MAGNIFIC_API_KEY`) show `ok` when set and `info` when not; with `AZURE_SPEECH_KEY` set and no `AZURE_SPEECH_REGION`, a `missing` line `AZURE_SPEECH_REGION` asks for the region of your Azure Speech resource. It also shows two lines about what is installed once per machine ([Where the tools live](07-media.md#where-the-tools-live)):
+Optional. Install what is missing with `coursekit setup --media`: `ffmpeg`, `vhs`, `asciinema` (not available on Windows; terminal demos use VHS), `piper`, `stable-ts`, and `PIPER_VOICE` (path to the draft voice). The seven API keys (`ELEVENLABS_API_KEY`, `AZURE_SPEECH_KEY`, `GOOGLE_TTS_API_KEY`, `GEMINI_API_KEY`, `MAGNIFIC_API_KEY`, `PEXELS_API_KEY`, `YOUTUBE_API_KEY`) show `ok` when set and `info` when not; with `AZURE_SPEECH_KEY` set and no `AZURE_SPEECH_REGION`, a `missing` line `AZURE_SPEECH_REGION` asks for the region of your Azure Speech resource. It also shows two lines about what is installed once per machine ([Where the tools live](07-media.md#where-the-tools-live)):
 
 | Check | Meaning and fix |
 |---|---|

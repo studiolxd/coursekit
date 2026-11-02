@@ -140,6 +140,13 @@ update:
 assembly:
   code_languages: []           # e.g. [toml]
 
+# The official channels of the project: the makers of the applications and the bodies its courses teach (by handle, id, name
+# or address). `coursekit videos find CODE "<what>"` searches their videos (with YOUTUBE_API_KEY, the YouTube API; without it,
+# the search provider of `coursekit research`), and `coursekit videos check` approves their videos as `forbidden ›
+# allow_channels` does. A course sets its own in course.yaml › rules › videos.
+videos:
+  channels: []                 # e.g. ["@MicrosoftLearn", "https://www.youtube.com/@Google"]
+
 # What must not appear in the content of a course: `coursekit verify` reports each occurrence as an error. Empty by default.
 # A course sets its own in course.yaml › rules › forbidden (a list replaces this one).
 forbidden:
@@ -179,5 +186,14 @@ content:
   visual_types: [image, illustration, icon, infographic, diagram, animated_gif, video, terminal_demo]
   visual_sections: [intro, summary]
   visual_decision: true
+  # How much a unit is seen, as warnings of `verify` (never errors): a content section carries one visual resource more for
+  # every `visual_per_words` words of its own (0: not checked); a unit carries at least `photos_per_unit` photographs or
+  # captures of a real application (the types of `photo_types`), so that it does not rest only on what the agent draws; and
+  # when a unit has three visuals or more, no more than `visual_mix_max` of them are of the `drawn_types` (null: not checked).
+  visual_per_words: 1500
+  photo_types: [image]
+  photos_per_unit: 1
+  drawn_types: [infographic, diagram]
+  visual_mix_max: 0.6
   # Directives and their creator bricks: config/directives.yaml
   allowed_symbols: "★✔✘·—‹›"
